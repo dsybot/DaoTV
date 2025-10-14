@@ -619,15 +619,15 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               >
                                 {source.title}
                               </h3>
-                              {/* 标题悬浮提示 - 显示完整标题 */}
+                              {/* 标题悬浮提示 - 毛玻璃效果 */}
                               {index !== 0 && (
-                                <div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-gray-900/95 dark:bg-gray-800/95 text-white text-sm rounded-lg shadow-xl backdrop-blur-sm opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 ease-out delay-300 whitespace-nowrap z-[1000] pointer-events-none border border-gray-700/50'>
-                                  <div className='relative'>
+                                <div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2.5 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 text-sm rounded-xl shadow-2xl backdrop-blur-md opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 ease-out delay-500 whitespace-nowrap z-[1000] pointer-events-none border border-gray-200/50 dark:border-gray-600/50 ring-1 ring-black/5 dark:ring-white/10'>
+                                  <div className='relative font-medium'>
                                     {source.title}
                                   </div>
-                                  {/* 小箭头 */}
-                                  <div className='absolute top-full left-1/2 -translate-x-1/2 -mt-[1px]'>
-                                    <div className='w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900/95 dark:border-t-gray-800/95'></div>
+                                  {/* 小箭头 - 毛玻璃配色 */}
+                                  <div className='absolute top-full left-1/2 -translate-x-1/2 -mt-px'>
+                                    <div className='w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px] border-t-white/90 dark:border-t-gray-800/90 drop-shadow-sm'></div>
                                   </div>
                                 </div>
                               )}
