@@ -588,6 +588,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           </div>
                         )}
 
+                        {/* 悬浮光效 - 优化版 */}
+                        {!isCurrentSource && (
+                          <div className='absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/0 to-transparent group-hover:via-blue-500/[0.08] dark:group-hover:via-blue-400/[0.06] transition-all duration-700 pointer-events-none rounded-xl'></div>
+                        )}
 
                         {/* 封面 */}
                         <div className='flex-shrink-0 w-12 h-20 bg-gradient-to-br from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-shadow duration-300'>
@@ -609,10 +613,24 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           {/* 标题和分辨率 - 顶部 */}
                           <div className='flex items-start justify-between gap-3 h-6'>
                             <div className='flex-1 min-w-0 relative group/title'>
-                              <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
+                              <h3 
+                                className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'
+                                title={source.title}
+                              >
                                 {source.title}
                               </h3>
-                              {/* 标题级别的 tooltip - 移除以避免显示问题 */}
+                              {/* 标题悬浮提示 - 显示完整标题 */}
+                              {index !== 0 && (
+                                <div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-gray-900/95 dark:bg-gray-800/95 text-white text-sm rounded-lg shadow-xl backdrop-blur-sm opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 ease-out delay-300 whitespace-nowrap z-[1000] pointer-events-none border border-gray-700/50'>
+                                  <div className='relative'>
+                                    {source.title}
+                                  </div>
+                                  {/* 小箭头 */}
+                                  <div className='absolute top-full left-1/2 -translate-x-1/2 -mt-[1px]'>
+                                    <div className='w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900/95 dark:border-t-gray-800/95'></div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
