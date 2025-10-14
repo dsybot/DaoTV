@@ -2,6 +2,7 @@
 'use server';
 
 import { ReleaseCalendarItem } from './types';
+import { getConfig } from './config';
 
 const baseUrl = 'https://g.manmankan.com/dy2013';
 
@@ -175,7 +176,13 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
  */
 export async function scrapeMovieReleases(): Promise<ReleaseCalendarItem[]> {
   try {
-    const url = `${baseUrl}/dianying/shijianbiao/`;
+    const config = await getConfig();
+    const proxyUrl = config.SiteConfig?.ReleaseCalendarProxy || '';
+
+    const targetUrl = `${baseUrl}/dianying/shijianbiao/`;
+    // 如果配置了代理，使用代理；否则直连
+    const url = proxyUrl ? `${proxyUrl}?url=${encodeURIComponent(targetUrl)}` : targetUrl;
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -200,7 +207,13 @@ export async function scrapeMovieReleases(): Promise<ReleaseCalendarItem[]> {
  */
 export async function scrapeTVReleases(): Promise<ReleaseCalendarItem[]> {
   try {
-    const url = `${baseUrl}/dianshiju/shijianbiao/`;
+    const config = await getConfig();
+    const proxyUrl = config.SiteConfig?.ReleaseCalendarProxy || '';
+
+    const targetUrl = `${baseUrl}/dianshiju/shijianbiao/`;
+    // 如果配置了代理，使用代理；否则直连
+    const url = proxyUrl ? `${proxyUrl}?url=${encodeURIComponent(targetUrl)}` : targetUrl;
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
