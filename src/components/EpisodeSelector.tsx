@@ -647,10 +647,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               </span>
                               {/* 当前源标记 - 紧跟源名称后 */}
                               {isCurrentSource && (
-                                <div className='flex items-center gap-1 flex-shrink-0'>
+                                <div className='flex items-center gap-0.5 flex-shrink-0'>
                                   {/* 动感小箭头 - 指向左边（源名称） */}
-                                  <div className='text-green-500 animate-pulse'>
-                                    <svg className='w-3.5 h-3.5' fill='currentColor' viewBox='0 0 20 20'>
+                                  <div className='text-green-500 animate-pulse -mr-0.5'>
+                                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
                                       <path fillRule='evenodd' d='M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z' clipRule='evenodd' />
                                     </svg>
                                   </div>
