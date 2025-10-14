@@ -357,44 +357,44 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
             onClick={() => setActiveTab('episodes')}
             className={`group flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden
               ${activeTab === 'episodes'
-                ? 'text-green-600 dark:text-green-400'
+                ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400'
                 : 'text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400'
               }
             `.trim()}
           >
             {/* 激活态背景光晕 */}
             {activeTab === 'episodes' && (
-              <div className='absolute inset-0 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 -z-10'></div>
+              <div className='absolute inset-0 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20'></div>
             )}
             {/* 非激活态背景 */}
             {activeTab !== 'episodes' && (
-              <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 group-hover:bg-gray-100 dark:group-hover:bg-gray-800/70 transition-colors duration-300 -z-10'></div>
+              <div className='absolute inset-0 bg-black/5 dark:bg-white/5 group-hover:bg-black/3 dark:group-hover:bg-white/8 transition-colors duration-300'></div>
             )}
             {/* 悬浮光效 */}
-            <div className='absolute inset-0 bg-gradient-to-r from-transparent via-green-100/0 to-transparent dark:via-green-500/0 group-hover:via-green-100/50 dark:group-hover:via-green-500/10 transition-all duration-300 -z-10'></div>
-            <span className='relative z-10 font-bold'>选集</span>
+            <div className='absolute inset-0 bg-gradient-to-r from-transparent via-green-100/0 to-transparent dark:via-green-500/0 group-hover:via-green-100/50 dark:group-hover:via-green-500/10 transition-all duration-300'></div>
+            <span className='relative z-10'>选集</span>
           </div>
         )}
         <div
           onClick={handleSourceTabClick}
           className={`group flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden
             ${activeTab === 'sources'
-              ? 'text-blue-600 dark:text-blue-400'
+              ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-sky-600 dark:from-blue-400 dark:via-cyan-400 dark:to-sky-400'
               : 'text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400'
             }
           `.trim()}
         >
           {/* 激活态背景光晕 */}
           {activeTab === 'sources' && (
-            <div className='absolute inset-0 bg-gradient-to-r from-blue-50 via-cyan-50 to-sky-50 dark:from-blue-900/20 dark:via-cyan-900/20 dark:to-sky-900/20 -z-10'></div>
+            <div className='absolute inset-0 bg-gradient-to-r from-blue-50 via-cyan-50 to-sky-50 dark:from-blue-900/20 dark:via-cyan-900/20 dark:to-sky-900/20'></div>
           )}
           {/* 非激活态背景 */}
           {activeTab !== 'sources' && (
-            <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 group-hover:bg-gray-100 dark:group-hover:bg-gray-800/70 transition-colors duration-300 -z-10'></div>
+            <div className='absolute inset-0 bg-black/5 dark:bg-white/5 group-hover:bg-black/3 dark:group-hover:bg-white/8 transition-colors duration-300'></div>
           )}
           {/* 悬浮光效 */}
-          <div className='absolute inset-0 bg-gradient-to-r from-transparent via-blue-100/0 to-transparent dark:via-blue-500/0 group-hover:via-blue-100/50 dark:group-hover:via-blue-500/10 transition-all duration-300 -z-10'></div>
-          <span className='relative z-10 font-bold'>换源</span>
+          <div className='absolute inset-0 bg-gradient-to-r from-transparent via-blue-100/0 to-transparent dark:via-blue-500/0 group-hover:via-blue-100/50 dark:group-hover:via-blue-500/10 transition-all duration-300'></div>
+          <span className='relative z-10'>换源</span>
         </div>
       </div>
 
@@ -616,10 +616,13 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
                                 {source.title}
                               </h3>
-                              {/* 悬浮标签 - 显示完整标题 */}
-                              <div className='absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-sm text-white text-sm font-medium rounded-lg shadow-xl opacity-0 scale-95 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-200 ease-out delay-300 whitespace-nowrap z-[1000] pointer-events-none max-w-[320px] overflow-hidden text-ellipsis'>
-                                {source.title}
-                              </div>
+                              {/* 标题级别的 tooltip - 第一个元素不显示 */}
+                              {index !== 0 && (
+                                <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 ease-out delay-100 whitespace-nowrap z-[500] pointer-events-none'>
+                                  {source.title}
+                                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800'></div>
+                                </div>
+                              )}
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
