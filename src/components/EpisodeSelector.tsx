@@ -547,7 +547,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           {!sourceSearchLoading &&
             !sourceSearchError &&
             availableSources.length > 0 && (
-              <div className='flex-1 overflow-y-auto space-y-2 pb-20'>
+              <div className='flex-1 overflow-y-auto space-y-2 pb-20 px-1'>
                 {availableSources
                   .sort((a, b) => {
                     const aIsCurrent =
@@ -573,7 +573,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         className={`group flex items-start gap-3 px-3 py-3 rounded-xl transition-all select-none duration-300 relative overflow-hidden
                       ${isCurrentSource
                             ? 'bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/30 dark:via-emerald-900/30 dark:to-teal-900/30 border-2 border-green-500/50 dark:border-green-400/50 shadow-lg shadow-green-500/10'
-                            : 'bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-white/5 dark:to-white/10 hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 hover:scale-[1.02] hover:shadow-md cursor-pointer border border-gray-200/50 dark:border-white/10'
+                            : 'bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-white/5 dark:to-white/10 hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 hover:scale-[1.03] hover:shadow-xl hover:z-10 cursor-pointer border border-gray-200/50 dark:border-white/10'
                           }`.trim()}
                       >
                         {/* 当前源标记 */}
