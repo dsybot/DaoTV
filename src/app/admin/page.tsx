@@ -277,6 +277,8 @@ interface SiteConfig {
   TMDBApiKey?: string;
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
+  // 上映日程代理配置
+  ReleaseCalendarProxy?: string;
 }
 
 // 视频源数据类型
