@@ -590,7 +590,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
                         {/* 悬浮光效 */}
                         {!isCurrentSource && (
-                          <div className='absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent group-hover:from-blue-500/[0.03] group-hover:via-purple-500/[0.05] group-hover:to-pink-500/[0.03] transition-all duration-500 pointer-events-none rounded-xl'></div>
+                          <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/0 to-transparent group-hover:via-white/30 dark:group-hover:via-white/5 transition-all duration-500 pointer-events-none'></div>
                         )}
 
                         {/* 封面 */}
@@ -616,10 +616,13 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
                                 {source.title}
                               </h3>
-                              {/* 悬浮标签 - 精美设计 */}
-                              <div className='absolute left-0 -top-9 px-3 py-1.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-semibold rounded-lg shadow-[0_8px_16px_rgba(0,0,0,0.25)] opacity-0 scale-90 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-300 ease-out delay-500 whitespace-nowrap z-[1000] pointer-events-none backdrop-blur-sm border border-white/20'>
-                                <span className='relative drop-shadow-sm'>{source.title}</span>
-                              </div>
+                              {/* 标题级别的 tooltip - 第一个元素不显示 */}
+                              {index !== 0 && (
+                                <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 ease-out delay-100 whitespace-nowrap z-[500] pointer-events-none'>
+                                  {source.title}
+                                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800'></div>
+                                </div>
+                              )}
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
