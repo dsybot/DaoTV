@@ -617,7 +617,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                                 {source.title}
                               </h3>
                               {/* 悬浮标签 - 显示完整标题 */}
-                              <div className='absolute left-0 -top-8 px-2.5 py-1 bg-gray-800/95 dark:bg-gray-700/95 text-white text-xs rounded-md shadow-lg opacity-0 scale-95 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-200 ease-out delay-300 whitespace-nowrap z-[1000] pointer-events-none max-w-[280px] truncate'>
+                              <div className='absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-sm text-white text-sm font-medium rounded-lg shadow-xl opacity-0 scale-95 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-200 ease-out delay-300 whitespace-nowrap z-[1000] pointer-events-none max-w-[320px] overflow-hidden text-ellipsis'>
                                 {source.title}
                               </div>
                             </div>
