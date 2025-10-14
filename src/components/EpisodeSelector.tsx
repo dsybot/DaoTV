@@ -602,18 +602,18 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               {/* 当前源标记 - 紧跟标题后 */}
                               {isCurrentSource && (
                                 <div className='flex items-center gap-0.5 flex-shrink-0'>
-                                  {/* 动感小箭头 */}
-                                  <div className='text-green-500 animate-pulse'>
-                                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
-                                      <path fillRule='evenodd' d='M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z' clipRule='evenodd' />
-                                    </svg>
-                                  </div>
                                   {/* 标签 */}
                                   <div className='relative'>
                                     <div className='absolute inset-0 bg-green-500 rounded-full blur-[2px] opacity-50 animate-pulse'></div>
                                     <div className='relative bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow-md'>
                                       当前源
                                     </div>
+                                  </div>
+                                  {/* 动感小箭头 - 指向左边（标题） */}
+                                  <div className='text-green-500 animate-pulse'>
+                                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
+                                      <path fillRule='evenodd' d='M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z' clipRule='evenodd' />
+                                    </svg>
                                   </div>
                                 </div>
                               )}
