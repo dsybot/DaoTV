@@ -588,9 +588,9 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           </div>
                         )}
 
-                        {/* 悬浮光效 - 优化版 */}
+                        {/* 悬浮光效 */}
                         {!isCurrentSource && (
-                          <div className='absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/0 to-transparent group-hover:via-blue-500/[0.08] dark:group-hover:via-blue-400/[0.06] transition-all duration-700 pointer-events-none rounded-xl'></div>
+                          <div className='absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent group-hover:from-blue-500/[0.03] group-hover:via-purple-500/[0.05] group-hover:to-pink-500/[0.03] transition-all duration-500 pointer-events-none rounded-xl'></div>
                         )}
 
                         {/* 封面 */}
@@ -613,15 +613,12 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           {/* 标题和分辨率 - 顶部 */}
                           <div className='flex items-start justify-between gap-3 h-6'>
                             <div className='flex-1 min-w-0 relative group/title'>
-                              <h3 
-                                className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'
-                                title={source.title}
-                              >
+                              <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
                                 {source.title}
                               </h3>
-                              {/* 悬浮提示 - 简约现代风格 */}
-                              <div className='absolute left-0 -top-10 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-medium rounded-md shadow-lg opacity-0 scale-95 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-200 ease-out delay-700 whitespace-nowrap z-[1000] pointer-events-none max-w-xs'>
-                                {source.title}
+                              {/* 悬浮标签 - 精美设计 */}
+                              <div className='absolute left-0 -top-9 px-3 py-1.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-semibold rounded-lg shadow-[0_8px_16px_rgba(0,0,0,0.25)] opacity-0 scale-90 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-300 ease-out delay-500 whitespace-nowrap z-[1000] pointer-events-none backdrop-blur-sm border border-white/20'>
+                                <span className='relative drop-shadow-sm'>{source.title}</span>
                               </div>
                             </div>
                             {(() => {
