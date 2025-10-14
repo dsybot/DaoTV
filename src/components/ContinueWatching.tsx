@@ -226,7 +226,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
               return (
                 <div
                   key={record.key}
-                  className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44 relative group/card'
+                  className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44 relative group/card pt-2 pr-2'
                 >
                   <div className='relative group-hover/card:z-[500] transition-all duration-300'>
                     <VideoCard
@@ -252,7 +252,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                   </div>
                   {/* 新集数徽章 */}
                   {newEpisodesCount > 0 && (
-                    <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
+                    <div className='absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
                       +{newEpisodesCount}集
                     </div>
                   )}
