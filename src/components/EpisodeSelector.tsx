@@ -577,7 +577,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           }`.trim()}
                       >
                         {/* 封面 */}
-                        <div className='flex-shrink-0 w-12 h-20 bg-gradient-to-br from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-shadow duration-300 relative'>
+                        <div className='flex-shrink-0 w-12 h-20 bg-gradient-to-br from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-shadow duration-300'>
                           {source.episodes && source.episodes.length > 0 && (
                             <img
                               src={processImageUrl(source.poster)}
@@ -591,35 +591,32 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           )}
                         </div>
 
-                        {/* 当前源标记 - 放在封面和标题之间 */}
-                        {isCurrentSource && (
-                          <div className='flex items-center gap-1 my-auto'>
-                            <div className='relative flex items-center gap-1'>
-                              {/* 动感小箭头 */}
-                              <div className='text-green-500 animate-pulse'>
-                                <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
-                                  <path fillRule='evenodd' d='M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z' clipRule='evenodd' />
-                                </svg>
-                              </div>
-                              {/* 标签 */}
-                              <div className='relative'>
-                                <div className='absolute inset-0 bg-green-500 rounded-full blur-sm opacity-60 animate-pulse'></div>
-                                <div className='relative bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold shadow-lg whitespace-nowrap'>
-                                  当前源
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                         {/* 信息区域 */}
                         <div className='flex-1 min-w-0 flex flex-col justify-between h-20'>
                           {/* 标题和分辨率 - 顶部 */}
-                          <div className='flex items-start justify-between gap-3 h-6'>
-                            <div className='flex-1 min-w-0'>
+                          <div className='flex items-start justify-between gap-2 h-6'>
+                            <div className='flex items-center gap-1.5 flex-1 min-w-0'>
                               <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
                                 {source.title}
                               </h3>
+                              {/* 当前源标记 - 紧跟标题后 */}
+                              {isCurrentSource && (
+                                <div className='flex items-center gap-0.5 flex-shrink-0'>
+                                  {/* 动感小箭头 */}
+                                  <div className='text-green-500 animate-pulse'>
+                                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
+                                      <path fillRule='evenodd' d='M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z' clipRule='evenodd' />
+                                    </svg>
+                                  </div>
+                                  {/* 标签 */}
+                                  <div className='relative'>
+                                    <div className='absolute inset-0 bg-green-500 rounded-full blur-[2px] opacity-50 animate-pulse'></div>
+                                    <div className='relative bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow-md'>
+                                      当前源
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
