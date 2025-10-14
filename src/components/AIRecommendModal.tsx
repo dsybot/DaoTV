@@ -35,7 +35,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
   const [messages, setMessages] = useState<ExtendedAIMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<{message: string, details?: string} | null>(null);
+  const [error, setError] = useState<{ message: string, details?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
@@ -65,7 +65,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           localStorage.removeItem('ai-recommend-messages');
         }
       }
-      
+
       // 没有有效缓存时显示欢迎消息
       const welcomeMessage: ExtendedAIMessage = {
         role: 'assistant',
@@ -87,7 +87,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
       // 🔥 修复Bug #1: 保持原有时间戳，不要每次都重置
       const existingCache = localStorage.getItem('ai-recommend-messages');
       let existingTimestamp = new Date().getTime(); // 默认当前时间
-      
+
       if (existingCache) {
         try {
           const parsed = JSON.parse(existingCache);
@@ -96,7 +96,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           // 解析失败时使用当前时间
         }
       }
-      
+
       const cache = {
         messages,
         timestamp: existingTimestamp // 保持原有时间戳，不重置
@@ -153,7 +153,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
       // 智能上下文管理：只发送最近8条消息（4轮对话）
       const updatedMessages = [...messages, userMessage];
       const conversationHistory = updatedMessages.slice(-8);
-      
+
       const response = await sendAIRecommendMessage(conversationHistory);
       const assistantMessage: ExtendedAIMessage = {
         role: 'assistant',
@@ -168,7 +168,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
       setMessages([...updatedMessages, assistantMessage]);
     } catch (error) {
       console.error('AI推荐请求失败:', error);
-      
+
       if (error instanceof Error) {
         // 尝试解析错误响应中的详细信息
         try {
@@ -221,7 +221,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     } catch (error) {
       console.error("Failed to clear messages cache", error);
     }
-    
+
     // 重新显示欢迎消息
     const welcomeMessage: ExtendedAIMessage = {
       role: 'assistant',
@@ -240,11 +240,11 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* 背景遮罩 */}
-      <div 
+      <div
         className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* 对话框 */}
       <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white dark:bg-gray-900 rounded-lg shadow-2xl flex flex-col overflow-hidden">
         {/* 头部 */}
@@ -277,7 +277,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         </div>
 
         {/* 消息区域 */}
-        <div 
+        <div
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-800"
         >
@@ -292,7 +292,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 支持影视推荐、YouTube链接解析和视频搜索推荐
               </p>
-              
+
               {/* 预设问题 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                 {AI_RECOMMEND_PRESETS.map((preset, index) => (
@@ -318,11 +318,10 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.role === 'user'
+                className={`max-w-[80%] p-3 rounded-lg ${message.role === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
-                }`}
+                  }`}
               >
                 {message.role === 'assistant' ? (
                   <div
@@ -335,7 +334,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                   <div className="whitespace-pre-wrap">{message.content}</div>
                 )}
               </div>
-              
+
               {/* 推荐影片卡片 */}
               {message.role === 'assistant' && message.recommendations && message.recommendations.length > 0 && (
                 <div className="mt-3 space-y-2 max-w-[80%]">
@@ -347,7 +346,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                       推荐影片卡片
                     </div>
                     <span className="text-gray-400 dark:text-gray-500">
-                      {message.recommendations.length < 4 
+                      {message.recommendations.length < 4
                         ? `显示 ${message.recommendations.length} 个推荐`
                         : `显示前 4 个推荐`
                       }
@@ -491,8 +490,8 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                           ) : (
                             <div className="flex items-start gap-3">
                               <div className="relative cursor-pointer" onClick={() => handleVideoLinkPlay(video)}>
-                                <img 
-                                  src={video.thumbnail} 
+                                <img
+                                  src={video.thumbnail}
                                   alt={video.title}
                                   className="w-20 h-15 object-cover rounded"
                                 />
@@ -515,7 +514,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                               </div>
                             </div>
                           )}
-                          
+
                           <div className="flex gap-2">
                             {playingVideoId !== video.videoId && (
                               <button
@@ -619,7 +618,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               <span>发送</span>
             </button>
           </form>
-          
+
           {/* 提示信息 */}
           <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>💡 支持影视推荐、YouTube链接解析和视频搜索</span>

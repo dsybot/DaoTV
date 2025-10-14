@@ -619,18 +619,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               >
                                 {source.title}
                               </h3>
-                              {/* 标题悬浮提示 - 毛玻璃效果 */}
-                              {index !== 0 && (
-                                <div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2.5 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 text-sm rounded-xl shadow-2xl backdrop-blur-md opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 ease-out delay-500 whitespace-nowrap z-[1000] pointer-events-none border border-gray-200/50 dark:border-gray-600/50 ring-1 ring-black/5 dark:ring-white/10'>
-                                  <div className='relative font-medium'>
-                                    {source.title}
-                                  </div>
-                                  {/* 小箭头 - 毛玻璃配色 */}
-                                  <div className='absolute top-full left-1/2 -translate-x-1/2 -mt-px'>
-                                    <div className='w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px] border-t-white/90 dark:border-t-gray-800/90 drop-shadow-sm'></div>
-                                  </div>
-                                </div>
-                              )}
+                              {/* 悬浮提示 - 简约现代风格 */}
+                              <div className='absolute left-0 -top-10 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-medium rounded-md shadow-lg opacity-0 scale-95 group-hover/title:opacity-100 group-hover/title:scale-100 transition-all duration-200 ease-out delay-700 whitespace-nowrap z-[1000] pointer-events-none max-w-xs'>
+                                {source.title}
+                              </div>
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
