@@ -595,28 +595,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         <div className='flex-1 min-w-0 flex flex-col justify-between h-20'>
                           {/* 标题和分辨率 - 顶部 */}
                           <div className='flex items-start justify-between gap-2 h-6'>
-                            <div className='flex items-center gap-1.5 flex-1 min-w-0'>
+                            <div className='flex-1 min-w-0'>
                               <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
                                 {source.title}
                               </h3>
-                              {/* 当前源标记 - 紧跟标题后 */}
-                              {isCurrentSource && (
-                                <div className='flex items-center gap-0.5 flex-shrink-0'>
-                                  {/* 标签 */}
-                                  <div className='relative'>
-                                    <div className='absolute inset-0 bg-green-500 rounded-full blur-[2px] opacity-50 animate-pulse'></div>
-                                    <div className='relative bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow-md'>
-                                      当前源
-                                    </div>
-                                  </div>
-                                  {/* 动感小箭头 - 指向左边（标题） */}
-                                  <div className='text-green-500 animate-pulse'>
-                                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
-                                      <path fillRule='evenodd' d='M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z' clipRule='evenodd' />
-                                    </svg>
-                                  </div>
-                                </div>
-                              )}
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
@@ -659,9 +641,29 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
                           {/* 源名称和集数信息 - 垂直居中 */}
                           <div className='flex items-center justify-between'>
-                            <span className='text-xs px-2 py-1 border border-gray-500/60 rounded text-gray-700 dark:text-gray-300'>
-                              {source.source_name}
-                            </span>
+                            <div className='flex items-center gap-1'>
+                              <span className='text-xs px-2 py-1 border border-gray-500/60 rounded text-gray-700 dark:text-gray-300'>
+                                {source.source_name}
+                              </span>
+                              {/* 当前源标记 - 紧跟源名称后 */}
+                              {isCurrentSource && (
+                                <div className='flex items-center gap-0.5 flex-shrink-0'>
+                                  {/* 标签 */}
+                                  <div className='relative'>
+                                    <div className='absolute inset-0 bg-green-500 rounded-full blur-[2px] opacity-50 animate-pulse'></div>
+                                    <div className='relative bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow-md'>
+                                      当前源
+                                    </div>
+                                  </div>
+                                  {/* 动感小箭头 - 指向左边（源名称） */}
+                                  <div className='text-green-500 animate-pulse'>
+                                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'>
+                                      <path fillRule='evenodd' d='M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z' clipRule='evenodd' />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             {source.episodes.length > 1 && (
                               <span className='text-xs text-gray-500 dark:text-gray-400 font-medium'>
                                 {source.episodes.length} 集
