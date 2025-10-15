@@ -46,10 +46,16 @@ const PageLayout = ({ children, activePath = '/', showAIButton = false, onAIClic
               >
                 {/* 微光背景效果 */}
                 <div className='absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 dark:group-hover:from-purple-300/20 dark:group-hover:to-pink-500/20 transition-all duration-300'></div>
-                
+
                 {/* 机器人图标 */}
-                <svg className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' fill='currentColor' viewBox='0 0 24 24'>
-                  <path d='M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A1.5 1.5 0 1 0 9 14.5 1.5 1.5 0 0 0 7.5 13m9 0a1.5 1.5 0 1 0 1.5 1.5 1.5 1.5 0 0 0-1.5-1.5z'/>
+                <svg className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' viewBox='0 0 24 24'>
+                  <rect x='4' y='8' width='16' height='12' rx='2'/>
+                  <path d='M9 8V6a3 3 0 0 1 6 0v2'/>
+                  <circle cx='9' cy='13' r='1'/>
+                  <circle cx='15' cy='13' r='1'/>
+                  <path d='M9 17h6'/>
+                  <path d='M2 12h2'/>
+                  <path d='M20 12h2'/>
                 </svg>
               </button>
             )}
