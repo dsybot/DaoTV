@@ -473,10 +473,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                 <button
                   key={episodeNumber}
                   onClick={() => handleEpisodeClick(episodeNumber - 1)}
-                  className={`group h-10 min-w-10 px-3 py-2 flex items-center justify-center text-sm font-semibold rounded-lg transition-all duration-300 whitespace-nowrap font-mono relative overflow-visible
+                  className={`group h-10 min-w-10 px-3 py-2 flex items-center justify-center text-sm font-semibold rounded-lg transition-all duration-300 whitespace-nowrap font-mono relative
                     ${isActive
-                      ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20'
-                      : 'bg-gradient-to-r from-gray-200 to-gray-100 text-gray-700 hover:from-gray-300 hover:to-gray-200 hover:scale-105 hover:shadow-md dark:from-white/10 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/20 dark:hover:to-white/15'
+                      ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20 z-10'
+                      : 'bg-gradient-to-r from-gray-200 to-gray-100 text-gray-700 hover:from-gray-300 hover:to-gray-200 hover:scale-105 hover:shadow-md hover:z-10 dark:from-white/10 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/20 dark:hover:to-white/15'
                     }`.trim()}
                 >
                   {/* 激活态光晕效果 */}
