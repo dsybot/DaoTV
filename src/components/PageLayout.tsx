@@ -17,17 +17,23 @@ interface PageLayoutProps {
 
 const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState<boolean>(false);
+  const [aiEnabled, setAiEnabled] = useState<boolean>(true); // 默认启用，检查后再决定
 
   // 检查AI功能是否启用
   useEffect(() => {
     const checkAIEnabled = async () => {
       try {
         const response = await fetch('/api/admin/ai-recommend');
-        const data = await response.json();
-        setAiEnabled(data.enabled || false);
+        if (response.ok) {
+          const data = await response.json();
+          setAiEnabled(data.enabled !== false); // 只有明确 disabled 才隐藏
+        } else {
+          // API 失败时保持默认显示
+          setAiEnabled(true);
+        }
       } catch (error) {
-        setAiEnabled(false);
+        // 发生错误时默认显示
+        setAiEnabled(true);
       }
     };
     checkAIEnabled();
