@@ -24,7 +24,6 @@ import { getDoubanCategories } from '@/lib/douban.client';
 import { DoubanItem } from '@/lib/types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
-import AIRecommendModal from '@/components/AIRecommendModal';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
 import PageLayout from '@/components/PageLayout';
@@ -49,8 +48,6 @@ function HomeClient() {
   const [username, setUsername] = useState<string>('');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
-  const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState<boolean | null>(true); // 默认显示，检查后再决定
 
   // 获取用户名
   useEffect(() => {
@@ -72,29 +69,6 @@ function HomeClient() {
     }
   }, [announcement]);
 
-  // 检查AI功能是否启用
-  useEffect(() => {
-    const checkAIStatus = async () => {
-      try {
-        // 发送一个测试请求来检查AI功能状态
-        const response = await fetch('/api/ai-recommend', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: 'test' }]
-          })
-        });
-
-        // 如果是403错误，说明功能未启用
-        setAiEnabled(response.status !== 403);
-      } catch (error) {
-        // 发生错误时默认显示按钮
-        setAiEnabled(true);
-      }
-    };
-
-    checkAIStatus();
-  }, []);
 
   // 收藏夹数据
   type FavoriteItem = {
@@ -240,10 +214,7 @@ function HomeClient() {
   };
 
   return (
-    <PageLayout
-      showAIButton={aiEnabled || false}
-      onAIClick={() => setShowAIRecommendModal(true)}
-    >
+    <PageLayout>
       <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
         {/* 欢迎横幅 - 在所有 tab 显示 */}
         <div className='mb-6 mt-0 md:mt-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-lg animate-[slideDown_0.5s_ease-out]'>
@@ -646,11 +617,6 @@ function HomeClient() {
         </div>
       )}
 
-      {/* AI推荐模态框 */}
-      <AIRecommendModal
-        isOpen={showAIRecommendModal}
-        onClose={() => setShowAIRecommendModal(false)}
-      />
     </PageLayout>
   );
 }

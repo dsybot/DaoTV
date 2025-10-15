@@ -1,18 +1,41 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
 import { BackButton } from './BackButton';
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
 import Sidebar from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
+import AIRecommendModal from './AIRecommendModal';
 
 interface PageLayoutProps {
   children: React.ReactNode;
   activePath?: string;
-  showAIButton?: boolean;
-  onAIClick?: () => void;
 }
 
-const PageLayout = ({ children, activePath = '/', showAIButton = false, onAIClick }: PageLayoutProps) => {
+const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
+  const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState<boolean>(false);
+
+  // 检查AI功能是否启用
+  useEffect(() => {
+    const checkAIEnabled = async () => {
+      try {
+        const response = await fetch('/api/admin/ai-recommend');
+        const data = await response.json();
+        setAiEnabled(data.enabled || false);
+      } catch (error) {
+        setAiEnabled(false);
+      }
+    };
+    checkAIEnabled();
+  }, []);
+
+  // 判断是否显示 AI 按钮（除了管理员页面）
+  const shouldShowAIButton = aiEnabled && activePath !== '/admin';
+
   return (
     <div className='w-full min-h-screen'>
       {/* 移动端头部 */}
@@ -37,9 +60,9 @@ const PageLayout = ({ children, activePath = '/', showAIButton = false, onAIClic
           {/* 桌面端顶部按钮 */}
           <div className='absolute top-2 right-4 z-20 hidden md:flex items-center gap-2'>
             {/* AI推荐按钮 */}
-            {showAIButton && onAIClick && (
+            {shouldShowAIButton && (
               <button
-                onClick={onAIClick}
+                onClick={() => setShowAIRecommendModal(true)}
                 className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-purple-500 dark:text-gray-300 dark:hover:text-purple-400 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-purple-500/30 dark:hover:shadow-purple-400/30 group'
                 title='AI智能推荐'
                 aria-label='AI Recommend'
@@ -75,6 +98,14 @@ const PageLayout = ({ children, activePath = '/', showAIButton = false, onAIClic
       <div className='md:hidden'>
         <MobileBottomNav activePath={activePath} />
       </div>
+
+      {/* AI推荐模态框 - 全局显示 */}
+      {shouldShowAIButton && (
+        <AIRecommendModal
+          isOpen={showAIRecommendModal}
+          onClose={() => setShowAIRecommendModal(false)}
+        />
+      )}
     </div>
   );
 };
