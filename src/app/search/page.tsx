@@ -48,9 +48,9 @@ function SearchPageClient() {
   const [useVirtualization, setUseVirtualization] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('useVirtualization');
-      return saved !== null ? JSON.parse(saved) : true; // 默认启用
+      return saved !== null ? JSON.parse(saved) : false; // 默认关闭
     }
-    return true;
+    return false;
   });
 
   // 网盘搜索相关状态
