@@ -596,7 +596,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                           {/* 标题和分辨率 - 顶部 */}
                           <div className='flex items-start justify-between gap-2 h-6'>
                             <div className='flex-1 min-w-0'>
-                              <h3 className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none'>
+                              <h3
+                                className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none cursor-help'
+                                title={source.title}
+                              >
                                 {source.title}
                               </h3>
                             </div>
