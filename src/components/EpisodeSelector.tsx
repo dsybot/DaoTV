@@ -595,13 +595,29 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         <div className='flex-1 min-w-0 flex flex-col justify-between h-20'>
                           {/* 标题和分辨率 - 顶部 */}
                           <div className='flex items-start justify-between gap-2 h-6'>
-                            <div className='flex-1 min-w-0'>
-                              <h3
-                                className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none cursor-help'
-                                title={source.title}
+                            <div className='flex-1 min-w-0 relative'>
+                              <h3 
+                                className='font-medium text-base truncate text-gray-900 dark:text-gray-100 leading-none peer'
                               >
                                 {source.title}
                               </h3>
+                              {/* 增强的 tooltip */}
+                              <div
+                                className='absolute bottom-full left-0 mb-2 px-3 py-2 bg-gradient-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 pointer-events-none z-50 backdrop-blur-sm'
+                                style={{
+                                  minWidth: '200px',
+                                  maxWidth: 'min(90vw, 400px)',
+                                  whiteSpace: 'normal',
+                                  wordBreak: 'break-word',
+                                  left: '50%',
+                                  transform: 'translateX(-50%)',
+                                }}
+                              >
+                                <span className='font-medium leading-relaxed block text-center'>{source.title}</span>
+                                <div
+                                  className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-800'
+                                ></div>
+                              </div>
                             </div>
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
