@@ -48,24 +48,10 @@ const PageLayout = ({ children, activePath = '/', showAIButton = false, onAIClic
                 <div className='absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 dark:group-hover:from-purple-300/20 dark:group-hover:to-pink-500/20 transition-all duration-300'></div>
 
                 {/* 机器人图标 */}
-                <svg className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' viewBox='0 0 24 24' fill='currentColor'>
-                  {/* 天线圆圈 */}
-                  <circle cx='12' cy='3' r='1.5' />
-                  {/* 天线 */}
-                  <rect x='11.5' y='4.5' width='1' height='2' />
-                  {/* 主头部 */}
-                  <path d='M7 6.5h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z' stroke='currentColor' strokeWidth='2' fill='none' />
-                  {/* 左耳 */}
-                  <circle cx='5' cy='11' r='2' stroke='currentColor' strokeWidth='2' fill='none' />
-                  {/* 右耳 */}
-                  <circle cx='19' cy='11' r='2' stroke='currentColor' strokeWidth='2' fill='none' />
-                  {/* 眼睛 */}
-                  <circle cx='9.5' cy='11' r='2' stroke='currentColor' strokeWidth='1.5' fill='none' />
-                  <circle cx='14.5' cy='11' r='2' stroke='currentColor' strokeWidth='1.5' fill='none' />
-                  <circle cx='9.5' cy='11' r='0.8' />
-                  <circle cx='14.5' cy='11' r='0.8' />
-                  {/* 嘴巴 */}
-                  <rect x='10' y='14.5' width='4' height='1.5' rx='0.75' />
+                <svg className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' viewBox='0 0 1024 1024' fill='currentColor'>
+                  <path d='M683.7 922.7h-345c-73.5 0-133.3-59.8-133.3-133.3V459.8c0-73.5 59.8-133.3 133.3-133.3h345c73.5 0 133.3 59.8 133.3 133.3v329.6c0 73.5-59.8 133.3-133.3 133.3z m-345-506.9c-24.3 0-44.1 19.8-44.1 44.1v329.6c0 24.3 19.8 44.1 44.1 44.1h345c24.3 0 44.1-19.8 44.1-44.1V459.8c0-24.3-19.8-44.1-44.1-44.1h-345zM914.3 759.6c-24.6 0-44.6-20-44.6-44.6V534.3c0-24.6 20-44.6 44.6-44.6s44.6 20 44.6 44.6V715c0 24.7-20 44.6-44.6 44.6zM111.7 759.6c-24.6 0-44.6-20-44.6-44.6V534.3c0-24.6 20-44.6 44.6-44.6s44.6 20 44.6 44.6V715c0 24.7-19.9 44.6-44.6 44.6z' />
+                  <path d='M511.2 415.8c-24.6 0-44.6-20-44.6-44.6V239.3c0-24.6 20-44.6 44.6-44.6s44.6 20 44.6 44.6v131.9c0 24.6-20 44.6-44.6 44.6z' />
+                  <path d='M511.2 276.6c-49.2 0-89.2-40-89.2-89.2s40-89.2 89.2-89.2 89.2 40 89.2 89.2-40 89.2-89.2 89.2z m0-89.2h0.2-0.2z m0 0h0.2-0.2z m0 0h0.2-0.2z m0 0h0.2-0.2z m0 0z m0 0h0.2-0.2z m0 0h0.2-0.2z m0-0.1h0.2-0.2zM399 675.5c-28.1 0-50.9-22.8-50.9-50.9 0-28.1 22.8-50.9 50.9-50.9s50.9 22.8 50.9 50.9c0 28.1-22.8 50.9-50.9 50.9zM622.9 675.5c-28.1 0-50.9-22.8-50.9-50.9 0-28.1 22.8-50.9 50.9-50.9 28.1 0 50.9 22.8 50.9 50.9 0 28.1-22.8 50.9-50.9 50.9z' />
                 </svg>
               </button>
             )}
