@@ -349,7 +349,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   return (
-    <div className='md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-visible'>
+    <div className='md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
       {/* 主要的 Tab 切换 - 美化版本 */}
       <div className='flex mb-1 -mx-6 flex-shrink-0 relative'>
         {totalEpisodes > 1 && (
@@ -400,9 +400,9 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
       {/* 选集 Tab 内容 */}
       {activeTab === 'episodes' && (
-        <>
+        <div className='flex flex-col flex-1 overflow-visible -mx-4 px-4'>
           {/* 分类标签 */}
-          <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 flex-shrink-0'>
+          <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-2 px-2 flex-shrink-0'>
             <div
               className='flex-1 overflow-x-auto'
               ref={categoryContainerRef}
@@ -460,7 +460,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           </div>
 
           {/* 集数网格 */}
-          <div className='flex flex-wrap gap-3 overflow-y-auto flex-1 content-start pb-4 -mx-2 px-2'>
+          <div className='flex flex-wrap gap-3 overflow-y-auto flex-1 content-start pb-4'>
             {(() => {
               const len = currentEnd - currentStart + 1;
               const episodes = Array.from({ length: len }, (_, i) =>
@@ -505,7 +505,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               );
             })}
           </div>
-        </>
+        </div>
       )}
 
       {/* 换源 Tab 内容 */}
