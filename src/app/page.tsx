@@ -264,7 +264,7 @@ function HomeClient() {
           <CapsuleSwitch
             options={[
               { label: '首页', value: 'home' },
-              { label: '收藏夾', value: 'favorites' },
+              { label: '收藏夹', value: 'favorites' },
             ]}
             active={activeTab}
             onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
