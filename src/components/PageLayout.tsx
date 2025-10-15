@@ -45,7 +45,11 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   return (
     <div className='w-full min-h-screen'>
       {/* 移动端头部 */}
-      <MobileHeader showBackButton={['/play', '/live'].includes(activePath)} />
+      <MobileHeader 
+        showBackButton={['/play', '/live'].includes(activePath)}
+        showAIButton={shouldShowAIButton}
+        onAIClick={() => setShowAIRecommendModal(true)}
+      />
 
       {/* 主要布局容器 */}
       <div className='flex md:grid md:grid-cols-[auto_1fr] w-full min-h-screen md:min-h-auto'>
