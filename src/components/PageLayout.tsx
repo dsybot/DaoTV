@@ -47,24 +47,18 @@ const PageLayout = ({ children, activePath = '/', showAIButton = false, onAIClic
                 {/* 微光背景效果 */}
                 <div className='absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 dark:group-hover:from-purple-300/20 dark:group-hover:to-pink-500/20 transition-all duration-300'></div>
 
-                {/* 机器人图标 - 精美设计 */}
+                {/* 机器人头部图标 - 简约设计 */}
                 <svg className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' viewBox='0 0 24 24'>
                   {/* 天线 */}
-                  <circle cx='12' cy='2' r='1' fill='currentColor' />
-                  <line x1='12' y1='3' x2='12' y2='5' />
+                  <circle cx='12' cy='4' r='1' fill='currentColor' />
+                  <line x1='12' y1='5' x2='12' y2='7' />
                   {/* 头部 */}
-                  <rect x='7' y='5' width='10' height='8' rx='2' />
+                  <rect x='6' y='7' width='12' height='10' rx='2' />
                   {/* 眼睛 */}
-                  <circle cx='10' cy='9' r='1' fill='currentColor' />
-                  <circle cx='14' cy='9' r='1' fill='currentColor' />
-                  {/* 身体 */}
-                  <rect x='6' y='13' width='12' height='7' rx='2' />
-                  {/* 手臂 */}
-                  <path d='M6 15H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2' />
-                  <path d='M18 15h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2' />
-                  {/* 腿 */}
-                  <path d='M10 20v2' />
-                  <path d='M14 20v2' />
+                  <circle cx='9.5' cy='11' r='1.5' fill='currentColor' />
+                  <circle cx='14.5' cy='11' r='1.5' fill='currentColor' />
+                  {/* 嘴巴 */}
+                  <path d='M9 14h6' />
                 </svg>
               </button>
             )}
