@@ -605,15 +605,15 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               <div
                                 className='absolute top-full left-0 mt-2 px-3 py-2 bg-gradient-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 pointer-events-none z-[9999] backdrop-blur-sm'
                                 style={{
-                                  minWidth: '200px',
-                                  maxWidth: 'min(90vw, 400px)',
+                                  maxWidth: 'min(90vw, 300px)',
                                   whiteSpace: 'normal',
                                   wordBreak: 'break-word',
                                   left: '50%',
                                   transform: 'translateX(-50%)',
-                                }}
+                                  textWrap: 'balance',
+                                } as React.CSSProperties}
                               >
-                                <span className='font-medium leading-relaxed block text-center'>{source.title}</span>
+                                <span className='font-medium leading-relaxed block text-center' style={{ textWrap: 'balance' } as React.CSSProperties}>{source.title}</span>
                                 <div
                                   className='absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-transparent border-b-gray-800'
                                 ></div>
