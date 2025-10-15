@@ -605,7 +605,8 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                               <div
                                 className='absolute top-full left-0 mt-2 px-3 py-2 bg-gradient-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 pointer-events-none z-[9999] backdrop-blur-sm'
                                 style={{
-                                  maxWidth: 'min(90vw, 300px)',
+                                  width: 'max-content',
+                                  maxWidth: 'min(90vw, 12em)',
                                   whiteSpace: 'normal',
                                   wordBreak: 'break-word',
                                   left: '50%',
