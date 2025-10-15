@@ -240,7 +240,10 @@ function HomeClient() {
   };
 
   return (
-    <PageLayout>
+    <PageLayout 
+      showAIButton={aiEnabled || false}
+      onAIClick={() => setShowAIRecommendModal(true)}
+    >
       <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
         {/* 欢迎横幅 - 在所有 tab 显示 */}
         <div className='mb-6 mt-0 md:mt-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-lg animate-[slideDown_0.5s_ease-out]'>
@@ -286,36 +289,15 @@ function HomeClient() {
         </div>
 
         {/* 顶部 Tab 切换 */}
-        <div className='mb-8 flex flex-col sm:flex-row items-center justify-center gap-4'>
+        <div className='mb-8 flex items-center justify-center'>
           <CapsuleSwitch
             options={[
               { label: '首页', value: 'home' },
-              { label: '收藏夹', value: 'favorites' },
+              { label: '收藏夾', value: 'favorites' },
             ]}
             active={activeTab}
             onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
           />
-
-          {/* AI推荐按钮 - 精美设计 */}
-          {aiEnabled && (
-            <button
-              onClick={() => setShowAIRecommendModal(true)}
-              className='relative flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 group overflow-hidden border border-white/20'
-              title='AI智能推荐'
-            >
-              {/* 动态光效 */}
-              <div className='absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-out'></div>
-              
-              {/* 脉冲背景 */}
-              <div className='absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 animate-pulse'></div>
-
-              <Brain className='h-5 w-5 relative z-10 drop-shadow-md group-hover:rotate-12 transition-transform duration-300' />
-              <span className='relative z-10 text-sm drop-shadow-sm'>AI推荐</span>
-              
-              {/* 闪烁小星星 */}
-              <div className='absolute top-1 right-2 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 animate-ping'></div>
-            </button>
-          )}
         </div>
 
         <div className='max-w-[95%] mx-auto'>
