@@ -296,21 +296,24 @@ function HomeClient() {
             onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
           />
 
-          {/* AI推荐按钮 - 只在功能启用时显示，添加脉冲动画 */}
+          {/* AI推荐按钮 - 精美设计 */}
           {aiEnabled && (
             <button
               onClick={() => setShowAIRecommendModal(true)}
-              className='relative flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full font-medium transition-all transform hover:scale-105 shadow-lg hover:shadow-xl group overflow-hidden'
-              title='AI影视推荐'
+              className='relative flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 group overflow-hidden border border-white/20'
+              title='AI智能推荐'
             >
-              {/* 脉冲光环 */}
-              <div className='absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-100 animate-ping'></div>
+              {/* 动态光效 */}
+              <div className='absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-out'></div>
+              
+              {/* 脉冲背景 */}
+              <div className='absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 animate-pulse'></div>
 
-              {/* 闪烁背景 */}
-              <div className='absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-20 animate-pulse'></div>
-
-              <Brain className='h-4 w-4 relative z-10 group-hover:rotate-12 transition-transform duration-300' />
-              <span className='relative z-10'>AI推荐</span>
+              <Brain className='h-5 w-5 relative z-10 drop-shadow-md group-hover:rotate-12 transition-transform duration-300' />
+              <span className='relative z-10 text-sm drop-shadow-sm'>AI推荐</span>
+              
+              {/* 闪烁小星星 */}
+              <div className='absolute top-1 right-2 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 animate-ping'></div>
             </button>
           )}
         </div>
