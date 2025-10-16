@@ -103,7 +103,7 @@ html:not(.dark) body {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* View Transitions API 动画 - 原始滑入效果，优化速度 */
+/* View Transitions API 动画 - 原始效果 + GPU加速优化 */
 @keyframes slide-from-top {
   from {
     clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
@@ -124,13 +124,17 @@ html:not(.dark) body {
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.3s;
+  animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   animation-fill-mode: both;
-  /* 启用 GPU 加速 */
+  /* GPU 硬件加速优化 - 减少掉帧 */
   will-change: clip-path;
   transform: translateZ(0);
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  /* 强制合成层 */
+  isolation: isolate;
 }
 
 /*
