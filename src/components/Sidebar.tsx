@@ -223,7 +223,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                   } gap-3 justify-start`}
               >
                 <div className='w-4 h-4 flex items-center justify-center relative z-10'>
-                  <Home className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-gray-400 dark:group-hover:text-green-400 dark:data-[active=true]:text-green-400 transition-colors duration-150' />
+                  <Home className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-gray-400 dark:group-hover:text-green-400 dark:data-[active=true]:text-green-400 transition-all duration-200 group-hover:scale-110' />
                 </div>
                 {!isCollapsed && (
                   <span className='whitespace-nowrap transition-opacity duration-200 opacity-100 relative z-10'>
@@ -245,7 +245,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                   } gap-3 justify-start`}
               >
                 <div className='w-4 h-4 flex items-center justify-center relative z-10'>
-                  <Search className='h-4 w-4 text-gray-500 group-hover:text-blue-600 data-[active=true]:text-blue-700 dark:text-gray-400 dark:group-hover:text-blue-400 dark:data-[active=true]:text-blue-400 transition-colors duration-150' />
+                  <Search className='h-4 w-4 text-gray-500 group-hover:text-blue-600 data-[active=true]:text-blue-700 dark:text-gray-400 dark:group-hover:text-blue-400 dark:data-[active=true]:text-blue-400 transition-all duration-200 group-hover:scale-110' />
                 </div>
                 {!isCollapsed && (
                   <span className='whitespace-nowrap transition-opacity duration-200 opacity-100 relative z-10'>
@@ -300,7 +300,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                       }}
                     >
                       <div className='w-4 h-4 flex items-center justify-center relative z-10'>
-                        <Icon className={`h-4 w-4 text-gray-500 ${theme.icon} dark:text-gray-400 transition-colors duration-150`} />
+                        <Icon className={`h-4 w-4 text-gray-500 ${theme.icon} dark:text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:rotate-12`} />
                       </div>
                       {!isCollapsed && (
                         <span className='whitespace-nowrap transition-opacity duration-200 opacity-100 relative z-10'>
