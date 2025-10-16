@@ -366,9 +366,9 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                             <span className="hidden sm:block">
                               {shouldShowExpandDesktop ? (
                                 <div className="space-y-2">
-                                  <span className={`block ${isTitleExpanded ? '' : 'line-clamp-2'}`}>
+                                  <div className={`${isTitleExpanded ? '' : 'line-clamp-2'}`}>
                                     {title}
-                                  </span>
+                                  </div>
                                   <button
                                     onClick={() => toggleTitleExpansion(linkKey)}
                                     className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-700 transition-all duration-200 ease-in-out"
@@ -384,9 +384,9 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                                   </button>
                                 </div>
                               ) : (
-                                <span className="line-clamp-2">
+                                <div className="line-clamp-2">
                                   {title}
-                                </span>
+                                </div>
                               )}
                             </span>
                           </h4>
