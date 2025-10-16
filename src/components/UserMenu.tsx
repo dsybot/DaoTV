@@ -2029,7 +2029,7 @@ export const UserMenu: React.FC = () => {
                               />
                               {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
                               {getProgress(record) > 0 && getProgress(record) < 95 && (
-                                <div className='absolute left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-10' style={{ top: 'calc(100% * 2 / 3 - 1.75rem)' }}>
+                                <div className='absolute left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[100]' style={{ top: 'calc(100% * 2 / 3 - 1.5rem)' }}>
                                   {Math.round(getProgress(record))}%
                                 </div>
                               )}
