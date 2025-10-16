@@ -205,8 +205,8 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                 className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:text-gray-700 transition-all duration-200 z-10 dark:text-gray-400 dark:hover:text-gray-200 group/toggle ${isCollapsed ? 'left-1/2 -translate-x-1/2' : 'right-2'
                   }`}
               >
-                {/* 渐变边框效果 - 优化：移除 pulse 动画 */}
-                <div className='absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 opacity-0 group-hover/toggle:opacity-100 transition-opacity duration-300'></div>
+                {/* 渐变边框效果 */}
+                <div className='absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 opacity-0 group-hover/toggle:opacity-100 transition-opacity duration-300 animate-pulse'></div>
                 <div className='absolute inset-[2px] rounded-full bg-white dark:bg-gray-900 group-hover/toggle:bg-gray-50 dark:group-hover/toggle:bg-gray-800 transition-colors duration-300'></div>
 
                 <Menu className='h-4 w-4 relative z-10 transition-transform duration-200 group-hover/toggle:rotate-180' />
@@ -294,7 +294,10 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                       onClick={() => setActive(item.href)}
                       data-active={isActive}
                       className={`group relative flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-gradient-to-r ${theme.hover} ${theme.active} ${theme.text} transition-colors duration-150 min-h-[40px] dark:text-gray-300 ${isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
-                        } gap-3 justify-start`}
+                        } gap-3 justify-start animate-[slideInFromLeft_0.3s_ease-out] opacity-0`}
+                      style={{
+                        animation: `slideInFromLeft 0.3s ease-out ${index * 0.05}s forwards`,
+                      }}
                     >
                       <div className='w-4 h-4 flex items-center justify-center relative z-10'>
                         <Icon className={`h-4 w-4 text-gray-500 ${theme.icon} dark:text-gray-400 transition-colors duration-150`} />
