@@ -818,7 +818,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   控制是否允许新用户通过注册页面自行注册账户
                 </div>
               </div>
-              <div className='flex items-center'>
+              <div className='flex items-center self-center'>
                 <button
                   type="button"
                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${config.UserConfig.AllowRegister ? buttonStyles.toggleOn : buttonStyles.toggleOff
@@ -860,7 +860,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   <span
                     aria-hidden="true"
                     className={`pointer-events-none inline-block h-4 w-4 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AllowRegister ? buttonStyles.toggleThumbOn : buttonStyles.toggleThumbOff
-                    }`}
+                      }`}
                   />
                 </button>
                 <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
@@ -880,7 +880,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     自动删除指定天数内未登录的非活跃用户账号
                   </div>
                 </div>
-                <div className='flex items-center'>
+                <div className='flex items-center self-center'>
                   <button
                     type="button"
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${config.UserConfig.AutoCleanupInactiveUsers ? buttonStyles.toggleOn : buttonStyles.toggleOff
@@ -922,13 +922,13 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         }
                       });
                     }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`pointer-events-none inline-block h-4 w-4 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AutoCleanupInactiveUsers ? buttonStyles.toggleThumbOn : buttonStyles.toggleThumbOff
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-4 w-4 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AutoCleanupInactiveUsers ? buttonStyles.toggleThumbOn : buttonStyles.toggleThumbOff
                         }`}
-                      />
-                    </button>
+                    />
+                  </button>
                   <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                     {config.UserConfig.AutoCleanupInactiveUsers ? '开启' : '关闭'}
                   </span>
