@@ -2057,10 +2057,6 @@ export const UserMenu: React.FC = () => {
                       })}
                     </span>
                   </div>
-                  {/* 收藏心形图标 */}
-                  <div className='absolute bottom-2 right-2'>
-                    <Heart className='w-4 h-4 text-red-500 fill-red-500' />
-                  </div>
                 </div>
               );
             })}
