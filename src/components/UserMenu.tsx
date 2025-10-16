@@ -1900,98 +1900,186 @@ export const UserMenu: React.FC = () => {
 
       {/* 继续观看弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-2 sm:inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[85vh] overflow-y-auto overflow-x-hidden'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='p-6'>
-          <div className='flex items-center justify-between mb-4'>
-            <h3 className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-              <PlayCircle className='w-6 h-6 text-blue-500' />
-              继续观看
+        <div className='p-3 sm:p-6'>
+          <div className='flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-900 z-10 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700'>
+            <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+              <PlayCircle className='w-5 h-5 sm:w-6 sm:h-6 text-blue-500 fill-blue-500' />
+              <span className='hidden sm:inline'>继续观看</span>
+              <span className='sm:hidden'>观看</span>
+              {playRecords.length > 0 && (
+                <span className='ml-1 sm:ml-2 text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400'>
+                  {playRecords.length}部
+                </span>
+              )}
             </h3>
             <button
               onClick={handleCloseContinueWatching}
-              className='p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+              className='p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800'
             >
               <X className='w-5 h-5' />
             </button>
           </div>
 
-          {/* 播放记录网格 */}
-          <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-            {playRecords.map((record) => {
-              const { source, id } = parseKey(record.key);
-              const newEpisodesCount = getNewEpisodesCount(record);
-              return (
-                <div key={record.key} className='relative group/card'>
-                  <div className='relative group-hover/card:z-[500] transition-all duration-300'>
-                    <VideoCard
-                      id={id}
-                      title={record.title}
-                      poster={record.cover}
-                      year={record.year}
-                      source={source}
-                      source_name={record.source_name}
-                      progress={getProgress(record)}
-                      episodes={record.total_episodes}
-                      currentEpisode={record.index}
-                      query={record.search_title}
-                      from='playrecord'
-                      type={record.total_episodes > 1 ? 'tv' : ''}
-                      remarks={record.remarks}
-                    />
-                  </div>
-                  {/* 新集数徽章 */}
-                  {newEpisodesCount > 0 && (
-                    <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
-                      +{newEpisodesCount}集
-                    </div>
-                  )}
-                  {/* 进度指示器 */}
-                  {getProgress(record) > 0 && (
-                    <div className='absolute bottom-2 left-2 right-2 bg-black/50 rounded px-2 py-1'>
-                      <div className='flex items-center gap-1'>
-                        <div className='flex-1 bg-gray-600 rounded-full h-1'>
-                          <div
-                            className='bg-blue-500 h-1 rounded-full transition-all'
-                            style={{ width: `${Math.min(getProgress(record), 100)}%` }}
-                          />
-                        </div>
-                        <span className='text-xs text-white font-medium'>
-                          {Math.round(getProgress(record))}%
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 空状态 */}
-          {playRecords.length === 0 && (
-            <div className='text-center py-12'>
-              <PlayCircle className='w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4' />
-              <p className='text-gray-500 dark:text-gray-400 mb-2'>暂无需要继续观看的内容</p>
-              <p className='text-xs text-gray-400 dark:text-gray-500'>
+          {playRecords.length === 0 ? (
+            /* 空状态 */
+            <div className='text-center py-16'>
+              <PlayCircle className='w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6' />
+              <p className='text-lg text-gray-500 dark:text-gray-400 mb-2'>暂无需要继续观看的内容</p>
+              <p className='text-sm text-gray-400 dark:text-gray-500'>
                 {enableContinueWatchingFilter
                   ? `观看进度在${continueWatchingMinProgress}%-${continueWatchingMaxProgress}%之间且播放时间超过2分钟的内容会显示在这里`
                   : '播放时间超过2分钟的所有内容都会显示在这里'
                 }
               </p>
             </div>
+          ) : (
+            /* 时间线样式的播放记录列表 */
+            <div className='space-y-6 sm:space-y-8'>
+              {groupPlayRecordsByDate().map(([dateKey, records], groupIndex) => {
+                const date = new Date(records[0].save_time);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const isYesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString() === date.toDateString();
+                
+                let displayDate = dateKey;
+                if (isToday) displayDate = '今天';
+                else if (isYesterday) displayDate = '昨天';
+                else {
+                  displayDate = date.toLocaleDateString('zh-CN', {
+                    month: 'long',
+                    day: 'numeric',
+                  });
+                }
+                
+                return (
+                  <div key={dateKey} className='relative'>
+                    {/* 时间线连接线 */}
+                    {groupIndex < groupPlayRecordsByDate().length - 1 && (
+                      <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 opacity-30'></div>
+                    )}
+                    
+                    {/* 日期标题 */}
+                    <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
+                      <div className='relative flex-shrink-0'>
+                        <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 flex items-center justify-center shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20'>
+                          <span className='text-white text-xs sm:text-sm font-bold'>{records.length}</span>
+                        </div>
+                        <div className='absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-cyan-400 to-sky-400 opacity-30 blur animate-pulse'></div>
+                      </div>
+                      <div className='flex-1 min-w-0'>
+                        <h4 className='text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate'>
+                          {displayDate}
+                        </h4>
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          <span className='hidden sm:inline'>观看了 </span>{records.length}<span className='hidden sm:inline'> 部作品</span><span className='sm:hidden'>部</span>
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* 该日期的播放记录卡片网格 */}
+                    <div className='ml-8 sm:ml-11 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4'>
+                      {records.map((record) => {
+                        const { source, id } = parseKey(record.key);
+                        const newEpisodesCount = getNewEpisodesCount(record);
+                        return (
+                          <div key={record.key} className='relative group/card'>
+                            <div className='relative group-hover/card:z-[500] transition-all duration-300'>
+                              <VideoCard
+                                id={id}
+                                title={record.title}
+                                poster={record.cover}
+                                year={record.year}
+                                source={source}
+                                source_name={record.source_name}
+                                progress={getProgress(record)}
+                                episodes={record.total_episodes}
+                                currentEpisode={record.index}
+                                query={record.search_title}
+                                from='playrecord'
+                                type={record.total_episodes > 1 ? 'tv' : ''}
+                                remarks={record.remarks}
+                              />
+                            </div>
+                            {/* 新集数徽章 */}
+                            {newEpisodesCount > 0 && (
+                              <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
+                                +{newEpisodesCount}集
+                              </div>
+                            )}
+                            {/* 进度指示器 */}
+                            {getProgress(record) > 0 && (
+                              <div className='absolute bottom-2 left-2 right-2 bg-black/50 rounded px-2 py-1'>
+                                <div className='flex items-center gap-1'>
+                                  <div className='flex-1 bg-gray-600 rounded-full h-1'>
+                                    <div
+                                      className='bg-blue-500 h-1 rounded-full transition-all'
+                                      style={{ width: `${Math.min(getProgress(record), 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className='text-xs text-white font-medium'>
+                                    {Math.round(getProgress(record))}%
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-
-          {/* 底部说明 */}
-          <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
-            <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
-              点击海报即可继续观看
-            </p>
-          </div>
+          
+          {/* 底部统计 */}
+          {playRecords.length > 0 && (
+            <div className='mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700'>
+              <div className='flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
+                <div className='flex items-center gap-1.5 sm:gap-2'>
+                  <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
+                  <span>共 {playRecords.length} 部观看</span>
+                </div>
+                <div className='w-px h-3 sm:h-4 bg-gray-300 dark:bg-gray-600'></div>
+                <div className='flex items-center gap-1.5 sm:gap-2'>
+                  <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500'></div>
+                  <span>跨越 {groupPlayRecordsByDate().length} 天</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
   );
+
+  // 按日期分组播放记录
+  const groupPlayRecordsByDate = () => {
+    const groups: { [key: string]: typeof playRecords } = {};
+    
+    playRecords.forEach((record) => {
+      const date = new Date(record.save_time);
+      const dateKey = date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(record);
+    });
+    
+    // 按日期倒序排列（最新的在前）
+    return Object.entries(groups).sort((a, b) => {
+      const dateA = new Date(a[1][0].save_time);
+      const dateB = new Date(b[1][0].save_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
 
   // 按日期分组收藏
   const groupFavoritesByDate = () => {
