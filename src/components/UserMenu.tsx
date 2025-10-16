@@ -1880,6 +1880,32 @@ export const UserMenu: React.FC = () => {
     </>
   );
 
+  // 按日期分组播放记录
+  const groupPlayRecordsByDate = () => {
+    const groups: { [key: string]: typeof playRecords } = {};
+    
+    playRecords.forEach((record) => {
+      const date = new Date(record.save_time);
+      const dateKey = date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(record);
+    });
+    
+    // 按日期倒序排列（最新的在前）
+    return Object.entries(groups).sort((a, b) => {
+      const dateA = new Date(a[1][0].save_time);
+      const dateB = new Date(b[1][0].save_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
+
   // 继续观看弹窗内容
   const continueWatchingPanel = (
     <>
@@ -1942,7 +1968,7 @@ export const UserMenu: React.FC = () => {
                 const date = new Date(records[0].save_time);
                 const isToday = new Date().toDateString() === date.toDateString();
                 const isYesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString() === date.toDateString();
-                
+
                 let displayDate = dateKey;
                 if (isToday) displayDate = '今天';
                 else if (isYesterday) displayDate = '昨天';
@@ -1952,14 +1978,14 @@ export const UserMenu: React.FC = () => {
                     day: 'numeric',
                   });
                 }
-                
+
                 return (
                   <div key={dateKey} className='relative'>
                     {/* 时间线连接线 */}
                     {groupIndex < groupPlayRecordsByDate().length - 1 && (
                       <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 opacity-30'></div>
                     )}
-                    
+
                     {/* 日期标题 */}
                     <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
                       <div className='relative flex-shrink-0'>
@@ -1977,7 +2003,7 @@ export const UserMenu: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* 该日期的播放记录卡片网格 */}
                     <div className='ml-8 sm:ml-11 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4'>
                       {records.map((record) => {
@@ -2033,7 +2059,7 @@ export const UserMenu: React.FC = () => {
               })}
             </div>
           )}
-          
+
           {/* 底部统计 */}
           {playRecords.length > 0 && (
             <div className='mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700'>
@@ -2054,32 +2080,6 @@ export const UserMenu: React.FC = () => {
       </div>
     </>
   );
-
-  // 按日期分组播放记录
-  const groupPlayRecordsByDate = () => {
-    const groups: { [key: string]: typeof playRecords } = {};
-    
-    playRecords.forEach((record) => {
-      const date = new Date(record.save_time);
-      const dateKey = date.toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
-      }
-      groups[dateKey].push(record);
-    });
-    
-    // 按日期倒序排列（最新的在前）
-    return Object.entries(groups).sort((a, b) => {
-      const dateA = new Date(a[1][0].save_time);
-      const dateB = new Date(b[1][0].save_time);
-      return dateB.getTime() - dateA.getTime();
-    });
-  };
 
   // 按日期分组收藏
   const groupFavoritesByDate = () => {
@@ -2164,7 +2164,7 @@ export const UserMenu: React.FC = () => {
                 const date = new Date(items[0].save_time);
                 const isToday = new Date().toDateString() === date.toDateString();
                 const isYesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString() === date.toDateString();
-                
+
                 let displayDate = dateKey;
                 if (isToday) displayDate = '今天';
                 else if (isYesterday) displayDate = '昨天';
@@ -2174,14 +2174,14 @@ export const UserMenu: React.FC = () => {
                     day: 'numeric',
                   });
                 }
-                
+
                 return (
                   <div key={dateKey} className='relative'>
                     {/* 时间线连接线 - 移动端更靠左 */}
                     {groupIndex < groupFavoritesByDate().length - 1 && (
                       <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
                     )}
-                    
+
                     {/* 日期标题 */}
                     <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
                       <div className='relative flex-shrink-0'>
@@ -2199,7 +2199,7 @@ export const UserMenu: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* 该日期的收藏卡片网格 */}
                     <div className='ml-8 sm:ml-11 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4'>
                       {items.map((favorite) => {
