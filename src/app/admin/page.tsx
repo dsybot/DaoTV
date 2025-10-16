@@ -809,7 +809,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
             注册设置
           </h4>
           <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800'>
-            <div className='flex items-center justify-between'>
+            <div className='flex items-start justify-between'>
               <div>
                 <div className='font-medium text-gray-900 dark:text-gray-100'>
                   允许用户注册
@@ -818,7 +818,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   控制是否允许新用户通过注册页面自行注册账户
                 </div>
               </div>
-              <div className='flex items-center self-center'>
+              <div className='flex items-center mt-2'>
                 <button
                   type="button"
                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${config.UserConfig.AllowRegister ? buttonStyles.toggleOn : buttonStyles.toggleOff
@@ -871,7 +871,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
             {/* 自动清理非活跃用户设置 */}
             <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
-              <div className='flex items-center justify-between mb-4'>
+              <div className='flex items-start justify-between mb-4'>
                 <div>
                   <div className='font-medium text-gray-900 dark:text-gray-100'>
                     自动清理非活跃用户
@@ -880,7 +880,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     自动删除指定天数内未登录的非活跃用户账号
                   </div>
                 </div>
-                <div className='flex items-center self-center'>
+                <div className='flex items-center mt-2'>
                   <button
                     type="button"
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${config.UserConfig.AutoCleanupInactiveUsers ? buttonStyles.toggleOn : buttonStyles.toggleOff
