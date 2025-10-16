@@ -2049,7 +2049,7 @@ export const UserMenu: React.FC = () => {
                     type={favorite.total_episodes > 1 ? 'tv' : ''}
                   />
                   {/* 收藏时间标签 */}
-                  <div className='absolute top-2 right-2 bg-black/50 rounded px-2 py-1'>
+                  <div className='absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1'>
                     <span className='text-xs text-white font-medium'>
                       {new Date(favorite.save_time).toLocaleDateString('zh-CN', {
                         month: 'short',
