@@ -1996,7 +1996,7 @@ export const UserMenu: React.FC = () => {
   // 按日期分组收藏
   const groupFavoritesByDate = () => {
     const groups: { [key: string]: typeof favorites } = {};
-    
+
     favorites.forEach((favorite) => {
       const date = new Date(favorite.save_time);
       const dateKey = date.toLocaleDateString('zh-CN', {
@@ -2004,13 +2004,13 @@ export const UserMenu: React.FC = () => {
         month: '2-digit',
         day: '2-digit',
       });
-      
+
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(favorite);
     });
-    
+
     // 按日期倒序排列（最新的在前）
     return Object.entries(groups).sort((a, b) => {
       const dateA = new Date(a[1][0].save_time);
@@ -2039,16 +2039,17 @@ export const UserMenu: React.FC = () => {
 
       {/* 收藏弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-2 sm:inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[85vh] overflow-y-auto overflow-x-hidden'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='p-6'>
-          <div className='flex items-center justify-between mb-6 sticky top-0 bg-white dark:bg-gray-900 z-10 pb-4 border-b border-gray-200 dark:border-gray-700'>
-            <h3 className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-              <Heart className='w-6 h-6 text-red-500 fill-red-500' />
-              我的收藏时光
-              <span className='ml-2 text-sm font-normal text-gray-500 dark:text-gray-400'>
-                {favorites.length} 部作品
+        <div className='p-3 sm:p-6'>
+          <div className='flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-900 z-10 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700'>
+            <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+              <Heart className='w-5 h-5 sm:w-6 sm:h-6 text-red-500 fill-red-500' />
+              <span className='hidden sm:inline'>我的收藏时光</span>
+              <span className='sm:hidden'>收藏</span>
+              <span className='ml-1 sm:ml-2 text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400'>
+                {favorites.length}部
               </span>
             </h3>
             <button
@@ -2070,7 +2071,7 @@ export const UserMenu: React.FC = () => {
             </div>
           ) : (
             /* 时间线样式的收藏列表 */
-            <div className='space-y-8'>
+            <div className='space-y-6 sm:space-y-8'>
               {groupFavoritesByDate().map(([dateKey, items], groupIndex) => {
                 const date = new Date(items[0].save_time);
                 const isToday = new Date().toDateString() === date.toDateString();
@@ -2088,31 +2089,31 @@ export const UserMenu: React.FC = () => {
                 
                 return (
                   <div key={dateKey} className='relative'>
-                    {/* 时间线连接线 */}
+                    {/* 时间线连接线 - 移动端更靠左 */}
                     {groupIndex < groupFavoritesByDate().length - 1 && (
-                      <div className='absolute left-[15px] top-[40px] bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
+                      <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
                     )}
                     
                     {/* 日期标题 */}
-                    <div className='flex items-center gap-3 mb-4'>
-                      <div className='relative'>
-                        <div className='w-8 h-8 rounded-full bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
-                          <span className='text-white text-sm font-bold'>{items.length}</span>
+                    <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
+                      <div className='relative flex-shrink-0'>
+                        <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
+                          <span className='text-white text-xs sm:text-sm font-bold'>{items.length}</span>
                         </div>
                         <div className='absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400 opacity-30 blur animate-pulse'></div>
                       </div>
-                      <div className='flex-1'>
-                        <h4 className='text-base font-semibold text-gray-900 dark:text-gray-100'>
+                      <div className='flex-1 min-w-0'>
+                        <h4 className='text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate'>
                           {displayDate}
                         </h4>
                         <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          收藏了 {items.length} 部作品
+                          <span className='hidden sm:inline'>收藏了 </span>{items.length}<span className='hidden sm:inline'> 部作品</span><span className='sm:hidden'>部</span>
                         </p>
                       </div>
                     </div>
                     
                     {/* 该日期的收藏卡片网格 */}
-                    <div className='ml-11 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4'>
+                    <div className='ml-8 sm:ml-11 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4'>
                       {items.map((favorite) => {
                         const { source, id } = parseKey(favorite.key);
                         return (
@@ -2141,15 +2142,15 @@ export const UserMenu: React.FC = () => {
 
           {/* 底部统计 */}
           {favorites.length > 0 && (
-            <div className='mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
-              <div className='flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-gray-400'>
-                <div className='flex items-center gap-2'>
-                  <div className='w-2 h-2 rounded-full bg-gradient-to-br from-green-500 to-emerald-500'></div>
-                  <span>共 {favorites.length} 部收藏</span>
+            <div className='mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700'>
+              <div className='flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
+                <div className='flex items-center gap-1.5 sm:gap-2'>
+                  <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-green-500 to-emerald-500'></div>
+                  <span>共 {favorites.length} 部</span>
                 </div>
-                <div className='w-px h-4 bg-gray-300 dark:bg-gray-600'></div>
-                <div className='flex items-center gap-2'>
-                  <div className='w-2 h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
+                <div className='w-px h-3 sm:h-4 bg-gray-300 dark:bg-gray-600'></div>
+                <div className='flex items-center gap-1.5 sm:gap-2'>
+                  <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
                   <span>跨越 {groupFavoritesByDate().length} 天</span>
                 </div>
               </div>
