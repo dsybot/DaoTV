@@ -1883,7 +1883,7 @@ export const UserMenu: React.FC = () => {
   // 按日期分组播放记录
   const groupPlayRecordsByDate = () => {
     const groups: { [key: string]: typeof playRecords } = {};
-    
+
     playRecords.forEach((record) => {
       const date = new Date(record.save_time);
       const dateKey = date.toLocaleDateString('zh-CN', {
@@ -1891,13 +1891,13 @@ export const UserMenu: React.FC = () => {
         month: '2-digit',
         day: '2-digit',
       });
-      
+
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(record);
     });
-    
+
     // 按日期倒序排列（最新的在前）
     return Object.entries(groups).sort((a, b) => {
       const dateA = new Date(a[1][0].save_time);
@@ -2034,20 +2034,10 @@ export const UserMenu: React.FC = () => {
                                 +{newEpisodesCount}集
                               </div>
                             )}
-                            {/* 进度指示器 */}
-                            {getProgress(record) > 0 && (
-                              <div className='absolute bottom-2 left-2 right-2 bg-black/50 rounded px-2 py-1'>
-                                <div className='flex items-center gap-1'>
-                                  <div className='flex-1 bg-gray-600 rounded-full h-1'>
-                                    <div
-                                      className='bg-blue-500 h-1 rounded-full transition-all'
-                                      style={{ width: `${Math.min(getProgress(record), 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className='text-xs text-white font-medium'>
-                                    {Math.round(getProgress(record))}%
-                                  </span>
-                                </div>
+                            {/* 进度百分比徽章 - 仅在有进度时显示 */}
+                            {getProgress(record) > 0 && getProgress(record) < 95 && (
+                              <div className='absolute top-2 left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium'>
+                                {Math.round(getProgress(record))}%
                               </div>
                             )}
                           </div>
