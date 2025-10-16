@@ -273,7 +273,7 @@ export default function ShortDramaPage() {
           {/* 无更多数据提示 */}
           {!loading && !hasMore && dramas.length > 0 && (
             <div className='flex justify-center mt-12 py-8'>
-              <div className='relative px-8 py-5 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-rose-900/20 border border-purple-200/50 dark:border-purple-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+              <div className='relative px-8 py-5 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-rose-900/20 border border-purple-200/50 dark:border-purple-700/50 shadow-lg overflow-hidden'>
                 {/* 装饰性背景 */}
                 <div className='absolute inset-0 bg-gradient-to-br from-purple-100/20 to-pink-100/20 dark:from-purple-800/10 dark:to-pink-800/10'></div>
 
@@ -307,10 +307,10 @@ export default function ShortDramaPage() {
           {/* 无搜索结果 */}
           {!loading && dramas.length === 0 && isSearchMode && (
             <div className='flex justify-center py-16'>
-              <div className='relative px-12 py-10 rounded-3xl bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 dark:from-gray-800/40 dark:via-slate-800/40 dark:to-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 shadow-xl backdrop-blur-sm overflow-hidden max-w-md'>
-                {/* 装饰性元素 */}
-                <div className='absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full blur-3xl'></div>
-                <div className='absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-teal-200/20 rounded-full blur-3xl'></div>
+              <div className='relative px-12 py-10 rounded-3xl bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 dark:from-gray-800/40 dark:via-slate-800/40 dark:to-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 shadow-xl overflow-hidden max-w-md'>
+                {/* 装饰性元素 - 优化：移除模糊效果 */}
+                <div className='absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full opacity-60'></div>
+                <div className='absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-teal-200/20 rounded-full opacity-60'></div>
 
                 {/* 内容 */}
                 <div className='relative flex flex-col items-center gap-4'>
@@ -356,7 +356,7 @@ export default function ShortDramaPage() {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-purple-500/90 hover:bg-purple-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
+        className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-purple-500/95 hover:bg-purple-500 text-white rounded-full shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
           ? 'opacity-100 translate-y-0 pointer-events-auto'
           : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
