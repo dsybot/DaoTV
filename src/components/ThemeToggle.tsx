@@ -57,16 +57,16 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-amber-500 dark:text-gray-300 dark:hover:text-amber-400 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-amber-500/30 dark:hover:shadow-amber-400/30 group'
+      className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-amber-500 dark:text-gray-300 dark:hover:text-amber-400 transition-all duration-200 hover:scale-110 group'
       aria-label='Toggle theme'
     >
       {/* 微光背景效果 */}
-      <div className='absolute inset-0 rounded-full bg-gradient-to-br from-amber-400/0 to-amber-600/0 group-hover:from-amber-400/20 group-hover:to-amber-600/20 dark:group-hover:from-amber-300/20 dark:group-hover:to-amber-500/20 transition-all duration-300'></div>
+      <div className='absolute inset-0 rounded-full bg-gradient-to-br from-amber-400/0 to-amber-600/0 group-hover:from-amber-400/20 group-hover:to-amber-600/20 dark:group-hover:from-amber-300/20 dark:group-hover:to-amber-500/20 transition-all duration-200'></div>
 
       {resolvedTheme === 'dark' ? (
-        <Sun className='w-full h-full relative z-10 group-hover:rotate-180 transition-transform duration-500' />
+        <Sun className='w-full h-full relative z-10 group-hover:rotate-180 transition-transform duration-300' />
       ) : (
-        <Moon className='w-full h-full relative z-10 group-hover:rotate-180 transition-transform duration-500' />
+        <Moon className='w-full h-full relative z-10 group-hover:rotate-180 transition-transform duration-300' />
       )}
     </button>
   );
