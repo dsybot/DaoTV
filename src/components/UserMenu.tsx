@@ -2027,17 +2027,17 @@ export const UserMenu: React.FC = () => {
                                 type={record.total_episodes > 1 ? 'tv' : ''}
                                 remarks={record.remarks}
                               />
+                              {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
+                              {getProgress(record) > 0 && getProgress(record) < 95 && (
+                                <div className='absolute left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-10' style={{ top: 'calc(100% * 2 / 3 - 1.75rem)' }}>
+                                  {Math.round(getProgress(record))}%
+                                </div>
+                              )}
                             </div>
                             {/* 新集数徽章 */}
                             {newEpisodesCount > 0 && (
                               <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
                                 +{newEpisodesCount}集
-                              </div>
-                            )}
-                            {/* 进度百分比徽章 - 仅在有进度时显示 */}
-                            {getProgress(record) > 0 && getProgress(record) < 95 && (
-                              <div className='absolute bottom-2 left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium'>
-                                {Math.round(getProgress(record))}%
                               </div>
                             )}
                           </div>
