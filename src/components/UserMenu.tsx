@@ -2036,7 +2036,7 @@ export const UserMenu: React.FC = () => {
                             )}
                             {/* 进度百分比徽章 - 仅在有进度时显示 */}
                             {getProgress(record) > 0 && getProgress(record) < 95 && (
-                              <div className='absolute top-2 left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium'>
+                              <div className='absolute bottom-2 left-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium'>
                                 {Math.round(getProgress(record))}%
                               </div>
                             )}
