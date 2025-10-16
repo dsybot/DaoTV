@@ -103,6 +103,11 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
 
       showMessage('success', 'AI推荐配置保存成功');
       await refreshConfig();
+      
+      // 触发配置更新事件，通知其他组件（如PageLayout）更新AI按钮显示状态
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('adminConfigUpdated'));
+      }
     } catch (err) {
       showMessage('error', err instanceof Error ? err.message : '保存失败');
     } finally {

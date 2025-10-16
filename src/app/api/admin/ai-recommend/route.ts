@@ -6,6 +6,24 @@ import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
+// GET 方法：返回 AI 推荐配置状态
+export async function GET(request: NextRequest) {
+  try {
+    const config = await getConfig();
+    return NextResponse.json({ 
+      enabled: config.AIRecommendConfig?.enabled ?? true 
+    }, {
+      headers: {
+        'Cache-Control': 'no-store', // 不缓存结果
+      },
+    });
+  } catch (error) {
+    console.error('Get AI recommend config error:', error);
+    // 错误时默认返回启用状态
+    return NextResponse.json({ enabled: true });
+  }
+}
+
 export async function POST(request: NextRequest) {
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
   if (storageType === 'localstorage') {

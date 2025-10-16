@@ -17,7 +17,7 @@ interface PageLayoutProps {
 
 const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState<boolean>(true); // 默认启用，检查后再决定
+  const [aiEnabled, setAiEnabled] = useState<boolean>(false); // 默认不显示，检查后再决定
 
   // 检查AI功能是否启用
   useEffect(() => {
@@ -26,17 +26,28 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         const response = await fetch('/api/admin/ai-recommend');
         if (response.ok) {
           const data = await response.json();
-          setAiEnabled(data.enabled !== false); // 只有明确 disabled 才隐藏
+          setAiEnabled(data.enabled === true); // 只有明确启用才显示
         } else {
-          // API 失败时保持默认显示
-          setAiEnabled(true);
+          // API 失败时默认隐藏（安全起见）
+          setAiEnabled(false);
         }
       } catch (error) {
-        // 发生错误时默认显示
-        setAiEnabled(true);
+        // 发生错误时默认隐藏
+        setAiEnabled(false);
       }
     };
     checkAIEnabled();
+
+    // 监听配置更新事件，实时同步AI按钮显示状态
+    const handleConfigUpdate = () => {
+      console.log('配置更新，重新检查AI状态');
+      checkAIEnabled();
+    };
+    
+    window.addEventListener('adminConfigUpdated', handleConfigUpdate);
+    return () => {
+      window.removeEventListener('adminConfigUpdated', handleConfigUpdate);
+    };
   }, []);
 
   // 判断是否显示 AI 按钮（除了管理员页面）
