@@ -1930,7 +1930,7 @@ export const UserMenu: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-3 sm:p-6'>
-          <div className='flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-900 z-10 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-900 z-[600] pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700'>
             <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
               <PlayCircle className='w-5 h-5 sm:w-6 sm:h-6 text-blue-500 fill-blue-500' />
               <span className='hidden sm:inline'>继续观看</span>
@@ -2121,7 +2121,7 @@ export const UserMenu: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-3 sm:p-6'>
-          <div className='flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-900 z-10 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-900 z-[600] pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700'>
             <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
               <Heart className='w-5 h-5 sm:w-6 sm:h-6 text-red-500 fill-red-500' />
               <span className='hidden sm:inline'>我的收藏时光</span>
