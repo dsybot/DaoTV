@@ -1993,6 +1993,32 @@ export const UserMenu: React.FC = () => {
     </>
   );
 
+  // 按日期分组收藏
+  const groupFavoritesByDate = () => {
+    const groups: { [key: string]: typeof favorites } = {};
+    
+    favorites.forEach((favorite) => {
+      const date = new Date(favorite.save_time);
+      const dateKey = date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(favorite);
+    });
+    
+    // 按日期倒序排列（最新的在前）
+    return Object.entries(groups).sort((a, b) => {
+      const dateA = new Date(a[1][0].save_time);
+      const dateB = new Date(b[1][0].save_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
+
   // 我的收藏弹窗内容
   const favoritesPanel = (
     <>
@@ -2013,72 +2039,122 @@ export const UserMenu: React.FC = () => {
 
       {/* 收藏弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[80vh] overflow-y-auto'
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-6'>
-          <div className='flex items-center justify-between mb-4'>
+          <div className='flex items-center justify-between mb-6 sticky top-0 bg-white dark:bg-gray-900 z-10 pb-4 border-b border-gray-200 dark:border-gray-700'>
             <h3 className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-              <Heart className='w-6 h-6 text-red-500' />
-              我的收藏
+              <Heart className='w-6 h-6 text-red-500 fill-red-500' />
+              我的收藏时光
+              <span className='ml-2 text-sm font-normal text-gray-500 dark:text-gray-400'>
+                {favorites.length} 部作品
+              </span>
             </h3>
             <button
               onClick={handleCloseFavorites}
-              className='p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+              className='p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800'
             >
               <X className='w-5 h-5' />
             </button>
           </div>
 
-          {/* 收藏网格 */}
-          <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-            {favorites.map((favorite) => {
-              const { source, id } = parseKey(favorite.key);
-              return (
-                <div key={favorite.key} className='relative'>
-                  <VideoCard
-                    id={id}
-                    title={favorite.title}
-                    poster={favorite.cover}
-                    year={favorite.year}
-                    source={source}
-                    source_name={favorite.source_name}
-                    episodes={favorite.total_episodes}
-                    query={favorite.search_title}
-                    from='favorite'
-                    type={favorite.total_episodes > 1 ? 'tv' : ''}
-                  />
-                  {/* 收藏时间标签 */}
-                  <div className='absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1'>
-                    <span className='text-xs text-white font-medium'>
-                      {new Date(favorite.save_time).toLocaleDateString('zh-CN', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 空状态 */}
-          {favorites.length === 0 && (
-            <div className='text-center py-12'>
-              <Heart className='w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4' />
-              <p className='text-gray-500 dark:text-gray-400 mb-2'>暂无收藏</p>
-              <p className='text-xs text-gray-400 dark:text-gray-500'>
+          {favorites.length === 0 ? (
+            /* 空状态 */
+            <div className='text-center py-16'>
+              <Heart className='w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-6' />
+              <p className='text-lg text-gray-500 dark:text-gray-400 mb-2'>暂无收藏</p>
+              <p className='text-sm text-gray-400 dark:text-gray-500'>
                 在详情页点击收藏按钮即可添加收藏
               </p>
             </div>
+          ) : (
+            /* 时间线样式的收藏列表 */
+            <div className='space-y-8'>
+              {groupFavoritesByDate().map(([dateKey, items], groupIndex) => {
+                const date = new Date(items[0].save_time);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const isYesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString() === date.toDateString();
+                
+                let displayDate = dateKey;
+                if (isToday) displayDate = '今天';
+                else if (isYesterday) displayDate = '昨天';
+                else {
+                  displayDate = date.toLocaleDateString('zh-CN', {
+                    month: 'long',
+                    day: 'numeric',
+                  });
+                }
+                
+                return (
+                  <div key={dateKey} className='relative'>
+                    {/* 时间线连接线 */}
+                    {groupIndex < groupFavoritesByDate().length - 1 && (
+                      <div className='absolute left-[15px] top-[40px] bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
+                    )}
+                    
+                    {/* 日期标题 */}
+                    <div className='flex items-center gap-3 mb-4'>
+                      <div className='relative'>
+                        <div className='w-8 h-8 rounded-full bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
+                          <span className='text-white text-sm font-bold'>{items.length}</span>
+                        </div>
+                        <div className='absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400 opacity-30 blur animate-pulse'></div>
+                      </div>
+                      <div className='flex-1'>
+                        <h4 className='text-base font-semibold text-gray-900 dark:text-gray-100'>
+                          {displayDate}
+                        </h4>
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          收藏了 {items.length} 部作品
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* 该日期的收藏卡片网格 */}
+                    <div className='ml-11 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4'>
+                      {items.map((favorite) => {
+                        const { source, id } = parseKey(favorite.key);
+                        return (
+                          <div key={favorite.key} className='group relative'>
+                            <VideoCard
+                              id={id}
+                              title={favorite.title}
+                              poster={favorite.cover}
+                              year={favorite.year}
+                              source={source}
+                              source_name={favorite.source_name}
+                              episodes={favorite.total_episodes}
+                              query={favorite.search_title}
+                              from='favorite'
+                              type={favorite.total_episodes > 1 ? 'tv' : ''}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
-          {/* 底部说明 */}
-          <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
-            <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
-              点击海报即可进入详情页面
-            </p>
-          </div>
+          {/* 底部统计 */}
+          {favorites.length > 0 && (
+            <div className='mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
+              <div className='flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-gray-400'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 rounded-full bg-gradient-to-br from-green-500 to-emerald-500'></div>
+                  <span>共 {favorites.length} 部收藏</span>
+                </div>
+                <div className='w-px h-4 bg-gray-300 dark:bg-gray-600'></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
+                  <span>跨越 {groupFavoritesByDate().length} 天</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
