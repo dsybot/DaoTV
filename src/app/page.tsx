@@ -89,7 +89,7 @@ function HomeClient() {
   // 按日期分组收藏
   const groupFavoritesByDate = () => {
     const groups: { [key: string]: FavoriteItem[] } = {};
-    
+
     favoriteItems.forEach((favorite) => {
       const date = new Date(favorite.save_time);
       const dateKey = date.toLocaleDateString('zh-CN', {
@@ -97,13 +97,13 @@ function HomeClient() {
         month: '2-digit',
         day: '2-digit',
       });
-      
+
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(favorite);
     });
-    
+
     // 按日期倒序排列（最新的在前）
     return Object.entries(groups).sort((a, b) => {
       const dateA = new Date(a[1][0].save_time);
@@ -328,7 +328,7 @@ function HomeClient() {
                   </button>
                 )}
               </div>
-              
+
               {favoriteItems.length === 0 ? (
                 /* 空状态 - 优化：移除模糊和pulse动画 */
                 <div className='flex flex-col items-center justify-center py-16 px-4'>
@@ -362,7 +362,7 @@ function HomeClient() {
                     const date = new Date(items[0].save_time);
                     const isToday = new Date().toDateString() === date.toDateString();
                     const isYesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString() === date.toDateString();
-                    
+
                     let displayDate = dateKey;
                     if (isToday) displayDate = '今天';
                     else if (isYesterday) displayDate = '昨天';
@@ -372,14 +372,14 @@ function HomeClient() {
                         day: 'numeric',
                       });
                     }
-                    
+
                     return (
                       <div key={dateKey} className='relative'>
                         {/* 时间线连接线 */}
                         {groupIndex < groupFavoritesByDate().length - 1 && (
                           <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
                         )}
-                        
+
                         {/* 日期标题 - 优化：移除blur和pulse动画 */}
                         <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
                           <div className='relative flex-shrink-0'>
@@ -396,7 +396,7 @@ function HomeClient() {
                             </p>
                           </div>
                         </div>
-                        
+
                         {/* 该日期的收藏卡片网格 */}
                         <div className='ml-8 sm:ml-11 justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
                           {items.map((item) => (
@@ -415,7 +415,7 @@ function HomeClient() {
                   })}
                 </div>
               )}
-              
+
               {/* 底部统计 */}
               {favoriteItems.length > 0 && (
                 <div className='mt-8 sm:mt-12 pt-6 border-t border-gray-200 dark:border-gray-700'>
@@ -652,7 +652,7 @@ function HomeClient() {
       </div>
       {announcement && showAnnouncement && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/70 p-4 transition-opacity duration-300 ${showAnnouncement ? '' : 'opacity-0 pointer-events-none'
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4 transition-opacity duration-300 ${showAnnouncement ? '' : 'opacity-0 pointer-events-none'
             }`}
           onTouchStart={(e) => {
             // 如果点击的是背景区域，阻止触摸事件冒泡，防止背景滚动
