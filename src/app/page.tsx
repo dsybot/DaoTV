@@ -247,9 +247,9 @@ function HomeClient() {
         {/* 欢迎横幅 - 在所有 tab 显示 */}
         <div className='mb-6 mt-0 md:mt-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-lg animate-[slideDown_0.5s_ease-out]'>
           <div className='relative bg-white dark:bg-gray-900 rounded-2xl p-5 sm:p-6'>
-            {/* 装饰性背景 */}
-            <div className='absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl'></div>
-            <div className='absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-400/10 to-purple-400/10 rounded-full blur-2xl'></div>
+            {/* 装饰性背景 - 优化：移除模糊效果，使用纯渐变 */}
+            <div className='absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full opacity-60'></div>
+            <div className='absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-400/10 to-purple-400/10 rounded-full opacity-60'></div>
 
             <div className='relative z-10'>
               <div className='flex items-start justify-between gap-4'>
@@ -276,9 +276,9 @@ function HomeClient() {
                   </p>
                 </div>
 
-                {/* 装饰图标 - 只在大屏幕显示 */}
+                {/* 装饰图标 - 优化：移除 pulse 动画 */}
                 <div className='hidden lg:block flex-shrink-0'>
-                  <div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg animate-pulse'>
+                  <div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
                     <Film className='w-8 h-8 text-white' />
                   </div>
                 </div>
@@ -330,13 +330,13 @@ function HomeClient() {
               </div>
               
               {favoriteItems.length === 0 ? (
-                /* 空状态 */
+                /* 空状态 - 优化：移除模糊和pulse动画 */
                 <div className='flex flex-col items-center justify-center py-16 px-4'>
                   <div className='mb-6 relative'>
-                    <div className='absolute inset-0 bg-gradient-to-r from-pink-300 to-purple-300 dark:from-pink-600 dark:to-purple-600 opacity-20 blur-3xl rounded-full animate-pulse'></div>
+                    <div className='absolute inset-0 bg-gradient-to-r from-pink-300 to-purple-300 dark:from-pink-600 dark:to-purple-600 opacity-20 rounded-full'></div>
                     <svg className='w-32 h-32 relative z-10' viewBox='0 0 200 200' fill='none' xmlns='http://www.w3.org/2000/svg'>
                       <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
-                        className='fill-gray-300 dark:fill-gray-600 stroke-gray-400 dark:stroke-gray-500 transition-colors duration-300'
+                        className='fill-gray-300 dark:fill-gray-600 stroke-gray-400 dark:stroke-gray-500'
                         strokeWidth='3'
                       />
                       <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
@@ -380,13 +380,12 @@ function HomeClient() {
                           <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
                         )}
                         
-                        {/* 日期标题 */}
+                        {/* 日期标题 - 优化：移除blur和pulse动画 */}
                         <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
                           <div className='relative flex-shrink-0'>
                             <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
                               <span className='text-white text-xs sm:text-sm font-bold'>{items.length}</span>
                             </div>
-                            <div className='absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400 opacity-30 blur animate-pulse'></div>
                           </div>
                           <div className='flex-1 min-w-0'>
                             <h4 className='text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate'>
