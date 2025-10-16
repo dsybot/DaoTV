@@ -81,9 +81,36 @@ function HomeClient() {
     currentEpisode?: number;
     search_title?: string;
     origin?: 'vod' | 'live';
+    save_time: number;
   };
 
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
+
+  // 按日期分组收藏
+  const groupFavoritesByDate = () => {
+    const groups: { [key: string]: FavoriteItem[] } = {};
+    
+    favoriteItems.forEach((favorite) => {
+      const date = new Date(favorite.save_time);
+      const dateKey = date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(favorite);
+    });
+    
+    // 按日期倒序排列（最新的在前）
+    return Object.entries(groups).sort((a, b) => {
+      const dateA = new Date(a[1][0].save_time);
+      const dateB = new Date(b[1][0].save_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
 
   useEffect(() => {
     // 清理过期缓存
@@ -181,6 +208,7 @@ function HomeClient() {
           currentEpisode,
           search_title: fav?.search_title,
           origin: fav?.origin,
+          save_time: fav.save_time,
         } as FavoriteItem;
       });
     setFavoriteItems(sorted);
@@ -273,67 +301,138 @@ function HomeClient() {
 
         <div className='max-w-[95%] mx-auto'>
           {activeTab === 'favorites' ? (
-            // 收藏夹视图
+            // 收藏夹视图 - 时间线样式
             <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
-                <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                  我的收藏
-                </h2>
+              <div className='mb-6 flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
+                  <h2 className='text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200'>
+                    我的收藏时光
+                  </h2>
+                  {favoriteItems.length > 0 && (
+                    <span className='text-sm text-gray-500 dark:text-gray-400'>
+                      {favoriteItems.length} 部作品
+                    </span>
+                  )}
+                </div>
                 {favoriteItems.length > 0 && (
                   <button
-                    className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    className='text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors'
                     onClick={async () => {
-                      await clearAllFavorites();
-                      setFavoriteItems([]);
+                      if (confirm('确定要清空所有收藏吗？')) {
+                        await clearAllFavorites();
+                        setFavoriteItems([]);
+                      }
                     }}
                   >
-                    清空
+                    清空收藏
                   </button>
                 )}
               </div>
-              <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
-                {favoriteItems.map((item) => (
-                  <div key={item.id + item.source} className='w-full'>
-                    <VideoCard
-                      query={item.search_title}
-                      {...item}
-                      from='favorite'
-                      type={item.episodes > 1 ? 'tv' : ''}
-                    />
+              
+              {favoriteItems.length === 0 ? (
+                /* 空状态 */
+                <div className='flex flex-col items-center justify-center py-16 px-4'>
+                  <div className='mb-6 relative'>
+                    <div className='absolute inset-0 bg-gradient-to-r from-pink-300 to-purple-300 dark:from-pink-600 dark:to-purple-600 opacity-20 blur-3xl rounded-full animate-pulse'></div>
+                    <svg className='w-32 h-32 relative z-10' viewBox='0 0 200 200' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                      <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
+                        className='fill-gray-300 dark:fill-gray-600 stroke-gray-400 dark:stroke-gray-500 transition-colors duration-300'
+                        strokeWidth='3'
+                      />
+                      <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeDasharray='5,5'
+                        className='text-gray-400 dark:text-gray-500'
+                      />
+                    </svg>
                   </div>
-                ))}
-                {favoriteItems.length === 0 && (
-                  <div className='col-span-full flex flex-col items-center justify-center py-16 px-4'>
-                    {/* SVG 插画 - 空收藏夹 */}
-                    <div className='mb-6 relative'>
-                      <div className='absolute inset-0 bg-gradient-to-r from-pink-300 to-purple-300 dark:from-pink-600 dark:to-purple-600 opacity-20 blur-3xl rounded-full animate-pulse'></div>
-                      <svg className='w-32 h-32 relative z-10' viewBox='0 0 200 200' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                        {/* 心形主体 */}
-                        <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
-                          className='fill-gray-300 dark:fill-gray-600 stroke-gray-400 dark:stroke-gray-500 transition-colors duration-300'
-                          strokeWidth='3'
-                        />
-                        {/* 虚线边框 */}
-                        <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
-                          fill='none'
-                          stroke='currentColor'
-                          strokeWidth='2'
-                          strokeDasharray='5,5'
-                          className='text-gray-400 dark:text-gray-500'
-                        />
-                      </svg>
+                  <h3 className='text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2'>
+                    收藏夹空空如也
+                  </h3>
+                  <p className='text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs'>
+                    快去发现喜欢的影视作品，点击 ❤️ 添加到收藏吧！
+                  </p>
+                </div>
+              ) : (
+                /* 时间线样式的收藏列表 */
+                <div className='space-y-6 sm:space-y-8'>
+                  {groupFavoritesByDate().map(([dateKey, items], groupIndex) => {
+                    const date = new Date(items[0].save_time);
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    const isYesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString() === date.toDateString();
+                    
+                    let displayDate = dateKey;
+                    if (isToday) displayDate = '今天';
+                    else if (isYesterday) displayDate = '昨天';
+                    else {
+                      displayDate = date.toLocaleDateString('zh-CN', {
+                        month: 'long',
+                        day: 'numeric',
+                      });
+                    }
+                    
+                    return (
+                      <div key={dateKey} className='relative'>
+                        {/* 时间线连接线 */}
+                        {groupIndex < groupFavoritesByDate().length - 1 && (
+                          <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
+                        )}
+                        
+                        {/* 日期标题 */}
+                        <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
+                          <div className='relative flex-shrink-0'>
+                            <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
+                              <span className='text-white text-xs sm:text-sm font-bold'>{items.length}</span>
+                            </div>
+                            <div className='absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400 opacity-30 blur animate-pulse'></div>
+                          </div>
+                          <div className='flex-1 min-w-0'>
+                            <h4 className='text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate'>
+                              {displayDate}
+                            </h4>
+                            <p className='text-xs text-gray-500 dark:text-gray-400'>
+                              <span className='hidden sm:inline'>收藏了 </span>{items.length}<span className='hidden sm:inline'> 部作品</span><span className='sm:hidden'>部</span>
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* 该日期的收藏卡片网格 */}
+                        <div className='ml-8 sm:ml-11 justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                          {items.map((item) => (
+                            <div key={item.id + item.source} className='w-full'>
+                              <VideoCard
+                                query={item.search_title}
+                                {...item}
+                                from='favorite'
+                                type={item.episodes > 1 ? 'tv' : ''}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* 底部统计 */}
+              {favoriteItems.length > 0 && (
+                <div className='mt-8 sm:mt-12 pt-6 border-t border-gray-200 dark:border-gray-700'>
+                  <div className='flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
+                    <div className='flex items-center gap-1.5 sm:gap-2'>
+                      <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-green-500 to-emerald-500'></div>
+                      <span>共 {favoriteItems.length} 部收藏</span>
                     </div>
-
-                    {/* 文字提示 */}
-                    <h3 className='text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2'>
-                      收藏夹空空如也
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs'>
-                      快去发现喜欢的影视作品，点击 ❤️ 添加到收藏吧！
-                    </p>
+                    <div className='w-px h-3 sm:h-4 bg-gray-300 dark:bg-gray-600'></div>
+                    <div className='flex items-center gap-1.5 sm:gap-2'>
+                      <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
+                      <span>跨越 {groupFavoritesByDate().length} 天</span>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </section>
           ) : (
             // 首页视图
