@@ -300,9 +300,8 @@ function HomeClient() {
         </div>
 
         <div className='max-w-[95%] mx-auto'>
-          {activeTab === 'favorites' ? (
-            // 收藏夹视图 - 时间线样式
-            <section className='mb-8'>
+          {/* 收藏夹视图 - 优化：使用 CSS 控制显示，避免重复挂载 */}
+          <section className={`mb-8 ${activeTab === 'favorites' ? 'block' : 'hidden'}`}>
               <div className='mb-6 flex items-center justify-between'>
                 <div className='flex items-center gap-3'>
                   <h2 className='text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200'>
@@ -433,9 +432,9 @@ function HomeClient() {
                 </div>
               )}
             </section>
-          ) : (
-            // 首页视图
-            <>
+
+          {/* 首页视图 - 优化：使用 CSS 控制显示，避免重复挂载 */}
+          <div className={activeTab === 'home' ? 'block' : 'hidden'}>
               {/* 继续观看 */}
               <ContinueWatching />
 
@@ -646,8 +645,7 @@ function HomeClient() {
                     ))}
                 </ScrollableRow>
               </section>
-            </>
-          )}
+          </div>
         </div>
       </div>
       {announcement && showAnnouncement && (
