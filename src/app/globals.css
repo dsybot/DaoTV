@@ -103,40 +103,61 @@ html:not(.dark) body {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* View Transitions API 动画 - 优化：使用简单淡入效果，最佳性能 */
+/* View Transitions API 动画 - 最优方案：transform + opacity，兼具美观与性能 */
+@keyframes slide-fade-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-fade-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.15s;
-  animation-timing-function: ease-out;
-  /* 启用 GPU 加速 */
-  transform: translateZ(0);
+  animation-duration: 0.25s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+  /* 启用 GPU 加速 - transform 和 opacity 都是 GPU 优化属性 */
+  will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
+/* 旧视图淡出 */
 ::view-transition-old(root) {
-  animation-name: theme-fade-out;
+  animation-name: fade-out;
 }
 
-::view-transition-new(root) {
-  animation-name: theme-fade-in;
+/* 从浅色到深色：新内容（深色）从顶部滑入 */
+html.dark::view-transition-new(root) {
+  animation-name: slide-fade-from-top;
 }
 
-@keyframes theme-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes theme-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* 从深色到浅色：新内容（浅色）从底部滑入 */
+html:not(.dark)::view-transition-new(root) {
+  animation-name: slide-fade-from-bottom;
 }
 
 /* 强制播放器内部的 video 元素高度为 100%，并保持内容完整显示 */
