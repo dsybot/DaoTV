@@ -91,6 +91,9 @@ const buttonStyles = {
   toggleThumb: 'bg-white',
   toggleThumbOn: 'translate-x-6',
   toggleThumbOff: 'translate-x-1',
+  // 大圆形开关专用样式（h-5 w-5）
+  toggleThumbOnLarge: 'translate-x-5',
+  toggleThumbOffLarge: 'translate-x-0.5',
   // 快速操作按钮样式
   quickAction: 'px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors',
 };
@@ -859,7 +862,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 >
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none inline-block h-5 w-5 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AllowRegister ? buttonStyles.toggleThumbOn : buttonStyles.toggleThumbOff
+                    className={`pointer-events-none inline-block h-5 w-5 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AllowRegister ? buttonStyles.toggleThumbOnLarge : buttonStyles.toggleThumbOffLarge
                     }`}
                   />
                 </button>
@@ -922,13 +925,13 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         }
                       });
                     }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`pointer-events-none inline-block h-5 w-5 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AutoCleanupInactiveUsers ? buttonStyles.toggleThumbOn : buttonStyles.toggleThumbOff
-                      }`}
-                    />
-                  </button>
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${config.UserConfig.AutoCleanupInactiveUsers ? buttonStyles.toggleThumbOnLarge : buttonStyles.toggleThumbOffLarge
+                        }`}
+                      />
+                    </button>
                   <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                     {config.UserConfig.AutoCleanupInactiveUsers ? '开启' : '关闭'}
                   </span>
