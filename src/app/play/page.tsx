@@ -1741,6 +1741,28 @@ function PlayPageClient() {
       }
     };
 
+    // 刷新搜索源
+    const refreshSources = async () => {
+      setSourceSearchLoading(true);
+      setSourceSearchError(null);
+      try {
+        console.log('手动刷新搜索源...');
+        const query = searchTitle || videoTitle;
+        if (!query) {
+          throw new Error('缺少搜索标题');
+        }
+        const sourcesInfo = await fetchSourcesData(query);
+        if (sourcesInfo.length === 0) {
+          setSourceSearchError('未找到匹配结果');
+        } else {
+          console.log(`刷新成功，找到 ${sourcesInfo.length} 个播放源`);
+        }
+      } catch (err) {
+        console.error('刷新搜索源失败:', err);
+        setSourceSearchError(err instanceof Error ? err.message : '刷新失败');
+      }
+    };
+
     const initAll = async () => {
       if (!currentSource && !currentId && !videoTitle && !searchTitle) {
         setError('缺少必要参数');
@@ -4204,6 +4226,7 @@ function PlayPageClient() {
                 sourceSearchLoading={sourceSearchLoading}
                 sourceSearchError={sourceSearchError}
                 precomputedVideoInfo={precomputedVideoInfo}
+                onRefreshSources={refreshSources}
               />
             </div>
           </div>

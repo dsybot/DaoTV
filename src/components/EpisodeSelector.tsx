@@ -42,6 +42,8 @@ interface EpisodeSelectorProps {
   sourceSearchError?: string | null;
   /** 预计算的测速结果，避免重复测速 */
   precomputedVideoInfo?: Map<string, VideoInfo>;
+  /** 刷新搜索源 */
+  onRefreshSources?: () => void;
 }
 
 /**
@@ -61,6 +63,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   sourceSearchLoading = false,
   sourceSearchError = null,
   precomputedVideoInfo,
+  onRefreshSources,
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -511,6 +514,41 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
       {/* 换源 Tab 内容 */}
       {activeTab === 'sources' && (
         <div className='flex flex-col h-full mt-4'>
+          {/* 标题栏和刷新按钮 */}
+          <div className='flex items-center justify-between mb-3 px-2'>
+            <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300'>
+              选源 {availableSources.length > 0 && !sourceSearchLoading && (
+                <span className='text-xs text-gray-500 dark:text-gray-400 ml-1'>
+                  ({availableSources.length})
+                </span>
+              )}
+            </h3>
+            {onRefreshSources && (
+              <button
+                onClick={onRefreshSources}
+                disabled={sourceSearchLoading}
+                className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95'
+                title='刷新搜索源'
+              >
+                <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors duration-200'></div>
+                <svg
+                  className={`relative z-10 w-3.5 h-3.5 ${sourceSearchLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`}
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                  />
+                </svg>
+                <span className='relative z-10'>刷新</span>
+              </button>
+            )}
+          </div>
+          
           {sourceSearchLoading && (
             <div className='flex items-center justify-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500'></div>
