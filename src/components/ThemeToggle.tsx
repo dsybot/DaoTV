@@ -49,8 +49,15 @@ export function ThemeToggle() {
       return;
     }
 
+    // 性能优化：在切换期间减少不必要的重绘
+    const root = document.documentElement;
+    root.style.setProperty('pointer-events', 'none');
+    
     (document as any).startViewTransition(() => {
       setTheme(targetTheme);
+    }).finished.finally(() => {
+      // 动画完成后恢复交互
+      root.style.removeProperty('pointer-events');
     });
   };
 
