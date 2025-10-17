@@ -52,12 +52,12 @@ function CustomSelect({ value, onChange, options, title, width }: CustomSelectPr
       <button
         type='button'
         onClick={() => setIsOpen(!isOpen)}
-        className='w-full pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200 text-left flex items-center justify-between hover:border-gray-400 dark:hover:border-gray-500'
+        className='relative w-full pl-3 pr-9 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200 text-left hover:border-gray-400 dark:hover:border-gray-500'
         title={title}
       >
-        <span className='truncate'>{selectedOption?.label || ''}</span>
+        <span className='block pr-1'>{selectedOption?.label || ''}</span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
+          className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
