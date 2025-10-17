@@ -103,36 +103,42 @@ html:not(.dark) body {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* View Transitions API 动画 - 简洁高性能的淡入淡出效果 */
+/* View Transitions API 动画 - 优雅的缩放淡入淡出效果 */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.2s;
-  animation-timing-function: ease-in-out;
+  animation-duration: 0.35s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   /* GPU 硬件加速 - 只使用 opacity 和 transform，性能最佳 */
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 
-/* 旧视图淡出 */
+/* 旧视图：缩小淡出 */
 ::view-transition-old(root) {
-  animation-name: theme-fade-out;
+  animation-name: theme-zoom-fade-out;
 }
 
-/* 新视图淡入 */
+/* 新视图：从小放大淡入 */
 ::view-transition-new(root) {
-  animation-name: theme-fade-in;
+  animation-name: theme-zoom-fade-in;
 }
 
-@keyframes theme-fade-out {
+@keyframes theme-zoom-fade-out {
   to {
     opacity: 0;
+    transform: scale(0.95) translateZ(0);
   }
 }
 
-@keyframes theme-fade-in {
+@keyframes theme-zoom-fade-in {
   from {
     opacity: 0;
+    transform: scale(1.05) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
   }
 }
 
