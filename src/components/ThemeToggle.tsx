@@ -41,23 +41,17 @@ export function ThemeToggle() {
   }
 
   const toggleTheme = () => {
-    // 检查浏览器是否支持 View Transitions API
     const targetTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
     setThemeColor(targetTheme);
+    
+    // 使用 View Transitions API 实现丝滑切换
     if (!(document as any).startViewTransition) {
       setTheme(targetTheme);
       return;
     }
 
-    // 性能优化：在切换期间减少不必要的重绘
-    const root = document.documentElement;
-    root.style.setProperty('pointer-events', 'none');
-    
     (document as any).startViewTransition(() => {
       setTheme(targetTheme);
-    }).finished.finally(() => {
-      // 动画完成后恢复交互
-      root.style.removeProperty('pointer-events');
     });
   };
 
