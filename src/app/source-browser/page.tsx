@@ -740,8 +740,8 @@ export default function SourceBrowserPage() {
         {/* Query & Sort */}
         {activeSource && (
           <div className='bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700'>
-            <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3'>
-              <div className='flex-1 flex items-center gap-2'>
+            <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700'>
+              <div className='flex flex-wrap items-center gap-2'>
                 <input
                   value={query}
                   onChange={(e) => {
@@ -764,7 +764,7 @@ export default function SourceBrowserPage() {
                     }
                   }}
                   placeholder='输入关键词并回车进行搜索；清空回车恢复分类'
-                  className='flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='flex-1 min-w-[200px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 {query && (
                   <button
@@ -806,7 +806,7 @@ export default function SourceBrowserPage() {
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
                   placeholder='地区/关键词筛选（标题或备注包含）'
-                  className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='flex-1 min-w-[150px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 <CustomSelect
                   value={filterYear}
@@ -818,9 +818,9 @@ export default function SourceBrowserPage() {
                   width={filterYearWidth}
                   title='年份'
                 />
-              </div>
-              <div className='text-xs text-gray-500'>
-                当前模式：{mode === 'search' ? '搜索' : '分类'}
+                <div className='text-xs text-gray-500 w-full sm:w-auto sm:ml-auto'>
+                  当前模式：{mode === 'search' ? '搜索' : '分类'}
+                </div>
               </div>
             </div>
           </div>
