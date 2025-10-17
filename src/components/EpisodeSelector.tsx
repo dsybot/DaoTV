@@ -145,29 +145,22 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
     }
   }, []);
 
-  // 测速当前播放源
-  const testCurrentSource = useCallback(() => {
-    if (!currentSource || !currentId) {
-      return;
-    }
+  // 批量测速所有播放源
+  const testAllSources = useCallback(async () => {
+    if (availableSources.length === 0) return;
 
-    const currentSourceData = availableSources.find(
-      (s) => s.source === currentSource && s.id === currentId
-    );
+    // 清除所有已测试标记，强制重新测速
+    setAttemptedSources(new Set());
+    attemptedSourcesRef.current = new Set();
 
-    if (currentSourceData) {
-      // 清除已测试标记，强制重新测速
-      const sourceKey = `${currentSource}-${currentId}`;
-      setAttemptedSources((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(sourceKey);
-        return newSet;
-      });
-      
-      // 调用现有的测速函数
-      getVideoInfo(currentSourceData);
+    // 分批次测速
+    const batchSize = Math.ceil(availableSources.length / 2);
+
+    for (let start = 0; start < availableSources.length; start += batchSize) {
+      const batch = availableSources.slice(start, start + batchSize);
+      await Promise.all(batch.map(getVideoInfo));
     }
-  }, [currentSource, currentId, availableSources, getVideoInfo]);
+  }, [availableSources, getVideoInfo]);
 
   // 当有预计算结果时，先合并到videoInfoMap中
   useEffect(() => {
@@ -573,11 +566,11 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                 </button>
               )}
               
-              {currentSource && currentId && (
+              {availableSources.length > 0 && (
                 <button
-                  onClick={testCurrentSource}
+                  onClick={testAllSources}
                   className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95'
-                  title='测速当前播放源'
+                  title='测速所有播放源'
                 >
                   <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors duration-200'></div>
                   <svg
