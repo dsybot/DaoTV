@@ -2,7 +2,7 @@
 
 'use client';
 
-import { ExternalLink, Layers, Server, Tv } from 'lucide-react';
+import { ChevronDown, ExternalLink, Layers, Server, Tv } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -20,6 +20,73 @@ type Item = {
   type_name?: string;
   remarks?: string;
 };
+
+// 自定义下拉选择组件
+interface CustomSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  title?: string;
+  width: number;
+}
+
+function CustomSelect({ value, onChange, options, title, width }: CustomSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div ref={containerRef} className='relative' style={{ width: `${width}px` }}>
+      <button
+        type='button'
+        onClick={() => setIsOpen(!isOpen)}
+        className='w-full pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200 text-left flex items-center justify-between hover:border-gray-400 dark:hover:border-gray-500'
+        title={title}
+      >
+        <span className='truncate'>{selectedOption?.label || ''}</span>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type='button'
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-sm transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                option.value === value
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SourceBrowserPage() {
   const router = useRouter();
@@ -90,8 +157,6 @@ export default function SourceBrowserPage() {
   // 动态宽度调整
   const [sortByWidth, setSortByWidth] = useState(160);
   const [filterYearWidth, setFilterYearWidth] = useState(110);
-  const sortByRef = useRef<HTMLSelectElement>(null);
-  const filterYearRef = useRef<HTMLSelectElement>(null);
   const measureSpanRef = useRef<HTMLSpanElement>(null);
 
   // 动态计算select宽度
@@ -715,12 +780,11 @@ export default function SourceBrowserPage() {
                     清除
                   </button>
                 )}
-                <select
-                  ref={sortByRef}
+                <CustomSelect
                   value={sortBy}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setSortBy(
-                      e.target.value as
+                      val as
                         | 'default'
                         | 'title-asc'
                         | 'title-desc'
@@ -728,37 +792,32 @@ export default function SourceBrowserPage() {
                         | 'year-desc'
                     )
                   }
-                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200'
-                  style={{ width: `${sortByWidth}px` }}
+                  options={[
+                    { value: 'default', label: '默认顺序' },
+                    { value: 'title-asc', label: '标题 A→Z' },
+                    { value: 'title-desc', label: '标题 Z→A' },
+                    { value: 'year-asc', label: '年份 从低到高' },
+                    { value: 'year-desc', label: '年份 从高到低' },
+                  ]}
+                  width={sortByWidth}
                   title='排序'
-                >
-                  <option value='default'>默认顺序</option>
-                  <option value='title-asc'>标题 A→Z</option>
-                  <option value='title-desc'>标题 Z→A</option>
-                  <option value='year-asc'>年份 从低到高</option>
-                  <option value='year-desc'>年份 从高到低</option>
-                </select>
+                />
                 <input
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
                   placeholder='地区/关键词筛选（标题或备注包含）'
                   className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
-                <select
-                  ref={filterYearRef}
+                <CustomSelect
                   value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200'
-                  style={{ width: `${filterYearWidth}px` }}
+                  onChange={setFilterYear}
+                  options={[
+                    { value: '', label: '全部年份' },
+                    ...availableYears.map((y) => ({ value: y, label: y })),
+                  ]}
+                  width={filterYearWidth}
                   title='年份'
-                >
-                  <option value=''>全部年份</option>
-                  {availableYears.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div className='text-xs text-gray-500'>
                 当前模式：{mode === 'search' ? '搜索' : '分类'}
