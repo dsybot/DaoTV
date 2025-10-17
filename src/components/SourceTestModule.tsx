@@ -250,7 +250,7 @@ export default function SourceTestModule() {
   const [sortKey, setSortKey] = useState<
     'status' | 'responseTime' | 'resultCount' | 'matchRate' | 'name'
   >('status');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [sortByWidth, setSortByWidth] = useState(100);
   const measureSpanRef = useRef<HTMLSpanElement>(null);
 
@@ -587,8 +587,8 @@ export default function SourceTestModule() {
             </div>
           </div>
 
-          <div className='flex items-center'>
-            <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'>
+          <div className='flex items-end'>
+            <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 pb-2'>
               <input
                 type='checkbox'
                 className='w-4 h-4 rounded border-gray-300 dark:border-gray-600'
