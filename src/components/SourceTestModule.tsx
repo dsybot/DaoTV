@@ -587,7 +587,7 @@ export default function SourceTestModule() {
             </div>
           </div>
 
-          <div className='flex items-end'>
+          <div className='flex items-center'>
             <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'>
               <input
                 type='checkbox'
