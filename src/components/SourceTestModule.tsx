@@ -756,19 +756,22 @@ export default function SourceTestModule() {
             return (
               <div
                 key={source.key}
-                className={`border rounded-lg p-4 ${
+                className={`border rounded-lg overflow-hidden ${
                   source.disabled
                     ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
                     : 'border-gray-200 dark:border-gray-700'
                 }`}
               >
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3 flex-1 min-w-0'>
-                    {getStatusIcon(
-                      result?.status || 'pending',
-                      source.disabled
-                    )}
-                    <div className='flex-1 min-w-0'>
+                <div className='p-4 overflow-x-auto'>
+                  <div className='flex items-center justify-between min-w-max'>
+                  <div className='flex items-center gap-3 flex-1'>
+                    <div className='flex-shrink-0'>
+                      {getStatusIcon(
+                        result?.status || 'pending',
+                        source.disabled
+                      )}
+                    </div>
+                    <div className='flex-1'>
                       <div className='flex items-center gap-2'>
                         <span
                           className={`font-medium ${
@@ -785,19 +788,13 @@ export default function SourceTestModule() {
                           </span>
                         )}
                       </div>
-                      <div 
-                        className='text-sm text-gray-500 dark:text-gray-400 overflow-x-auto whitespace-nowrap'
-                        style={{
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: '#9ca3af transparent'
-                        }}
-                      >
+                      <div className='text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap'>
                         {source.key} • {source.api}
                       </div>
                     </div>
 
                     {result && (
-                      <div className='text-right'>
+                      <div className='text-right whitespace-nowrap'>
                         <div className='text-sm text-gray-600 dark:text-gray-400'>
                           {result.responseTime && `${result.responseTime}ms`}
                         </div>
@@ -837,11 +834,11 @@ export default function SourceTestModule() {
                     )}
                   </div>
 
-                  <div className='flex items-center gap-2 ml-4'>
+                  <div className='flex items-center gap-2 ml-4 flex-shrink-0'>
                     {result?.results && result.results.length > 0 && (
                       <button
                         onClick={() => handleViewResults(result.results)}
-                        className='px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700'
+                        className='px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap'
                       >
                         查看结果
                       </button>
@@ -850,7 +847,7 @@ export default function SourceTestModule() {
                     <button
                       onClick={() => handleTestSingle(source.key)}
                       disabled={result?.status === 'testing'}
-                      className={`px-3 py-1 text-sm rounded disabled:cursor-not-allowed ${
+                      className={`px-3 py-1 text-sm rounded disabled:cursor-not-allowed whitespace-nowrap ${
                         source.disabled
                           ? 'bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-400'
                           : 'bg-gray-600 text-white hover:bg-gray-700 disabled:bg-gray-400'
@@ -865,7 +862,7 @@ export default function SourceTestModule() {
 
                     <button
                       onClick={() => toggleSource(source)}
-                      className={`px-3 py-1 text-sm rounded ${
+                      className={`px-3 py-1 text-sm rounded whitespace-nowrap ${
                         source.disabled
                           ? 'bg-green-600 hover:bg-green-700 text-white'
                           : 'bg-red-600 hover:bg-red-700 text-white'
@@ -875,9 +872,10 @@ export default function SourceTestModule() {
                     </button>
                   </div>
                 </div>
+                </div>
 
                 {result?.error && (
-                  <div className='mt-2 text-sm text-red-600 dark:text-red-400'>
+                  <div className='px-4 pb-4 text-sm text-red-600 dark:text-red-400'>
                     错误: {result.error}
                   </div>
                 )}
