@@ -763,12 +763,12 @@ export default function SourceTestModule() {
                 }`}
               >
                 <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3 flex-1'>
+                  <div className='flex items-center gap-3 flex-1 min-w-0'>
                     {getStatusIcon(
                       result?.status || 'pending',
                       source.disabled
                     )}
-                    <div className='flex-1'>
+                    <div className='flex-1 min-w-0'>
                       <div className='flex items-center gap-2'>
                         <span
                           className={`font-medium ${
@@ -785,7 +785,13 @@ export default function SourceTestModule() {
                           </span>
                         )}
                       </div>
-                      <div className='text-sm text-gray-500 dark:text-gray-400'>
+                      <div 
+                        className='text-sm text-gray-500 dark:text-gray-400 overflow-x-auto whitespace-nowrap'
+                        style={{
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#9ca3af transparent'
+                        }}
+                      >
                         {source.key} • {source.api}
                       </div>
                     </div>
