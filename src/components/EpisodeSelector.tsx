@@ -145,6 +145,30 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
     }
   }, []);
 
+  // 测速当前播放源
+  const testCurrentSource = useCallback(() => {
+    if (!currentSource || !currentId) {
+      return;
+    }
+
+    const currentSourceData = availableSources.find(
+      (s) => s.source === currentSource && s.id === currentId
+    );
+
+    if (currentSourceData) {
+      // 清除已测试标记，强制重新测速
+      const sourceKey = `${currentSource}-${currentId}`;
+      setAttemptedSources((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(sourceKey);
+        return newSet;
+      });
+      
+      // 调用现有的测速函数
+      getVideoInfo(currentSourceData);
+    }
+  }, [currentSource, currentId, availableSources, getVideoInfo]);
+
   // 当有预计算结果时，先合并到videoInfoMap中
   useEffect(() => {
     if (precomputedVideoInfo && precomputedVideoInfo.size > 0) {
@@ -523,30 +547,56 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                 </span>
               )}
             </h3>
-            {onRefreshSources && (
-              <button
-                onClick={onRefreshSources}
-                disabled={sourceSearchLoading}
-                className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95'
-                title='刷新搜索源'
-              >
-                <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors duration-200'></div>
-                <svg
-                  className={`relative z-10 w-3.5 h-3.5 ${sourceSearchLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`}
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
+            <div className='flex items-center gap-2'>
+              {onRefreshSources && (
+                <button
+                  onClick={onRefreshSources}
+                  disabled={sourceSearchLoading}
+                  className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95'
+                  title='刷新搜索源'
                 >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-                  />
-                </svg>
-                <span className='relative z-10'>刷新</span>
-              </button>
-            )}
+                  <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors duration-200'></div>
+                  <svg
+                    className={`relative z-10 w-3.5 h-3.5 ${sourceSearchLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`}
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                    />
+                  </svg>
+                  <span className='relative z-10'>刷新</span>
+                </button>
+              )}
+              
+              {currentSource && currentId && (
+                <button
+                  onClick={testCurrentSource}
+                  className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95'
+                  title='测速当前播放源'
+                >
+                  <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors duration-200'></div>
+                  <svg
+                    className='relative z-10 w-3.5 h-3.5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M13 10V3L4 14h7v7l9-11h-7z'
+                    />
+                  </svg>
+                  <span className='relative z-10'>测速</span>
+                </button>
+              )}
+            </div>
           </div>
           
           {sourceSearchLoading && (
