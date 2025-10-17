@@ -1546,6 +1546,66 @@ function PlayPageClient() {
     }
   }, [detail, currentEpisodeIndex]);
 
+  // 刷新搜索源 - 组件级别的函数
+  const refreshSources = useCallback(async () => {
+    setSourceSearchLoading(true);
+    setSourceSearchError(null);
+    try {
+      console.log('手动刷新搜索源...');
+      const query = searchTitle || videoTitle;
+      if (!query) {
+        throw new Error('缺少搜索标题');
+      }
+      
+      // 使用智能搜索变体获取全部源信息
+      const searchVariants = generateSearchVariants(query.trim());
+      const allResults: SearchResult[] = [];
+      let bestResults: SearchResult[] = [];
+
+      // 依次尝试每个搜索变体
+      for (const variant of searchVariants) {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(variant)}`
+        );
+        if (!response.ok) continue;
+        
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          allResults.push(...data.results);
+          
+          const filteredResults = data.results.filter(
+            (result: SearchResult) => {
+              const queryTitle = videoTitle.replaceAll(' ', '').toLowerCase();
+              const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
+              const titleMatch = resultTitle.includes(queryTitle) || queryTitle.includes(resultTitle);
+              const yearMatch = videoYear ? result.year.toLowerCase() === videoYear.toLowerCase() : true;
+              return titleMatch && yearMatch;
+            }
+          );
+
+          if (filteredResults.length > 0) {
+            bestResults = filteredResults;
+            break;
+          }
+        }
+      }
+
+      const finalResults = bestResults.length > 0 ? bestResults : allResults;
+      setAvailableSources(finalResults);
+      
+      if (finalResults.length === 0) {
+        setSourceSearchError('未找到匹配结果');
+      } else {
+        console.log(`刷新成功，找到 ${finalResults.length} 个播放源`);
+      }
+    } catch (err) {
+      console.error('刷新搜索源失败:', err);
+      setSourceSearchError(err instanceof Error ? err.message : '刷新失败');
+    } finally {
+      setSourceSearchLoading(false);
+    }
+  }, [searchTitle, videoTitle, videoYear]);
+
   // 进入页面时直接获取全部源信息
   useEffect(() => {
     const fetchSourceDetail = async (
@@ -1738,28 +1798,6 @@ function PlayPageClient() {
         return [];
       } finally {
         setSourceSearchLoading(false);
-      }
-    };
-
-    // 刷新搜索源
-    const refreshSources = async () => {
-      setSourceSearchLoading(true);
-      setSourceSearchError(null);
-      try {
-        console.log('手动刷新搜索源...');
-        const query = searchTitle || videoTitle;
-        if (!query) {
-          throw new Error('缺少搜索标题');
-        }
-        const sourcesInfo = await fetchSourcesData(query);
-        if (sourcesInfo.length === 0) {
-          setSourceSearchError('未找到匹配结果');
-        } else {
-          console.log(`刷新成功，找到 ${sourcesInfo.length} 个播放源`);
-        }
-      } catch (err) {
-        console.error('刷新搜索源失败:', err);
-        setSourceSearchError(err instanceof Error ? err.message : '刷新失败');
       }
     };
 
