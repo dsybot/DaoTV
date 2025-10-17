@@ -688,7 +688,7 @@ export default function SourceBrowserPage() {
                         | 'year-desc'
                     )
                   }
-                  className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-auto min-w-[120px]'
                   title='排序'
                 >
                   <option value='default'>默认顺序</option>
@@ -706,7 +706,7 @@ export default function SourceBrowserPage() {
                 <select
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-auto min-w-[120px]'
                   title='年份'
                 >
                   <option value=''>全部年份</option>
