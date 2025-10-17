@@ -244,6 +244,7 @@ export default function SourceTestModule() {
     new Map()
   );
   const [isTestingAll, setIsTestingAll] = useState(false);
+  const [hasTestedAll, setHasTestedAll] = useState(false);
   const [selectedResults, setSelectedResults] = useState<SearchResult[]>([]);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [onlyEnabled, setOnlyEnabled] = useState(true);
@@ -278,6 +279,12 @@ export default function SourceTestModule() {
   useEffect(() => {
     getAllApiSites().then(setSources);
   }, []);
+
+  // 当搜索关键词或测试范围改变时，重置测试状态
+  useEffect(() => {
+    setTestResults(new Map());
+    setHasTestedAll(false);
+  }, [searchKeyword, onlyEnabled]);
 
   // 测试单个源
   const handleTestSingle = async (sourceKey: string) => {
@@ -317,6 +324,7 @@ export default function SourceTestModule() {
     }
 
     setIsTestingAll(true);
+    setHasTestedAll(true);
     setTestResults(new Map());
 
     // 初始化所有源的状态
@@ -490,6 +498,11 @@ export default function SourceTestModule() {
   // 计算排序后的源列表
   const getSortedSources = () => {
     const scope = onlyEnabled ? sources.filter((s) => !s.disabled) : sources;
+
+    // 只有进行过全部测试后才启用排序，单独测试时保持原有顺序
+    if (!hasTestedAll) {
+      return scope;
+    }
 
     const statusWeight = (s?: SourceTestResult) => {
       // 数值越大表示越靠后（差）
