@@ -2033,8 +2033,8 @@ export const UserMenu: React.FC = () => {
                                 {getProgress(record) > 0 && getProgress(record) < 95 && (
                                   <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[501] pointer-events-none ${
                                     record.remarks && isSeriesCompleted(record.remarks)
-                                      ? 'bottom-[6.5rem] sm:bottom-28'
-                                      : 'bottom-16 sm:bottom-20'
+                                      ? 'bottom-28 sm:bottom-28'
+                                      : 'bottom-20 sm:bottom-20'
                                   }`}>
                                     {Math.round(getProgress(record))}%
                                   </div>
