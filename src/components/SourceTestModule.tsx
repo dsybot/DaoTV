@@ -750,20 +750,20 @@ export default function SourceTestModule() {
           </div>
         </div>
 
-        <div className='space-y-3'>
+        <div className='overflow-x-auto'>
+          <div className='space-y-3 min-w-max'>
           {getSortedSources().map((source) => {
             const result = testResults.get(source.key);
             return (
               <div
                 key={source.key}
-                className={`border rounded-lg overflow-hidden ${
+                className={`border rounded-lg p-4 ${
                   source.disabled
                     ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
                     : 'border-gray-200 dark:border-gray-700'
                 }`}
               >
-                <div className='p-4 overflow-x-auto'>
-                  <div className='flex items-center justify-between min-w-max'>
+                <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-3 flex-1'>
                     <div className='flex-shrink-0'>
                       {getStatusIcon(
@@ -872,16 +872,16 @@ export default function SourceTestModule() {
                     </button>
                   </div>
                 </div>
-                </div>
 
                 {result?.error && (
-                  <div className='px-4 pb-4 text-sm text-red-600 dark:text-red-400'>
+                  <div className='mt-2 text-sm text-red-600 dark:text-red-400'>
                     错误: {result.error}
                   </div>
                 )}
               </div>
             );
           })}
+          </div>
         </div>
       </div>
 
@@ -904,7 +904,7 @@ export default function SourceTestModule() {
               </div>
 
               <div className='p-6 overflow-y-auto max-h-[60vh]'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'>
                   {selectedResults.map((result, index) => (
                     <VideoCard
                       key={`${result.source}-${result.id}-${index}`}
