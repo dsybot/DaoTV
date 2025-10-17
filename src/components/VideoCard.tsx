@@ -1006,7 +1006,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         {/* 进度条 */}
         {config.showProgress && progress !== undefined && (
           <div
-            className='mt-1 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative group/progress cursor-pointer'
+            className='mt-1 h-1 w-full bg-gray-200 rounded-full overflow-hidden'
             style={{
               WebkitUserSelect: 'none',
               userSelect: 'none',
@@ -1030,30 +1030,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             />
-            
-            {/* 进度百分比悬浮提示 */}
-            <div
-              className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gradient-to-br from-gray-800 to-gray-900 text-white text-xs font-medium rounded-md shadow-xl border border-white/10 opacity-0 invisible group-hover/progress:opacity-100 group-hover/progress:visible transition-all duration-200 ease-out pointer-events-none z-[60] whitespace-nowrap'
-              style={{
-                WebkitUserSelect: 'none',
-                userSelect: 'none',
-                WebkitTouchCallout: 'none',
-              } as React.CSSProperties}
-            >
-              <span className='flex items-center gap-1.5'>
-                <span className='text-green-400'>▶</span>
-                <span>播放进度：{progress.toFixed(1)}%</span>
-              </span>
-              {/* 小箭头 */}
-              <div 
-                className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800'
-                style={{
-                  WebkitUserSelect: 'none',
-                  userSelect: 'none',
-                  WebkitTouchCallout: 'none',
-                } as React.CSSProperties}
-              ></div>
-            </div>
           </div>
         )}
 
