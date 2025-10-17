@@ -3,7 +3,7 @@
 import {
   ArrowPathIcon,
   CheckCircleIcon,
-  ChevronDown,
+  ChevronDownIcon,
   ClockIcon,
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
@@ -52,7 +52,7 @@ function CustomSelect({ value, onChange, options, title, width }: CustomSelectPr
         title={title}
       >
         <span className='block pr-1'>{selectedOption?.label || ''}</span>
-        <ChevronDown
+        <ChevronDownIcon
           className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
