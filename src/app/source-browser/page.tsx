@@ -87,6 +87,39 @@ export default function SourceBrowserPage() {
   const [previewBangumiLoading, setPreviewBangumiLoading] = useState(false);
   const [previewSearchPick, setPreviewSearchPick] = useState<GlobalSearchResult | null>(null);
 
+  // 动态宽度调整
+  const [sortByWidth, setSortByWidth] = useState(160);
+  const [filterYearWidth, setFilterYearWidth] = useState(110);
+  const sortByRef = useRef<HTMLSelectElement>(null);
+  const filterYearRef = useRef<HTMLSelectElement>(null);
+  const measureSpanRef = useRef<HTMLSpanElement>(null);
+
+  // 动态计算select宽度
+  useEffect(() => {
+    const calculateWidth = (text: string): number => {
+      if (!measureSpanRef.current) return 120;
+      measureSpanRef.current.textContent = text;
+      const textWidth = measureSpanRef.current.offsetWidth;
+      // 左padding(12) + 右padding(32) + 边框(2) + 额外空间(10)
+      return Math.max(textWidth + 56, 100);
+    };
+
+    // 计算排序select宽度
+    const sortByTexts: Record<string, string> = {
+      'default': '默认顺序',
+      'title-asc': '标题 A→Z',
+      'title-desc': '标题 Z→A',
+      'year-asc': '年份 从低到高',
+      'year-desc': '年份 从高到低',
+    };
+    const sortByText = sortByTexts[sortBy] || '默认顺序';
+    setSortByWidth(calculateWidth(sortByText));
+
+    // 计算年份select宽度
+    const yearText = filterYear || '全部年份';
+    setFilterYearWidth(calculateWidth(yearText));
+  }, [sortBy, filterYear]);
+
   const fetchSources = useCallback(async () => {
     setLoadingSources(true);
     setSourceError(null);
@@ -548,6 +581,12 @@ export default function SourceBrowserPage() {
   return (
     <PageLayout activePath='/source-browser'>
       <div className='max-w-7xl mx-auto px-4 md:px-6 pt-8 md:pt-12 pb-4 md:pb-6 space-y-6'>
+        {/* 隐藏的文本测量元素 */}
+        <span
+          ref={measureSpanRef}
+          className='absolute invisible whitespace-nowrap text-sm font-normal'
+          style={{ left: '-9999px' }}
+        />
         {/* Header - 美化版 */}
         <div className='relative'>
           <div className='absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-green-400/10 to-teal-400/10 rounded-2xl blur-3xl'></div>
@@ -677,6 +716,7 @@ export default function SourceBrowserPage() {
                   </button>
                 )}
                 <select
+                  ref={sortByRef}
                   value={sortBy}
                   onChange={(e) =>
                     setSortBy(
@@ -688,7 +728,8 @@ export default function SourceBrowserPage() {
                         | 'year-desc'
                     )
                   }
-                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-auto min-w-[120px]'
+                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200'
+                  style={{ width: `${sortByWidth}px` }}
                   title='排序'
                 >
                   <option value='default'>默认顺序</option>
@@ -704,9 +745,11 @@ export default function SourceBrowserPage() {
                   className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 <select
+                  ref={filterYearRef}
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm w-auto min-w-[120px]'
+                  className='pl-3 pr-8 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200'
+                  style={{ width: `${filterYearWidth}px` }}
                   title='年份'
                 >
                   <option value=''>全部年份</option>
