@@ -694,7 +694,7 @@ export default function SourceBrowserPage() {
               </span>
             )}
           </div>
-          <div className='p-5'>
+          <div className='p-5 overflow-visible'>
             {loadingSources ? (
               <div className='flex items-center gap-2 text-sm text-gray-500'>
                 <div className='w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin'></div>
@@ -712,7 +712,7 @@ export default function SourceBrowserPage() {
                 <p className='text-sm text-gray-500'>暂无可用来源</p>
               </div>
             ) : (
-              <div className='flex flex-wrap gap-2.5'>
+              <div className='flex flex-wrap gap-2.5 w-full'>
                 {sources.map((s, index) => (
                   <button
                     key={s.key}
@@ -836,7 +836,7 @@ export default function SourceBrowserPage() {
             </div>
             <div className='p-4 space-y-4'>
               {mode === 'category' && (
-                <div className='flex flex-wrap gap-2'>
+                <div className='flex flex-wrap gap-2 w-full'>
                   {loadingCategories ? (
                     <div className='text-sm text-gray-500'>加载分类...</div>
                   ) : categoryError ? (
@@ -870,7 +870,7 @@ export default function SourceBrowserPage() {
                   <div className='text-sm text-gray-500'>暂无内容</div>
                 ) : (
                   <>
-                    <div className='grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5'>
+                    <div className='grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
                       {filteredAndSorted.map((item) => (
                         <div
                           key={item.id}
