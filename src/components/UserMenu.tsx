@@ -39,6 +39,7 @@ import {
   type PlayRecord,
 } from '@/lib/db.client';
 import type { Favorite } from '@/lib/types';
+import { isSeriesCompleted } from '@/lib/utils';
 
 import { VersionPanel } from './VersionPanel';
 import VideoCard from './VideoCard';
@@ -2030,7 +2031,11 @@ export const UserMenu: React.FC = () => {
                                 />
                                 {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
                                 {getProgress(record) > 0 && getProgress(record) < 95 && (
-                                  <div className='absolute left-2 bottom-20 sm:bottom-24 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[501] pointer-events-none'>
+                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[501] pointer-events-none ${
+                                    record.remarks && isSeriesCompleted(record.remarks)
+                                      ? 'bottom-20 sm:bottom-24'
+                                      : 'bottom-16 sm:bottom-20'
+                                  }`}>
                                     {Math.round(getProgress(record))}%
                                   </div>
                                 )}
