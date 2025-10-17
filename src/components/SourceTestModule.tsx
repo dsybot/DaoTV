@@ -12,6 +12,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { SearchResult } from '@/lib/types';
 
@@ -881,43 +882,46 @@ export default function SourceTestModule() {
       </div>
 
       {/* 结果详情弹窗 */}
-      {showResultsModal && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
-          <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
-            <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                搜索结果 ({selectedResults.length} 个)
-              </h3>
-              <button
-                onClick={() => setShowResultsModal(false)}
-                className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              >
-                <XMarkIcon className='w-6 h-6' />
-              </button>
-            </div>
+      {showResultsModal &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+            <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
+              <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                  搜索结果 ({selectedResults.length} 个)
+                </h3>
+                <button
+                  onClick={() => setShowResultsModal(false)}
+                  className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                >
+                  <XMarkIcon className='w-6 h-6' />
+                </button>
+              </div>
 
-            <div className='p-6 overflow-y-auto max-h-[60vh]'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-                {selectedResults.map((result, index) => (
-                  <VideoCard
-                    key={`${result.source}-${result.id}-${index}`}
-                    id={result.id}
-                    title={result.title}
-                    poster={result.poster}
-                    year={result.year}
-                    episodes={result.episodes.length}
-                    source={result.source}
-                    source_name={result.source_name}
-                    from='search'
-                    type={result.type_name}
-                    rate={result.desc}
-                  />
-                ))}
+              <div className='p-6 overflow-y-auto max-h-[60vh]'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                  {selectedResults.map((result, index) => (
+                    <VideoCard
+                      key={`${result.source}-${result.id}-${index}`}
+                      id={result.id}
+                      title={result.title}
+                      poster={result.poster}
+                      year={result.year}
+                      episodes={result.episodes.length}
+                      source={result.source}
+                      source_name={result.source_name}
+                      from='search'
+                      type={result.type_name}
+                      rate={result.desc}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* 空状态 */}
       {sources.length === 0 && (
