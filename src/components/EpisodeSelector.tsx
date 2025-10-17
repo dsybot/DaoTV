@@ -420,7 +420,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
       {/* 选集 Tab 内容 */}
       {activeTab === 'episodes' && (
-        <div className='flex flex-col flex-1 overflow-visible -mx-4 px-4'>
+        <div className='flex flex-col flex-1 overflow-hidden -mx-4 px-4'>
           {/* 分类标签 */}
           <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-2 px-2 flex-shrink-0'>
             <div
