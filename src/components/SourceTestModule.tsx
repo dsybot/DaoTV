@@ -956,7 +956,7 @@ export default function SourceTestModule() {
             </div>
 
             <div className='p-6 overflow-y-auto max-h-[60vh]'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+              <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
                 {selectedResults.map((result, index) => (
                   <VideoCard
                     key={`${result.source}-${result.id}-${index}`}
