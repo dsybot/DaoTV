@@ -44,7 +44,7 @@ function CustomSelect<T extends string>({
       <button
         type='button'
         onClick={() => setIsOpen(!isOpen)}
-        className='group relative inline-flex items-center justify-between gap-3 px-4 py-2 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap'
+        className='group relative inline-flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap'
         title={title}
       >
         <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
@@ -61,7 +61,7 @@ function CustomSelect<T extends string>({
       </button>
 
       {isOpen && (
-        <div className='absolute z-50 mt-2 min-w-full w-max max-w-xs rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
+        <div className='absolute z-50 mt-2 min-w-full w-max max-w-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
           <div className='py-2 max-h-64 overflow-y-auto custom-scrollbar'>
             {options.map((option) => (
               <button
