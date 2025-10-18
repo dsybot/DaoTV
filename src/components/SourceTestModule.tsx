@@ -3,7 +3,6 @@
 import {
   ArrowPathIcon,
   CheckCircleIcon,
-  ChevronDownIcon,
   ClockIcon,
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
@@ -11,79 +10,11 @@ import {
   XCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useState } from 'react';
 
 import { SearchResult } from '@/lib/types';
 
 import VideoCard from '@/components/VideoCard';
-
-// 自定义下拉选择组件
-interface CustomSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  title?: string;
-  width: number;
-}
-
-function CustomSelect({ value, onChange, options, title, width }: CustomSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // 点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const selectedOption = options.find((opt) => opt.value === value);
-
-  return (
-    <div ref={containerRef} className='relative' style={{ width: `${width}px` }}>
-      <button
-        type='button'
-        onClick={() => setIsOpen(!isOpen)}
-        className='relative w-full pl-3 pr-9 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200 text-left hover:border-gray-400 dark:hover:border-gray-500'
-        title={title}
-      >
-        <span className='block pr-1'>{selectedOption?.label || ''}</span>
-        <ChevronDownIcon
-          className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type='button'
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                option.value === value
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // API源信息接口
 interface ApiSite {
@@ -250,29 +181,7 @@ export default function SourceTestModule() {
   const [sortKey, setSortKey] = useState<
     'status' | 'responseTime' | 'resultCount' | 'matchRate' | 'name'
   >('status');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [sortByWidth, setSortByWidth] = useState(100);
-  const measureSpanRef = useRef<HTMLSpanElement>(null);
-
-  // 动态计算select宽度
-  useEffect(() => {
-    const calculateWidth = (text: string): number => {
-      if (!measureSpanRef.current) return 100;
-      measureSpanRef.current.textContent = text;
-      const textWidth = measureSpanRef.current.offsetWidth;
-      return Math.max(textWidth + 56, 80);
-    };
-
-    const sortByTexts: Record<string, string> = {
-      'status': '状态',
-      'responseTime': '耗时',
-      'resultCount': '结果数',
-      'matchRate': '相关率',
-      'name': '名称',
-    };
-    const sortByText = sortByTexts[sortKey] || '状态';
-    setSortByWidth(calculateWidth(sortByText));
-  }, [sortKey]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // 加载所有源
   useEffect(() => {
@@ -550,12 +459,6 @@ export default function SourceTestModule() {
 
   return (
     <div className='max-w-7xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6'>
-      {/* 隐藏的文本测量元素 */}
-      <span
-        ref={measureSpanRef}
-        className='absolute invisible whitespace-nowrap text-sm font-normal'
-        style={{ left: '-9999px' }}
-      />
       {/* 标题 */}
       <div className='text-center'>
         <h1 className='text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2'>
@@ -723,19 +626,17 @@ export default function SourceTestModule() {
             <label className='text-xs sm:text-sm text-gray-600 dark:text-gray-300'>
               排序
             </label>
-            <CustomSelect
+            <select
               value={sortKey}
-              onChange={(val) => setSortKey(val as any)}
-              options={[
-                { value: 'status', label: '状态' },
-                { value: 'responseTime', label: '耗时' },
-                { value: 'resultCount', label: '结果数' },
-                { value: 'matchRate', label: '相关率' },
-                { value: 'name', label: '名称' },
-              ]}
-              width={sortByWidth}
-              title='排序方式'
-            />
+              onChange={(e) => setSortKey(e.target.value as any)}
+              className='text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            >
+              <option value='status'>状态</option>
+              <option value='responseTime'>耗时</option>
+              <option value='resultCount'>结果数</option>
+              <option value='matchRate'>相关率</option>
+              <option value='name'>名称</option>
+            </select>
             <button
               onClick={() =>
                 setSortOrder((p) => (p === 'asc' ? 'desc' : 'asc'))
@@ -748,8 +649,7 @@ export default function SourceTestModule() {
           </div>
         </div>
 
-        <div className='overflow-x-auto'>
-          <div className='space-y-3 min-w-max'>
+        <div className='space-y-3'>
           {getSortedSources().map((source) => {
             const result = testResults.get(source.key);
             return (
@@ -763,12 +663,10 @@ export default function SourceTestModule() {
               >
                 <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
                   <div className='flex items-center gap-3 flex-1'>
-                    <div className='flex-shrink-0'>
-                      {getStatusIcon(
-                        result?.status || 'pending',
-                        source.disabled
-                      )}
-                    </div>
+                    {getStatusIcon(
+                      result?.status || 'pending',
+                      source.disabled
+                    )}
                     <div className='flex-1 min-w-0'>
                       <div className='flex items-center gap-2 flex-wrap'>
                         <span
@@ -920,51 +818,47 @@ export default function SourceTestModule() {
               </div>
             );
           })}
-          </div>
         </div>
       </div>
 
       {/* 结果详情弹窗 */}
-      {showResultsModal &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
-            <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
-              <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                  搜索结果 ({selectedResults.length} 个)
-                </h3>
-                <button
-                  onClick={() => setShowResultsModal(false)}
-                  className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                >
-                  <XMarkIcon className='w-6 h-6' />
-                </button>
-              </div>
+      {showResultsModal && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
+            <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
+              <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                搜索结果 ({selectedResults.length} 个)
+              </h3>
+              <button
+                onClick={() => setShowResultsModal(false)}
+                className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              >
+                <XMarkIcon className='w-6 h-6' />
+              </button>
+            </div>
 
-              <div className='p-6 overflow-y-auto max-h-[60vh]'>
-                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'>
-                  {selectedResults.map((result, index) => (
-                    <VideoCard
-                      key={`${result.source}-${result.id}-${index}`}
-                      id={result.id}
-                      title={result.title}
-                      poster={result.poster}
-                      year={result.year}
-                      episodes={result.episodes.length}
-                      source={result.source}
-                      source_name={result.source_name}
-                      from='search'
-                      type={result.type_name}
-                      rate={result.desc}
-                    />
-                  ))}
-                </div>
+            <div className='p-6 overflow-y-auto max-h-[60vh]'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                {selectedResults.map((result, index) => (
+                  <VideoCard
+                    key={`${result.source}-${result.id}-${index}`}
+                    id={result.id}
+                    title={result.title}
+                    poster={result.poster}
+                    year={result.year}
+                    episodes={result.episodes.length}
+                    source={result.source}
+                    source_name={result.source_name}
+                    from='search'
+                    type={result.type_name}
+                    rate={result.desc}
+                  />
+                ))}
               </div>
             </div>
-          </div>,
-          document.body
-        )}
+          </div>
+        </div>
+      )}
 
       {/* 空状态 */}
       {sources.length === 0 && (

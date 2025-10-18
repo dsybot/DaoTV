@@ -2,7 +2,7 @@
 
 'use client';
 
-import { ChevronDown, ExternalLink, Layers, Server, Tv } from 'lucide-react';
+import { ExternalLink, Layers, Server, Tv } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -20,73 +20,6 @@ type Item = {
   type_name?: string;
   remarks?: string;
 };
-
-// 自定义下拉选择组件
-interface CustomSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  title?: string;
-  width: number;
-}
-
-function CustomSelect({ value, onChange, options, title, width }: CustomSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // 点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const selectedOption = options.find((opt) => opt.value === value);
-
-  return (
-    <div ref={containerRef} className='relative' style={{ width: `${width}px` }}>
-      <button
-        type='button'
-        onClick={() => setIsOpen(!isOpen)}
-        className='relative w-full pl-3 pr-9 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm transition-all duration-200 text-left hover:border-gray-400 dark:hover:border-gray-500'
-        title={title}
-      >
-        <span className='block pr-1'>{selectedOption?.label || ''}</span>
-        <ChevronDown
-          className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type='button'
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                option.value === value
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function SourceBrowserPage() {
   const router = useRouter();
@@ -153,37 +86,6 @@ export default function SourceBrowserPage() {
   const [previewBangumi, setPreviewBangumi] = useState<BangumiSubject | null>(null);
   const [previewBangumiLoading, setPreviewBangumiLoading] = useState(false);
   const [previewSearchPick, setPreviewSearchPick] = useState<GlobalSearchResult | null>(null);
-
-  // 动态宽度调整
-  const [sortByWidth, setSortByWidth] = useState(160);
-  const [filterYearWidth, setFilterYearWidth] = useState(110);
-  const measureSpanRef = useRef<HTMLSpanElement>(null);
-
-  // 动态计算select宽度
-  useEffect(() => {
-    const calculateWidth = (text: string): number => {
-      if (!measureSpanRef.current) return 120;
-      measureSpanRef.current.textContent = text;
-      const textWidth = measureSpanRef.current.offsetWidth;
-      // 左padding(12) + 右padding(32) + 边框(2) + 额外空间(10)
-      return Math.max(textWidth + 56, 100);
-    };
-
-    // 计算排序select宽度
-    const sortByTexts: Record<string, string> = {
-      'default': '默认顺序',
-      'title-asc': '标题 A→Z',
-      'title-desc': '标题 Z→A',
-      'year-asc': '年份 从低到高',
-      'year-desc': '年份 从高到低',
-    };
-    const sortByText = sortByTexts[sortBy] || '默认顺序';
-    setSortByWidth(calculateWidth(sortByText));
-
-    // 计算年份select宽度
-    const yearText = filterYear || '全部年份';
-    setFilterYearWidth(calculateWidth(yearText));
-  }, [sortBy, filterYear]);
 
   const fetchSources = useCallback(async () => {
     setLoadingSources(true);
@@ -645,13 +547,7 @@ export default function SourceBrowserPage() {
 
   return (
     <PageLayout activePath='/source-browser'>
-      <div className='max-w-7xl mx-auto px-4 md:px-6 pt-8 md:pt-12 pb-4 md:pb-6 space-y-6'>
-        {/* 隐藏的文本测量元素 */}
-        <span
-          ref={measureSpanRef}
-          className='absolute invisible whitespace-nowrap text-sm font-normal'
-          style={{ left: '-9999px' }}
-        />
+      <div className='max-w-7xl mx-auto p-4 md:p-6 space-y-6'>
         {/* Header - 美化版 */}
         <div className='relative'>
           <div className='absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-green-400/10 to-teal-400/10 rounded-2xl blur-3xl'></div>
@@ -694,7 +590,7 @@ export default function SourceBrowserPage() {
               </span>
             )}
           </div>
-          <div className='p-5 overflow-visible'>
+          <div className='p-5'>
             {loadingSources ? (
               <div className='flex items-center gap-2 text-sm text-gray-500'>
                 <div className='w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin'></div>
@@ -712,7 +608,7 @@ export default function SourceBrowserPage() {
                 <p className='text-sm text-gray-500'>暂无可用来源</p>
               </div>
             ) : (
-              <div className='flex flex-wrap gap-2.5 w-full'>
+              <div className='flex flex-wrap gap-2.5'>
                 {sources.map((s, index) => (
                   <button
                     key={s.key}
@@ -740,8 +636,8 @@ export default function SourceBrowserPage() {
         {/* Query & Sort */}
         {activeSource && (
           <div className='bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700'>
-            <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700'>
-              <div className='flex flex-wrap items-center gap-2'>
+            <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3'>
+              <div className='flex-1 flex items-center gap-2'>
                 <input
                   value={query}
                   onChange={(e) => {
@@ -764,7 +660,7 @@ export default function SourceBrowserPage() {
                     }
                   }}
                   placeholder='输入关键词并回车进行搜索；清空回车恢复分类'
-                  className='flex-1 min-w-[200px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 {query && (
                   <button
@@ -780,11 +676,11 @@ export default function SourceBrowserPage() {
                     清除
                   </button>
                 )}
-                <CustomSelect
+                <select
                   value={sortBy}
-                  onChange={(val) =>
+                  onChange={(e) =>
                     setSortBy(
-                      val as
+                      e.target.value as
                         | 'default'
                         | 'title-asc'
                         | 'title-desc'
@@ -792,35 +688,37 @@ export default function SourceBrowserPage() {
                         | 'year-desc'
                     )
                   }
-                  options={[
-                    { value: 'default', label: '默认顺序' },
-                    { value: 'title-asc', label: '标题 A→Z' },
-                    { value: 'title-desc', label: '标题 Z→A' },
-                    { value: 'year-asc', label: '年份 从低到高' },
-                    { value: 'year-desc', label: '年份 从高到低' },
-                  ]}
-                  width={sortByWidth}
+                  className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                   title='排序'
-                />
+                >
+                  <option value='default'>默认顺序</option>
+                  <option value='title-asc'>标题 A→Z</option>
+                  <option value='title-desc'>标题 Z→A</option>
+                  <option value='year-asc'>年份 从低到高</option>
+                  <option value='year-desc'>年份 从高到低</option>
+                </select>
                 <input
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
                   placeholder='地区/关键词筛选（标题或备注包含）'
-                  className='flex-1 min-w-[150px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
-                <CustomSelect
+                <select
                   value={filterYear}
-                  onChange={setFilterYear}
-                  options={[
-                    { value: '', label: '全部年份' },
-                    ...availableYears.map((y) => ({ value: y, label: y })),
-                  ]}
-                  width={filterYearWidth}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className='px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                   title='年份'
-                />
-                <div className='text-xs text-gray-500 w-full sm:w-auto sm:ml-auto'>
-                  当前模式：{mode === 'search' ? '搜索' : '分类'}
-                </div>
+                >
+                  <option value=''>全部年份</option>
+                  {availableYears.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className='text-xs text-gray-500'>
+                当前模式：{mode === 'search' ? '搜索' : '分类'}
               </div>
             </div>
           </div>
