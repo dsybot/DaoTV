@@ -182,6 +182,19 @@ export default function SourceBrowserPage() {
     setIsMounted(true);
   }, []);
 
+  // 预览弹窗打开时禁用背景滚动
+  useEffect(() => {
+    if (previewOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    // 清理函数：组件卸载时恢复滚动
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [previewOpen]);
+
   const fetchSources = useCallback(async () => {
     setLoadingSources(true);
     setSourceError(null);
