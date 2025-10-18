@@ -11,6 +11,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 import { SearchResult } from '@/lib/types';
 
@@ -266,6 +267,24 @@ export default function SourceTestModule() {
   const [selectedResults, setSelectedResults] = useState<SearchResult[]>([]);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [onlyEnabled, setOnlyEnabled] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 检测客户端渲染
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // 结果弹窗打开时禁用背景滚动
+  useEffect(() => {
+    if (showResultsModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showResultsModal]);
   const [sortKey, setSortKey] = useState<
     'status' | 'responseTime' | 'resultCount' | 'matchRate' | 'name'
   >('status');
@@ -920,9 +939,9 @@ export default function SourceTestModule() {
         </div>
       </div>
 
-      {/* 结果详情弹窗 */}
-      {showResultsModal && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+      {/* 结果详情弹窗 - 使用 Portal 渲染到 body */}
+      {isMounted && showResultsModal && createPortal(
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4'>
           <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
             <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
               <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
@@ -956,7 +975,8 @@ export default function SourceTestModule() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 空状态 */}
