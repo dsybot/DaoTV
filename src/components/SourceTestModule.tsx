@@ -578,7 +578,7 @@ export default function SourceTestModule() {
 
       {/* 搜索控制 */}
       <div className='bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm'>
-        <div className='flex flex-col gap-3 sm:gap-4'>
+        <div className='flex flex-col sm:flex-row gap-3 sm:gap-4'>
           <div className='flex-1'>
             <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
               搜索关键词
@@ -597,8 +597,8 @@ export default function SourceTestModule() {
             </div>
           </div>
 
-          <div className='flex flex-col sm:flex-row items-stretch sm:items-end gap-3'>
-            <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 px-1'>
+          <div className='flex items-center gap-3 sm:pt-7'>
+            <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap'>
               <input
                 type='checkbox'
                 className='w-4 h-4 rounded border-gray-300 dark:border-gray-600'
@@ -613,7 +613,7 @@ export default function SourceTestModule() {
               disabled={
                 isTestingAll || !searchKeyword.trim() || sources.length === 0
               }
-              className='px-4 sm:px-6 py-2.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
+              className='px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
                        disabled:bg-gray-400 disabled:cursor-not-allowed
                        flex items-center justify-center gap-2 whitespace-nowrap transition-colors'
             >
