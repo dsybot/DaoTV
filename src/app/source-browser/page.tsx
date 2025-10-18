@@ -655,7 +655,7 @@ export default function SourceBrowserPage() {
 
   return (
     <PageLayout activePath='/source-browser'>
-      <div className='max-w-7xl mx-auto px-4 pb-4 pt-20 md:px-6 md:pb-6 space-y-6'>
+      <div className='max-w-7xl mx-auto px-4 pb-4 pt-16 md:pt-20 md:px-6 md:pb-6 space-y-6'>
         {/* Header - 美化版 */}
         <div className='relative'>
           <div className='absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-green-400/10 to-teal-400/10 rounded-2xl blur-3xl'></div>
@@ -744,8 +744,8 @@ export default function SourceBrowserPage() {
         {/* Query & Sort */}
         {activeSource && (
           <div className='bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700'>
-            <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3'>
-              <div className='flex-1 flex items-center gap-2'>
+            <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
+              <div className='flex flex-wrap items-center gap-2'>
                 <input
                   value={query}
                   onChange={(e) => {
@@ -800,7 +800,7 @@ export default function SourceBrowserPage() {
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
                   placeholder='地区/关键词筛选（标题或备注包含）'
-                  className='min-w-[280px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='w-full md:min-w-[280px] md:w-auto px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 <CustomSelect
                   value={filterYear}
