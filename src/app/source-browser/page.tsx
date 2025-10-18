@@ -5,6 +5,7 @@
 import { ExternalLink, Layers, Server, Tv } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { ClientCache } from '@/lib/client-cache';
 import PageLayout from '@/components/PageLayout';
@@ -174,6 +175,12 @@ export default function SourceBrowserPage() {
   const [previewBangumi, setPreviewBangumi] = useState<BangumiSubject | null>(null);
   const [previewBangumiLoading, setPreviewBangumiLoading] = useState(false);
   const [previewSearchPick, setPreviewSearchPick] = useState<GlobalSearchResult | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 检测客户端渲染
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const fetchSources = useCallback(async () => {
     setLoadingSources(true);
@@ -964,10 +971,10 @@ export default function SourceBrowserPage() {
           </div>
         )}
 
-        {/* 预览弹层 */}
-        {previewOpen && (
+        {/* 预览弹层 - 使用 Portal 渲染到 body */}
+        {isMounted && previewOpen && createPortal(
           <div
-            className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-fadeIn'
+            className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-fadeIn'
             role='dialog'
             aria-modal='true'
             onClick={() => setPreviewOpen(false)}
@@ -1320,7 +1327,8 @@ export default function SourceBrowserPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </PageLayout>
