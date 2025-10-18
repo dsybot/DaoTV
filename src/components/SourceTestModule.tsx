@@ -288,7 +288,7 @@ export default function SourceTestModule() {
   const [sortKey, setSortKey] = useState<
     'status' | 'responseTime' | 'resultCount' | 'matchRate' | 'name'
   >('status');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // 加载所有源
   useEffect(() => {
