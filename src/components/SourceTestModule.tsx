@@ -10,11 +10,99 @@ import {
   XCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { SearchResult } from '@/lib/types';
 
 import VideoCard from '@/components/VideoCard';
+
+// 自定义优雅的 Select 组件
+function CustomSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  placeholder,
+  title,
+}: {
+  value: T;
+  onChange: (value: T) => void;
+  options: { value: T; label: string }[];
+  placeholder?: string;
+  title?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div className='relative inline-block' ref={selectRef}>
+      <button
+        type='button'
+        onClick={() => setIsOpen(!isOpen)}
+        className='group relative inline-flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap'
+        title={title}
+      >
+        <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
+        <svg
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 flex-shrink-0 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
+        >
+          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className='absolute z-50 mt-2 min-w-full w-max max-w-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
+          <div className='max-h-64 overflow-y-auto custom-scrollbar'>
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type='button'
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  option.value === value
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                }`}
+              >
+                <div className='flex items-center gap-2'>
+                  {option.value === value && (
+                    <svg className='w-4 h-4 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                      <path
+                        fillRule='evenodd'
+                        d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                        clipRule='evenodd'
+                      />
+                    </svg>
+                  )}
+                  <span className={option.value === value ? '' : 'ml-6'}>{option.label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // API源信息接口
 interface ApiSite {
@@ -626,25 +714,36 @@ export default function SourceTestModule() {
             <label className='text-xs sm:text-sm text-gray-600 dark:text-gray-300'>
               排序
             </label>
-            <select
+            <CustomSelect
               value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as any)}
-              className='text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 sm:px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-            >
-              <option value='status'>状态</option>
-              <option value='responseTime'>耗时</option>
-              <option value='resultCount'>结果数</option>
-              <option value='matchRate'>相关率</option>
-              <option value='name'>名称</option>
-            </select>
+              onChange={(value) => setSortKey(value as any)}
+              options={[
+                { value: 'status', label: '状态' },
+                { value: 'responseTime', label: '耗时' },
+                { value: 'resultCount', label: '结果数' },
+                { value: 'matchRate', label: '相关率' },
+                { value: 'name', label: '名称' },
+              ]}
+              title='排序方式'
+            />
             <button
               onClick={() =>
                 setSortOrder((p) => (p === 'asc' ? 'desc' : 'asc'))
               }
-              className='text-xs sm:text-sm px-2 sm:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors'
+              className='group relative inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500'
               title='切换升序/降序'
             >
-              {sortOrder === 'asc' ? '↑ 升序' : '↓ 降序'}
+              <svg
+                className={`w-4 h-4 transition-transform duration-300 ${
+                  sortOrder === 'desc' ? 'rotate-180' : ''
+                }`}
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 15l7-7 7 7' />
+              </svg>
+              <span className='text-xs sm:text-sm'>{sortOrder === 'asc' ? '升序' : '降序'}</span>
             </button>
           </div>
         </div>
