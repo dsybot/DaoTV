@@ -62,7 +62,7 @@ function CustomSelect<T extends string>({
 
       {isOpen && (
         <div className='absolute z-50 mt-2 min-w-full w-max max-w-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
-          <div className='py-2 max-h-64 overflow-y-auto custom-scrollbar'>
+          <div className='max-h-64 overflow-y-auto custom-scrollbar'>
             {options.map((option) => (
               <button
                 key={option.value}
