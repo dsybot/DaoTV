@@ -1117,10 +1117,10 @@ export default function SourceBrowserPage() {
                           return null;
                         })()}
                       </div>
-                      <div className='text-sm text-gray-600 dark:text-gray-300'>
+                      <div className='text-sm text-gray-900 dark:text-gray-300'>
                         年份：{previewData.year || previewItem?.year || '—'}
                       </div>
-                      <div className='text-sm text-gray-600 dark:text-gray-300'>
+                      <div className='text-sm text-gray-900 dark:text-gray-300'>
                         来源：{activeSource?.name}
                       </div>
                       <div className='flex flex-wrap gap-2 text-xs'>
@@ -1142,7 +1142,7 @@ export default function SourceBrowserPage() {
                             String(previewSearchPick.desc).trim()) ||
                           (previewItem?.remarks && previewItem.remarks.trim());
                         return desc ? (
-                          <div className='mt-1 border rounded-md p-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-300 max-h-40 overflow-auto whitespace-pre-line'>
+                          <div className='mt-1 border rounded-md p-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-300 max-h-40 overflow-auto whitespace-pre-line'>
                             {desc}
                           </div>
                         ) : null;
@@ -1160,7 +1160,7 @@ export default function SourceBrowserPage() {
                           (() => {
                             const d = previewDouban;
                             return (
-                              <div className='text-sm text-gray-700 dark:text-gray-300 space-y-1'>
+                              <div className='text-sm text-gray-900 dark:text-gray-300 space-y-1'>
                                 <div className='font-semibold'>豆瓣信息</div>
                                 {d.title && (
                                   <div>
@@ -1220,7 +1220,7 @@ export default function SourceBrowserPage() {
                                 {(d.episodes ||
                                   d.episode_length ||
                                   d.movie_duration) && (
-                                  <div className='text-xs text-gray-600 dark:text-gray-400'>
+                                  <div className='text-xs text-gray-800 dark:text-gray-400'>
                                     {d.episodes ? `集数：${d.episodes} ` : ''}
                                     {d.episode_length
                                       ? `单集：${d.episode_length} 分钟 `
@@ -1231,7 +1231,7 @@ export default function SourceBrowserPage() {
                                   </div>
                                 )}
                                 {d.plot_summary && (
-                                  <div className='text-xs text-gray-600 dark:text-gray-400 leading-relaxed'>
+                                  <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
                                     {d.plot_summary}
                                   </div>
                                 )}
@@ -1246,7 +1246,7 @@ export default function SourceBrowserPage() {
                           </div>
                         )}
                         {previewBangumi && (
-                          <div className='text-sm text-gray-700 dark:text-gray-300 space-y-1'>
+                          <div className='text-sm text-gray-900 dark:text-gray-300 space-y-1'>
                             <div className='font-semibold'>Bangumi 信息</div>
                             <div>
                               标题：
@@ -1277,7 +1277,7 @@ export default function SourceBrowserPage() {
                               )}
                             {Array.isArray(previewBangumi.infobox) &&
                               previewBangumi.infobox.length > 0 && (
-                                <div className='text-xs space-y-0.5'>
+                                <div className='text-xs text-gray-800 dark:text-gray-400 space-y-0.5'>
                                   {previewBangumi.infobox
                                     .slice(0, 10)
                                     .map((info, idx: number) => (
@@ -1297,7 +1297,7 @@ export default function SourceBrowserPage() {
                                 </div>
                               )}
                             {previewBangumi.summary && (
-                              <div className='text-xs text-gray-600 dark:text-gray-400 leading-relaxed'>
+                              <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
                                 {previewBangumi.summary}
                               </div>
                             )}
@@ -1310,7 +1310,7 @@ export default function SourceBrowserPage() {
               </div>
               {/* 底部操作栏 */}
               <div className='px-5 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white/90 via-blue-50/50 to-white/90 dark:from-gray-800/90 dark:via-blue-900/10 dark:to-gray-800/90 backdrop-blur-md flex items-center justify-between gap-3'>
-                <div className='text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
+                <div className='text-xs sm:text-sm text-gray-700 dark:text-gray-400'>
                   {previewData?.class && (
                     <span className='inline-flex items-center gap-1.5'>
                       <span className='w-1.5 h-1.5 rounded-full bg-blue-500'></span>
