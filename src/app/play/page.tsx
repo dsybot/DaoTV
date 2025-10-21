@@ -2862,6 +2862,15 @@ function PlayPageClient() {
                 return nextState; // 立即返回新状态
               },
             },
+            {
+              html: '跳过设置',
+              icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>',
+              tooltip: '设置片头片尾跳过',
+              onClick() {
+                setIsSkipSettingOpen(true);
+                return '打开跳过设置面板';
+              },
+            },
           ],
           // 控制栏配置
           controls: [
