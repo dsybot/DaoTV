@@ -4835,10 +4835,10 @@ function PlayPageClient() {
           <div className='relative w-full h-full max-w-4xl mx-auto p-8 md:p-12'>
             {/* 选集内容 - 增加更多 padding 避免 hover 放大时被裁切 */}
             <div className='relative w-full h-full overflow-y-auto px-12'>
-              {/* 关闭按钮 - 放在内容区右上角 */}
+              {/* 关闭按钮 - 放在内容区右上角外侧 */}
               <button
                 onClick={() => setShowEpisodePopup(false)}
-                className='absolute top-2 right-2 z-50 p-2 bg-red-500/90 hover:bg-red-600 backdrop-blur-sm rounded-full border border-red-400/50 hover:border-red-300 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group'
+                className='absolute -top-3 -right-3 z-50 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group'
                 title='关闭 (ESC)'
               >
                 <svg className='w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
