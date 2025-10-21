@@ -374,7 +374,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   return (
     <div className={`md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 ${inModal ? 'overflow-visible' : 'overflow-hidden'}`}>
       {/* 主要的 Tab 切换 - 美化版本 */}
-      <div className='flex mb-1 -mx-6 flex-shrink-0 relative'>
+      <div className={`flex mb-1 flex-shrink-0 relative ${inModal ? '-mx-4' : '-mx-6'}`}>
         {totalEpisodes > 1 && (
           <div
             onClick={() => setActiveTab('episodes')}
