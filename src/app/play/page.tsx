@@ -2902,12 +2902,14 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
-            // 🚀 选集菜单按钮（显示在设置和画中画之间）
+            // 🚀 选集菜单按钮（仅在全屏/网页全屏/隐藏选集面板时显示）
             {
+              name: 'episodeSelector',
               position: 'right',
               index: 11,
-              html: '<i class="art-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></i>',
+              html: '<i class="art-icon episode-selector-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></i>',
               tooltip: '选集换源',
+              style: { display: 'none' }, // 默认隐藏
               click: function () {
                 setShowEpisodePopup(!showEpisodePopup);
               },
@@ -3905,6 +3907,46 @@ function PlayPageClient() {
 
     loadAndInit();
   }, [Hls, videoUrl, loading, blockAdEnabled]);
+
+  // 控制选集按钮的显示/隐藏：仅在全屏、网页全屏或隐藏选集面板时显示
+  useEffect(() => {
+    if (!artPlayerRef.current) return;
+
+    const updateEpisodeSelectorButtonVisibility = () => {
+      const button = document.querySelector('.episode-selector-btn');
+      if (!button) {
+        // 如果按钮还未加载，延迟重试
+        setTimeout(updateEpisodeSelectorButtonVisibility, 100);
+        return;
+      }
+
+      // 检查是否是网页全屏
+      const isWebFullscreen = artPlayerRef.current?.fullscreenWeb || false;
+      
+      // 显示条件：全屏 OR 网页全屏 OR 隐藏了选集面板
+      const shouldShow = isFullscreen || isWebFullscreen || isEpisodeSelectorCollapsed;
+      
+      const parentElement = button.closest('.art-control') as HTMLElement;
+      if (parentElement) {
+        parentElement.style.display = shouldShow ? '' : 'none';
+      }
+    };
+
+    // 延迟执行，确保 DOM 已加载
+    const timer = setTimeout(updateEpisodeSelectorButtonVisibility, 100);
+
+    // 监听播放器的网页全屏变化
+    const handleFullscreenWebChange = () => {
+      updateEpisodeSelectorButtonVisibility();
+    };
+
+    artPlayerRef.current?.on('fullscreenWeb', handleFullscreenWebChange);
+
+    return () => {
+      clearTimeout(timer);
+      artPlayerRef.current?.off('fullscreenWeb', handleFullscreenWebChange);
+    };
+  }, [isFullscreen, isEpisodeSelectorCollapsed]);
 
   // 当组件卸载时清理定时器、Wake Lock 和播放器资源
   useEffect(() => {
