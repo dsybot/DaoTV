@@ -4836,7 +4836,7 @@ function PlayPageClient() {
             {/* 关闭按钮 - 放在内容区右上角外侧 */}
             <button
               onClick={() => setShowEpisodePopup(false)}
-              className='absolute top-6 right-10 z-50 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group'
+              className='absolute top-6 right-14 z-50 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group'
               title='关闭 (ESC)'
             >
               <svg className='w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
