@@ -346,6 +346,9 @@ function PlayPageClient() {
   const [isEpisodeSelectorCollapsed, setIsEpisodeSelectorCollapsed] =
     useState(false);
 
+  // 选集浮层状态（用于底栏快捷访问）
+  const [showEpisodePopup, setShowEpisodePopup] = useState(false);
+
   // 换源加载状态
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [videoLoadingStage, setVideoLoadingStage] = useState<
@@ -2135,7 +2138,7 @@ function PlayPageClient() {
     return () => {
       document.removeEventListener('keydown', handleKeyboardShortcuts);
     };
-  }, []);
+  }, [showEpisodePopup]);
 
   // 🚀 组件卸载时清理所有定时器和状态
   useEffect(() => {
@@ -2211,6 +2214,13 @@ function PlayPageClient() {
       (e.target as HTMLElement).tagName === 'TEXTAREA'
     )
       return;
+
+    // ESC 键关闭选集浮层
+    if (e.key === 'Escape' && showEpisodePopup) {
+      setShowEpisodePopup(false);
+      e.preventDefault();
+      return;
+    }
 
     // Alt + 左箭头 = 上一集
     if (e.altKey && e.key === 'ArrowLeft') {
@@ -2881,6 +2891,16 @@ function PlayPageClient() {
               tooltip: '播放下一集',
               click: function () {
                 handleNextEpisode();
+              },
+            },
+            // 🚀 选集菜单按钮（显示在设置和画中画之间）
+            {
+              position: 'right',
+              index: 11,
+              html: '<i class="art-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></i>',
+              tooltip: '选集换源',
+              click: function () {
+                setShowEpisodePopup(!showEpisodePopup);
               },
             },
             // 🚀 简单弹幕发送按钮（仅Web端显示）
@@ -4246,6 +4266,58 @@ function PlayPageClient() {
                             ? '🔄 切换播放源...'
                             : '🔄 视频加载中...'}
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 选集浮层 - 点击底栏选集按钮时显示 */}
+                {showEpisodePopup && (
+                  <div 
+                    className='absolute inset-0 bg-black/90 backdrop-blur-md rounded-xl flex items-center justify-center z-[600] transition-all duration-300'
+                    onClick={(e) => {
+                      // 点击背景关闭浮层
+                      if (e.target === e.currentTarget) {
+                        setShowEpisodePopup(false);
+                      }
+                    }}
+                  >
+                    <div className='relative w-full h-full max-w-4xl mx-auto p-4'>
+                      {/* 关闭按钮 */}
+                      <button
+                        onClick={() => setShowEpisodePopup(false)}
+                        className='absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg transition-all duration-200 hover:rotate-90'
+                        title='关闭 (ESC)'
+                      >
+                        <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                        </svg>
+                      </button>
+
+                      {/* 选集内容 */}
+                      <div className='w-full h-full overflow-hidden'>
+                        <EpisodeSelector
+                          totalEpisodes={totalEpisodes}
+                          episodes_titles={detail?.episodes_titles || []}
+                          value={currentEpisodeIndex + 1}
+                          onChange={(episodeNumber) => {
+                            handleEpisodeChange(episodeNumber - 1);
+                            setShowEpisodePopup(false);
+                          }}
+                          onSourceChange={(source, id, title) => {
+                            handleSourceChange(source, id, title);
+                            setShowEpisodePopup(false);
+                          }}
+                          currentSource={currentSource}
+                          currentId={currentId}
+                          videoTitle={videoTitle}
+                          videoYear={videoYear}
+                          availableSources={availableSources}
+                          sourceSearchLoading={sourceSearchLoading}
+                          sourceSearchError={sourceSearchError}
+                          precomputedVideoInfo={precomputedVideoInfo}
+                          onRefreshSources={refreshSources}
+                        />
                       </div>
                     </div>
                   </div>
