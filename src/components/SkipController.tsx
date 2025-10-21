@@ -2,6 +2,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   deleteSkipConfig,
@@ -40,6 +41,10 @@ export default function SkipController({
   const [showSkipButton, setShowSkipButton] = useState(false);
   const [currentSkipSegment, setCurrentSkipSegment] = useState<SkipSegment | null>(null);
   const [newSegment, setNewSegment] = useState<Partial<SkipSegment>>({});
+
+  // 🔑 全屏状态检测
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenContainer, setFullscreenContainer] = useState<HTMLElement | null>(null);
 
   // 新增状态：批量设置模式 - 支持分:秒格式
   // 🔑 初始化时直接从 localStorage 读取用户设置，避免重新挂载时重置为默认值
@@ -119,6 +124,39 @@ export default function SkipController({
   useEffect(() => {
     batchSettingsRef.current = batchSettings;
   }, [batchSettings]);
+
+  // 🔑 监听全屏状态变化
+  useEffect(() => {
+    const checkFullscreen = () => {
+      const fullscreenElement = document.fullscreenElement as HTMLElement;
+      setIsFullscreen(!!fullscreenElement);
+      
+      // 如果全屏，找到播放器容器
+      if (fullscreenElement) {
+        // 查找 artplayer 容器
+        const artplayerContainer = fullscreenElement.querySelector('.artplayer') as HTMLElement;
+        setFullscreenContainer(artplayerContainer || fullscreenElement);
+      } else {
+        setFullscreenContainer(null);
+      }
+    };
+
+    // 初始检测
+    checkFullscreen();
+
+    // 监听全屏变化事件
+    document.addEventListener('fullscreenchange', checkFullscreen);
+    document.addEventListener('webkitfullscreenchange', checkFullscreen);
+    document.addEventListener('mozfullscreenchange', checkFullscreen);
+    document.addEventListener('MSFullscreenChange', checkFullscreen);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', checkFullscreen);
+      document.removeEventListener('webkitfullscreenchange', checkFullscreen);
+      document.removeEventListener('mozfullscreenchange', checkFullscreen);
+      document.removeEventListener('MSFullscreenChange', checkFullscreen);
+    };
+  }, []);
 
   // 拖动相关状态
   const [isDragging, setIsDragging] = useState(false);
@@ -847,31 +885,15 @@ export default function SkipController({
     };
   }, [isSettingMode, handleCloseDialog]);
 
-  return (
-    <div className="skip-controller">
-      {/* 跳过按钮 - 放在播放器内左上角 */}
-      {showSkipButton && currentSkipSegment && (
-        <div className="absolute top-4 left-4 z-[9999] bg-black/80 text-white px-4 py-2 rounded-lg backdrop-blur-sm border border-white/20 shadow-lg animate-fade-in">
-          <div className="flex items-center space-x-3">
-            <span className="text-sm">
-              {currentSkipSegment.type === 'opening' ? '检测到片头' : '检测到片尾'}
-            </span>
-            <button
-              onClick={handleSkip}
-              className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition-colors"
-            >
-              {currentSkipSegment.type === 'ending' && onNextEpisode ? '下一集 ▶' : '跳过'}
-            </button>
-          </div>
-        </div>
-      )}
+  // 渲染设置面板内容
+  const renderSettingsPanel = () => {
+    if (!isSettingMode) return null;
 
-      {/* 设置模式面板 - 增强版批量设置 */}
-      {isSettingMode && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in"
-          onClick={handleCloseDialog}
-        >
+    const panel = (
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in"
+        onClick={handleCloseDialog}
+      >
           <div
             className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-[0_20px_60px_0_rgba(0,0,0,0.4)] border border-white/20 dark:border-gray-700/50 animate-scale-in"
             style={{
@@ -1168,7 +1190,38 @@ export default function SkipController({
             </details>
           </div>
         </div>
+    );
+
+    // 如果是全屏模式且有全屏容器，使用 Portal 渲染到全屏容器内
+    if (isFullscreen && fullscreenContainer) {
+      return createPortal(panel, fullscreenContainer);
+    }
+
+    // 否则直接返回
+    return panel;
+  };
+
+  return (
+    <div className="skip-controller">
+      {/* 跳过按钮 - 放在播放器内左上角 */}
+      {showSkipButton && currentSkipSegment && (
+        <div className="absolute top-4 left-4 z-[9999] bg-black/80 text-white px-4 py-2 rounded-lg backdrop-blur-sm border border-white/20 shadow-lg animate-fade-in">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm">
+              {currentSkipSegment.type === 'opening' ? '检测到片头' : '检测到片尾'}
+            </span>
+            <button
+              onClick={handleSkip}
+              className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition-colors"
+            >
+              {currentSkipSegment.type === 'ending' && onNextEpisode ? '下一集 ▶' : '跳过'}
+            </button>
+          </div>
+        </div>
       )}
+
+      {/* 设置模式面板 - 使用 Portal 在全屏时渲染到播放器内部 */}
+      {renderSettingsPanel()}
 
       {/* 管理已有片段 - 优化为可拖动 */}
       {actualSegments.length > 0 && !isSettingMode && (
