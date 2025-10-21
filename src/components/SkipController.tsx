@@ -188,10 +188,28 @@ export default function SkipController({
     // 默认左下角
     return { x: 16, y: window.innerHeight - 200 };
   });
+
+  // 全屏模式下的独立位置状态
+  const [fullscreenPosition, setFullscreenPosition] = useState(() => {
+    // 从 localStorage 读取保存的全屏位置
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('skipControllerFullscreenPosition');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('解析保存的全屏位置失败:', e);
+        }
+      }
+    }
+    // 默认右边中间位置
+    return { x: window.innerWidth - 300, y: 100 };
+  });
+
   const dragStartPos = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // 拖动处理函数
+  // 拖动处理函数（非全屏模式）
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // 只在点击顶部标题栏时触发拖动
     if ((e.target as HTMLElement).closest('.drag-handle')) {
@@ -203,7 +221,7 @@ export default function SkipController({
     }
   }, [position]);
 
-  // 触摸开始
+  // 触摸开始（非全屏模式）
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if ((e.target as HTMLElement).closest('.drag-handle')) {
       setIsDragging(true);
@@ -215,6 +233,28 @@ export default function SkipController({
     }
   }, [position]);
 
+  // 全屏模式拖动处理函数
+  const handleFullscreenMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.drag-handle')) {
+      setIsDragging(true);
+      dragStartPos.current = {
+        x: e.clientX - fullscreenPosition.x,
+        y: e.clientY - fullscreenPosition.y,
+      };
+    }
+  }, [fullscreenPosition]);
+
+  const handleFullscreenTouchStart = useCallback((e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('.drag-handle')) {
+      setIsDragging(true);
+      const touch = e.touches[0];
+      dragStartPos.current = {
+        x: touch.clientX - fullscreenPosition.x,
+        y: touch.clientY - fullscreenPosition.y,
+      };
+    }
+  }, [fullscreenPosition]);
+
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
 
@@ -224,11 +264,18 @@ export default function SkipController({
     const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 200);
     const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 200);
 
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
-    });
-  }, [isDragging]);
+    if (isFullscreen) {
+      setFullscreenPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    } else {
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    }
+  }, [isDragging, isFullscreen]);
 
   // 触摸移动
   const handleTouchMove = useCallback((e: TouchEvent) => {
@@ -241,18 +288,34 @@ export default function SkipController({
     const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 200);
     const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 200);
 
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
-    });
-  }, [isDragging]);
+    if (isFullscreen) {
+      setFullscreenPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    } else {
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    }
+  }, [isDragging, isFullscreen]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('skipControllerPosition', JSON.stringify(position));
     }
   }, [position]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('skipControllerFullscreenPosition', JSON.stringify(fullscreenPosition));
+    }
+  }, [fullscreenPosition]);
 
   // 添加全局事件监听
   useEffect(() => {
@@ -927,23 +990,31 @@ export default function SkipController({
     const configPanel = (
       <div
         ref={panelRef}
-        onMouseDown={isFullscreen ? undefined : handleMouseDown}
-        onTouchStart={isFullscreen ? undefined : handleTouchStart}
+        onMouseDown={isFullscreen ? handleFullscreenMouseDown : handleMouseDown}
+        onTouchStart={isFullscreen ? handleFullscreenTouchStart : handleTouchStart}
         style={{
           position: 'fixed',
-          left: isFullscreen ? '50%' : `${position.x}px`,
-          top: isFullscreen ? '50%' : `${position.y}px`,
-          transform: isFullscreen ? 'translate(-50%, -50%)' : undefined,
-          cursor: (!isFullscreen && isDragging) ? 'grabbing' : 'default',
-          userSelect: (!isFullscreen && isDragging) ? 'none' : 'auto',
+          left: isFullscreen ? `${fullscreenPosition.x}px` : `${position.x}px`,
+          top: isFullscreen ? `${fullscreenPosition.y}px` : `${position.y}px`,
+          cursor: isDragging ? 'grabbing' : 'default',
+          userSelect: isDragging ? 'none' : 'auto',
         }}
-        className="z-[9998] max-w-sm bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in"
+        className={`z-[9998] max-w-sm ${isFullscreen ? 'bg-black/50 dark:bg-black/50' : 'bg-white/95 dark:bg-gray-800/95'} backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in`}
       >
         <div className="p-3">
-          {/* 全屏模式下显示保存成功提示 */}
+          {/* 全屏模式下显示保存成功提示和关闭按钮 */}
           {isFullscreen && (
-            <div className="mb-2 px-3 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg text-sm font-medium text-center">
-              ✅ 跳过配置已保存（5秒后自动关闭）
+            <div className="mb-2 flex items-center justify-between px-3 py-2 bg-green-500/80 dark:bg-green-600/80 text-white rounded-lg text-sm font-medium">
+              <span>✅ 跳过配置已保存</span>
+              <button
+                onClick={() => setShowConfigPanelInFullscreen(false)}
+                className="ml-2 p-1 hover:bg-white/20 rounded transition-colors"
+                title="关闭"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
           
@@ -951,25 +1022,25 @@ export default function SkipController({
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
             </svg>
-            跳过配置
-            {!isFullscreen && <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">可拖动</span>}
+            <span className={isFullscreen ? 'text-white' : ''}>跳过配置</span>
+            <span className={`ml-auto text-xs ${isFullscreen ? 'text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>可拖动</span>
           </h4>
           <div className="space-y-1">
             {actualSegments.map((segment, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
+                className={`flex items-center justify-between p-2 ${isFullscreen ? 'bg-white/10' : 'bg-gray-50 dark:bg-gray-700'} rounded text-xs`}
               >
-                <span className="text-gray-800 dark:text-gray-200 flex-1 mr-2">
+                <span className={`${isFullscreen ? 'text-white' : 'text-gray-800 dark:text-gray-200'} flex-1 mr-2`}>
                   <span className="font-medium">
                     {segment.type === 'opening' ? '🎬片头' : '🎭片尾'}
                   </span>
                   <br />
-                  <span className="text-gray-600 dark:text-gray-400">
+                  <span className={isFullscreen ? 'text-gray-200' : 'text-gray-600 dark:text-gray-400'}>
                     {formatTime(segment.start)} - {formatTime(segment.end)}
                   </span>
                   {segment.autoSkip && (
-                    <span className="ml-1 px-1 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 rounded text-xs">
+                    <span className={`ml-1 px-1 ${isFullscreen ? 'bg-green-500/80 text-white' : 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'} rounded text-xs`}>
                       自动
                     </span>
                   )}
