@@ -1179,7 +1179,7 @@ export default function SkipController({
                     className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
                     placeholder="0:00"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 0:00)</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 0:00)</p>
                 </div>
 
                 <div>
@@ -1200,7 +1200,7 @@ export default function SkipController({
                   >
                       📍 标记当前时间
                   </button>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 1:30)</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 1:30)</p>
                 </div>
               </div>
 
@@ -1217,7 +1217,7 @@ export default function SkipController({
                     计时模式
                   </label>
                   <div className="flex gap-4">
-                    <label className="flex items-center">
+                    <label className="flex items-center text-gray-700 dark:text-gray-300">
                       <input
                         type="radio"
                         name="endingMode"
@@ -1228,7 +1228,7 @@ export default function SkipController({
                       />
                       剩余时间（推荐）
                     </label>
-                    <label className="flex items-center">
+                    <label className="flex items-center text-gray-700 dark:text-gray-300">
                       <input
                         type="radio"
                         name="endingMode"
@@ -1240,7 +1240,7 @@ export default function SkipController({
                       绝对时间
                     </label>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     {batchSettings.endingMode === 'remaining'
                       ? '基于剩余时间倒计时（如：还剩2分钟时开始）'
                       : '基于播放时间（如：播放到第20分钟时开始）'
@@ -1266,7 +1266,7 @@ export default function SkipController({
                   >
                     📍 标记当前时间
                   </button>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">
                     {batchSettings.endingMode === 'remaining'
                       ? '当剩余时间达到此值时开始倒计时'
                       : '从视频开始播放此时间后开始检测片尾'
@@ -1285,7 +1285,7 @@ export default function SkipController({
                     className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
                     placeholder="留空直接跳下一集"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">空白=直接跳下一集</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">空白=直接跳下一集</p>
                 </div>
               </div>
             </div>
@@ -1299,7 +1299,7 @@ export default function SkipController({
                     <p><strong>剩余时间:</strong> {secondsToTime(duration - currentTime)}</p>
                   </>
                 )}
-                <div className="text-xs mt-3 text-gray-500 dark:text-gray-400 space-y-1 border-t border-gray-300 dark:border-gray-600 pt-2">
+                <div className="text-xs mt-3 text-gray-600 dark:text-gray-400 space-y-1 border-t border-gray-300 dark:border-gray-600 pt-2">
                   <p className="font-semibold text-gray-700 dark:text-gray-300">📝 使用说明：</p>
                   <p>🎬 <strong>片头设置:</strong> 播放到片头结束位置，点击"📍 标记"按钮</p>
                   <p>🎭 <strong>片尾设置:</strong> 播放到片尾开始位置，点击"📍 标记"按钮</p>
