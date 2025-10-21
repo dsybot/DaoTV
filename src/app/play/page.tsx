@@ -4845,7 +4845,7 @@ function PlayPageClient() {
             </button>
 
             {/* 选集内容 - 增加更多 padding 避免 hover 放大时被裁切 */}
-            <div className='w-full h-full overflow-y-auto px-4' style={{ overflowX: 'visible' }}>
+            <div className='w-full h-full overflow-y-auto px-12'>
               <EpisodeSelector
                 totalEpisodes={totalEpisodes}
                 episodes_titles={detail?.episodes_titles || []}
@@ -4867,6 +4867,7 @@ function PlayPageClient() {
                 sourceSearchError={sourceSearchError}
                 precomputedVideoInfo={precomputedVideoInfo}
                 onRefreshSources={refreshSources}
+                inModal={true}
               />
             </div>
           </div>

@@ -44,6 +44,8 @@ interface EpisodeSelectorProps {
   precomputedVideoInfo?: Map<string, VideoInfo>;
   /** 刷新搜索源 */
   onRefreshSources?: () => void;
+  /** 是否在弹窗模式中使用（用于调整overflow和padding避免hover裁切） */
+  inModal?: boolean;
 }
 
 /**
@@ -64,6 +66,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   sourceSearchError = null,
   precomputedVideoInfo,
   onRefreshSources,
+  inModal = false,
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -369,7 +372,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   return (
-    <div className='md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
+    <div className={`md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 ${inModal ? 'overflow-visible' : 'overflow-hidden'}`}>
       {/* 主要的 Tab 切换 - 美化版本 */}
       <div className='flex mb-1 -mx-6 flex-shrink-0 relative'>
         {totalEpisodes > 1 && (
@@ -628,7 +631,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           {!sourceSearchLoading &&
             !sourceSearchError &&
             availableSources.length > 0 && (
-              <div className='flex-1 overflow-y-auto space-y-2 pb-20 px-1'>
+              <div className={`flex-1 overflow-y-auto space-y-2 pb-20 ${inModal ? 'px-8' : 'px-1'}`}>
                 {availableSources
                   .sort((a, b) => {
                     const aIsCurrent =
