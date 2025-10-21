@@ -348,6 +348,7 @@ function PlayPageClient() {
 
   // 选集浮层状态（用于底栏快捷访问）
   const [showEpisodePopup, setShowEpisodePopup] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 换源加载状态
   const [isVideoLoading, setIsVideoLoading] = useState(true);
@@ -3115,6 +3116,12 @@ function PlayPageClient() {
           ],
         });
 
+        // 监听全屏状态变化
+        artPlayerRef.current.on('fullscreen', (isFullscreenNow: boolean) => {
+          console.log('Fullscreen state changed:', isFullscreenNow);
+          setIsFullscreen(isFullscreenNow);
+        });
+
         // 监听播放器事件
         artPlayerRef.current.on('ready', async () => {
           setError(null);
@@ -4271,8 +4278,8 @@ function PlayPageClient() {
                   </div>
                 )}
 
-                {/* 选集浮层 - 播放器内浮层，支持全屏和网页全屏 */}
-                {showEpisodePopup && (
+                {/* 选集浮层 - 自适应全屏和非全屏模式 */}
+                {showEpisodePopup && !isFullscreen && (
                   <div 
                     className='absolute inset-0 bg-black/90 backdrop-blur-md rounded-xl flex items-center justify-center z-[9999] transition-all duration-300'
                     onClick={(e) => {
@@ -4798,6 +4805,59 @@ function PlayPageClient() {
 
         <ChevronUp className='w-6 h-6 text-white relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1' />
       </button>
+
+      {/* 全屏模式专用浮层 - 使用 fixed 定位覆盖整个视口 */}
+      {showEpisodePopup && isFullscreen && (
+        <div 
+          className='fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center transition-all duration-300'
+          style={{ zIndex: 99999 }}
+          onClick={(e) => {
+            // 点击背景关闭浮层
+            if (e.target === e.currentTarget) {
+              setShowEpisodePopup(false);
+            }
+          }}
+        >
+          <div className='relative w-full h-full max-w-4xl mx-auto p-4 md:p-6'>
+            {/* 关闭按钮 */}
+            <button
+              onClick={() => setShowEpisodePopup(false)}
+              className='absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg transition-all duration-200 hover:rotate-90'
+              title='关闭 (ESC)'
+            >
+              <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+              </svg>
+            </button>
+
+            {/* 选集内容 */}
+            <div className='w-full h-full overflow-hidden'>
+              <EpisodeSelector
+                totalEpisodes={totalEpisodes}
+                episodes_titles={detail?.episodes_titles || []}
+                value={currentEpisodeIndex + 1}
+                onChange={(episodeNumber) => {
+                  handleEpisodeChange(episodeNumber - 1);
+                  setShowEpisodePopup(false);
+                }}
+                onSourceChange={(source, id, title) => {
+                  handleSourceChange(source, id, title);
+                  setShowEpisodePopup(false);
+                }}
+                currentSource={currentSource}
+                currentId={currentId}
+                videoTitle={videoTitle}
+                videoYear={videoYear}
+                availableSources={availableSources}
+                sourceSearchLoading={sourceSearchLoading}
+                sourceSearchError={sourceSearchError}
+                precomputedVideoInfo={precomputedVideoInfo}
+                onRefreshSources={refreshSources}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </PageLayout>
   );
 }
