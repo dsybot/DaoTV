@@ -745,9 +745,8 @@ export default function SourceBrowserPage() {
         {activeSource && (
           <div className='bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700'>
             <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-col gap-3'>
-              <div className='flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1'>
-                {/* 第一行：搜索框 + 排序 */}
-                <div className='flex items-center gap-2 flex-1'>
+              {/* 第一行：搜索框 + 排序 + 当前模式（桌面端） */}
+              <div className='flex items-center gap-2 flex-wrap md:flex-nowrap'>
                 <input
                   value={query}
                   onChange={(e) => {
@@ -770,7 +769,7 @@ export default function SourceBrowserPage() {
                     }
                   }}
                   placeholder='搜索关键词（回车搜索，清空恢复分类）'
-                  className='flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='flex-1 min-w-0 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 {query && (
                   <button
@@ -798,9 +797,13 @@ export default function SourceBrowserPage() {
                   ]}
                   title='排序'
                 />
+                {/* 当前模式（桌面端在同一行，手机端在下面） */}
+                <div className='hidden md:block text-xs text-gray-700 dark:text-gray-400 whitespace-nowrap'>
+                  当前模式：{mode === 'search' ? '搜索' : '分类'}
+                </div>
               </div>
               {/* 第二行：筛选框 + 年份 */}
-              <div className='flex items-center gap-2'>
+              <div className='flex items-center gap-2 flex-wrap md:flex-nowrap'>
                 <input
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
@@ -817,8 +820,8 @@ export default function SourceBrowserPage() {
                   title='年份'
                 />
               </div>
-            </div>
-            <div className='text-xs text-gray-700 dark:text-gray-400 whitespace-nowrap px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
+              {/* 当前模式（仅手机端显示） */}
+              <div className='md:hidden text-xs text-gray-700 dark:text-gray-400 whitespace-nowrap'>
                 当前模式：{mode === 'search' ? '搜索' : '分类'}
               </div>
             </div>
