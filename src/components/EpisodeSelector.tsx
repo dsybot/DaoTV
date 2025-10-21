@@ -374,11 +374,11 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   return (
     <div className={`md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 ${inModal ? 'overflow-visible' : 'overflow-hidden'}`}>
       {/* 主要的 Tab 切换 - 美化版本 */}
-      <div className={`flex mb-1 flex-shrink-0 relative ${inModal ? '-mx-4' : '-mx-6'}`}>
+      <div className={`flex mb-1 flex-shrink-0 relative ${inModal ? '-mx-4 rounded-t-xl' : '-mx-6'}`}>
         {totalEpisodes > 1 && (
           <div
             onClick={() => setActiveTab('episodes')}
-            className={`group flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden
+            className={`group flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden ${inModal ? 'rounded-tl-xl' : ''}
               ${activeTab === 'episodes'
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400'
@@ -400,7 +400,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
         )}
         <div
           onClick={handleSourceTabClick}
-          className={`group flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden
+          className={`group flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden ${inModal && totalEpisodes <= 1 ? 'rounded-t-xl' : inModal ? 'rounded-tr-xl' : ''}
             ${activeTab === 'sources'
               ? 'text-blue-600 dark:text-blue-400'
               : 'text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400'
