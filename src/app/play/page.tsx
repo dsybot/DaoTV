@@ -4823,7 +4823,7 @@ function PlayPageClient() {
       {/* 使用 Portal 的统一浮层 - 自动适应全屏和非全屏模式 */}
       {showEpisodePopup && portalContainer && createPortal(
         <div 
-          className='fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center transition-all duration-300'
+          className='fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center transition-all duration-300'
           style={{ zIndex: 99999 }}
           onClick={(e) => {
             // 点击背景关闭浮层
@@ -4832,7 +4832,7 @@ function PlayPageClient() {
             }
           }}
         >
-          <div className='relative w-full h-full max-w-4xl mx-auto p-6 md:p-8'>
+          <div className='relative w-full h-full max-w-4xl mx-auto p-8 md:p-12'>
             {/* 关闭按钮 */}
             <button
               onClick={() => setShowEpisodePopup(false)}
@@ -4844,8 +4844,8 @@ function PlayPageClient() {
               </svg>
             </button>
 
-            {/* 选集内容 - 增加 padding 避免 hover 放大时被裁切 */}
-            <div className='w-full h-full overflow-y-auto overflow-x-visible px-2'>
+            {/* 选集内容 - 增加更多 padding 避免 hover 放大时被裁切 */}
+            <div className='w-full h-full overflow-y-auto px-4' style={{ overflowX: 'visible' }}>
               <EpisodeSelector
                 totalEpisodes={totalEpisodes}
                 episodes_titles={detail?.episodes_titles || []}
