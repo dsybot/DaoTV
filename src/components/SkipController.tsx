@@ -46,6 +46,10 @@ export default function SkipController({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenContainer, setFullscreenContainer] = useState<HTMLElement | null>(null);
 
+  // 🔑 全屏模式下跳过配置组件的显示控制
+  const [showConfigPanelInFullscreen, setShowConfigPanelInFullscreen] = useState(false);
+  const fullscreenPanelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 新增状态：批量设置模式 - 支持分:秒格式
   // 🔑 初始化时直接从 localStorage 读取用户设置，避免重新挂载时重置为默认值
   const [batchSettings, setBatchSettings] = useState(() => {
@@ -110,6 +114,15 @@ export default function SkipController({
   const lastSkipTimeRef = useRef<number>(0);
   const skipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoSkipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 清理全屏面板定时器
+  useEffect(() => {
+    return () => {
+      if (fullscreenPanelTimeoutRef.current) {
+        clearTimeout(fullscreenPanelTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 🔥 关键修复：记录已处理的片段，防止重复触发
   const lastProcessedSegmentRef = useRef<{ type: string; episodeId: string } | null>(null);
@@ -695,12 +708,28 @@ export default function SkipController({
       // batchSettings 会通过 useEffect 自动从 skipConfig 同步，不需要手动重置
       onSettingModeChange?.(false);
 
-      alert('跳过配置已保存');
+      // 🔑 全屏模式下的特殊处理
+      if (isFullscreen) {
+        // 显示跳过配置组件
+        setShowConfigPanelInFullscreen(true);
+        
+        // 5秒后自动隐藏
+        if (fullscreenPanelTimeoutRef.current) {
+          clearTimeout(fullscreenPanelTimeoutRef.current);
+        }
+        fullscreenPanelTimeoutRef.current = setTimeout(() => {
+          setShowConfigPanelInFullscreen(false);
+        }, 5000);
+        
+        // 不显示 alert，避免干扰全屏体验
+      } else {
+        alert('跳过配置已保存');
+      }
     } catch (err) {
       console.error('保存跳过配置失败:', err);
       alert('保存失败，请重试');
     }
-  }, [batchSettings, duration, source, id, title, onSettingModeChange, timeToSeconds, secondsToTime]);
+  }, [batchSettings, duration, source, id, title, onSettingModeChange, timeToSeconds, secondsToTime, isFullscreen]);
 
   // 删除跳过片段
   const handleDeleteSegment = useCallback(
@@ -884,6 +913,100 @@ export default function SkipController({
       window.removeEventListener('keydown', handleEscKey);
     };
   }, [isSettingMode, handleCloseDialog]);
+
+  // 渲染跳过配置组件（可拖动的那个）
+  const renderConfigPanel = () => {
+    // 全屏模式：只在 showConfigPanelInFullscreen 为 true 时显示
+    // 非全屏模式：按原逻辑显示
+    const shouldShow = isFullscreen 
+      ? showConfigPanelInFullscreen && actualSegments.length > 0
+      : actualSegments.length > 0 && !isSettingMode;
+
+    if (!shouldShow) return null;
+
+    const configPanel = (
+      <div
+        ref={panelRef}
+        onMouseDown={isFullscreen ? undefined : handleMouseDown}
+        onTouchStart={isFullscreen ? undefined : handleTouchStart}
+        style={{
+          position: 'fixed',
+          left: isFullscreen ? '50%' : `${position.x}px`,
+          top: isFullscreen ? '50%' : `${position.y}px`,
+          transform: isFullscreen ? 'translate(-50%, -50%)' : undefined,
+          cursor: (!isFullscreen && isDragging) ? 'grabbing' : 'default',
+          userSelect: (!isFullscreen && isDragging) ? 'none' : 'auto',
+        }}
+        className="z-[9998] max-w-sm bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in"
+      >
+        <div className="p-3">
+          {/* 全屏模式下显示保存成功提示 */}
+          {isFullscreen && (
+            <div className="mb-2 px-3 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg text-sm font-medium text-center">
+              ✅ 跳过配置已保存（5秒后自动关闭）
+            </div>
+          )}
+          
+          <h4 className="drag-handle font-medium mb-2 text-gray-900 dark:text-gray-100 text-sm flex items-center cursor-move select-none">
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+            跳过配置
+            {!isFullscreen && <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">可拖动</span>}
+          </h4>
+          <div className="space-y-1">
+            {actualSegments.map((segment, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
+              >
+                <span className="text-gray-800 dark:text-gray-200 flex-1 mr-2">
+                  <span className="font-medium">
+                    {segment.type === 'opening' ? '🎬片头' : '🎭片尾'}
+                  </span>
+                  <br />
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {formatTime(segment.start)} - {formatTime(segment.end)}
+                  </span>
+                  {segment.autoSkip && (
+                    <span className="ml-1 px-1 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 rounded text-xs">
+                      自动
+                    </span>
+                  )}
+                </span>
+                {!isFullscreen && (
+                  <button
+                    onClick={() => handleDeleteSegment(index)}
+                    className="px-1.5 py-0.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors flex-shrink-0"
+                    title="删除"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {!isFullscreen && (
+            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+              <button
+                onClick={() => onSettingModeChange?.(true)}
+                className="w-full px-2 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded text-xs transition-colors"
+              >
+                修改配置
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    // 如果是全屏模式且有全屏容器，使用 Portal
+    if (isFullscreen && fullscreenContainer) {
+      return createPortal(configPanel, fullscreenContainer);
+    }
+
+    return configPanel;
+  };
 
   // 渲染设置面板内容
   const renderSettingsPanel = () => {
@@ -1223,70 +1346,8 @@ export default function SkipController({
       {/* 设置模式面板 - 使用 Portal 在全屏时渲染到播放器内部 */}
       {renderSettingsPanel()}
 
-      {/* 管理已有片段 - 优化为可拖动 */}
-      {actualSegments.length > 0 && !isSettingMode && (
-        <div
-          ref={panelRef}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          style={{
-            position: 'fixed',
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            cursor: isDragging ? 'grabbing' : 'default',
-            userSelect: isDragging ? 'none' : 'auto',
-          }}
-          className="z-[9998] max-w-sm bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in"
-        >
-          <div className="p-3">
-            <h4 className="drag-handle font-medium mb-2 text-gray-900 dark:text-gray-100 text-sm flex items-center cursor-move select-none">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-              跳过配置
-              <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">可拖动</span>
-            </h4>
-            <div className="space-y-1">
-              {actualSegments.map((segment, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
-                >
-                  <span className="text-gray-800 dark:text-gray-200 flex-1 mr-2">
-                    <span className="font-medium">
-                      {segment.type === 'opening' ? '🎬片头' : '🎭片尾'}
-                    </span>
-                    <br />
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {formatTime(segment.start)} - {formatTime(segment.end)}
-                    </span>
-                    {segment.autoSkip && (
-                      <span className="ml-1 px-1 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 rounded text-xs">
-                        自动
-                      </span>
-                    )}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteSegment(index)}
-                    className="px-1.5 py-0.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors flex-shrink-0"
-                    title="删除"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-              <button
-                onClick={() => onSettingModeChange?.(true)}
-                className="w-full px-2 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded text-xs transition-colors"
-              >
-                修改配置
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 管理已有片段 - 优化为可拖动，全屏模式下使用 Portal */}
+      {renderConfigPanel()}
 
       <style jsx>{`
         @keyframes fade-in {
