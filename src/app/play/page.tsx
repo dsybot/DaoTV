@@ -2905,7 +2905,7 @@ function PlayPageClient() {
             // 🚀 简单弹幕发送按钮（仅Web端显示）
             ...(isMobile ? [] : [{
               position: 'right',
-              index: 11,
+              index: 10,
               html: '弹',
               tooltip: '发送弹幕',
               click: function () {
@@ -2927,7 +2927,7 @@ function PlayPageClient() {
             {
               name: 'episodeSelector',
               position: 'right',
-              index: 10,
+              index: 12,
               html: '<i class="art-icon episode-selector-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></i>',
               tooltip: '选集换源',
               style: { display: 'none' }, // 默认隐藏
