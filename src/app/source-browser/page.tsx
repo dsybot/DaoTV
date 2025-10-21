@@ -800,7 +800,7 @@ export default function SourceBrowserPage() {
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
                   placeholder='筛选地区/关键词'
-                  className='w-full md:flex-1 md:min-w-[160px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
+                  className='w-full md:w-[180px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 <CustomSelect
                   value={filterYear}
