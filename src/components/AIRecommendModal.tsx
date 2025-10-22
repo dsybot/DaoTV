@@ -246,9 +246,9 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
       />
 
       {/* 对话框 */}
-      <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white/40 dark:bg-gray-900/40 backdrop-blur-3xl rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/30 dark:border-gray-700/30">
+      <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white/25 dark:bg-gray-900/25 backdrop-blur-3xl rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/20 dark:border-gray-700/20">
         {/* 头部 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/20 dark:border-gray-700/20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/20 dark:border-gray-700/20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
               {/* 机器人图标 */}
@@ -605,7 +605,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         </div>
 
         {/* 输入区域 */}
-        <div className="px-6 py-4 border-t border-gray-200/20 dark:border-gray-700/20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
+        <div className="px-6 py-4 border-t border-gray-200/20 dark:border-gray-700/20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <div className="flex-1">
               <textarea
