@@ -342,7 +342,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
 
               {/* 推荐影片卡片 */}
               {message.role === 'assistant' && message.recommendations && message.recommendations.length > 0 && (
-                <div className="mt-3 space-y-2 max-w-[80%]">
+                <div className="mt-4 space-y-3 max-w-[80%]">
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
                     <div className="flex items-center">
                       <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full text-xs font-semibold mr-2">
@@ -361,9 +361,9 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                     <div
                       key={index}
                       onClick={() => handleMovieSelect(movie)}
-                      className="p-3.5 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm border border-gray-200/60 dark:border-gray-600/60 rounded-xl cursor-pointer hover:shadow-lg hover:border-blue-400 dark:hover:border-purple-500 hover:bg-white dark:hover:bg-gray-700 transition-all group"
+                      className="p-4 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm border border-gray-200/60 dark:border-gray-600/60 rounded-xl cursor-pointer hover:shadow-lg hover:border-blue-400 dark:hover:border-purple-500 hover:bg-white dark:hover:bg-gray-700 transition-all group"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-4">
                         {movie.poster && (
                           <img
                             src={movie.poster}
@@ -372,19 +372,19 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 dark:text-white text-sm flex items-center">
+                          <h4 className="font-medium text-gray-900 dark:text-white text-sm flex items-center mb-1">
                             {movie.title}
                             {movie.year && (
-                              <span className="text-gray-500 dark:text-gray-400 ml-1">({movie.year})</span>
+                              <span className="text-gray-500 dark:text-gray-400 ml-1.5">({movie.year})</span>
                             )}
                             <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 text-xs">
                               🔍 搜索
                             </span>
                           </h4>
                           {movie.genre && (
-                            <p className="text-xs text-blue-600 dark:text-purple-400 mt-1 font-medium">{movie.genre}</p>
+                            <p className="text-xs text-blue-600 dark:text-purple-400 mb-1.5 font-medium">{movie.genre}</p>
                           )}
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
                             {movie.description}
                           </p>
                         </div>
@@ -396,7 +396,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
 
               {/* YouTube视频推荐卡片 */}
               {message.role === 'assistant' && message.youtubeVideos && message.youtubeVideos.length > 0 && (
-                <div className="mt-3 space-y-2 max-w-[80%]">
+                <div className="mt-4 space-y-3 max-w-[80%]">
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
                     <div className="flex items-center">
                       <span className="bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/50 dark:to-pink-900/50 text-red-600 dark:text-pink-400 px-2 py-1 rounded-full text-xs font-medium mr-2">
@@ -427,14 +427,14 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                           >
                             <X className="w-4 h-4" />
                           </button>
-                          <div className="p-3">
-                            <h4 className="font-medium text-gray-900 dark:text-white text-sm">{video.title}</h4>
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">{video.channelTitle}</p>
+                          <div className="p-4">
+                            <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1.5">{video.title}</h4>
+                            <p className="text-xs text-red-600 dark:text-red-400">{video.channelTitle}</p>
                           </div>
                         </div>
                       ) : (
-                        <div onClick={() => handleYouTubeVideoSelect(video)} className="p-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                          <div className="flex items-start gap-3">
+                        <div onClick={() => handleYouTubeVideoSelect(video)} className="p-4 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
+                          <div className="flex items-start gap-4">
                             <div className="relative">
                               <img src={video.thumbnail} alt={video.title} className="w-16 h-12 object-cover rounded flex-shrink-0" />
                               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
@@ -444,9 +444,9 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2">{video.title}</h4>
-                              <p className="text-xs text-red-600 dark:text-red-400 mt-1">{video.channelTitle}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{video.description}</p>
+                              <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 mb-1">{video.title}</h4>
+                              <p className="text-xs text-red-600 dark:text-red-400 mb-1.5">{video.channelTitle}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">{video.description}</p>
                             </div>
                           </div>
                         </div>
@@ -458,7 +458,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
 
               {/* 视频链接解析卡片 */}
               {message.role === 'assistant' && message.videoLinks && message.videoLinks.length > 0 && (
-                <div className="mt-3 space-y-2 max-w-[80%]">
+                <div className="mt-4 space-y-3 max-w-[80%]">
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
                     <div className="flex items-center">
                       <span className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 text-green-600 dark:text-emerald-400 px-2 py-1 rounded-full text-xs font-medium mr-2">
