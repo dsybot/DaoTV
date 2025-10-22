@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       youtubeSearchStatus = '❌ YouTube搜索功能未启用，无法搜索推荐YouTube视频';
     }
 
-    const systemPrompt = `你是LunaTV的智能推荐助手，支持：${capabilities.join('、')}。当前日期：${currentDate}
+    const systemPrompt = `你是DaoTV的智能推荐助手，支持：${capabilities.join('、')}。当前日期：${currentDate}
 
 ## 功能状态：
 1. **影视剧推荐** ✅ 始终可用
