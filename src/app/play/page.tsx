@@ -270,6 +270,25 @@ function PlayPageClient() {
     Map<string, { quality: string; loadSpeed: string; pingTime: number }>
   >(new Map());
 
+  // 测速进度状态
+  const [speedTestProgress, setSpeedTestProgress] = useState<{
+    current: number;
+    total: number;
+    currentSourceName: string;
+    results: Array<{
+      sourceName: string;
+      quality: string;
+      loadSpeed: string;
+      pingTime: number;
+      status: 'testing' | 'success' | 'failed';
+    }>;
+  }>({
+    current: 0,
+    total: 0,
+    currentSourceName: '',
+    results: [],
+  });
+
   // 弹幕缓存：避免重复请求相同的弹幕数据，支持页面刷新持久化（统一存储）
   const DANMU_CACHE_DURATION = 30 * 60; // 30分钟缓存（秒）
   const DANMU_CACHE_KEY_PREFIX = 'danmu-cache';
@@ -726,37 +745,105 @@ function PlayPageClient() {
   const lightweightPreference = async (sources: SearchResult[]): Promise<SearchResult> => {
     console.log('开始轻量级测速，仅测试连通性');
 
-    const results = await Promise.all(
-      sources.map(async (source) => {
-        try {
-          if (!source.episodes || source.episodes.length === 0) {
-            return { source, pingTime: 9999, available: false };
-          }
+    // 初始化测速进度
+    setSpeedTestProgress({
+      current: 0,
+      total: sources.length,
+      currentSourceName: '',
+      results: [],
+    });
 
-          const episodeUrl = source.episodes.length > 1
-            ? source.episodes[1]
-            : source.episodes[0];
+    const results: Array<{
+      source: SearchResult;
+      pingTime: number;
+      available: boolean;
+    }> = [];
 
-          // 仅测试连通性和响应时间
-          const startTime = performance.now();
-          await fetch(episodeUrl, {
-            method: 'HEAD',
-            mode: 'no-cors',
-            signal: AbortSignal.timeout(3000) // 3秒超时
-          });
-          const pingTime = performance.now() - startTime;
+    // 逐个测速以实时更新进度
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i];
+      
+      // 更新当前测速源
+      setSpeedTestProgress(prev => ({
+        ...prev,
+        current: i + 1,
+        currentSourceName: source.source_name || '未知源',
+      }));
 
-          return {
-            source,
-            pingTime: Math.round(pingTime),
-            available: true
-          };
-        } catch (error) {
-          console.warn(`轻量级测速失败: ${source.source_name}`, error);
-          return { source, pingTime: 9999, available: false };
+      try {
+        if (!source.episodes || source.episodes.length === 0) {
+          results.push({ source, pingTime: 9999, available: false });
+          
+          // 更新结果列表
+          setSpeedTestProgress(prev => ({
+            ...prev,
+            results: [
+              ...prev.results,
+              {
+                sourceName: source.source_name || '未知源',
+                quality: '未知',
+                loadSpeed: '未知',
+                pingTime: 9999,
+                status: 'failed',
+              },
+            ],
+          }));
+          continue;
         }
-      })
-    );
+
+        const episodeUrl = source.episodes.length > 1
+          ? source.episodes[1]
+          : source.episodes[0];
+
+        // 仅测试连通性和响应时间
+        const startTime = performance.now();
+        await fetch(episodeUrl, {
+          method: 'HEAD',
+          mode: 'no-cors',
+          signal: AbortSignal.timeout(3000) // 3秒超时
+        });
+        const pingTime = Math.round(performance.now() - startTime);
+
+        results.push({
+          source,
+          pingTime,
+          available: true
+        });
+
+        // 更新结果列表
+        setSpeedTestProgress(prev => ({
+          ...prev,
+          results: [
+            ...prev.results,
+            {
+              sourceName: source.source_name || '未知源',
+              quality: '未知',
+              loadSpeed: '未知',
+              pingTime,
+              status: 'success',
+            },
+          ],
+        }));
+      } catch (error) {
+        console.warn(`轻量级测速失败: ${source.source_name}`, error);
+        results.push({ source, pingTime: 9999, available: false });
+        
+        // 更新结果列表
+        setSpeedTestProgress(prev => ({
+          ...prev,
+          results: [
+            ...prev.results,
+            {
+              sourceName: source.source_name || '未知源',
+              quality: '未知',
+              loadSpeed: '未知',
+              pingTime: 9999,
+              status: 'failed',
+            },
+          ],
+        }));
+      }
+    }
 
     // 按可用性和响应时间排序
     const sortedResults = results
@@ -777,6 +864,14 @@ function PlayPageClient() {
 
   // 完整测速（桌面设备）
   const fullSpeedTest = async (sources: SearchResult[]): Promise<SearchResult> => {
+    // 初始化测速进度
+    setSpeedTestProgress({
+      current: 0,
+      total: sources.length,
+      currentSourceName: '',
+      results: [],
+    });
+
     // 桌面设备使用小批量并发，避免创建过多实例
     const concurrency = 2;
     const allResults: Array<{
@@ -784,14 +879,39 @@ function PlayPageClient() {
       testResult: { quality: string; loadSpeed: string; pingTime: number };
     } | null> = [];
 
+    let completedCount = 0;
+
     for (let i = 0; i < sources.length; i += concurrency) {
       const batch = sources.slice(i, i + concurrency);
       console.log(`测速批次 ${Math.floor(i / concurrency) + 1}/${Math.ceil(sources.length / concurrency)}: ${batch.length} 个源`);
 
       const batchResults = await Promise.all(
-        batch.map(async (source) => {
+        batch.map(async (source, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          
+          // 更新当前测速源
+          setSpeedTestProgress(prev => ({
+            ...prev,
+            current: globalIndex + 1,
+            currentSourceName: source.source_name || '未知源',
+          }));
+
           try {
             if (!source.episodes || source.episodes.length === 0) {
+              // 更新失败结果
+              setSpeedTestProgress(prev => ({
+                ...prev,
+                results: [
+                  ...prev.results,
+                  {
+                    sourceName: source.source_name || '未知源',
+                    quality: '未知',
+                    loadSpeed: '未知',
+                    pingTime: 9999,
+                    status: 'failed',
+                  },
+                ],
+              }));
               return null;
             }
 
@@ -800,15 +920,47 @@ function PlayPageClient() {
               : source.episodes[0];
 
             const testResult = await getVideoResolutionFromM3u8(episodeUrl);
+            
+            // 更新成功结果
+            setSpeedTestProgress(prev => ({
+              ...prev,
+              results: [
+                ...prev.results,
+                {
+                  sourceName: source.source_name || '未知源',
+                  quality: testResult.quality,
+                  loadSpeed: testResult.loadSpeed,
+                  pingTime: testResult.pingTime,
+                  status: 'success',
+                },
+              ],
+            }));
+
             return { source, testResult };
           } catch (error) {
             console.warn(`测速失败: ${source.source_name}`, error);
+            
+            // 更新失败结果
+            setSpeedTestProgress(prev => ({
+              ...prev,
+              results: [
+                ...prev.results,
+                {
+                  sourceName: source.source_name || '未知源',
+                  quality: '未知',
+                  loadSpeed: '未知',
+                  pingTime: 9999,
+                  status: 'failed',
+                },
+              ],
+            }));
             return null;
           }
         })
       );
 
       allResults.push(...batchResults);
+      completedCount += batch.length;
 
       // 批次间延迟，让资源有时间清理
       if (i + concurrency < sources.length) {
@@ -4109,6 +4261,101 @@ function PlayPageClient() {
               <p className='text-xl font-semibold text-gray-800 dark:text-gray-200 animate-pulse'>
                 {loadingMessage}
               </p>
+              
+              {/* 实时测速进度 */}
+              {loadingStage === 'preferring' && speedTestProgress.total > 0 && (
+                <div className='mt-6 w-full max-w-xl mx-auto space-y-4'>
+                  {/* 当前测速源和进度 */}
+                  <div className='bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 shadow-lg'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-gray-600 dark:text-gray-400'>
+                        测速进度
+                      </span>
+                      <span className='text-sm font-bold text-green-600 dark:text-green-400'>
+                        {speedTestProgress.current} / {speedTestProgress.total}
+                      </span>
+                    </div>
+                    
+                    {/* 进度条 */}
+                    <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden mb-3'>
+                      <div
+                        className='h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-300'
+                        style={{
+                          width: `${(speedTestProgress.current / speedTestProgress.total) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+
+                    {/* 当前测速源 */}
+                    {speedTestProgress.currentSourceName && (
+                      <div className='flex items-center space-x-2'>
+                        <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                        <span className='text-sm text-gray-700 dark:text-gray-300'>
+                          正在测速: <span className='font-semibold'>{speedTestProgress.currentSourceName}</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 测速结果列表 */}
+                  {speedTestProgress.results.length > 0 && (
+                    <div className='bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 shadow-lg max-h-60 overflow-y-auto'>
+                      <div className='text-xs font-medium text-gray-600 dark:text-gray-400 mb-3'>
+                        测速结果
+                      </div>
+                      <div className='space-y-2'>
+                        {speedTestProgress.results.map((result, index) => (
+                          <div
+                            key={index}
+                            className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 ${
+                              result.status === 'success'
+                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                                : result.status === 'failed'
+                                ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                                : 'bg-gray-50 dark:bg-gray-700/50'
+                            }`}
+                          >
+                            <div className='flex items-center space-x-2 flex-1 min-w-0'>
+                              {result.status === 'success' ? (
+                                <svg className='w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                                  <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clipRule='evenodd' />
+                                </svg>
+                              ) : (
+                                <svg className='w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                                  <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clipRule='evenodd' />
+                                </svg>
+                              )}
+                              <span className='text-xs font-medium text-gray-700 dark:text-gray-300 truncate'>
+                                {result.sourceName}
+                              </span>
+                            </div>
+                            
+                            {result.status === 'success' && (
+                              <div className='flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-400 flex-shrink-0'>
+                                {result.quality !== '未知' && (
+                                  <span className='font-medium'>{result.quality}</span>
+                                )}
+                                {result.loadSpeed !== '未知' && (
+                                  <span>{result.loadSpeed}</span>
+                                )}
+                                <span className='text-green-600 dark:text-green-400 font-medium'>
+                                  {result.pingTime}ms
+                                </span>
+                              </div>
+                            )}
+                            
+                            {result.status === 'failed' && (
+                              <span className='text-xs text-red-600 dark:text-red-400 flex-shrink-0'>
+                                测速失败
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
