@@ -246,9 +246,9 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
       />
 
       {/* 对话框 */}
-      <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/20 dark:border-gray-700/30">
+      <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white/50 dark:bg-gray-900/50 backdrop-blur-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/20 dark:border-gray-700/30">
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-white/20 bg-gradient-to-r from-indigo-500/95 via-purple-500/95 to-pink-500/95">
+        <div className="flex items-center justify-between p-4 border-b border-white/20 bg-gray-900/40 dark:bg-gray-800/40 backdrop-blur-xl">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-white bg-opacity-20 rounded-lg">
               {/* 机器人图标 */}
@@ -260,7 +260,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">AI 智能助手</h2>
-              <p className="text-blue-100 text-sm">影视推荐 · 视频解析 · YouTube搜索</p>
+              <p className="text-gray-300 text-sm">影视推荐 · 视频解析 · YouTube搜索</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -605,7 +605,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         </div>
 
         {/* 输入区域 */}
-        <div className="p-4 border-t border-white/20 bg-white/70 dark:bg-gray-900/70">
+        <div className="p-4 border-t border-white/20 bg-white/50 dark:bg-gray-900/50">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <div className="flex-1">
               <textarea
