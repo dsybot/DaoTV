@@ -377,7 +377,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                             {movie.year && (
                               <span className="text-gray-500 dark:text-gray-400 ml-1">({movie.year})</span>
                             )}
-                            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 text-xs"
+                            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 text-xs">
                               🔍 搜索
                             </span>
                           </h4>
