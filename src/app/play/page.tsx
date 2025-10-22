@@ -4182,8 +4182,8 @@ function PlayPageClient() {
   if (loading) {
     return (
       <PageLayout activePath='/play'>
-        <div className='flex items-center justify-center min-h-screen bg-transparent'>
-          <div className='text-center max-w-md mx-auto px-6'>
+        <div className='fixed inset-0 flex items-center justify-center bg-transparent overflow-hidden'>
+          <div className='text-center max-w-xl w-full mx-auto px-6 py-8'>
             {/* 动画影院图标 */}
             <div className='relative mb-8'>
               <div className='relative mx-auto w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
@@ -4299,7 +4299,7 @@ function PlayPageClient() {
 
                   {/* 测速结果列表 */}
                   {speedTestProgress.results.length > 0 && (
-                    <div className='bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 shadow-lg max-h-60 overflow-y-auto'>
+                    <div className='bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 shadow-lg max-h-[45vh] overflow-y-auto'>
                       <div className='text-xs font-medium text-gray-600 dark:text-gray-400 mb-3'>
                         测速结果
                       </div>
