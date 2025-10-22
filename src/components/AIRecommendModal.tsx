@@ -246,11 +246,11 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
       />
 
       {/* 对话框 */}
-      <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white/50 dark:bg-gray-900/50 backdrop-blur-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/20 dark:border-gray-700/30">
+      <div className="relative w-full max-w-4xl h-[80vh] mx-4 bg-white/40 dark:bg-gray-900/40 backdrop-blur-3xl rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/30 dark:border-gray-700/30">
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-white/20 bg-gray-900/40 dark:bg-gray-800/40 backdrop-blur-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200/20 dark:border-gray-700/20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
               {/* 机器人图标 */}
               <svg className="h-6 w-6 text-white" viewBox="0 0 1024 1024" fill="currentColor">
                 <path d="M683.7 922.7h-345c-73.5 0-133.3-59.8-133.3-133.3V459.8c0-73.5 59.8-133.3 133.3-133.3h345c73.5 0 133.3 59.8 133.3 133.3v329.6c0 73.5-59.8 133.3-133.3 133.3z m-345-506.9c-24.3 0-44.1 19.8-44.1 44.1v329.6c0 24.3 19.8 44.1 44.1 44.1h345c24.3 0 44.1-19.8 44.1-44.1V459.8c0-24.3-19.8-44.1-44.1-44.1h-345zM914.3 759.6c-24.6 0-44.6-20-44.6-44.6V534.3c0-24.6 20-44.6 44.6-44.6s44.6 20 44.6 44.6V715c0 24.7-20 44.6-44.6 44.6zM111.7 759.6c-24.6 0-44.6-20-44.6-44.6V534.3c0-24.6 20-44.6 44.6-44.6s44.6 20 44.6 44.6V715c0 24.7-19.9 44.6-44.6 44.6z" />
@@ -259,22 +259,22 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">AI 智能助手</h2>
-              <p className="text-gray-300 text-sm">影视推荐 · 视频解析 · YouTube搜索</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 智能助手</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">影视推荐 · 视频解析 · YouTube搜索</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {messages.length > 0 && (
               <button
                 onClick={resetChat}
-                className="px-3 py-1 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors border border-white/30"
+                className="px-3 py-1.5 text-sm bg-gray-100/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200/80 dark:hover:bg-gray-600/80 transition-colors font-medium"
               >
                 清空对话
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white"
+              className="p-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
               <X className="h-5 w-5" />
             </button>
@@ -284,17 +284,17 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         {/* 消息区域 */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-gray-50/30 via-blue-50/20 to-purple-50/20 dark:from-gray-800/30 dark:via-gray-900/20 dark:to-gray-800/30"
+          className="flex-1 overflow-y-auto p-6 space-y-4"
         >
           {messages.length <= 1 && messages.every(msg => msg.role === 'assistant' && msg.content.includes('AI智能助手')) && (
             <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full mb-4 shadow-lg shadow-purple-500/50">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-xl shadow-purple-500/30">
                 <Sparkles className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 欢迎使用AI智能助手
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
                 支持影视推荐、YouTube链接解析和视频搜索推荐
               </p>
 
@@ -304,10 +304,10 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                   <button
                     key={index}
                     onClick={() => handlePresetClick(preset)}
-                    className="p-3 text-left bg-white/90 dark:bg-gray-700/90 rounded-xl border border-gray-200/50 dark:border-gray-600/50 hover:border-indigo-400 dark:hover:border-purple-400 hover:shadow-md transition-all group"
+                    className="p-4 text-left bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-gray-600/60 hover:border-blue-400 dark:hover:border-purple-400 hover:shadow-lg hover:bg-white/90 dark:hover:bg-gray-700/90 transition-all group"
                     disabled={isLoading}
                   >
-                    <div className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-purple-400 transition-colors">
+                    <div className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-purple-400 transition-colors">
                       {preset.title}
                     </div>
                   </button>
@@ -323,9 +323,9 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-3 rounded-xl shadow-md ${message.role === 'user'
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                    : 'bg-white/95 dark:bg-gray-700/95 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50'
+                className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-lg ${message.role === 'user'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                    : 'bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-gray-600/60'
                   }`}
               >
                 {message.role === 'assistant' ? (
@@ -345,7 +345,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                 <div className="mt-3 space-y-2 max-w-[80%]">
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
                     <div className="flex items-center">
-                      <span className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-indigo-600 dark:text-purple-400 px-2 py-1 rounded-full text-xs font-medium mr-2">
+                      <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full text-xs font-semibold mr-2">
                         🎬 点击搜索
                       </span>
                       推荐影片卡片
@@ -361,7 +361,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                     <div
                       key={index}
                       onClick={() => handleMovieSelect(movie)}
-                      className="p-3 bg-white/95 dark:bg-gray-700/95 border border-gray-200/50 dark:border-gray-600/50 rounded-xl cursor-pointer hover:shadow-md hover:border-indigo-300 dark:hover:border-purple-600 transition-all group"
+                      className="p-3.5 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm border border-gray-200/60 dark:border-gray-600/60 rounded-xl cursor-pointer hover:shadow-lg hover:border-blue-400 dark:hover:border-purple-500 hover:bg-white dark:hover:bg-gray-700 transition-all group"
                     >
                       <div className="flex items-start gap-3">
                         {movie.poster && (
@@ -377,12 +377,12 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                             {movie.year && (
                               <span className="text-gray-500 dark:text-gray-400 ml-1">({movie.year})</span>
                             )}
-                            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-indigo-500 text-xs">
+                            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 text-xs"
                               🔍 搜索
                             </span>
                           </h4>
                           {movie.genre && (
-                            <p className="text-xs text-indigo-600 dark:text-purple-400 mt-1">{movie.genre}</p>
+                            <p className="text-xs text-blue-600 dark:text-purple-400 mt-1 font-medium">{movie.genre}</p>
                           )}
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                             {movie.description}
@@ -409,7 +409,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                     </span>
                   </div>
                   {message.youtubeVideos.map((video, index) => (
-                    <div key={index} className="bg-white/95 dark:bg-gray-800/95 border border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                    <div key={index} className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
                       {playingVideoId === video.id ? (
                         <div className="relative">
                           <div className="aspect-video">
@@ -471,7 +471,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                     </span>
                   </div>
                   {message.videoLinks.map((video, index) => (
-                    <div key={index} className="border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-4 bg-white/95 dark:bg-gray-800/95 shadow-md">
+                    <div key={index} className="border border-gray-200/60 dark:border-gray-700/60 rounded-xl p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-md">
                       {video.playable ? (
                         <div className="space-y-3">
                           {playingVideoId === video.videoId ? (
@@ -560,11 +560,11 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           {/* 加载状态 */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white/95 dark:bg-gray-700/95 p-3 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-md">
+              <div className="bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm p-3 rounded-2xl border border-gray-200/60 dark:border-gray-600/60 shadow-md">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
@@ -605,7 +605,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         </div>
 
         {/* 输入区域 */}
-        <div className="p-4 border-t border-white/20 bg-white/50 dark:bg-gray-900/50">
+        <div className="px-6 py-4 border-t border-gray-200/20 dark:border-gray-700/20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <div className="flex-1">
               <textarea
@@ -613,7 +613,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="输入影视推荐类型、YouTube搜索内容或直接粘贴YouTube链接..."
-                className="w-full p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-xl bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-colors"
+                className="w-full px-4 py-3 border border-gray-200/60 dark:border-gray-600/60 rounded-xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700 resize-none transition-all shadow-sm"
                 rows={2}
                 disabled={isLoading}
               />
@@ -621,7 +621,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             <button
               type="submit"
               disabled={!inputMessage.trim() || isLoading}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-lg shadow-indigo-500/30"
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all flex items-center space-x-2 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
             >
               <Send className="h-4 w-4" />
               <span>发送</span>
