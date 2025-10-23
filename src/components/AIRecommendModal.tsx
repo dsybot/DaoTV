@@ -324,7 +324,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             >
               <div
                 className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-lg ${message.role === 'user'
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                    ? 'bg-[#95EC69] text-gray-900'
                     : 'bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-gray-600/60'
                   }`}
               >
@@ -444,7 +444,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 mb-1">{video.title}</h4>
+                              <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2 mb-1">{video.title}</h4>
                               <p className="text-xs text-red-600 dark:text-red-400 mb-1.5">{video.channelTitle}</p>
                               <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">{video.description}</p>
                             </div>
@@ -562,9 +562,9 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             <div className="flex justify-start">
               <div className="bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm p-3 rounded-2xl border border-gray-200/60 dark:border-gray-600/60 shadow-md">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-[#95EC69] rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-[#95EC69] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-[#95EC69] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
