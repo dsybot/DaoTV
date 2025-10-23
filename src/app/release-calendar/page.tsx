@@ -57,7 +57,7 @@ function CustomSelect<T extends string>({
       </button>
 
       {isOpen && (
-        <div className='absolute z-50 mt-2 min-w-full w-max max-w-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
+        <div className='absolute z-50 mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
           <div className='max-h-64 overflow-y-auto custom-scrollbar'>
             {options.map((option) => (
               <button
@@ -484,7 +484,7 @@ export default function ReleaseCalendarPage() {
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
               />
             </div>
             <div>
@@ -493,7 +493,7 @@ export default function ReleaseCalendarPage() {
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
               />
             </div>
           </div>
