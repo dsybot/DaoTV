@@ -62,7 +62,7 @@ function CustomSelect<T extends string>({
       </button>
 
       {isOpen && (
-        <div className='absolute z-50 mt-2 min-w-full w-max rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
+        <div className='absolute z-50 mt-2 min-w-full max-w-xs w-auto rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
           <div className='max-h-64 overflow-y-auto custom-scrollbar'>
             {options.map((option) => (
               <button
@@ -72,13 +72,13 @@ function CustomSelect<T extends string>({
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 whitespace-nowrap ${
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
                   option.value === value
                     ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
                     : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
                 }`}
               >
-                <div className='flex items-center gap-2'>
+                <div className='flex items-center gap-2 min-w-0'>
                   {option.value === value && (
                     <svg className='w-4 h-4 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
                       <path
@@ -88,7 +88,7 @@ function CustomSelect<T extends string>({
                       />
                     </svg>
                   )}
-                  <span className={option.value === value ? '' : 'ml-6'}>{option.label}</span>
+                  <span className={`truncate ${option.value === value ? '' : 'ml-6'}`}>{option.label}</span>
                 </div>
               </button>
             ))}
