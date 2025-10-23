@@ -286,8 +286,8 @@ export default function SourceTestModule() {
     };
   }, [showResultsModal]);
   const [sortKey, setSortKey] = useState<
-    'status' | 'responseTime' | 'resultCount' | 'matchRate' | 'name'
-  >('status');
+    'status' | 'responseTime' | 'resultCount' | 'matchRate' | 'name' | 'default'
+  >('default');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // 加载所有源
@@ -507,6 +507,11 @@ export default function SourceTestModule() {
   const getSortedSources = () => {
     const scope = onlyEnabled ? sources.filter((s) => !s.disabled) : sources;
 
+    // 如果是默认排序，保持原始顺序，不排序
+    if (sortKey === 'default') {
+      return scope;
+    }
+
     const statusWeight = (s?: SourceTestResult) => {
       // 数值越大表示越靠后（差）
       if (!s) return 4; // 未测试
@@ -540,6 +545,8 @@ export default function SourceTestModule() {
           return typeof r?.matchRate === 'number' ? r!.matchRate! : -1; // 未测试置为-1，降序时排后
         case 'name':
           return src.name.toLowerCase();
+        default:
+          return 0;
       }
     };
 
@@ -737,6 +744,7 @@ export default function SourceTestModule() {
               value={sortKey}
               onChange={(value) => setSortKey(value as any)}
               options={[
+                { value: 'default', label: '默认顺序' },
                 { value: 'status', label: '状态' },
                 { value: 'responseTime', label: '耗时' },
                 { value: 'resultCount', label: '结果数' },
@@ -956,7 +964,7 @@ export default function SourceTestModule() {
             </div>
 
             <div className='p-6 overflow-y-auto max-h-[60vh]'>
-              <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+              <div className='grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4'>
                 {selectedResults.map((result, index) => (
                   <VideoCard
                     key={`${result.source}-${result.id}-${index}`}
