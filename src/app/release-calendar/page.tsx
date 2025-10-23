@@ -1,10 +1,204 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Calendar, Filter, Search, Clock, Film, Tv, MapPin, Tag, ChevronUp } from 'lucide-react';
+import { Calendar, Filter, Search, Clock, Film, Tv, MapPin, Tag, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { ReleaseCalendarItem, ReleaseCalendarResult } from '@/lib/types';
 import PageLayout from '@/components/PageLayout';
+
+// 自定义优雅的日期选择器组件
+function CustomDatePicker({
+  value,
+  onChange,
+  placeholder,
+  title,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  title?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (value) {
+      return new Date(value);
+    }
+    return new Date();
+  });
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return placeholder || '选择日期';
+    const date = new Date(dateStr);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+
+    const days: (number | null)[] = [];
+    // 填充前面的空白
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
+    }
+    // 填充日期
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    return days;
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const handleDateClick = (day: number) => {
+    const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+    onChange(dateStr);
+    setIsOpen(false);
+  };
+
+  const isSelectedDate = (day: number) => {
+    if (!value) return false;
+    const selectedDate = new Date(value);
+    return (
+      selectedDate.getFullYear() === currentMonth.getFullYear() &&
+      selectedDate.getMonth() === currentMonth.getMonth() &&
+      selectedDate.getDate() === day
+    );
+  };
+
+  const isToday = (day: number) => {
+    const today = new Date();
+    return (
+      today.getFullYear() === currentMonth.getFullYear() &&
+      today.getMonth() === currentMonth.getMonth() &&
+      today.getDate() === day
+    );
+  };
+
+  const days = getDaysInMonth(currentMonth);
+  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+  return (
+    <div className='relative inline-block w-full' ref={datePickerRef}>
+      <button
+        type='button'
+        onClick={() => setIsOpen(!isOpen)}
+        className='group relative inline-flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap w-full'
+        title={title}
+      >
+        <span className='truncate'>{formatDisplayDate(value)}</span>
+        <Calendar className='w-4 h-4 text-gray-500 flex-shrink-0' />
+      </button>
+
+      {isOpen && (
+        <div className='absolute z-50 mt-2 w-full min-w-[280px] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden p-3'>
+          {/* 月份导航 */}
+          <div className='flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-700'>
+            <button
+              type='button'
+              onClick={handlePrevMonth}
+              className='p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
+            >
+              <ChevronLeft className='w-5 h-5 text-gray-600 dark:text-gray-400' />
+            </button>
+            <span className='text-sm font-semibold text-gray-900 dark:text-white'>
+              {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
+            </span>
+            <button
+              type='button'
+              onClick={handleNextMonth}
+              className='p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
+            >
+              <ChevronRight className='w-5 h-5 text-gray-600 dark:text-gray-400' />
+            </button>
+          </div>
+
+          {/* 星期标题 */}
+          <div className='grid grid-cols-7 gap-1 mb-2'>
+            {weekDays.map((day) => (
+              <div key={day} className='text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-1'>
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* 日期网格 */}
+          <div className='grid grid-cols-7 gap-1'>
+            {days.map((day, index) => (
+              <div key={index}>
+                {day ? (
+                  <button
+                    type='button'
+                    onClick={() => handleDateClick(day)}
+                    className={`w-full aspect-square rounded text-sm font-medium transition-all duration-150 ${
+                      isSelectedDate(day)
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                        : isToday(day)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ) : (
+                  <div className='w-full aspect-square' />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* 快捷操作 */}
+          <div className='flex gap-2 mt-3 pt-2 border-t border-gray-200 dark:border-gray-700'>
+            <button
+              type='button'
+              onClick={() => {
+                const today = new Date();
+                const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                onChange(dateStr);
+                setIsOpen(false);
+              }}
+              className='flex-1 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors'
+            >
+              今天
+            </button>
+            <button
+              type='button'
+              onClick={() => {
+                onChange('');
+                setIsOpen(false);
+              }}
+              className='flex-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors'
+            >
+              清除
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // 自定义优雅的 Select 组件
 function CustomSelect<T extends string>({
@@ -480,20 +674,20 @@ export default function ReleaseCalendarPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">开始日期</label>
-              <input
-                type="date"
+              <CustomDatePicker
                 value={filters.dateFrom}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                onChange={(value) => setFilters(prev => ({ ...prev, dateFrom: value }))}
+                placeholder="选择开始日期"
+                title="选择开始日期"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">结束日期</label>
-              <input
-                type="date"
+              <CustomDatePicker
                 value={filters.dateTo}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                onChange={(value) => setFilters(prev => ({ ...prev, dateTo: value }))}
+                placeholder="选择结束日期"
+                title="选择结束日期"
               />
             </div>
           </div>
