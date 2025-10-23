@@ -62,7 +62,7 @@ function CustomSelect<T extends string>({
       </button>
 
       {isOpen && (
-        <div className='absolute z-50 mt-2 min-w-full w-max max-w-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
+        <div className='absolute z-50 mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl animate-scaleIn overflow-hidden'>
           <div className='max-h-64 overflow-y-auto custom-scrollbar'>
             {options.map((option) => (
               <button
@@ -792,8 +792,8 @@ export default function SourceBrowserPage() {
                     { value: 'default', label: '默认顺序' },
                     { value: 'title-asc', label: '标题 A→Z' },
                     { value: 'title-desc', label: '标题 Z→A' },
-                    { value: 'year-asc', label: '年份 从低到高' },
-                    { value: 'year-desc', label: '年份 从高到低' },
+                    { value: 'year-asc', label: '年份 ↑' },
+                    { value: 'year-desc', label: '年份 ↓' },
                   ]}
                   title='排序'
                 />
