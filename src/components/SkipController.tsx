@@ -51,7 +51,21 @@ export default function SkipController({
   const fullscreenPanelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 🔑 非全屏模式下的折叠状态控制
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    // 从 localStorage 读取保存的折叠状态
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('skipControllerCollapsed');
+      if (saved !== null) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('解析保存的折叠状态失败:', e);
+        }
+      }
+    }
+    // 默认展开
+    return false;
+  });
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isHovering, setIsHovering] = useState(false);
   
@@ -345,6 +359,13 @@ export default function SkipController({
       localStorage.setItem('skipControllerFullscreenPosition', JSON.stringify(fullscreenPosition));
     }
   }, [fullscreenPosition]);
+
+  // 保存折叠状态到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('skipControllerCollapsed', JSON.stringify(isCollapsed));
+    }
+  }, [isCollapsed]);
 
   // 添加全局事件监听
   useEffect(() => {
