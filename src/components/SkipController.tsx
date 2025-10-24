@@ -50,6 +50,11 @@ export default function SkipController({
   const [showConfigPanelInFullscreen, setShowConfigPanelInFullscreen] = useState(false);
   const fullscreenPanelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 🔑 非全屏模式下的折叠状态控制
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isHovering, setIsHovering] = useState(false);
+
   // 新增状态：批量设置模式 - 支持分:秒格式
   // 🔑 初始化时直接从 localStorage 读取用户设置，避免重新挂载时重置为默认值
   const [batchSettings, setBatchSettings] = useState(() => {
@@ -115,11 +120,14 @@ export default function SkipController({
   const skipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoSkipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 清理全屏面板定时器
+  // 清理全屏面板定时器和折叠定时器
   useEffect(() => {
     return () => {
       if (fullscreenPanelTimeoutRef.current) {
         clearTimeout(fullscreenPanelTimeoutRef.current);
+      }
+      if (collapseTimeoutRef.current) {
+        clearTimeout(collapseTimeoutRef.current);
       }
     };
   }, []);
@@ -786,6 +794,19 @@ export default function SkipController({
         
         // 不显示 alert，避免干扰全屏体验
       } else {
+        // 🔑 非全屏模式：显示配置面板，6秒后自动收起为悬浮球
+        setIsCollapsed(false);
+        
+        // 清除之前的定时器
+        if (collapseTimeoutRef.current) {
+          clearTimeout(collapseTimeoutRef.current);
+        }
+        
+        // 6秒后自动收起
+        collapseTimeoutRef.current = setTimeout(() => {
+          setIsCollapsed(true);
+        }, 6000);
+        
         alert('跳过配置已保存');
       }
     } catch (err) {
@@ -977,6 +998,15 @@ export default function SkipController({
     };
   }, [isSettingMode, handleCloseDialog]);
 
+  // 🔑 切换折叠状态（手动收起/展开）
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
+    // 清除自动收起定时器
+    if (collapseTimeoutRef.current) {
+      clearTimeout(collapseTimeoutRef.current);
+    }
+  }, []);
+
   // 渲染跳过配置组件（可拖动的那个）
   const renderConfigPanel = () => {
     // 全屏模式：只在 showConfigPanelInFullscreen 为 true 时显示
@@ -987,11 +1017,77 @@ export default function SkipController({
 
     if (!shouldShow) return null;
 
+    // 🔑 非全屏且已折叠：显示悬浯球
+    if (!isFullscreen && isCollapsed && !isHovering) {
+      const floatingBall = (
+        <div
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onMouseEnter={() => {
+            setIsHovering(true);
+            // 鼠标悬停时展开面板
+            setIsCollapsed(false);
+            // 清除自动收起定时器
+            if (collapseTimeoutRef.current) {
+              clearTimeout(collapseTimeoutRef.current);
+            }
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            // 点击时展开面板
+            setIsCollapsed(false);
+            if (collapseTimeoutRef.current) {
+              clearTimeout(collapseTimeoutRef.current);
+            }
+          }}
+          style={{
+            position: 'fixed',
+            right: '0px', // 吸附到右边缘
+            top: `${position.y}px`,
+            cursor: isDragging ? 'grabbing' : 'pointer',
+            userSelect: 'none',
+            transition: 'all 0.3s ease-out',
+          }}
+          className="z-[9998] group animate-slide-in-right"
+          title="鼠标悬停或点击展开"
+        >
+          <div className="bg-gradient-to-l from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-2 rounded-l-full shadow-lg border-l border-t border-b border-blue-400 flex items-center space-x-2 transition-all group-hover:px-4">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium hidden group-hover:inline">跳过</span>
+            <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full">{actualSegments.length}</span>
+          </div>
+        </div>
+      );
+
+      return floatingBall;
+    }
+
     const configPanel = (
       <div
         ref={panelRef}
         onMouseDown={isFullscreen ? handleFullscreenMouseDown : handleMouseDown}
         onTouchStart={isFullscreen ? handleFullscreenTouchStart : handleTouchStart}
+        onMouseEnter={() => {
+          setIsHovering(true);
+          // 鼠标进入时清除自动收起定时器
+          if (collapseTimeoutRef.current) {
+            clearTimeout(collapseTimeoutRef.current);
+          }
+        }}
+        onMouseLeave={() => {
+          setIsHovering(false);
+          // 🔑 鼠标离开时，延迟3秒后自动收起为悬浯球
+          if (!isFullscreen && collapseTimeoutRef.current) {
+            clearTimeout(collapseTimeoutRef.current);
+          }
+          if (!isFullscreen) {
+            collapseTimeoutRef.current = setTimeout(() => {
+              setIsCollapsed(true);
+            }, 3000);
+          }
+        }}
         style={{
           position: 'fixed',
           left: isFullscreen ? `${fullscreenPosition.x}px` : `${position.x}px`,
@@ -1018,13 +1114,30 @@ export default function SkipController({
             </div>
           )}
           
-          <h4 className="drag-handle font-medium mb-2 text-gray-900 dark:text-gray-100 text-sm flex items-center cursor-move select-none">
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            </svg>
-            <span className={isFullscreen ? 'text-white' : ''}>跳过配置</span>
-            <span className={`ml-auto text-xs ${isFullscreen ? 'text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>可拖动</span>
-          </h4>
+          <div className="drag-handle flex items-center justify-between mb-2 cursor-move select-none">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+              <span className={isFullscreen ? 'text-white' : ''}>跳过配置</span>
+              <span className={`ml-2 text-xs ${isFullscreen ? 'text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>可拖动</span>
+            </h4>
+            {/* 🔑 非全屏模式下显示收起按钮 */}
+            {!isFullscreen && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleCollapse();
+                }}
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                title="收起为悬浮球"
+              >
+                <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
           <div className="space-y-1">
             {actualSegments.map((segment, index) => (
               <div
@@ -1441,11 +1554,24 @@ export default function SkipController({
             transform: scale(1);
           }
         }
+        @keyframes slide-in-right {
+          from {
+            opacity: 0;
+            transform: translateX(100%);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;
         }
         .animate-scale-in {
           animation: scale-in 0.3s ease-out;
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out;
         }
       `}</style>
     </div>
