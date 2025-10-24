@@ -54,6 +54,25 @@ export default function SkipController({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isHovering, setIsHovering] = useState(false);
+  
+  // 🔑 悬浯球拖动和边缘吸附状态
+  const [isDraggingBall, setIsDraggingBall] = useState(false);
+  const [ballPosition, setBallPosition] = useState(() => {
+    // 从 localStorage 读取保存的悬浯球位置
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('skipBallPosition');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('解析保存的悬浯球位置失败:', e);
+        }
+      }
+    }
+    // 默认右侧位置
+    return { x: window.innerWidth - 60, y: 100 };
+  });
+  const ballDraggedRef = useRef(false); // 记录是否真正拖动过
 
   // 新增状态：批量设置模式 - 支持分:秒格式
   // 🔑 初始化时直接从 localStorage 读取用户设置，避免重新挂载时重置为默认值
@@ -215,7 +234,9 @@ export default function SkipController({
   });
 
   const dragStartPos = useRef({ x: 0, y: 0 });
+  const ballDragStartPos = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
+  const ballRef = useRef<HTMLDivElement>(null);
 
   // 拖动处理函数（非全屏模式）
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -1007,6 +1028,107 @@ export default function SkipController({
     }
   }, []);
 
+  // 🔑 计算是否靠近屏幕边缘
+  const getEdgeSnap = useCallback((x: number, y: number) => {
+    const snapThreshold = 80; // 80px 内吸附到边缘
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // 判断是否靠近各个边缘
+    const nearLeft = x < snapThreshold;
+    const nearRight = x > screenWidth - snapThreshold;
+    const nearTop = y < snapThreshold;
+    const nearBottom = y > screenHeight - snapThreshold;
+
+    if (nearLeft) return { edge: 'left' as const, x: 0, y };
+    if (nearRight) return { edge: 'right' as const, x: screenWidth, y };
+    if (nearTop) return { edge: 'top' as const, x, y: 0 };
+    if (nearBottom) return { edge: 'bottom' as const, x, y: screenHeight };
+    
+    return { edge: null, x, y };
+  }, []);
+
+  // 🔑 悬浯球拖动处理
+  const handleBallMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDraggingBall(true);
+    ballDraggedRef.current = false; // 重置拖动标记
+    ballDragStartPos.current = {
+      x: e.clientX - ballPosition.x,
+      y: e.clientY - ballPosition.y,
+    };
+    e.stopPropagation();
+  }, [ballPosition]);
+
+  const handleBallTouchStart = useCallback((e: React.TouchEvent) => {
+    setIsDraggingBall(true);
+    ballDraggedRef.current = false;
+    const touch = e.touches[0];
+    ballDragStartPos.current = {
+      x: touch.clientX - ballPosition.x,
+      y: touch.clientY - ballPosition.y,
+    };
+    e.stopPropagation();
+  }, [ballPosition]);
+
+  const handleBallMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isDraggingBall) return;
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    let newX = clientX - ballDragStartPos.current.x;
+    let newY = clientY - ballDragStartPos.current.y;
+
+    // 判断是否真正移动了（距离超过5px）
+    const deltaX = Math.abs(newX - ballPosition.x);
+    const deltaY = Math.abs(newY - ballPosition.y);
+    if (deltaX > 5 || deltaY > 5) {
+      ballDraggedRef.current = true;
+    }
+
+    const maxX = window.innerWidth - 60;
+    const maxY = window.innerHeight - 60;
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
+    setBallPosition({ x: newX, y: newY });
+  }, [isDraggingBall, ballPosition]);
+
+  const handleBallMouseUp = useCallback(() => {
+    if (isDraggingBall) {
+      setIsDraggingBall(false);
+      // 拖动结束后检查是否需要吸附到边缘
+      const snap = getEdgeSnap(ballPosition.x, ballPosition.y);
+      const finalPos = snap.edge ? { x: snap.x, y: snap.y } : ballPosition;
+      setBallPosition(finalPos);
+      // 保存到 localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('skipBallPosition', JSON.stringify(finalPos));
+      }
+    }
+  }, [isDraggingBall, ballPosition, getEdgeSnap]);
+
+  // 监听悬浯球拖动事件
+  useEffect(() => {
+    if (isDraggingBall) {
+      const handleMove = (e: MouseEvent | TouchEvent) => handleBallMove(e);
+      const handleUp = () => handleBallMouseUp();
+
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+      window.addEventListener('touchmove', handleMove);
+      window.addEventListener('touchend', handleUp);
+
+      return () => {
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleUp);
+        window.removeEventListener('touchmove', handleMove);
+        window.removeEventListener('touchend', handleUp);
+      };
+    }
+  }, [isDraggingBall, handleBallMove, handleBallMouseUp]);
+
   // 渲染跳过配置组件（可拖动的那个）
   const renderConfigPanel = () => {
     // 全屏模式：只在 showConfigPanelInFullscreen 为 true 时显示
@@ -1018,46 +1140,82 @@ export default function SkipController({
     if (!shouldShow) return null;
 
     // 🔑 非全屏且已折叠：显示悬浯球
-    if (!isFullscreen && isCollapsed && !isHovering) {
+    if (!isFullscreen && isCollapsed) {
+      const snap = getEdgeSnap(ballPosition.x, ballPosition.y);
+      const isSnapped = snap.edge !== null;
+      
+      // 获取跳过时间信息用于显示
+      const openingSegment = actualSegments.find(s => s.type === 'opening');
+      const endingSegment = actualSegments.find(s => s.type === 'ending');
+      
       const floatingBall = (
         <div
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          onMouseEnter={() => {
-            setIsHovering(true);
-            // 鼠标悬停时展开面板
-            setIsCollapsed(false);
-            // 清除自动收起定时器
-            if (collapseTimeoutRef.current) {
-              clearTimeout(collapseTimeoutRef.current);
-            }
+          ref={ballRef}
+          onMouseDown={(e) => {
+            // 如果不是拖动，则开始拖动检测
+            handleBallMouseDown(e);
           }}
+          onTouchStart={handleBallTouchStart}
           onClick={(e) => {
             e.stopPropagation();
-            // 点击时展开面板
-            setIsCollapsed(false);
-            if (collapseTimeoutRef.current) {
-              clearTimeout(collapseTimeoutRef.current);
+            // 只有在没有真正拖动时才展开
+            if (!ballDraggedRef.current) {
+              setIsCollapsed(false);
+              setIsHovering(true);
+              if (collapseTimeoutRef.current) {
+                clearTimeout(collapseTimeoutRef.current);
+              }
             }
+            ballDraggedRef.current = false; // 重置
           }}
           style={{
             position: 'fixed',
-            right: '0px', // 吸附到右边缘
-            top: `${position.y}px`,
-            cursor: isDragging ? 'grabbing' : 'pointer',
+            left: snap.edge === 'right' ? 'auto' : (snap.edge === 'left' ? '0px' : `${ballPosition.x}px`),
+            right: snap.edge === 'right' ? '0px' : 'auto',
+            top: snap.edge === 'bottom' ? 'auto' : (snap.edge === 'top' ? '0px' : `${ballPosition.y}px`),
+            bottom: snap.edge === 'bottom' ? '0px' : 'auto',
+            cursor: isDraggingBall ? 'grabbing' : 'move',
             userSelect: 'none',
-            transition: 'all 0.3s ease-out',
+            transition: isDraggingBall ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: isDraggingBall ? 'scale(1.1)' : 'scale(1)',
           }}
-          className="z-[9998] group animate-slide-in-right"
-          title="鼠标悬停或点击展开"
+          className="z-[9998] group"
+          title="拖动或点击展开"
         >
-          <div className="bg-gradient-to-l from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-2 rounded-l-full shadow-lg border-l border-t border-b border-blue-400 flex items-center space-x-2 transition-all group-hover:px-4">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="text-sm font-medium hidden group-hover:inline">跳过</span>
-            <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full">{actualSegments.length}</span>
-          </div>
+          {/* 圆形悬浯球（不靠近边缘时） */}
+          {!isSnapped && (
+            <div className="bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full shadow-2xl border-2 border-white/30 transition-all w-14 h-14 flex flex-col items-center justify-center">
+              <svg className="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+              <span className="text-[9px] font-medium opacity-90">跳过</span>
+            </div>
+          )}
+          
+          {/* 边缘吸附形态 */}
+          {isSnapped && (
+            <div className={`bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-2xl border border-white/30 transition-all
+              ${snap.edge === 'left' ? 'rounded-r-2xl pl-2 pr-3 py-3' : ''}
+              ${snap.edge === 'right' ? 'rounded-l-2xl pr-2 pl-3 py-3' : ''}
+              ${snap.edge === 'top' ? 'rounded-b-2xl pt-2 pb-3 px-3' : ''}
+              ${snap.edge === 'bottom' ? 'rounded-t-2xl pb-2 pt-3 px-3' : ''}
+            `}>
+              <div className={`flex items-center gap-2 ${(snap.edge === 'top' || snap.edge === 'bottom') ? 'flex-row' : 'flex-col'}`}>
+                {openingSegment && (
+                  <div className="text-center">
+                    <div className="text-[10px] opacity-75">🎬片头</div>
+                    <div className="text-xs font-bold">{formatTime(openingSegment.end)}</div>
+                  </div>
+                )}
+                {endingSegment && (
+                  <div className="text-center">
+                    <div className="text-[10px] opacity-75">🎭片尾</div>
+                    <div className="text-xs font-bold">{formatTime(endingSegment.start)}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       );
 
@@ -1127,7 +1285,13 @@ export default function SkipController({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleCollapse();
+                  // 立即收起
+                  setIsCollapsed(true);
+                  setIsHovering(false);
+                  // 清除自动收起定时器
+                  if (collapseTimeoutRef.current) {
+                    clearTimeout(collapseTimeoutRef.current);
+                  }
                 }}
                 className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                 title="收起为悬浮球"
