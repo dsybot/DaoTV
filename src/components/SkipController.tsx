@@ -1042,7 +1042,7 @@ export default function SkipController({
 
   // 🔑 切换折叠状态（手动收起/展开）
   const toggleCollapse = useCallback(() => {
-    setIsCollapsed(prev => !prev);
+    setIsCollapsed((prev: boolean) => !prev);
     // 清除自动收起定时器
     if (collapseTimeoutRef.current) {
       clearTimeout(collapseTimeoutRef.current);
