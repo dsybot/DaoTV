@@ -61,6 +61,34 @@ export async function POST(request: Request) {
     await setTelegramToken(token, tokenData);
     console.log('[Magic Link] Token saved successfully');
 
+    // 自动设置 webhook 到当前域名（如果还未设置）
+    try {
+      const webhookUrl = `${baseUrl}/api/telegram/webhook`;
+      const infoResponse = await fetch(
+        `https://api.telegram.org/bot${telegramConfig.botToken}/getWebhookInfo`
+      );
+      const info = await infoResponse.json();
+
+      if (info.ok && info.result.url !== webhookUrl) {
+        console.log('[Magic Link] Auto-setting webhook to:', webhookUrl);
+        await fetch(
+          `https://api.telegram.org/bot${telegramConfig.botToken}/setWebhook`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: webhookUrl,
+              allowed_updates: ['message'],
+            }),
+          }
+        );
+        console.log('[Magic Link] Webhook set successfully');
+      }
+    } catch (error) {
+      console.error('[Magic Link] Failed to set webhook:', error);
+      // 不阻止流程继续
+    }
+
     // 生成 Telegram 深度链接
     const botUsername = telegramConfig.botUsername;
     const deepLink = `https://t.me/${botUsername}?start=${token}`;
