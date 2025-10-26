@@ -78,6 +78,7 @@ export async function GET() {
     ];
 
     console.log('[轮播API] 开始从TMDB搜索内容...');
+    console.log('[轮播API] 待搜索标题:', items.map(i => `${i.title}(${i.type})`).join(', '));
 
     // 并行搜索TMDB获取详情
     const carouselPromises = items.map(item =>
@@ -85,6 +86,11 @@ export async function GET() {
     );
 
     const carouselResults = await Promise.allSettled(carouselPromises);
+    
+    // 统计搜索结果
+    const successCount = carouselResults.filter(r => r.status === 'fulfilled' && r.value !== null).length;
+    const failCount = carouselResults.length - successCount;
+    console.log(`[轮播API] 搜索结果: 成功${successCount}个, 失败${failCount}个`);
 
     // 过滤出成功获取的数据
     const carouselList: CarouselItem[] = carouselResults
