@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       EnableTMDBCarousel,
     });
 
-    // 处理轮播图设置：如果是 undefined（新字段），使用数据库中的值或默认 true
+    // 处理轮播图设置：如果是 undefined（新字段），使用数据库中的值或默认 false
     // 如果明确传了 true/false，则使用传入的值
     let finalEnableTMDBCarousel: boolean;
     if (EnableTMDBCarousel !== undefined) {
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
       // 数据库中有值，保持原值
       finalEnableTMDBCarousel = adminConfig.SiteConfig.EnableTMDBCarousel;
     } else {
-      // 首次添加此字段，默认开启
-      finalEnableTMDBCarousel = true;
+      // 首次添加此字段，默认关闭
+      finalEnableTMDBCarousel = false;
     }
 
     // 更新缓存中的站点设置

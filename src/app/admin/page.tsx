@@ -4065,7 +4065,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBApiKey: '',
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
-    EnableTMDBCarousel: true,
+    EnableTMDBCarousel: false,
     // 上映日程代理配置
     ReleaseCalendarProxy: '',
   });
@@ -4142,7 +4142,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         TMDBApiKey: config.SiteConfig.TMDBApiKey || '',
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
-        EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? true,
+        EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? false,
         // 上映日程代理配置
         ReleaseCalendarProxy: config.SiteConfig.ReleaseCalendarProxy || '',
       });
@@ -4215,7 +4215,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           DisableYellowFilter: siteSettings.DisableYellowFilter ?? false,
           FluidSearch: siteSettings.FluidSearch ?? true,
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch ?? false,
-          EnableTMDBCarousel: siteSettings.EnableTMDBCarousel ?? true,
+          EnableTMDBCarousel: siteSettings.EnableTMDBCarousel ?? false,
         };
         
         console.log('[SiteConfig] 将要保存 TMDB 设置:', {
