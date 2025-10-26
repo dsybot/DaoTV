@@ -613,7 +613,7 @@ export async function getCarouselItemByTitle(
 
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
-    let mediaId: number = 0;
+    let mediaId = 0;
 
     if (type === 'movie') {
       const movieSearch = await searchTMDBMovie(title);
