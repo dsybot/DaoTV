@@ -99,26 +99,24 @@ export default function HomeCarousel() {
 
   // 无数据或错误处理
   if (error || items.length === 0) {
-    // 开发环境下显示详细错误信息
-    if (process.env.NODE_ENV === 'development') {
-      return (
-        <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-2xl flex items-center justify-center p-6">
-          <div className="text-center">
-            <div className="text-red-600 dark:text-red-400 text-lg font-semibold mb-2">
-              ⚠️ 轮播组件调试信息
-            </div>
-            <div className="text-red-500 dark:text-red-300 text-sm">
-              {error || '未获取到轮播数据'}
-            </div>
-            <div className="text-gray-500 dark:text-gray-400 text-xs mt-2">
-              请检查浏览器控制台和服务端日志
-            </div>
+    return (
+      <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-2xl flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🎬</div>
+          <div className="text-gray-600 dark:text-gray-300 text-lg font-medium mb-2">
+            精彩内容即将呈现
           </div>
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
+            {error || '正在为您准备热门影视内容...'}
+          </div>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-4 p-3 bg-gray-200 dark:bg-gray-700 rounded">
+              调试: 请检查浏览器控制台和服务端日志
+            </div>
+          )}
         </div>
-      );
-    }
-    // 生产环境静默失败
-    return null;
+      </div>
+    );
   }
 
   const currentItem = items[currentIndex];

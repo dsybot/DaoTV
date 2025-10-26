@@ -29,7 +29,8 @@ export async function GET() {
       );
     }
 
-    console.log('[轮播API] 从豆瓣获取热门数据...');
+    console.log('[轮播API] ===== 开始轮播数据获取流程 =====');
+    console.log('[轮播API] 第1步: 从豆瓣获取热门数据...');
 
     // 从豆瓣获取热门数据
     const [moviesResult, tvShowsResult] = await Promise.allSettled([
@@ -44,6 +45,11 @@ export async function GET() {
         type: 'tv',
       }),
     ]);
+    
+    console.log('[轮播API] 豆瓣API调用结果:', {
+      moviesStatus: moviesResult.status,
+      tvShowsStatus: tvShowsResult.status,
+    });
 
     const movies =
       moviesResult.status === 'fulfilled' && moviesResult.value?.code === 200
@@ -55,7 +61,23 @@ export async function GET() {
         ? tvShowsResult.value.list.slice(0, 10)
         : [];
 
-    console.log(`[轮播API] 豆瓣热门: ${movies.length}部电影, ${tvShows.length}部剧集`);
+    console.log(`[轮播API] 第2步: 豆瓣热门结果: ${movies.length}部电影, ${tvShows.length}部剧集`);
+    
+    // 调试：如果没有数据，输出原因
+    if (movies.length === 0) {
+      if (moviesResult.status === 'rejected') {
+        console.error('[轮播API] 电影获取失败:', moviesResult.reason);
+      } else if (moviesResult.status === 'fulfilled') {
+        console.warn('[轮播API] 电影API返回:', moviesResult.value);
+      }
+    }
+    if (tvShows.length === 0) {
+      if (tvShowsResult.status === 'rejected') {
+        console.error('[轮播API] 剧集获取失败:', tvShowsResult.reason);
+      } else if (tvShowsResult.status === 'fulfilled') {
+        console.warn('[轮播API] 剧集API返回:', tvShowsResult.value);
+      }
+    }
     
     if (movies.length === 0 && tvShows.length === 0) {
       console.error('[轮播API] 豆瓣API未返回数据');
