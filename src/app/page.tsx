@@ -50,6 +50,7 @@ function HomeClient() {
   const [username, setUsername] = useState<string>('');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [showWelcomeToast, setShowWelcomeToast] = useState(true);
 
   // 获取用户名
   useEffect(() => {
@@ -70,6 +71,15 @@ function HomeClient() {
       }
     }
   }, [announcement]);
+
+  // 欢迎提示窗自动消失
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcomeToast(false);
+    }, 3000); // 3秒后自动消失
+
+    return () => clearTimeout(timer);
+  }, []);
 
 
   // 收藏夹数据
@@ -248,49 +258,56 @@ function HomeClient() {
       {/* Telegram 新用户欢迎弹窗 */}
       <TelegramWelcomeModal />
 
-      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
-        {/* 欢迎横幅 - 在所有 tab 显示 */}
-        <div className='mb-6 mt-0 md:mt-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-lg animate-[slideDown_0.5s_ease-out]'>
-          <div className='relative bg-white dark:bg-gray-900 rounded-2xl p-5 sm:p-6'>
-            {/* 装饰性背景 - 优化：移除模糊效果，使用纯渐变 */}
-            <div className='absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full opacity-60'></div>
-            <div className='absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-400/10 to-purple-400/10 rounded-full opacity-60'></div>
-
-            <div className='relative z-10'>
-              <div className='flex items-start justify-between gap-4'>
-                <div className='flex-1 min-w-0'>
-                  <h2 className='text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1.5 flex items-center gap-2 flex-wrap'>
-                    <span>
-                      {(() => {
-                        const hour = new Date().getHours();
-                        if (hour < 12) return '早上好';
-                        if (hour < 18) return '下午好';
-                        return '晚上好';
-                      })()}
-                      {username && '，'}
-                    </span>
-                    {username && (
-                      <span className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
-                        {username}
-                      </span>
-                    )}
-                    <span className='inline-block animate-wave origin-bottom-right'>👋</span>
-                  </h2>
-                  <p className='text-sm sm:text-base text-gray-600 dark:text-gray-400'>
-                    发现更多精彩影视内容 ✨
-                  </p>
-                </div>
-
-                {/* 装饰图标 - 优化：移除 pulse 动画 */}
-                <div className='hidden lg:block flex-shrink-0'>
-                  <div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
-                    <Film className='w-8 h-8 text-white' />
-                  </div>
-                </div>
+      {/* 右侧滑入的欢迎悬浮窗 */}
+      <div
+        className={`fixed top-20 right-4 z-50 transition-all duration-500 ease-out ${
+          showWelcomeToast
+            ? 'translate-x-0 opacity-100'
+            : 'translate-x-[120%] opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className='relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-2xl'>
+          <div className='relative bg-white dark:bg-gray-900 rounded-xl px-5 py-3 backdrop-blur-sm'>
+            <div className='flex items-center gap-3'>
+              <div className='flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center'>
+                <span className='text-xl animate-wave origin-bottom-right'>👋</span>
               </div>
+              <div className='flex-1 min-w-0'>
+                <div className='text-base font-bold text-gray-900 dark:text-white flex items-center gap-1.5 flex-wrap'>
+                  <span>
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return '早上好';
+                      if (hour < 18) return '下午好';
+                      return '晚上好';
+                    })()}
+                    {username && '，'}
+                  </span>
+                  {username && (
+                    <span className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
+                      {username}
+                    </span>
+                  )}
+                </div>
+                <p className='text-xs text-gray-600 dark:text-gray-400 mt-0.5'>
+                  发现更多精彩影视内容 ✨
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWelcomeToast(false)}
+                className='flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors'
+                aria-label='关闭'
+              >
+                <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
 
         {/* 轮播图 - 在所有tab显示 */}
         <div className='mb-8'>
