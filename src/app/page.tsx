@@ -310,7 +310,7 @@ function HomeClient() {
       <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
 
         {/* 轮播图 - 在所有tab显示 */}
-        <div className='mb-8'>
+        <div className='mt-8 sm:mt-12 mb-8'>
           <HomeCarousel />
         </div>
 
