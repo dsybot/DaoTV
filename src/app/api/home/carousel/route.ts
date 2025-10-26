@@ -30,10 +30,10 @@ export async function GET() {
     }
 
     console.log('[轮播API] ===== 开始轮播数据获取流程 =====');
-    console.log('[轮播API] 第1步: 从豆瓣获取热门数据...');
+    console.log('[轮播API] 第1步: 从豆瓣获取热门数据 (6电影+10剧集+4综艺)...');
 
-    // 从豆瓣获取热门数据
-    const [moviesResult, tvShowsResult] = await Promise.allSettled([
+    // 从豆瓣获取热门数据：6部电影 + 10部剧集 + 4部综艺
+    const [moviesResult, tvShowsResult, varietyShowsResult] = await Promise.allSettled([
       getDoubanCategories({
         kind: 'movie',
         category: '热门',
@@ -44,16 +44,22 @@ export async function GET() {
         category: 'tv',
         type: 'tv',
       }),
+      getDoubanCategories({
+        kind: 'tv',
+        category: 'show',
+        type: 'show',
+      }),
     ]);
     
     console.log('[轮播API] 豆瓣API调用结果:', {
       moviesStatus: moviesResult.status,
       tvShowsStatus: tvShowsResult.status,
+      varietyShowsStatus: varietyShowsResult.status,
     });
 
     const movies =
       moviesResult.status === 'fulfilled' && moviesResult.value?.code === 200
-        ? moviesResult.value.list.slice(0, 10)
+        ? moviesResult.value.list.slice(0, 6)
         : [];
 
     const tvShows =
@@ -61,7 +67,12 @@ export async function GET() {
         ? tvShowsResult.value.list.slice(0, 10)
         : [];
 
-    console.log(`[轮播API] 第2步: 豆瓣热门结果: ${movies.length}部电影, ${tvShows.length}部剧集`);
+    const varietyShows =
+      varietyShowsResult.status === 'fulfilled' && varietyShowsResult.value?.code === 200
+        ? varietyShowsResult.value.list.slice(0, 4)
+        : [];
+
+    console.log(`[轮播API] 第2步: 豆瓣热门结果: ${movies.length}部电影, ${tvShows.length}部剧集, ${varietyShows.length}部综艺`);
     
     // 调试：如果没有数据，输出原因
     if (movies.length === 0) {
@@ -78,9 +89,16 @@ export async function GET() {
         console.warn('[轮播API] 剧集API返回:', tvShowsResult.value);
       }
     }
+    if (varietyShows.length === 0) {
+      if (varietyShowsResult.status === 'rejected') {
+        console.error('[轮播API] 综艺获取失败:', varietyShowsResult.reason);
+      } else if (varietyShowsResult.status === 'fulfilled') {
+        console.warn('[轮播API] 综艺API返回:', varietyShowsResult.value);
+      }
+    }
     
-    if (movies.length === 0 && tvShows.length === 0) {
-      console.error('[轮播API] 豆瓣API未返回数据');
+    if (movies.length === 0 && tvShows.length === 0 && varietyShows.length === 0) {
+      console.error('[轮播API] 豆瓣API未返回任何数据');
       return NextResponse.json({
         code: 200,
         message: '豆瓣API未返回热门数据',
@@ -88,14 +106,16 @@ export async function GET() {
         debug: process.env.NODE_ENV === 'development' ? {
           moviesStatus: moviesResult.status,
           tvShowsStatus: tvShowsResult.status,
+          varietyShowsStatus: varietyShowsResult.status,
         } : undefined
       });
     }
 
-    // 合并标题列表
+    // 合并标题列表：电影 + 剧集 + 综艺
     const items = [
       ...movies.map(m => ({ title: m.title, type: 'movie' as const })),
       ...tvShows.map(t => ({ title: t.title, type: 'tv' as const })),
+      ...varietyShows.map(v => ({ title: v.title, type: 'tv' as const })), // 综艺也用tv类型在TMDB搜索
     ];
 
     console.log(`[轮播API] 第3步: 准备搜索${items.length}个标题...`);
@@ -171,6 +191,7 @@ export async function GET() {
           rejectedResults: rejected.length,
           sourceMovies: movies.length,
           sourceTVShows: tvShows.length,
+          sourceVarietyShows: varietyShows.length,
         }
       });
     }
