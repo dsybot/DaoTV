@@ -97,7 +97,21 @@ export async function GET() {
           result.status === 'fulfilled' && result.value !== null
       )
       .map(result => result.value)
-      .filter(item => item.backdrop && item.backdrop.length > 0); // 确保有横屏海报
+      .filter(item => {
+        // 优先使用横屏海报，如果没有则使用竖版海报
+        if (item.backdrop && item.backdrop.length > 0) {
+          return true;
+        }
+        // 如果没有横屏但有竖版海报也可以
+        if (item.poster && item.poster.length > 0) {
+          console.log(`[轮播API] ${item.title} 使用竖版海报代替横屏`);
+          // 将竖版海报作为横屏使用
+          item.backdrop = item.poster;
+          return true;
+        }
+        console.warn(`[轮播API] ${item.title} 缺少海报，已过滤`);
+        return false;
+      });
 
     console.log(`[轮播API] 成功获取 ${carouselList.length} 个轮播项`);
     if (carouselList.length > 0) {

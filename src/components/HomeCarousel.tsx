@@ -142,6 +142,8 @@ export default function HomeCarousel() {
             className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700"
             style={{
               backgroundImage: `url(${currentItem.backdrop})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
             }}
           />
 
