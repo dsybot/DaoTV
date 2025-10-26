@@ -27,7 +27,7 @@ export async function GET() {
 
     console.log('[轮播API] 开始获取豆瓣热门数据...');
 
-    // 从豆瓣获取热门电影和电视剧（各取3个）
+    // 从豆瓣获取热门电影和电视剧（各取8个以增加命中率）
     const [moviesResult, tvShowsResult] = await Promise.allSettled([
       getDoubanCategories({
         kind: 'movie',
@@ -41,17 +41,31 @@ export async function GET() {
       }),
     ]);
 
+    // 记录豆瓣API调用结果
+    if (moviesResult.status === 'rejected') {
+      console.error('[轮播API] 豆瓣电影API失败:', moviesResult.reason);
+    }
+    if (tvShowsResult.status === 'rejected') {
+      console.error('[轮播API] 豆瓣剧集API失败:', tvShowsResult.reason);
+    }
+
     const movies =
       moviesResult.status === 'fulfilled' && moviesResult.value?.code === 200
-        ? moviesResult.value.list.slice(0, 3)
+        ? moviesResult.value.list.slice(0, 8)
         : [];
 
     const tvShows =
       tvShowsResult.status === 'fulfilled' && tvShowsResult.value?.code === 200
-        ? tvShowsResult.value.list.slice(0, 3)
+        ? tvShowsResult.value.list.slice(0, 8)
         : [];
 
     console.log(`[轮播API] 豆瓣数据: ${movies.length}部电影, ${tvShows.length}部电视剧`);
+    if (movies.length > 0) {
+      console.log('[轮播API] 电影标题:', movies.slice(0, 3).map(m => m.title).join(', '));
+    }
+    if (tvShows.length > 0) {
+      console.log('[轮播API] 剧集标题:', tvShows.slice(0, 3).map(t => t.title).join(', '));
+    }
 
     // 合并并准备要查询的项目
     const items = [
@@ -86,9 +100,15 @@ export async function GET() {
       .filter(item => item.backdrop && item.backdrop.length > 0); // 确保有横屏海报
 
     console.log(`[轮播API] 成功获取 ${carouselList.length} 个轮播项`);
+    if (carouselList.length > 0) {
+      console.log('[轮播API] 轮播项标题:', carouselList.map(item => item.title).join(', '));
+    }
 
     // 如果没有获取到任何数据
     if (carouselList.length === 0) {
+      console.warn('[轮播API] 警告：未能获取到任何有效的轮播数据');
+      console.warn('[轮播API] 豆瓣返回:', { movies: movies.length, tvShows: tvShows.length });
+      console.warn('[轮播API] TMDB搜索可能全部失败或无横屏海报');
       return NextResponse.json({
         code: 200,
         message: '未能获取到有效的轮播数据',

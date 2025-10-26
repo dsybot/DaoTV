@@ -526,7 +526,7 @@ export async function searchTMDBMovie(query: string, page = 1): Promise<TMDBMovi
   const cacheKey = getCacheKey('movie_search', { query: query.trim(), page });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB电影搜索缓存命中: ${query}`);
+    console.log(`TMDB电影搜索缓存命中: ${query} (${cached.results.length}条结果)`);
     return cached;
   }
 
@@ -536,7 +536,7 @@ export async function searchTMDBMovie(query: string, page = 1): Promise<TMDBMovi
   });
 
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
-  console.log(`TMDB电影搜索已缓存: ${query}`);
+  console.log(`TMDB电影搜索已缓存: ${query} (${result.results.length}条结果)`);
 
   return result;
 }
@@ -548,7 +548,7 @@ export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearc
   const cacheKey = getCacheKey('tv_search', { query: query.trim(), page });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB电视剧搜索缓存命中: ${query}`);
+    console.log(`TMDB电视剧搜索缓存命中: ${query} (${cached.results.length}条结果)`);
     return cached;
   }
 
@@ -558,7 +558,7 @@ export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearc
   });
 
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
-  console.log(`TMDB电视剧搜索已缓存: ${query}`);
+  console.log(`TMDB电视剧搜索已缓存: ${query} (${result.results.length}条结果)`);
 
   return result;
 }
@@ -630,9 +630,11 @@ export async function getCarouselItemByTitle(
     }
 
     if (!searchResult) {
-      console.log(`[TMDB轮播] 未找到: ${title}`);
+      console.warn(`[TMDB轮播] 未找到: ${title} (${type})`);
       return null;
     }
+
+    console.log(`[TMDB轮播] 找到匹配: ${type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name}`);
 
     // 2. 获取预告片
     let trailerKey: string | undefined;
@@ -672,6 +674,10 @@ export async function getCarouselItemByTitle(
       type,
       trailerKey
     };
+
+    if (!carouselItem.backdrop) {
+      console.warn(`[TMDB轮播] ${title} 缺少横屏海报`);
+    }
 
     return carouselItem;
   } catch (error) {

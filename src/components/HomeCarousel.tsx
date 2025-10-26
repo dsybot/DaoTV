@@ -81,15 +81,22 @@ export default function HomeCarousel() {
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext, showTrailer]);
 
-  // 不显示轮播的情况
+  // 加载状态
   if (loading) {
     return (
-      <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 rounded-2xl animate-pulse" />
+      <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 rounded-2xl animate-pulse flex items-center justify-center">
+        <div className="text-gray-500 dark:text-gray-400 text-lg">正在加载精彩内容...</div>
+      </div>
     );
   }
 
+  // 无数据时不显示组件（静默失败）
   if (error || items.length === 0) {
-    return null; // 静默失败，不显示错误
+    // 开发环境下在控制台显示错误信息，生产环境静默
+    if (error && process.env.NODE_ENV === 'development') {
+      console.warn('[轮播组件]', error);
+    }
+    return null;
   }
 
   const currentItem = items[currentIndex];
