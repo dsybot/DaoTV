@@ -35,28 +35,20 @@ export default function HomeCarousel() {
   useEffect(() => {
     const fetchCarousel = async () => {
       try {
-        console.log('[轮播组件] 开始获取轮播数据...');
         setLoading(true);
         const response = await fetch('/api/home/carousel');
-        console.log('[轮播组件] API响应状态:', response.status);
-        
         const data: CarouselResponse = await response.json();
-        console.log('[轮播组件] API返回数据:', data);
 
         if (data.code === 200 && data.list.length > 0) {
-          console.log(`[轮播组件] 成功获取 ${data.list.length} 个轮播项`);
           setItems(data.list);
           setError(null);
         } else if (data.code === 503) {
-          console.warn('[轮播组件] TMDB功能未启用');
           setError('TMDB功能未启用');
         } else {
-          console.warn('[轮播组件] 暂无轮播数据:', data.message);
           setError(data.message || '暂无轮播数据');
         }
       } catch (err) {
-        console.error('[轮播组件] 获取轮播数据失败:', err);
-        setError(`加载失败: ${(err as Error).message}`);
+        setError('加载失败');
       } finally {
         setLoading(false);
       }
@@ -88,10 +80,12 @@ export default function HomeCarousel() {
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext, showTrailer]);
 
+  const containerClass = "w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl";
+
   // 加载状态
   if (loading) {
     return (
-      <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 rounded-2xl animate-pulse flex items-center justify-center">
+      <div className={`${containerClass} bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 animate-pulse flex items-center justify-center`}>
         <div className="text-gray-500 dark:text-gray-400 text-lg">正在加载精彩内容...</div>
       </div>
     );
@@ -100,7 +94,7 @@ export default function HomeCarousel() {
   // 无数据或错误处理
   if (error || items.length === 0) {
     return (
-      <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-2xl flex items-center justify-center p-6">
+      <div className={`${containerClass} bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-6`}>
         <div className="text-center">
           <div className="text-6xl mb-4">🎬</div>
           <div className="text-gray-600 dark:text-gray-300 text-lg font-medium mb-2">
@@ -109,11 +103,6 @@ export default function HomeCarousel() {
           <div className="text-gray-500 dark:text-gray-400 text-sm">
             {error || '正在为您准备热门影视内容...'}
           </div>
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-400 dark:text-gray-500 mt-4 p-3 bg-gray-200 dark:bg-gray-700 rounded">
-              调试: 请检查浏览器控制台和服务端日志
-            </div>
-          )}
         </div>
       </div>
     );
@@ -122,7 +111,7 @@ export default function HomeCarousel() {
   const currentItem = items[currentIndex];
 
   return (
-    <div className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden group">
+    <div className={`relative ${containerClass} overflow-hidden group`}>
       {/* 背景图片或预告片 */}
       {showTrailer && currentItem.trailerKey ? (
         <div className="absolute inset-0 w-full h-full">
@@ -135,17 +124,10 @@ export default function HomeCarousel() {
         </div>
       ) : (
         <>
-          {/* 背景图片 */}
           <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700"
-            style={{
-              backgroundImage: `url(${currentItem.backdrop})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
+            className="absolute inset-0 bg-cover bg-center transition-all duration-700"
+            style={{ backgroundImage: `url(${currentItem.backdrop})` }}
           />
-
-          {/* 渐变遮罩 */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         </>
