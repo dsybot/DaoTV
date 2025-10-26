@@ -83,7 +83,9 @@ export async function GET() {
     const carouselResults = await Promise.allSettled(carouselPromises);
     
     // 详细统计
-    const fulfilled = carouselResults.filter(r => r.status === 'fulfilled');
+    const fulfilled = carouselResults.filter(
+      (r): r is PromiseFulfilledResult<CarouselItem | null> => r.status === 'fulfilled'
+    );
     const rejected = carouselResults.filter(r => r.status === 'rejected');
     const nullResults = fulfilled.filter(r => r.value === null);
     const validResults = fulfilled.filter(r => r.value !== null);
