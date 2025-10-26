@@ -893,6 +893,7 @@ For complete feature updates and bug fixes, see [CHANGELOG](CHANGELOG).
 
 ### Major Milestone Versions
 
+- **v5.6.0**: Telegram Magic Link authentication, Source Browser & Testing Module, video source import/export
 - **v5.5.0**: User level system, release calendar, inactive user cleanup
 - **v5.4.0**: Complete short drama features, playback statistics system
 - **v5.3.0**: YouTube integration, AI recommendation system, TVBox security config
