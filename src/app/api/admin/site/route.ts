@@ -96,6 +96,20 @@ export async function POST(request: NextRequest) {
       EnableTMDBCarousel,
     });
 
+    // 处理轮播图设置：如果是 undefined（新字段），使用数据库中的值或默认 true
+    // 如果明确传了 true/false，则使用传入的值
+    let finalEnableTMDBCarousel: boolean;
+    if (EnableTMDBCarousel !== undefined) {
+      // 前端明确传了值（true 或 false）
+      finalEnableTMDBCarousel = EnableTMDBCarousel;
+    } else if (adminConfig.SiteConfig.EnableTMDBCarousel !== undefined) {
+      // 数据库中有值，保持原值
+      finalEnableTMDBCarousel = adminConfig.SiteConfig.EnableTMDBCarousel;
+    } else {
+      // 首次添加此字段，默认开启
+      finalEnableTMDBCarousel = true;
+    }
+
     // 更新缓存中的站点设置
     adminConfig.SiteConfig = {
       SiteName,
@@ -111,7 +125,7 @@ export async function POST(request: NextRequest) {
       TMDBApiKey: TMDBApiKey || '',
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
-      EnableTMDBCarousel: EnableTMDBCarousel ?? true,
+      EnableTMDBCarousel: finalEnableTMDBCarousel,
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
     };
 
