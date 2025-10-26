@@ -520,6 +520,44 @@ export interface CarouselItem {
 }
 
 /**
+ * 获取TMDB热门电影
+ */
+export async function getTMDBTrendingMovies(): Promise<TMDBMovieSearchResponse> {
+  const cacheKey = getCacheKey('trending_movies', {});
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`TMDB热门电影缓存命中 (${cached.results.length}条结果)`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBMovieSearchResponse>('/trending/movie/week');
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
+  console.log(`TMDB热门电影已缓存 (${result.results.length}条结果)`);
+
+  return result;
+}
+
+/**
+ * 获取TMDB热门电视剧
+ */
+export async function getTMDBTrendingTV(): Promise<TMDBTVSearchResponse> {
+  const cacheKey = getCacheKey('trending_tv', {});
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`TMDB热门电视剧缓存命中 (${cached.results.length}条结果)`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBTVSearchResponse>('/trending/tv/week');
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
+  console.log(`TMDB热门电视剧已缓存 (${result.results.length}条结果)`);
+
+  return result;
+}
+
+/**
  * 搜索电影
  */
 export async function searchTMDBMovie(query: string, page = 1): Promise<TMDBMovieSearchResponse> {
