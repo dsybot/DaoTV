@@ -4234,8 +4234,13 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           throw new Error(data.error || `保存失败: ${resp.status}`);
         }
 
-        showSuccess('保存成功, 请刷新页面', showAlert);
         await refreshConfig();
+        showSuccess('保存成功，即将刷新页面...', showAlert);
+        
+        // 延迟 1 秒后刷新整个页面，让用户看到成功提示
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } catch (err) {
         showError(err instanceof Error ? err.message : '保存失败', showAlert);
         throw err;
