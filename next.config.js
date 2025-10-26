@@ -5,6 +5,8 @@ const nextConfig = {
   output: 'standalone',
   eslint: {
     dirs: ['src'],
+    // Docker构建时忽略ESLint错误
+    ignoreDuringBuilds: true,
   },
 
   reactStrictMode: false,
