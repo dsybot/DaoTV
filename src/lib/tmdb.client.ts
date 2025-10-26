@@ -115,11 +115,19 @@ export interface TMDBFilterOptions {
 }
 
 /**
- * 检查TMDB是否已配置并启用
+ * 检查TMDB是否已配置并启用（用于演员搜索）
  */
 export async function isTMDBEnabled(): Promise<boolean> {
   const config = await getConfig();
   return !!(config.SiteConfig.EnableTMDBActorSearch && config.SiteConfig.TMDBApiKey);
+}
+
+/**
+ * 检查轮播图是否启用
+ */
+export async function isCarouselEnabled(): Promise<boolean> {
+  const config = await getConfig();
+  return !!(config.SiteConfig.EnableTMDBCarousel && config.SiteConfig.TMDBApiKey);
 }
 
 /**

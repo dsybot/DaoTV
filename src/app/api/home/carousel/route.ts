@@ -4,7 +4,7 @@ import { getCacheTime } from '@/lib/config';
 import { getDoubanCategories } from '@/lib/douban.client';
 import { 
   getCarouselItemByTitle,
-  isTMDBEnabled, 
+  isCarouselEnabled, 
   CarouselItem 
 } from '@/lib/tmdb.client';
 
@@ -16,13 +16,13 @@ export const runtime = 'nodejs';
  */
 export async function GET() {
   try {
-    // 检查TMDB是否启用
-    const tmdbEnabled = await isTMDBEnabled();
-    if (!tmdbEnabled) {
+    // 检查轮播图是否启用
+    const carouselEnabled = await isCarouselEnabled();
+    if (!carouselEnabled) {
       return NextResponse.json(
         {
           code: 503,
-          message: 'TMDB功能未启用，无法获取轮播数据',
+          message: 'TMDB轮播图功能未启用',
           list: []
         },
         { status: 503 }
