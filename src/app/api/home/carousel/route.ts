@@ -67,9 +67,10 @@ export async function GET() {
         ? tvShowsResult.value.list.slice(0, 10)
         : [];
 
+    // 综艺获取更多备选（因为TMDB搜索成功率可能较低）
     const varietyShows =
       varietyShowsResult.status === 'fulfilled' && varietyShowsResult.value?.code === 200
-        ? varietyShowsResult.value.list.slice(0, 4)
+        ? varietyShowsResult.value.list.slice(0, 10) // 获取10个，期望至少能匹配到4个
         : [];
 
     console.log(`[轮播API] 第2步: 豆瓣热门结果: ${movies.length}部电影, ${tvShows.length}部剧集, ${varietyShows.length}部综艺`);
@@ -111,11 +112,11 @@ export async function GET() {
       });
     }
 
-    // 合并标题列表：电影 + 剧集 + 综艺
+    // 合并标题列表：电影 + 剧集 + 综艺（标记来源以便后续分配）
     const items = [
-      ...movies.map(m => ({ title: m.title, type: 'movie' as const })),
-      ...tvShows.map(t => ({ title: t.title, type: 'tv' as const })),
-      ...varietyShows.map(v => ({ title: v.title, type: 'tv' as const })), // 综艺也用tv类型在TMDB搜索
+      ...movies.map(m => ({ title: m.title, type: 'movie' as const, source: 'movie' as const })),
+      ...tvShows.map(t => ({ title: t.title, type: 'tv' as const, source: 'tv' as const })),
+      ...varietyShows.map(v => ({ title: v.title, type: 'tv' as const, source: 'variety' as const })), // 综艺也用tv类型在TMDB搜索
     ];
 
     console.log(`[轮播API] 第3步: 准备搜索${items.length}个标题...`);
@@ -138,14 +139,22 @@ export async function GET() {
     
     console.log(`[轮播API] 搜索统计: 总数${carouselResults.length}, 成功${fulfilled.length}, 失败${rejected.length}, 空值${nullResults.length}, 有效${validResults.length}`);
 
-    // 过滤出成功获取的数据
-    const carouselList: CarouselItem[] = carouselResults
-      .filter(
-        (result): result is PromiseFulfilledResult<CarouselItem> =>
-          result.status === 'fulfilled' && result.value !== null
+    // 将搜索结果与原始items关联，保留source信息
+    const carouselWithSource = carouselResults
+      .map((result, index) => ({
+        result,
+        source: items[index].source,
+        originalTitle: items[index].title
+      }))
+      .filter(({ result }) => 
+        result.status === 'fulfilled' && result.value !== null
       )
-      .map(result => result.value)
-      .filter(item => {
+      .map(({ result, source, originalTitle }) => ({
+        item: (result as PromiseFulfilledResult<CarouselItem>).value,
+        source,
+        originalTitle
+      }))
+      .filter(({ item }) => {
         // 优先使用横屏海报，如果没有则使用竖版海报
         if (item.backdrop && item.backdrop.length > 0) {
           return true;
@@ -153,7 +162,6 @@ export async function GET() {
         // 如果没有横屏但有竖版海报也可以
         if (item.poster && item.poster.length > 0) {
           console.log(`[轮播API] ${item.title} 使用竖版海报代替横屏`);
-          // 将竖版海报作为横屏使用
           item.backdrop = item.poster;
           return true;
         }
@@ -161,7 +169,18 @@ export async function GET() {
         return false;
       });
 
-    console.log(`[轮播API] 第4步: 过滤后得到 ${carouselList.length} 个有效轮播项`);
+    // 按来源分类并限制数量：6电影 + 10剧集 + 4综艺
+    const movieItems = carouselWithSource.filter(x => x.source === 'movie').slice(0, 6);
+    const tvItems = carouselWithSource.filter(x => x.source === 'tv').slice(0, 10);
+    const varietyItems = carouselWithSource.filter(x => x.source === 'variety').slice(0, 4);
+
+    const carouselList = [
+      ...movieItems.map(x => x.item),
+      ...tvItems.map(x => x.item),
+      ...varietyItems.map(x => x.item),
+    ];
+
+    console.log(`[轮播API] 第4步: 按类型分配 - 电影:${movieItems.length}/6, 剧集:${tvItems.length}/10, 综艺:${varietyItems.length}/4, 总计:${carouselList.length}/20`);
     if (carouselList.length > 0) {
       console.log('[轮播API] ✅ 最终轮播项:', carouselList.map(item => `${item.title}(${item.type})`).join(', '));
     }
