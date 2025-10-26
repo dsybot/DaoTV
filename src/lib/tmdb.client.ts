@@ -6,6 +6,7 @@ import { TMDB_CACHE_EXPIRE, getCacheKey, getCache, setCache } from '@/lib/tmdb-c
 // TMDB API 配置
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
 // TMDB API 响应类型
 interface TMDBPerson {
@@ -436,5 +437,245 @@ export async function searchTMDBActorWorks(
       list: [],
       source: 'tmdb'
     } as TMDBResult;
+  }
+}
+
+// ============ 轮播图相关接口和函数 ============
+
+// 电影搜索响应
+interface TMDBMovieSearchResponse {
+  page: number;
+  results: TMDBMovie[];
+  total_pages: number;
+  total_results: number;
+}
+
+// 电视剧搜索响应
+interface TMDBTVSearchResponse {
+  page: number;
+  results: TMDBTVShow[];
+  total_pages: number;
+  total_results: number;
+}
+
+// 电影详情
+interface TMDBMovie {
+  id: number;
+  title: string;
+  original_title: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date: string;
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  genre_ids?: number[];
+}
+
+// 电视剧详情
+interface TMDBTVShow {
+  id: number;
+  name: string;
+  original_name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  genre_ids?: number[];
+}
+
+// 视频信息
+interface TMDBVideo {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  size: number;
+  type: string;
+  official: boolean;
+  published_at: string;
+}
+
+// 视频列表响应
+interface TMDBVideosResponse {
+  id: number;
+  results: TMDBVideo[];
+}
+
+// 轮播图项目
+export interface CarouselItem {
+  id: number;
+  title: string;
+  overview: string;
+  backdrop: string;
+  poster: string;
+  rate: number;
+  year: string;
+  type: 'movie' | 'tv';
+  trailerKey?: string; // YouTube视频key
+}
+
+/**
+ * 搜索电影
+ */
+export async function searchTMDBMovie(query: string, page = 1): Promise<TMDBMovieSearchResponse> {
+  const cacheKey = getCacheKey('movie_search', { query: query.trim(), page });
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`TMDB电影搜索缓存命中: ${query}`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBMovieSearchResponse>('/search/movie', {
+    query: query.trim(),
+    page: page.toString()
+  });
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
+  console.log(`TMDB电影搜索已缓存: ${query}`);
+
+  return result;
+}
+
+/**
+ * 搜索电视剧
+ */
+export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearchResponse> {
+  const cacheKey = getCacheKey('tv_search', { query: query.trim(), page });
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`TMDB电视剧搜索缓存命中: ${query}`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBTVSearchResponse>('/search/tv', {
+    query: query.trim(),
+    page: page.toString()
+  });
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
+  console.log(`TMDB电视剧搜索已缓存: ${query}`);
+
+  return result;
+}
+
+/**
+ * 获取电影预告片
+ */
+export async function getTMDBMovieVideos(movieId: number): Promise<TMDBVideosResponse> {
+  const cacheKey = getCacheKey('movie_videos', { movieId });
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`TMDB电影视频缓存命中: ${movieId}`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBVideosResponse>(`/movie/${movieId}/videos`);
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.movie_credits);
+  console.log(`TMDB电影视频已缓存: ${movieId}`);
+
+  return result;
+}
+
+/**
+ * 获取电视剧预告片
+ */
+export async function getTMDBTVVideos(tvId: number): Promise<TMDBVideosResponse> {
+  const cacheKey = getCacheKey('tv_videos', { tvId });
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`TMDB电视剧视频缓存命中: ${tvId}`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBVideosResponse>(`/tv/${tvId}/videos`);
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.tv_credits);
+  console.log(`TMDB电视剧视频已缓存: ${tvId}`);
+
+  return result;
+}
+
+/**
+ * 通过豆瓣电影/电视剧名称获取TMDB轮播图数据
+ */
+export async function getCarouselItemByTitle(
+  title: string,
+  type: 'movie' | 'tv'
+): Promise<CarouselItem | null> {
+  try {
+    console.log(`[TMDB轮播] 搜索 ${type}: ${title}`);
+
+    // 1. 搜索电影或电视剧
+    let searchResult: TMDBMovie | TMDBTVShow | null = null;
+    let mediaId: number = 0;
+
+    if (type === 'movie') {
+      const movieSearch = await searchTMDBMovie(title);
+      if (movieSearch.results.length > 0) {
+        searchResult = movieSearch.results[0];
+        mediaId = searchResult.id;
+      }
+    } else {
+      const tvSearch = await searchTMDBTV(title);
+      if (tvSearch.results.length > 0) {
+        searchResult = tvSearch.results[0];
+        mediaId = searchResult.id;
+      }
+    }
+
+    if (!searchResult) {
+      console.log(`[TMDB轮播] 未找到: ${title}`);
+      return null;
+    }
+
+    // 2. 获取预告片
+    let trailerKey: string | undefined;
+    try {
+      const videos = type === 'movie' 
+        ? await getTMDBMovieVideos(mediaId)
+        : await getTMDBTVVideos(mediaId);
+
+      // 优先选择官方预告片(Trailer)，其次是Teaser
+      const trailer = videos.results.find(
+        v => v.site === 'YouTube' && v.type === 'Trailer' && v.official
+      ) || videos.results.find(
+        v => v.site === 'YouTube' && v.type === 'Trailer'
+      ) || videos.results.find(
+        v => v.site === 'YouTube' && v.type === 'Teaser'
+      );
+
+      if (trailer) {
+        trailerKey = trailer.key;
+        console.log(`[TMDB轮播] 找到预告片: ${title} - ${trailerKey}`);
+      }
+    } catch (error) {
+      console.warn(`[TMDB轮播] 获取预告片失败: ${title}`, error);
+    }
+
+    // 3. 构建轮播图项
+    const carouselItem: CarouselItem = {
+      id: searchResult.id,
+      title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
+      overview: searchResult.overview || '',
+      backdrop: searchResult.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}` : '',
+      poster: searchResult.poster_path ? `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}` : '',
+      rate: searchResult.vote_average || 0,
+      year: type === 'movie' 
+        ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
+        : ((searchResult as TMDBTVShow).first_air_date?.split('-')[0] || ''),
+      type,
+      trailerKey
+    };
+
+    return carouselItem;
+  } catch (error) {
+    console.error(`[TMDB轮播] 处理失败: ${title}`, error);
+    return null;
   }
 }

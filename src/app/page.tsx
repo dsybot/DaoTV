@@ -26,6 +26,7 @@ import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
+import HomeCarousel from '@/components/HomeCarousel';
 import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
@@ -290,6 +291,13 @@ function HomeClient() {
             </div>
           </div>
         </div>
+
+        {/* 轮播图 - 仅在首页tab显示 */}
+        {activeTab === 'home' && (
+          <div className='mb-8'>
+            <HomeCarousel />
+          </div>
+        )}
 
         {/* 顶部 Tab 切换 */}
         <div className='mb-8 flex items-center justify-center'>
