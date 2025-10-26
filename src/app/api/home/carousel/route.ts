@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
+import { getDoubanCategories } from '@/lib/douban.client';
 import { 
-  getTMDBTrendingMovies,
-  getTMDBTrendingTV,
-  getTMDBMovieVideos,
-  getTMDBTVVideos,
+  getCarouselItemByTitle,
   isTMDBEnabled, 
   CarouselItem 
 } from '@/lib/tmdb.client';
-
-const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
-const TMDB_POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 export const runtime = 'nodejs';
 
 /**
  * 获取首页轮播图数据
- * 从TMDB trending获取本周热门内容，保证有数据
+ * 从豆瓣热门获取标题，然后从TMDB搜索获取海报和预告片
  */
 export async function GET() {
   try {
@@ -34,22 +29,36 @@ export async function GET() {
       );
     }
 
-    console.log('[轮播API] 从TMDB获取trending数据...');
+    console.log('[轮播API] 从豆瓣获取热门数据...');
 
-    // 从TMDB获取trending数据
+    // 从豆瓣获取热门数据
     const [moviesResult, tvShowsResult] = await Promise.allSettled([
-      getTMDBTrendingMovies(),
-      getTMDBTrendingTV(),
+      getDoubanCategories({
+        kind: 'movie',
+        category: '热门',
+        type: '全部',
+      }),
+      getDoubanCategories({
+        kind: 'tv',
+        category: 'tv',
+        type: 'tv',
+      }),
     ]);
 
-    const trendingMovies =
-      moviesResult.status === 'fulfilled' ? moviesResult.value.results.slice(0, 6) : [];
-    const trendingTV =
-      tvShowsResult.status === 'fulfilled' ? tvShowsResult.value.results.slice(0, 6) : [];
+    const movies =
+      moviesResult.status === 'fulfilled' && moviesResult.value?.code === 200
+        ? moviesResult.value.list.slice(0, 10)
+        : [];
 
-    console.log(`[轮播API] TMDB Trending: ${trendingMovies.length}部电影, ${trendingTV.length}部剧集`);
+    const tvShows =
+      tvShowsResult.status === 'fulfilled' && tvShowsResult.value?.code === 200
+        ? tvShowsResult.value.list.slice(0, 10)
+        : [];
 
-    if (trendingMovies.length === 0 && trendingTV.length === 0) {
+    console.log(`[轮播API] 豆瓣热门: ${movies.length}部电影, ${tvShows.length}部剧集`);
+    
+    if (movies.length === 0 && tvShows.length === 0) {
+      console.error('[轮播API] 豆瓣API未返回数据');
       return NextResponse.json({
         code: 200,
         message: '暂无轮播数据',
@@ -57,61 +66,29 @@ export async function GET() {
       });
     }
 
-    // 合并所有内容
-    const allMedia = [
-      ...trendingMovies.map(m => ({ data: m, type: 'movie' as const })),
-      ...trendingTV.map(t => ({ data: t, type: 'tv' as const })),
+    // 合并标题列表
+    const items = [
+      ...movies.map(m => ({ title: m.title, type: 'movie' as const })),
+      ...tvShows.map(t => ({ title: t.title, type: 'tv' as const })),
     ];
 
-    console.log('[轮播API] 开始获取预告片...');
+    console.log(`[轮播API] 开始搜索${items.length}个标题...`);
+    console.log('[轮播API] 前3个标题:', items.slice(0, 3).map(i => i.title).join(', '));
 
-    // 并行获取每个内容的预告片
-    const carouselPromises = allMedia.map(async ({ data, type }) => {
-      try {
-        // 获取预告片
-        let trailerKey: string | undefined;
-        try {
-          const videos = type === 'movie'
-            ? await getTMDBMovieVideos(data.id)
-            : await getTMDBTVVideos(data.id);
-
-          const trailer = videos.results.find(
-            v => v.site === 'YouTube' && v.type === 'Trailer' && v.official
-          ) || videos.results.find(
-            v => v.site === 'YouTube' && v.type === 'Trailer'
-          ) || videos.results.find(
-            v => v.site === 'YouTube' && v.type === 'Teaser'
-          );
-
-          if (trailer) {
-            trailerKey = trailer.key;
-          }
-        } catch (err) {
-          console.warn(`[轮播API] 获取预告片失败: ${type === 'movie' ? data.title : data.name}`);
-        }
-
-        const carouselItem: CarouselItem = {
-          id: data.id,
-          title: type === 'movie' ? data.title : data.name,
-          overview: data.overview || '',
-          backdrop: data.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${data.backdrop_path}` : '',
-          poster: data.poster_path ? `${TMDB_POSTER_BASE_URL}${data.poster_path}` : '',
-          rate: data.vote_average || 0,
-          year: type === 'movie'
-            ? (data.release_date?.split('-')[0] || '')
-            : (data.first_air_date?.split('-')[0] || ''),
-          type,
-          trailerKey
-        };
-
-        return carouselItem;
-      } catch (error) {
-        console.error(`[轮播API] 处理失败:`, error);
-        return null;
-      }
-    });
+    // 并行搜索TMDB获取详情
+    const carouselPromises = items.map(item =>
+      getCarouselItemByTitle(item.title, item.type)
+    );
 
     const carouselResults = await Promise.allSettled(carouselPromises);
+    
+    // 详细统计
+    const fulfilled = carouselResults.filter(r => r.status === 'fulfilled');
+    const rejected = carouselResults.filter(r => r.status === 'rejected');
+    const nullResults = fulfilled.filter(r => r.value === null);
+    const validResults = fulfilled.filter(r => r.value !== null);
+    
+    console.log(`[轮播API] 搜索统计: 总数${carouselResults.length}, 成功${fulfilled.length}, 失败${rejected.length}, 空值${nullResults.length}, 有效${validResults.length}`);
 
     // 过滤出成功获取的数据
     const carouselList: CarouselItem[] = carouselResults
@@ -143,8 +120,18 @@ export async function GET() {
 
     // 如果没有获取到任何数据
     if (carouselList.length === 0) {
-      console.warn('[轮播API] 警告：未能获取到任何有效的轮播数据');
-      console.warn('[轮播API] Trending数据:', { movies: trendingMovies.length, tv: trendingTV.length });
+      console.error('[轮播API] 警告：未能获取到任何有效的轮播数据');
+      console.error('[轮播API] 原始数据:', { movies: movies.length, tvShows: tvShows.length });
+      console.error('[轮播API] 所有TMDB搜索都失败或无海报');
+      
+      // 输出失败的标题
+      if (rejected.length > 0) {
+        console.error('[轮播API] 搜索异常的标题:', rejected.length);
+      }
+      if (nullResults.length > 0) {
+        console.error('[轮播API] 未找到匹配的标题数量:', nullResults.length);
+      }
+      
       return NextResponse.json({
         code: 200,
         message: '未能获取到有效的轮播数据',
