@@ -91,6 +91,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('[API] 接收到的 TMDB 设置:', {
+      EnableTMDBActorSearch,
+      EnableTMDBCarousel,
+    });
+
     // 更新缓存中的站点设置
     adminConfig.SiteConfig = {
       SiteName,
@@ -109,6 +114,11 @@ export async function POST(request: NextRequest) {
       EnableTMDBCarousel: EnableTMDBCarousel ?? true,
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
     };
+
+    console.log('[API] 将要保存到数据库的 TMDB 设置:', {
+      EnableTMDBActorSearch: adminConfig.SiteConfig.EnableTMDBActorSearch,
+      EnableTMDBCarousel: adminConfig.SiteConfig.EnableTMDBCarousel,
+    });
 
     // 写入数据库
     await db.saveAdminConfig(adminConfig);

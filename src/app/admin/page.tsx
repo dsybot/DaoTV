@@ -4121,6 +4121,11 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
 
   useEffect(() => {
     if (config?.SiteConfig) {
+      console.log('[SiteConfig] 从配置加载 TMDB 设置:', {
+        EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch,
+        EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel,
+      });
+      
       setSiteSettings({
         SiteName: config.SiteConfig.SiteName,
         Announcement: config.SiteConfig.Announcement,
@@ -4199,10 +4204,29 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
   const handleSave = async () => {
     await withLoading('saveSiteConfig', async () => {
       try {
+        console.log('[SiteConfig] 保存前 TMDB 设置:', {
+          EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch,
+          EnableTMDBCarousel: siteSettings.EnableTMDBCarousel,
+        });
+        
+        // 确保布尔值被明确设置
+        const dataToSave = {
+          ...siteSettings,
+          DisableYellowFilter: siteSettings.DisableYellowFilter ?? false,
+          FluidSearch: siteSettings.FluidSearch ?? true,
+          EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch ?? false,
+          EnableTMDBCarousel: siteSettings.EnableTMDBCarousel ?? true,
+        };
+        
+        console.log('[SiteConfig] 将要保存 TMDB 设置:', {
+          EnableTMDBActorSearch: dataToSave.EnableTMDBActorSearch,
+          EnableTMDBCarousel: dataToSave.EnableTMDBCarousel,
+        });
+        
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...siteSettings }),
+          body: JSON.stringify(dataToSave),
         });
 
         if (!resp.ok) {
