@@ -169,18 +169,42 @@ export async function GET() {
         return false;
       });
 
-    // 按来源分类并限制数量：6电影 + 10剧集 + 4综艺
-    const movieItems = carouselWithSource.filter(x => x.source === 'movie').slice(0, 6);
-    const tvItems = carouselWithSource.filter(x => x.source === 'tv').slice(0, 10);
-    const varietyItems = carouselWithSource.filter(x => x.source === 'variety').slice(0, 4);
+    // 按来源分类
+    const movieItems = carouselWithSource.filter(x => x.source === 'movie');
+    const tvItems = carouselWithSource.filter(x => x.source === 'tv');
+    const varietyItems = carouselWithSource.filter(x => x.source === 'variety');
 
-    const carouselList = [
-      ...movieItems.map(x => x.item),
-      ...tvItems.map(x => x.item),
-      ...varietyItems.map(x => x.item),
+    // 目标配额：10剧集 + 4综艺 + 电影补足到20个
+    let finalTvItems = tvItems.slice(0, 10);
+    let finalVarietyItems = varietyItems.slice(0, 4);
+    
+    // 计算需要的电影数量
+    const targetTotal = 20;
+    const tvCount = finalTvItems.length;
+    const varietyCount = finalVarietyItems.length;
+    const neededMovies = targetTotal - tvCount - varietyCount;
+    
+    let finalMovieItems = movieItems.slice(0, Math.max(6, neededMovies)); // 至少6部，不足20则多补
+
+    console.log(`[轮播API] 第4步: 按类型分配 - 剧集:${finalTvItems.length}/10, 综艺:${finalVarietyItems.length}/4, 电影:${finalMovieItems.length}(补足到20)`);
+    
+    if (varietyCount < 4) {
+      console.log(`[轮播API] 注意: 综艺不足4个(仅${varietyCount}个)，已用${neededMovies - 6}部额外电影补充`);
+    }
+
+    // 合并所有项目
+    let carouselList = [
+      ...finalMovieItems.map(x => x.item),
+      ...finalTvItems.map(x => x.item),
+      ...finalVarietyItems.map(x => x.item),
     ];
 
-    console.log(`[轮播API] 第4步: 按类型分配 - 电影:${movieItems.length}/6, 剧集:${tvItems.length}/10, 综艺:${varietyItems.length}/4, 总计:${carouselList.length}/20`);
+    console.log(`[轮播API] 总计:${carouselList.length}个轮播项`);
+    
+    // 随机打乱顺序，避免同类型聚在一起
+    carouselList = carouselList.sort(() => Math.random() - 0.5);
+    
+    console.log('[轮播API] 第5步: 随机排序完成');
     if (carouselList.length > 0) {
       console.log('[轮播API] ✅ 最终轮播项:', carouselList.map(item => `${item.title}(${item.type})`).join(', '));
     }
