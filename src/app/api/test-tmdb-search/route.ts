@@ -1,55 +1,55 @@
 import { NextResponse } from 'next/server';
-import { searchTMDBMovie, searchTMDBTV } from '@/lib/tmdb.client';
+import { getCarouselItemByTitle } from '@/lib/tmdb.client';
 
 export const runtime = 'nodejs';
 
 /**
- * 测试TMDB搜索API - 用于调试中文标题搜索
+ * 测试TMDB搜索API - 测试完整的轮播搜索流程
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const title = searchParams.get('title') || '死亡竞走';
-    const type = searchParams.get('type') || 'movie';
+    const type = (searchParams.get('type') || 'movie') as 'movie' | 'tv';
 
-    console.log(`[TMDB测试] 搜索: ${title} (${type})`);
+    console.log(`[TMDB测试] 测试轮播搜索: ${title} (${type})`);
 
-    let results;
-    if (type === 'movie') {
-      const response = await searchTMDBMovie(title);
-      results = response.results.map(r => ({
-        id: r.id,
-        title: r.title,
-        original_title: r.original_title,
-        release_date: r.release_date,
-        backdrop_path: r.backdrop_path,
-        poster_path: r.poster_path,
-        overview: r.overview?.substring(0, 100),
-      }));
+    const result = await getCarouselItemByTitle(title, type);
+
+    if (result) {
+      return NextResponse.json({
+        success: true,
+        query: title,
+        type,
+        result: {
+          id: result.id,
+          title: result.title,
+          overview: result.overview?.substring(0, 100),
+          backdrop: result.backdrop,
+          poster: result.poster,
+          rate: result.rate,
+          year: result.year,
+          trailerKey: result.trailerKey,
+          hasBackdrop: !!result.backdrop,
+          hasPoster: !!result.poster,
+          hasTrailer: !!result.trailerKey
+        }
+      });
     } else {
-      const response = await searchTMDBTV(title);
-      results = response.results.map(r => ({
-        id: r.id,
-        name: r.name,
-        original_name: r.original_name,
-        first_air_date: r.first_air_date,
-        backdrop_path: r.backdrop_path,
-        poster_path: r.poster_path,
-        overview: r.overview?.substring(0, 100),
-      }));
+      return NextResponse.json({
+        success: false,
+        query: title,
+        type,
+        message: '未找到匹配结果'
+      });
     }
-
-    return NextResponse.json({
-      query: title,
-      type,
-      resultCount: results.length,
-      results
-    });
   } catch (error) {
     console.error('[TMDB测试] 错误:', error);
     return NextResponse.json(
       {
-        error: (error as Error).message
+        success: false,
+        error: (error as Error).message,
+        stack: (error as Error).stack
       },
       { status: 500 }
     );
