@@ -35,21 +35,28 @@ export default function HomeCarousel() {
   useEffect(() => {
     const fetchCarousel = async () => {
       try {
+        console.log('[轮播组件] 开始获取轮播数据...');
         setLoading(true);
         const response = await fetch('/api/home/carousel');
+        console.log('[轮播组件] API响应状态:', response.status);
+        
         const data: CarouselResponse = await response.json();
+        console.log('[轮播组件] API返回数据:', data);
 
         if (data.code === 200 && data.list.length > 0) {
+          console.log(`[轮播组件] 成功获取 ${data.list.length} 个轮播项`);
           setItems(data.list);
           setError(null);
         } else if (data.code === 503) {
+          console.warn('[轮播组件] TMDB功能未启用');
           setError('TMDB功能未启用');
         } else {
-          setError('暂无轮播数据');
+          console.warn('[轮播组件] 暂无轮播数据:', data.message);
+          setError(data.message || '暂无轮播数据');
         }
       } catch (err) {
-        console.error('获取轮播数据失败:', err);
-        setError('加载失败');
+        console.error('[轮播组件] 获取轮播数据失败:', err);
+        setError(`加载失败: ${(err as Error).message}`);
       } finally {
         setLoading(false);
       }
@@ -90,12 +97,27 @@ export default function HomeCarousel() {
     );
   }
 
-  // 无数据时不显示组件（静默失败）
+  // 无数据或错误处理
   if (error || items.length === 0) {
-    // 开发环境下在控制台显示错误信息，生产环境静默
-    if (error && process.env.NODE_ENV === 'development') {
-      console.warn('[轮播组件]', error);
+    // 开发环境下显示详细错误信息
+    if (process.env.NODE_ENV === 'development') {
+      return (
+        <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-2xl flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="text-red-600 dark:text-red-400 text-lg font-semibold mb-2">
+              ⚠️ 轮播组件调试信息
+            </div>
+            <div className="text-red-500 dark:text-red-300 text-sm">
+              {error || '未获取到轮播数据'}
+            </div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs mt-2">
+              请检查浏览器控制台和服务端日志
+            </div>
+          </div>
+        </div>
+      );
     }
+    // 生产环境静默失败
     return null;
   }
 
