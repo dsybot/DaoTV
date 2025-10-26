@@ -647,7 +647,7 @@ export async function getCarouselItemByTitle(
   type: 'movie' | 'tv'
 ): Promise<CarouselItem | null> {
   try {
-    console.log(`[TMDB轮播] 搜索 ${type}: ${title}`);
+    console.log(`[TMDB轮播] 🔍 开始搜索 ${type}: "${title}"`);
 
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
@@ -655,24 +655,26 @@ export async function getCarouselItemByTitle(
 
     if (type === 'movie') {
       const movieSearch = await searchTMDBMovie(title);
+      console.log(`[TMDB轮播] "${title}" 搜索结果: ${movieSearch.results.length}个匹配`);
       if (movieSearch.results.length > 0) {
         searchResult = movieSearch.results[0];
         mediaId = searchResult.id;
+        console.log(`[TMDB轮播] ✅ 选择第1个: ${searchResult.title} (ID: ${mediaId})`);
       }
     } else {
       const tvSearch = await searchTMDBTV(title);
+      console.log(`[TMDB轮播] "${title}" 搜索结果: ${tvSearch.results.length}个匹配`);
       if (tvSearch.results.length > 0) {
         searchResult = tvSearch.results[0];
         mediaId = searchResult.id;
+        console.log(`[TMDB轮播] ✅ 选择第1个: ${searchResult.name} (ID: ${mediaId})`);
       }
     }
 
     if (!searchResult) {
-      console.warn(`[TMDB轮播] 未找到: ${title} (${type})`);
+      console.warn(`[TMDB轮播] ❌ 未找到匹配: "${title}" (${type})`);
       return null;
     }
-
-    console.log(`[TMDB轮播] 找到匹配: ${type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name}`);
 
     // 2. 获取预告片
     let trailerKey: string | undefined;
@@ -713,8 +715,12 @@ export async function getCarouselItemByTitle(
       trailerKey
     };
 
-    if (!carouselItem.backdrop) {
-      console.warn(`[TMDB轮播] ${title} 缺少横屏海报`);
+    console.log(`[TMDB轮播] 📸 海报情况: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}, trailer=${!!carouselItem.trailerKey}`);
+    
+    if (!carouselItem.backdrop && !carouselItem.poster) {
+      console.warn(`[TMDB轮播] ⚠️  ${title} 缺少所有海报，将被过滤`);
+    } else if (!carouselItem.backdrop) {
+      console.log(`[TMDB轮播] ℹ️  ${title} 使用竖版海报代替横屏`);
     }
 
     return carouselItem;

@@ -94,8 +94,8 @@ export async function GET() {
       ...tvShows.map(t => ({ title: t.title, type: 'tv' as const })),
     ];
 
-    console.log(`[轮播API] 开始搜索${items.length}个标题...`);
-    console.log('[轮播API] 前3个标题:', items.slice(0, 3).map(i => i.title).join(', '));
+    console.log(`[轮播API] 第3步: 准备搜索${items.length}个标题...`);
+    console.log('[轮播API] 📝 标题列表:', items.map(i => `"${i.title}"(${i.type})`).join(', '));
 
     // 并行搜索TMDB获取详情
     const carouselPromises = items.map(item =>
@@ -137,9 +137,9 @@ export async function GET() {
         return false;
       });
 
-    console.log(`[轮播API] 成功获取 ${carouselList.length} 个轮播项`);
+    console.log(`[轮播API] 第4步: 过滤后得到 ${carouselList.length} 个有效轮播项`);
     if (carouselList.length > 0) {
-      console.log('[轮播API] 轮播项标题:', carouselList.map(item => item.title).join(', '));
+      console.log('[轮播API] ✅ 最终轮播项:', carouselList.map(item => `${item.title}(${item.type})`).join(', '));
     }
 
     // 如果没有获取到任何数据
