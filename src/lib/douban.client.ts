@@ -267,6 +267,14 @@ function getDoubanProxyConfig(): {
   | 'custom';
   proxyUrl: string;
 } {
+  // 服务端环境使用默认配置
+  if (typeof localStorage === 'undefined' || typeof window === 'undefined') {
+    return {
+      proxyType: process.env.DOUBAN_PROXY_TYPE as any || 'cmliussss-cdn-tencent',
+      proxyUrl: process.env.DOUBAN_PROXY || '',
+    };
+  }
+  
   const doubanProxyType =
     localStorage.getItem('doubanDataSource') ||
     (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY_TYPE ||

@@ -83,8 +83,12 @@ export async function GET() {
       console.error('[轮播API] 豆瓣API未返回数据');
       return NextResponse.json({
         code: 200,
-        message: '暂无轮播数据',
+        message: '豆瓣API未返回热门数据',
         list: [],
+        debug: process.env.NODE_ENV === 'development' ? {
+          moviesStatus: moviesResult.status,
+          tvShowsStatus: tvShowsResult.status,
+        } : undefined
       });
     }
 
@@ -158,8 +162,16 @@ export async function GET() {
       
       return NextResponse.json({
         code: 200,
-        message: '未能获取到有效的轮播数据',
+        message: `TMDB搜索完成但无有效结果 (搜索${items.length}个, 成功${validResults.length}个, 空值${nullResults.length}个, 失败${rejected.length}个)`,
         list: [],
+        debug: {
+          totalSearched: items.length,
+          validResults: validResults.length,
+          nullResults: nullResults.length,
+          rejectedResults: rejected.length,
+          sourceMovies: movies.length,
+          sourceTVShows: tvShows.length,
+        }
       });
     }
 
