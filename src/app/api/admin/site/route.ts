@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       TMDBApiKey,
       TMDBLanguage,
       EnableTMDBActorSearch,
+      EnableTMDBCarousel,
       ReleaseCalendarProxy,
     } = body as {
       SiteName: string;
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
       TMDBApiKey?: string;
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
+      EnableTMDBCarousel?: boolean;
       ReleaseCalendarProxy?: string;
     };
 
@@ -103,7 +105,8 @@ export async function POST(request: NextRequest) {
       FluidSearch,
       TMDBApiKey: TMDBApiKey || '',
       TMDBLanguage: TMDBLanguage || 'zh-CN',
-      EnableTMDBActorSearch: EnableTMDBActorSearch || false,
+      EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
+      EnableTMDBCarousel: EnableTMDBCarousel ?? true,
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
     };
 

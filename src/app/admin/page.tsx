@@ -284,6 +284,7 @@ interface SiteConfig {
   TMDBApiKey?: string;
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
+  EnableTMDBCarousel?: boolean;
   // 上映日程代理配置
   ReleaseCalendarProxy?: string;
 }
@@ -4064,6 +4065,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBApiKey: '',
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
+    EnableTMDBCarousel: true,
     // 上映日程代理配置
     ReleaseCalendarProxy: '',
   });
@@ -4126,12 +4128,13 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         DoubanImageProxyType:
           config.SiteConfig.DoubanImageProxyType || 'direct',
         DoubanImageProxy: config.SiteConfig.DoubanImageProxy || '',
-        DisableYellowFilter: config.SiteConfig.DisableYellowFilter || false,
-        FluidSearch: config.SiteConfig.FluidSearch || true,
+        DisableYellowFilter: config.SiteConfig.DisableYellowFilter ?? false,
+        FluidSearch: config.SiteConfig.FluidSearch ?? true,
         // TMDB配置
         TMDBApiKey: config.SiteConfig.TMDBApiKey || '',
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
-        EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch || false,
+        EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
+        EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? true,
         // 上映日程代理配置
         ReleaseCalendarProxy: config.SiteConfig.ReleaseCalendarProxy || '',
       });
@@ -4619,7 +4622,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
       {/* TMDB配置 */}
       <div className='border-t border-gray-200 dark:border-gray-700 pt-6'>
         <h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-4'>
-          TMDB 演员搜索配置
+          TMDB 配置
         </h3>
 
         {/* TMDB API Key */}
@@ -4662,7 +4665,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         </div>
 
         {/* 启用TMDB演员搜索 */}
-        <div className='flex items-center justify-between'>
+        <div className='flex items-center justify-between mb-6'>
           <div>
             <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
               启用 TMDB 演员搜索
@@ -4686,6 +4689,36 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableTMDBActorSearch ? 'translate-x-6' : 'translate-x-1'
+                }`}
+            />
+          </button>
+        </div>
+
+        {/* 启用TMDB轮播图 */}
+        <div className='flex items-center justify-between'>
+          <div>
+            <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+              启用 TMDB 轮播图
+            </label>
+            <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+              启用后首页将显示基于豆瓣热门和TMDB数据的轮播图
+            </p>
+          </div>
+          <button
+            type='button'
+            onClick={() =>
+              setSiteSettings((prev) => ({
+                ...prev,
+                EnableTMDBCarousel: !prev.EnableTMDBCarousel,
+              }))
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${siteSettings.EnableTMDBCarousel
+              ? 'bg-green-600'
+              : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableTMDBCarousel ? 'translate-x-6' : 'translate-x-1'
                 }`}
             />
           </button>

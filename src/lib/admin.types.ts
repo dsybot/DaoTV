@@ -20,6 +20,7 @@ export interface AdminConfig {
     TMDBApiKey?: string;
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
+    EnableTMDBCarousel?: boolean;
     // 上映日程代理配置
     ReleaseCalendarProxy?: string;
   };
