@@ -292,12 +292,10 @@ function HomeClient() {
           </div>
         </div>
 
-        {/* 轮播图 - 仅在首页tab显示 */}
-        {activeTab === 'home' && (
-          <div className='mb-8'>
-            <HomeCarousel />
-          </div>
-        )}
+        {/* 轮播图 - 在所有tab显示 */}
+        <div className='mb-8'>
+          <HomeCarousel />
+        </div>
 
         {/* 顶部 Tab 切换 */}
         <div className='mb-8 flex items-center justify-center'>
