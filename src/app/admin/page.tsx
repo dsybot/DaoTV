@@ -4122,7 +4122,10 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
   useEffect(() => {
     if (config?.SiteConfig) {
       setSiteSettings({
-        ...config.SiteConfig,
+        SiteName: config.SiteConfig.SiteName,
+        Announcement: config.SiteConfig.Announcement,
+        SearchDownstreamMaxPage: config.SiteConfig.SearchDownstreamMaxPage,
+        SiteInterfaceCacheTime: config.SiteConfig.SiteInterfaceCacheTime,
         DoubanProxyType: config.SiteConfig.DoubanProxyType || 'direct',
         DoubanProxy: config.SiteConfig.DoubanProxy || '',
         DoubanImageProxyType:
