@@ -15,6 +15,7 @@ interface CarouselItem {
   year: string;
   type: 'movie' | 'tv';
   trailerKey?: string;
+  source?: 'movie' | 'tv' | 'variety'; // 豆瓣来源：电影、剧集、综艺
 }
 
 interface CarouselResponse {
@@ -152,7 +153,7 @@ export default function HomeCarousel() {
               )}
               <span className="text-gray-300">{currentItem.year}</span>
               <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs sm:text-sm rounded">
-                {currentItem.type === 'movie' ? '电影' : '电视剧'}
+                {currentItem.source === 'movie' ? '电影' : currentItem.source === 'variety' ? '综艺' : '电视剧'}
               </span>
             </div>
 
@@ -178,7 +179,7 @@ export default function HomeCarousel() {
                 </button>
               )}
               <Link
-                href={`/douban?type=${currentItem.type}`}
+                href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
                 className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors"
               >
                 <span className="text-sm sm:text-base font-medium">了解更多</span>

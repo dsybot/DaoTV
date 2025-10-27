@@ -192,11 +192,11 @@ export async function GET() {
       console.log(`[轮播API] 注意: 综艺不足4个(仅${varietyCount}个)，已用${neededMovies - 6}部额外电影补充`);
     }
 
-    // 合并所有项目
+    // 合并所有项目，保留source信息以便前端正确显示类型
     let carouselList = [
-      ...finalMovieItems.map(x => x.item),
-      ...finalTvItems.map(x => x.item),
-      ...finalVarietyItems.map(x => x.item),
+      ...finalMovieItems.map(x => ({ ...x.item, source: x.source })),
+      ...finalTvItems.map(x => ({ ...x.item, source: x.source })),
+      ...finalVarietyItems.map(x => ({ ...x.item, source: x.source })),
     ];
 
     console.log(`[轮播API] 总计:${carouselList.length}个轮播项`);
