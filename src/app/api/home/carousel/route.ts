@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
 import { getDoubanCategories } from '@/lib/douban.client';
-import { 
+import {
   getCarouselItemByTitle,
-  isCarouselEnabled, 
-  CarouselItem 
+  isCarouselEnabled,
+  CarouselItem
 } from '@/lib/tmdb.client';
 
 export const runtime = 'nodejs';
@@ -50,7 +50,7 @@ export async function GET() {
         type: 'show',
       }),
     ]);
-    
+
     console.log('[轮播API] 豆瓣API调用结果:', {
       moviesStatus: moviesResult.status,
       tvShowsStatus: tvShowsResult.status,
@@ -74,7 +74,7 @@ export async function GET() {
         : [];
 
     console.log(`[轮播API] 第2步: 豆瓣热门结果: ${movies.length}部电影, ${tvShows.length}部剧集, ${varietyShows.length}部综艺`);
-    
+
     // 调试：如果没有数据，输出原因
     if (movies.length === 0) {
       if (moviesResult.status === 'rejected') {
@@ -97,7 +97,7 @@ export async function GET() {
         console.warn('[轮播API] 综艺API返回:', varietyShowsResult.value);
       }
     }
-    
+
     if (movies.length === 0 && tvShows.length === 0 && varietyShows.length === 0) {
       console.error('[轮播API] 豆瓣API未返回任何数据');
       return NextResponse.json({
@@ -112,11 +112,38 @@ export async function GET() {
       });
     }
 
-    // 合并标题列表：电影 + 剧集 + 综艺（标记来源以便后续分配）
+    // 合并标题列表：电影 + 剧集 + 综艺（保留豆瓣原始数据）
     const items = [
-      ...movies.map(m => ({ title: m.title, type: 'movie' as const, source: 'movie' as const })),
-      ...tvShows.map(t => ({ title: t.title, type: 'tv' as const, source: 'tv' as const })),
-      ...varietyShows.map(v => ({ title: v.title, type: 'tv' as const, source: 'variety' as const })), // 综艺也用tv类型在TMDB搜索
+      ...movies.map(m => ({ 
+        title: m.title, 
+        type: 'movie' as const, 
+        source: 'movie' as const,
+        doubanData: { 
+          rate: m.rate,  // 字符串类型
+          year: m.year, 
+          plot_summary: m.plot_summary || '' 
+        }
+      })),
+      ...tvShows.map(t => ({ 
+        title: t.title, 
+        type: 'tv' as const, 
+        source: 'tv' as const,
+        doubanData: { 
+          rate: t.rate, 
+          year: t.year, 
+          plot_summary: t.plot_summary || '' 
+        }
+      })),
+      ...varietyShows.map(v => ({ 
+        title: v.title, 
+        type: 'tv' as const, 
+        source: 'variety' as const,
+        doubanData: { 
+          rate: v.rate, 
+          year: v.year, 
+          plot_summary: v.plot_summary || '' 
+        }
+      })), // 综艺也用tv类型在TMDB搜索
     ];
 
     console.log(`[轮播API] 第3步: 准备搜索${items.length}个标题...`);
@@ -128,7 +155,7 @@ export async function GET() {
     );
 
     const carouselResults = await Promise.allSettled(carouselPromises);
-    
+
     // 详细统计
     const fulfilled = carouselResults.filter(
       (r): r is PromiseFulfilledResult<CarouselItem | null> => r.status === 'fulfilled'
@@ -136,23 +163,25 @@ export async function GET() {
     const rejected = carouselResults.filter(r => r.status === 'rejected');
     const nullResults = fulfilled.filter(r => r.value === null);
     const validResults = fulfilled.filter(r => r.value !== null);
-    
+
     console.log(`[轮播API] 搜索统计: 总数${carouselResults.length}, 成功${fulfilled.length}, 失败${rejected.length}, 空值${nullResults.length}, 有效${validResults.length}`);
 
-    // 将搜索结果与原始items关联，保留source信息
+    // 将搜索结果与原始items关联，保留source信息和豆瓣数据
     const carouselWithSource = carouselResults
       .map((result, index) => ({
         result,
         source: items[index].source,
-        originalTitle: items[index].title
+        originalTitle: items[index].title,
+        doubanData: items[index].doubanData
       }))
       .filter(({ result }) => 
         result.status === 'fulfilled' && result.value !== null
       )
-      .map(({ result, source, originalTitle }) => ({
+      .map(({ result, source, originalTitle, doubanData }) => ({
         item: (result as PromiseFulfilledResult<CarouselItem>).value,
         source,
-        originalTitle
+        originalTitle,
+        doubanData
       }))
       .filter(({ item }) => {
         // 优先使用横屏海报，如果没有则使用竖版海报
@@ -177,33 +206,71 @@ export async function GET() {
     // 目标配额：10剧集 + 4综艺 + 电影补足到20个
     let finalTvItems = tvItems.slice(0, 10);
     let finalVarietyItems = varietyItems.slice(0, 4);
-    
+
     // 计算需要的电影数量
     const targetTotal = 20;
     const tvCount = finalTvItems.length;
     const varietyCount = finalVarietyItems.length;
     const neededMovies = targetTotal - tvCount - varietyCount;
-    
+
     let finalMovieItems = movieItems.slice(0, Math.max(6, neededMovies)); // 至少6部，不足20则多补
 
     console.log(`[轮播API] 第4步: 按类型分配 - 剧集:${finalTvItems.length}/10, 综艺:${finalVarietyItems.length}/4, 电影:${finalMovieItems.length}(补足到20)`);
-    
+
     if (varietyCount < 4) {
       console.log(`[轮播API] 注意: 综艺不足4个(仅${varietyCount}个)，已用${neededMovies - 6}部额外电影补充`);
     }
 
-    // 合并所有项目，保留source信息以便前端正确显示类型
+    // 合并所有项目，智能选择豆瓣或TMDB数据
     let carouselList = [
-      ...finalMovieItems.map(x => ({ ...x.item, source: x.source })),
-      ...finalTvItems.map(x => ({ ...x.item, source: x.source })),
-      ...finalVarietyItems.map(x => ({ ...x.item, source: x.source })),
+      ...finalMovieItems.map(x => {
+        // 检查豆瓣评分是否有效（参考播放界面的逻辑）
+        const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
+        const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
+        const doubanOverviewValid = x.doubanData.plot_summary && x.doubanData.plot_summary.trim() !== '';
+        
+        return {
+          ...x.item,
+          source: x.source,
+          // 优先使用豆瓣数据，如果豆瓣没有则使用TMDB数据
+          rate: doubanRateValid ? parseFloat(x.doubanData.rate) : x.item.rate,
+          year: doubanYearValid ? x.doubanData.year : x.item.year,
+          overview: doubanOverviewValid ? x.doubanData.plot_summary : x.item.overview,
+        };
+      }),
+      ...finalTvItems.map(x => {
+        const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
+        const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
+        const doubanOverviewValid = x.doubanData.plot_summary && x.doubanData.plot_summary.trim() !== '';
+        
+        return {
+          ...x.item,
+          source: x.source,
+          rate: doubanRateValid ? parseFloat(x.doubanData.rate) : x.item.rate,
+          year: doubanYearValid ? x.doubanData.year : x.item.year,
+          overview: doubanOverviewValid ? x.doubanData.plot_summary : x.item.overview,
+        };
+      }),
+      ...finalVarietyItems.map(x => {
+        const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
+        const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
+        const doubanOverviewValid = x.doubanData.plot_summary && x.doubanData.plot_summary.trim() !== '';
+        
+        return {
+          ...x.item,
+          source: x.source,
+          rate: doubanRateValid ? parseFloat(x.doubanData.rate) : x.item.rate,
+          year: doubanYearValid ? x.doubanData.year : x.item.year,
+          overview: doubanOverviewValid ? x.doubanData.plot_summary : x.item.overview,
+        };
+      }),
     ];
 
     console.log(`[轮播API] 总计:${carouselList.length}个轮播项`);
-    
+
     // 随机打乱顺序，避免同类型聚在一起
     carouselList = carouselList.sort(() => Math.random() - 0.5);
-    
+
     console.log('[轮播API] 第5步: 随机排序完成');
     if (carouselList.length > 0) {
       console.log('[轮播API] ✅ 最终轮播项:', carouselList.map(item => `${item.title}(${item.type})`).join(', '));
@@ -214,7 +281,7 @@ export async function GET() {
       console.error('[轮播API] 警告：未能获取到任何有效的轮播数据');
       console.error('[轮播API] 原始数据:', { movies: movies.length, tvShows: tvShows.length });
       console.error('[轮播API] 所有TMDB搜索都失败或无海报');
-      
+
       // 输出失败的标题
       if (rejected.length > 0) {
         console.error('[轮播API] 搜索异常的标题:', rejected.length);
@@ -222,7 +289,7 @@ export async function GET() {
       if (nullResults.length > 0) {
         console.error('[轮播API] 未找到匹配的标题数量:', nullResults.length);
       }
-      
+
       return NextResponse.json({
         code: 200,
         message: `TMDB搜索完成但无有效结果 (搜索${items.length}个, 成功${validResults.length}个, 空值${nullResults.length}个, 失败${rejected.length}个)`,
