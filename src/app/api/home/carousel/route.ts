@@ -113,15 +113,16 @@ export async function GET() {
     }
 
     // 合并标题列表：电影 + 剧集 + 综艺（保留豆瓣原始数据）
+    // 注意：豆瓣分类API只返回基础信息（标题、评分、年份），不包含剧情简介
     const items = [
       ...movies.map(m => ({ 
         title: m.title, 
         type: 'movie' as const, 
         source: 'movie' as const,
         doubanData: { 
-          rate: m.rate,  // 字符串类型
-          year: m.year, 
-          plot_summary: m.plot_summary || '' 
+          rate: m.rate,  // 字符串类型，如 "7.1"
+          year: m.year,  // 年份
+          // plot_summary 不在分类API中，需要从详情API获取
         }
       })),
       ...tvShows.map(t => ({ 
@@ -131,7 +132,6 @@ export async function GET() {
         doubanData: { 
           rate: t.rate, 
           year: t.year, 
-          plot_summary: t.plot_summary || '' 
         }
       })),
       ...varietyShows.map(v => ({ 
@@ -141,7 +141,6 @@ export async function GET() {
         doubanData: { 
           rate: v.rate, 
           year: v.year, 
-          plot_summary: v.plot_summary || '' 
         }
       })), // 综艺也用tv类型在TMDB搜索
     ];
@@ -174,7 +173,7 @@ export async function GET() {
         originalTitle: items[index].title,
         doubanData: items[index].doubanData
       }))
-      .filter(({ result }) => 
+      .filter(({ result }) =>
         result.status === 'fulfilled' && result.value !== null
       )
       .map(({ result, source, originalTitle, doubanData }) => ({
@@ -222,46 +221,43 @@ export async function GET() {
     }
 
     // 合并所有项目，智能选择豆瓣或TMDB数据
+    // 评分和年份：优先豆瓣，无效时使用TMDB
+    // 简介：使用TMDB（因为豆瓣分类API不返回简介，需调用详情API才有）
     let carouselList = [
       ...finalMovieItems.map(x => {
         // 检查豆瓣评分是否有效（参考播放界面的逻辑）
         const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
         const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
-        const doubanOverviewValid = x.doubanData.plot_summary && x.doubanData.plot_summary.trim() !== '';
         
         return {
           ...x.item,
           source: x.source,
-          // 优先使用豆瓣数据，如果豆瓣没有则使用TMDB数据
+          // 评分和年份优先使用豆瓣，简介使用TMDB
           rate: doubanRateValid ? parseFloat(x.doubanData.rate) : x.item.rate,
           year: doubanYearValid ? x.doubanData.year : x.item.year,
-          overview: doubanOverviewValid ? x.doubanData.plot_summary : x.item.overview,
+          // overview 保持使用TMDB的数据（豆瓣分类API无此字段）
         };
       }),
       ...finalTvItems.map(x => {
         const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
         const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
-        const doubanOverviewValid = x.doubanData.plot_summary && x.doubanData.plot_summary.trim() !== '';
         
         return {
           ...x.item,
           source: x.source,
           rate: doubanRateValid ? parseFloat(x.doubanData.rate) : x.item.rate,
           year: doubanYearValid ? x.doubanData.year : x.item.year,
-          overview: doubanOverviewValid ? x.doubanData.plot_summary : x.item.overview,
         };
       }),
       ...finalVarietyItems.map(x => {
         const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
         const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
-        const doubanOverviewValid = x.doubanData.plot_summary && x.doubanData.plot_summary.trim() !== '';
         
         return {
           ...x.item,
           source: x.source,
           rate: doubanRateValid ? parseFloat(x.doubanData.rate) : x.item.rate,
           year: doubanYearValid ? x.doubanData.year : x.item.year,
-          overview: doubanOverviewValid ? x.doubanData.plot_summary : x.item.overview,
         };
       }),
     ];
