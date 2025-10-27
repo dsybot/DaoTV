@@ -55,7 +55,8 @@ export const API_CONFIG = {
 
 // 在模块加载时根据环境决定配置来源
 let cachedConfig: AdminConfig;
-
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5000; // 缓存5秒，避免 Vercel Serverless 多实例缓存不一致
 
 // 从配置文件补充管理员配置
 export function refineConfig(adminConfig: AdminConfig): AdminConfig {
@@ -295,8 +296,11 @@ async function getInitConfig(configFile: string, subConfig: {
 }
 
 export async function getConfig(): Promise<AdminConfig> {
-  // 直接使用内存缓存
-  if (cachedConfig) {
+  const now = Date.now();
+  
+  // 🔥 修复：添加时间戳检查，避免 Vercel 多实例缓存不一致
+  // 缓存仅保留5秒，过期后强制重新从数据库读取
+  if (cachedConfig && (now - cacheTimestamp) < CACHE_DURATION) {
     return cachedConfig;
   }
 
@@ -314,6 +318,7 @@ export async function getConfig(): Promise<AdminConfig> {
   }
   adminConfig = await configSelfCheck(adminConfig);
   cachedConfig = adminConfig;
+  cacheTimestamp = now; // 更新缓存时间戳
   db.saveAdminConfig(cachedConfig);
   return cachedConfig;
 }
@@ -321,6 +326,7 @@ export async function getConfig(): Promise<AdminConfig> {
 // 清除配置缓存，强制重新从数据库读取
 export function clearConfigCache(): void {
   cachedConfig = null as any;
+  cacheTimestamp = 0; // 同时清除时间戳
 }
 
 export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminConfig> {

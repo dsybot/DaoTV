@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,no-console */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
@@ -140,11 +142,23 @@ export async function POST(request: NextRequest) {
     // 清除配置缓存，强制下次重新从数据库读取
     clearConfigCache();
 
+    // 🔥 关键修复：强制刷新所有页面的服务端缓存
+    // 这会清除 Vercel Edge 和 Serverless Functions 的缓存
+    try {
+      revalidatePath('/', 'layout'); // 刷新根layout
+      revalidatePath('/admin', 'page'); // 刷新管理页面
+      console.log('[API] 已触发页面缓存刷新');
+    } catch (e) {
+      console.warn('[API] 页面缓存刷新失败（非阻塞）:', e);
+    }
+
     return NextResponse.json(
       { ok: true },
       {
         headers: {
-          'Cache-Control': 'no-store', // 不缓存结果
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', // 不缓存结果
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       }
     );
