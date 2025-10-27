@@ -50,7 +50,7 @@ function HomeClient() {
   const [username, setUsername] = useState<string>('');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
-  const [showWelcomeToast, setShowWelcomeToast] = useState(true);
+  const [showWelcomeToast, setShowWelcomeToast] = useState(false);
 
   // 获取用户名
   useEffect(() => {
@@ -72,13 +72,24 @@ function HomeClient() {
     }
   }, [announcement]);
 
-  // 欢迎提示窗自动消失
+  // 欢迎提示窗 - 每次打开网站时显示一次（关闭浏览器标签页后重新打开才再次显示）
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcomeToast(false);
-    }, 3000); // 3秒后自动消失
+    if (typeof window !== 'undefined') {
+      const hasShownWelcome = sessionStorage.getItem('hasShownWelcome');
+      
+      // 如果本次会话还没有显示过欢迎弹窗，则显示
+      if (!hasShownWelcome) {
+        setShowWelcomeToast(true);
+        sessionStorage.setItem('hasShownWelcome', 'true');
+        
+        // 3秒后自动消失
+        const timer = setTimeout(() => {
+          setShowWelcomeToast(false);
+        }, 3000);
 
-    return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
+    }
   }, []);
 
 
