@@ -41,11 +41,15 @@ const intervalId = setInterval(() => {
 
       setTimeout(() => {
         // 服务器启动后，立即执行一次 cron 任务
+        // 这会刷新轮播图、直播源、配置等所有数据
+        console.log('🚀 首次执行定时任务（包括轮播图刷新）...');
         executeCronJob();
       }, 3000);
 
       // 然后设置每小时执行一次 cron 任务
+      // 轮播图将从豆瓣获取最新热门内容，绕过所有缓存
       setInterval(() => {
+        console.log('⏰ 定时任务触发（每小时）...');
         executeCronJob();
       }, 60 * 60 * 1000); // 每小时执行一次
     }

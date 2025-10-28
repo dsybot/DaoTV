@@ -13,9 +13,15 @@ export const runtime = 'nodejs';
 /**
  * 获取首页轮播图数据
  * 从豆瓣热门获取标题，然后从TMDB搜索获取海报和预告片
+ * 
+ * @param request - 支持 ?bypass=true 参数强制绕过所有缓存（用于定时任务刷新）
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // 检查是否需要绕过缓存（定时任务刷新时使用）
+    const { searchParams } = new URL(request.url);
+    const bypassCache = searchParams.get('bypass') === 'true';
+
     // 检查轮播图是否启用
     const carouselEnabled = await isCarouselEnabled();
     if (!carouselEnabled) {
@@ -30,26 +36,92 @@ export async function GET() {
     }
 
     console.log('[轮播API] ===== 开始轮播数据获取流程 =====');
+    console.log(`[轮播API] 绕过缓存: ${bypassCache ? '是' : '否'}`);
     console.log('[轮播API] 第1步: 从豆瓣获取热门数据 (6电影+10剧集+4综艺)...');
 
     // 从豆瓣获取热门数据：6部电影 + 10部剧集 + 4部综艺
-    const [moviesResult, tvShowsResult, varietyShowsResult] = await Promise.allSettled([
-      getDoubanCategories({
-        kind: 'movie',
-        category: '热门',
-        type: '全部',
-      }),
-      getDoubanCategories({
-        kind: 'tv',
-        category: 'tv',
-        type: 'tv',
-      }),
-      getDoubanCategories({
-        kind: 'tv',
-        category: 'show',
-        type: 'show',
-      }),
-    ]);
+    // 如果是定时任务刷新（bypass=true），则直接调用豆瓣API绕过所有缓存
+    const [moviesResult, tvShowsResult, varietyShowsResult] = bypassCache
+      ? await Promise.allSettled([
+        // 直接从豆瓣获取，绕过所有缓存层
+        fetch(`https://m.douban.com/rexxar/api/v2/subject/recent_hot/movie?start=0&limit=20&category=热门&type=全部&_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Referer': 'https://movie.douban.com/',
+            'Cache-Control': 'no-cache'
+          }
+        }).then(async r => {
+          const data = await r.json();
+          return {
+            code: 200,
+            list: data.items?.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              poster: item.pic?.normal || item.pic?.large || '',
+              rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
+              year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
+            })) || []
+          };
+        }).catch(() => ({ code: 500, list: [] })),
+        fetch(`https://m.douban.com/rexxar/api/v2/subject/recent_hot/tv?start=0&limit=20&category=tv&type=tv&_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Referer': 'https://movie.douban.com/',
+            'Cache-Control': 'no-cache'
+          }
+        }).then(async r => {
+          const data = await r.json();
+          return {
+            code: 200,
+            list: data.items?.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              poster: item.pic?.normal || item.pic?.large || '',
+              rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
+              year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
+            })) || []
+          };
+        }).catch(() => ({ code: 500, list: [] })),
+        fetch(`https://m.douban.com/rexxar/api/v2/subject/recent_hot/tv?start=0&limit=20&category=show&type=show&_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Referer': 'https://movie.douban.com/',
+            'Cache-Control': 'no-cache'
+          }
+        }).then(async r => {
+          const data = await r.json();
+          return {
+            code: 200,
+            list: data.items?.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              poster: item.pic?.normal || item.pic?.large || '',
+              rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
+              year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
+            })) || []
+          };
+        }).catch(() => ({ code: 500, list: [] })),
+      ])
+      : await Promise.allSettled([
+        getDoubanCategories({
+          kind: 'movie',
+          category: '热门',
+          type: '全部',
+        }),
+        getDoubanCategories({
+          kind: 'tv',
+          category: 'tv',
+          type: 'tv',
+        }),
+        getDoubanCategories({
+          kind: 'tv',
+          category: 'show',
+          type: 'show',
+        }),
+      ]);
 
     console.log('[轮播API] 豆瓣API调用结果:', {
       moviesStatus: moviesResult.status,
@@ -115,32 +187,32 @@ export async function GET() {
     // 合并标题列表：电影 + 剧集 + 综艺（保留豆瓣原始数据）
     // 注意：豆瓣分类API只返回基础信息（标题、评分、年份），不包含剧情简介
     const items = [
-      ...movies.map(m => ({ 
-        title: m.title, 
-        type: 'movie' as const, 
+      ...movies.map(m => ({
+        title: m.title,
+        type: 'movie' as const,
         source: 'movie' as const,
-        doubanData: { 
+        doubanData: {
           rate: m.rate,  // 字符串类型，如 "7.1"
           year: m.year,  // 年份
           // plot_summary 不在分类API中，需要从详情API获取
         }
       })),
-      ...tvShows.map(t => ({ 
-        title: t.title, 
-        type: 'tv' as const, 
+      ...tvShows.map(t => ({
+        title: t.title,
+        type: 'tv' as const,
         source: 'tv' as const,
-        doubanData: { 
-          rate: t.rate, 
-          year: t.year, 
+        doubanData: {
+          rate: t.rate,
+          year: t.year,
         }
       })),
-      ...varietyShows.map(v => ({ 
-        title: v.title, 
-        type: 'tv' as const, 
+      ...varietyShows.map(v => ({
+        title: v.title,
+        type: 'tv' as const,
         source: 'variety' as const,
-        doubanData: { 
-          rate: v.rate, 
-          year: v.year, 
+        doubanData: {
+          rate: v.rate,
+          year: v.year,
         }
       })), // 综艺也用tv类型在TMDB搜索
     ];
@@ -228,7 +300,7 @@ export async function GET() {
         // 检查豆瓣评分是否有效（参考播放界面的逻辑）
         const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
         const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
-        
+
         return {
           ...x.item,
           source: x.source,
@@ -241,7 +313,7 @@ export async function GET() {
       ...finalTvItems.map(x => {
         const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
         const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
-        
+
         return {
           ...x.item,
           source: x.source,
@@ -252,7 +324,7 @@ export async function GET() {
       ...finalVarietyItems.map(x => {
         const doubanRateValid = x.doubanData.rate && x.doubanData.rate !== "0" && parseFloat(x.doubanData.rate) > 0;
         const doubanYearValid = x.doubanData.year && x.doubanData.year.trim() !== '';
-        
+
         return {
           ...x.item,
           source: x.source,
@@ -302,7 +374,11 @@ export async function GET() {
       });
     }
 
-    const cacheTime = await getCacheTime();
+    // 轮播图缓存策略：
+    // - bypass模式（定时任务）：不缓存，确保获取最新数据
+    // - 普通模式（用户访问）：缓存30分钟，平衡性能和新鲜度
+    const carouselCacheTime = bypassCache ? 0 : 1800; // 30分钟 = 1800秒
+
     return NextResponse.json(
       {
         code: 200,
@@ -310,11 +386,16 @@ export async function GET() {
         list: carouselList,
       },
       {
-        headers: {
-          'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
-          'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-          'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-        },
+        headers: bypassCache
+          ? {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          }
+          : {
+            'Cache-Control': `public, max-age=${carouselCacheTime}, s-maxage=${carouselCacheTime}`,
+            'CDN-Cache-Control': `public, s-maxage=${carouselCacheTime}`,
+          },
       }
     );
   } catch (error) {

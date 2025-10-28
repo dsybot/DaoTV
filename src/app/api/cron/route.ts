@@ -89,6 +89,14 @@ async function cronJob() {
     console.error('❌ 播放记录和收藏刷新失败:', err);
   }
 
+  try {
+    console.log('🎬 刷新首页轮播图...');
+    await refreshCarousel();
+    console.log('✅ 首页轮播图刷新完成');
+  } catch (err) {
+    console.error('❌ 首页轮播图刷新失败:', err);
+  }
+
   console.log('🎉 定时任务执行完成');
 }
 
@@ -172,12 +180,12 @@ async function refreshRecordAndFavorites() {
   try {
     const users = await db.getAllUsers();
     console.log('📋 数据库中的用户列表:', users);
-    
+
     if (process.env.USERNAME && !users.includes(process.env.USERNAME)) {
       users.push(process.env.USERNAME);
       console.log(`➕ 添加环境变量用户: ${process.env.USERNAME}`);
     }
-    
+
     console.log('📋 最终处理用户列表:', users);
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();
@@ -212,7 +220,7 @@ async function refreshRecordAndFavorites() {
 
     for (const user of users) {
       console.log(`开始处理用户: ${user}`);
-      
+
       // 检查用户是否真的存在
       const userExists = await db.checkUserExist(user);
       console.log(`用户 ${user} 是否存在: ${userExists}`);
@@ -429,7 +437,7 @@ async function cleanupInactiveUsers() {
             new Promise((_, reject) =>
               setTimeout(() => reject(new Error('getUserPlayStat超时')), 5000)
             )
-          ]) as { lastLoginTime?: number; firstLoginTime?: number; loginCount?: number; [key: string]: any };
+          ]) as { lastLoginTime?: number; firstLoginTime?: number; loginCount?: number;[key: string]: any };
           console.log(`  📈 用户统计结果:`, userStats);
         } catch (err) {
           console.error(`  ❌ 获取用户统计失败: ${err}, 跳过该用户`);
@@ -542,8 +550,8 @@ async function optimizeActiveUserLevels() {
               displayTitle: `${userLevel.icon} ${userLevel.name}`
             },
             displayLoginCount: userStats.loginCount > 10000 ? '10000+' :
-                              userStats.loginCount > 1000 ? `${Math.floor(userStats.loginCount / 1000)}k+` :
-                              userStats.loginCount.toString(),
+              userStats.loginCount > 1000 ? `${Math.floor(userStats.loginCount / 1000)}k+` :
+                userStats.loginCount.toString(),
             lastLevelUpdate: new Date().toISOString()
           };
 
@@ -561,5 +569,65 @@ async function optimizeActiveUserLevels() {
     console.log(`✅ 等级优化完成，共优化 ${optimizedCount} 个用户`);
   } catch (err) {
     console.error('🚫 等级优化任务失败:', err);
+  }
+}
+
+/**
+ * 刷新首页轮播图缓存
+ * 通过定时任务主动请求轮播图API，确保数据每次执行时都更新
+ */
+async function refreshCarousel() {
+  try {
+    // 构造完整的API URL（内部调用，使用localhost）
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const host = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'localhost:3000';
+    // 添加 bypass=true 参数强制绕过所有缓存
+    const apiUrl = `${protocol}://${host}/api/home/carousel?bypass=true`;
+
+    console.log(`🔗 请求轮播图API（绕过缓存）: ${apiUrl}`);
+
+    // 设置30秒超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'DaoTV-CronJob/1.0',
+        // 添加缓存控制头，强制获取新数据
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      },
+      // 使用 no-store 确保不使用缓存
+      cache: 'no-store',
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`轮播图API返回错误: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.code === 200) {
+      const itemCount = data.list?.length || 0;
+      console.log(`✅ 轮播图数据获取成功，共 ${itemCount} 项`);
+
+      if (itemCount > 0) {
+        // 输出前3个标题作为示例
+        const sampleTitles = data.list.slice(0, 3).map((item: any) => item.title).join(', ');
+        console.log(`📝 示例内容: ${sampleTitles}...`);
+      }
+    } else {
+      console.warn(`⚠️ 轮播图API返回非200状态: ${data.message}`);
+    }
+  } catch (error) {
+    if ((error as Error).name === 'AbortError') {
+      console.error('❌ 轮播图API请求超时（30秒）');
+    } else {
+      console.error('❌ 刷新轮播图失败:', error);
+    }
+    throw error;
   }
 }
