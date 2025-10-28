@@ -187,32 +187,35 @@ export async function GET(request: Request) {
     // 合并标题列表：电影 + 剧集 + 综艺（保留豆瓣原始数据）
     // 注意：豆瓣分类API只返回基础信息（标题、评分、年份），不包含剧情简介
     const items = [
-      ...movies.map(m => ({
-        title: m.title,
-        type: 'movie' as const,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...movies.map((m: any) => ({ 
+        title: m.title, 
+        type: 'movie' as const, 
         source: 'movie' as const,
-        doubanData: {
+        doubanData: { 
           rate: m.rate,  // 字符串类型，如 "7.1"
           year: m.year,  // 年份
           // plot_summary 不在分类API中，需要从详情API获取
         }
       })),
-      ...tvShows.map(t => ({
-        title: t.title,
-        type: 'tv' as const,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...tvShows.map((t: any) => ({ 
+        title: t.title, 
+        type: 'tv' as const, 
         source: 'tv' as const,
-        doubanData: {
-          rate: t.rate,
-          year: t.year,
+        doubanData: { 
+          rate: t.rate, 
+          year: t.year, 
         }
       })),
-      ...varietyShows.map(v => ({
-        title: v.title,
-        type: 'tv' as const,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...varietyShows.map((v: any) => ({ 
+        title: v.title, 
+        type: 'tv' as const, 
         source: 'variety' as const,
-        doubanData: {
-          rate: v.rate,
-          year: v.year,
+        doubanData: { 
+          rate: v.rate, 
+          year: v.year, 
         }
       })), // 综艺也用tv类型在TMDB搜索
     ];
