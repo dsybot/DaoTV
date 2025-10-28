@@ -573,61 +573,54 @@ async function optimizeActiveUserLevels() {
 }
 
 /**
- * 刷新首页轮播图缓存
- * 通过定时任务主动请求轮播图API，确保数据每次执行时都更新
+ * 刷新轮播图缓存
+ * 
+ * 新策略：
+ * 1. 直接调用生成器生成数据
+ * 2. 将结果缓存到服务器
+ * 3. 用户访问时直接读缓存（极快）
  */
 async function refreshCarousel() {
   try {
-    // 构造完整的API URL（内部调用，使用localhost）
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const host = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'localhost:3000';
-    // 添加 bypass=true 参数强制绕过所有缓存
-    const apiUrl = `${protocol}://${host}/api/home/carousel?bypass=true`;
-
-    console.log(`🔗 请求轮播图API（绕过缓存）: ${apiUrl}`);
-
-    // 设置30秒超时
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'DaoTV-CronJob/1.0',
-        // 添加缓存控制头，强制获取新数据
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      },
-      // 使用 no-store 确保不使用缓存
-      cache: 'no-store',
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`轮播图API返回错误: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    if (data.code === 200) {
-      const itemCount = data.list?.length || 0;
-      console.log(`✅ 轮播图数据获取成功，共 ${itemCount} 项`);
-
-      if (itemCount > 0) {
-        // 输出前3个标题作为示例
-        const sampleTitles = data.list.slice(0, 3).map((item: any) => item.title).join(', ');
-        console.log(`📝 示例内容: ${sampleTitles}...`);
-      }
+    console.log('🎬 开始刷新轮播图缓存...');
+    
+    // 动态导入，避免循环依赖
+    const { generateCarouselData } = await import('@/lib/carousel-generator');
+    const { setCachedCarousel, getCarouselCacheStatus } = await import('@/lib/carousel-cache');
+    
+    // 查看当前缓存状态
+    const beforeStatus = await getCarouselCacheStatus();
+    if (beforeStatus.exists) {
+      console.log(`📊 当前缓存: ${beforeStatus.itemCount}项，${beforeStatus.ageMinutes}分钟前生成`);
     } else {
-      console.warn(`⚠️ 轮播图API返回非200状态: ${data.message}`);
+      console.log('📊 当前无缓存');
     }
+    
+    // 生成新数据
+    const startTime = Date.now();
+    const carouselList = await generateCarouselData();
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    
+    if (carouselList.length === 0) {
+      console.error('❌ 生成失败，未获取到数据');
+      return;
+    }
+    
+    console.log(`✅ 数据生成成功，共 ${carouselList.length} 项（耗时 ${duration}秒）`);
+    
+    // 保存到缓存
+    await setCachedCarousel(carouselList);
+    
+    // 输出示例
+    if (carouselList.length > 0) {
+      const sampleTitles = carouselList.slice(0, 3).map((item: any) => item.title).join(', ');
+      console.log(`📝 示例内容: ${sampleTitles}...`);
+    }
+    
+    console.log('🎉 轮播图缓存刷新完成');
+    
   } catch (error) {
-    if ((error as Error).name === 'AbortError') {
-      console.error('❌ 轮播图API请求超时（30秒）');
-    } else {
-      console.error('❌ 刷新轮播图失败:', error);
-    }
+    console.error('❌ 刷新轮播图失败:', error);
     throw error;
   }
 }
