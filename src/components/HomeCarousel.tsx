@@ -41,7 +41,9 @@ export default function HomeCarousel() {
         const data: CarouselResponse = await response.json();
 
         if (data.code === 200 && data.list.length > 0) {
-          setItems(data.list);
+          // 在客户端进行随机打乱，确保每次访问都有不同的排列
+          const shuffledList = [...data.list].sort(() => Math.random() - 0.5);
+          setItems(shuffledList);
           setError(null);
         } else if (data.code === 503) {
           setError('TMDB功能未启用');
@@ -232,11 +234,10 @@ export default function HomeCarousel() {
                 setCurrentIndex(index);
                 setIsAutoPlaying(false);
               }}
-              className={`h-1 sm:h-1.5 rounded-full transition-all ${
-                index === currentIndex
+              className={`h-1 sm:h-1.5 rounded-full transition-all ${index === currentIndex
                   ? 'w-8 sm:w-12 bg-white'
                   : 'w-4 sm:w-6 bg-white/50 hover:bg-white/70'
-              }`}
+                }`}
               aria-label={`切换到第 ${index + 1} 个`}
             />
           ))}
