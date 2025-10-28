@@ -393,11 +393,11 @@ export abstract class BaseRedisStorage implements IStorage {
   }
 
   async getCarouselCache(): Promise<any | null> {
-    const val = await this.withRetry(() => 
+    const val = await this.withRetry(() =>
       this.client.get(this.carouselCacheKey())
     );
     if (!val) return null;
-    
+
     try {
       return JSON.parse(val);
     } catch (e) {
