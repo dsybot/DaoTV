@@ -387,6 +387,42 @@ export abstract class BaseRedisStorage implements IStorage {
     );
   }
 
+  // ---------- 轮播图缓存 ----------
+  private carouselCacheKey() {
+    return 'carousel:latest';
+  }
+
+  async getCarouselCache(): Promise<any | null> {
+    const val = await this.withRetry(() => 
+      this.client.get(this.carouselCacheKey())
+    );
+    if (!val) return null;
+    
+    try {
+      return JSON.parse(val);
+    } catch (e) {
+      console.error('[Redis] 解析轮播缓存失败:', e);
+      return null;
+    }
+  }
+
+  async setCarouselCache(data: any): Promise<void> {
+    try {
+      const jsonStr = JSON.stringify(data);
+      // 设置2小时过期
+      await this.withRetry(() =>
+        this.client.set(this.carouselCacheKey(), jsonStr, { EX: 7200 })
+      );
+    } catch (e) {
+      console.error('[Redis] 设置轮播缓存失败:', e);
+      throw e;
+    }
+  }
+
+  async clearCarouselCache(): Promise<void> {
+    await this.withRetry(() => this.client.del(this.carouselCacheKey()));
+  }
+
   // ---------- 跳过片头片尾配置 ----------
   private skipConfigKey(user: string, source: string, id: string) {
     return `u:${user}:skip:${source}+${id}`;

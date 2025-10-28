@@ -310,6 +310,42 @@ export class UpstashRedisStorage implements IStorage {
     }
   }
 
+  // ---------- 轮播图缓存 ----------
+  private carouselCacheKey() {
+    return 'carousel:latest';
+  }
+
+  async getCarouselCache(): Promise<any | null> {
+    const val = await withRetry(() => this.client.get(this.carouselCacheKey()));
+    if (!val) return null;
+    
+    if (typeof val === 'string') {
+      try {
+        return JSON.parse(val);
+      } catch (e) {
+        console.error('[Upstash] 解析轮播缓存失败:', e);
+        return null;
+      }
+    }
+    
+    return val;
+  }
+
+  async setCarouselCache(data: any): Promise<void> {
+    try {
+      const jsonStr = JSON.stringify(data);
+      // 设置2小时过期
+      await withRetry(() => this.client.set(this.carouselCacheKey(), jsonStr, { ex: 7200 }));
+    } catch (e) {
+      console.error('[Upstash] 设置轮播缓存失败:', e);
+      throw e;
+    }
+  }
+
+  async clearCarouselCache(): Promise<void> {
+    await withRetry(() => this.client.del(this.carouselCacheKey()));
+  }
+
   // ---------- 跳过片头片尾配置 ----------
   private skipConfigKey(user: string, source: string, id: string) {
     return `u:${user}:skip:${source}+${id}`;

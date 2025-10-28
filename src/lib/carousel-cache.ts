@@ -26,13 +26,12 @@ export interface CarouselCacheData {
  */
 export async function getCachedCarousel(): Promise<CarouselCacheData | null> {
   try {
-    const cached = await db.get(CAROUSEL_CACHE_KEY);
+    const cached = await db.getCarouselCache();
     
     if (cached) {
       console.log('[轮播缓存] ✅ 命中服务器缓存');
-      const data = JSON.parse(cached);
       return {
-        ...data,
+        ...cached,
         source: 'cache' as const,
       };
     }
@@ -59,11 +58,7 @@ export async function setCachedCarousel(carouselList: any[]): Promise<void> {
       expiresAt: expiresAt.toISOString(),
     };
     
-    await db.set(
-      CAROUSEL_CACHE_KEY,
-      JSON.stringify(cacheData),
-      CAROUSEL_CACHE_EXPIRE
-    );
+    await db.setCarouselCache(cacheData);
     
     console.log(`[轮播缓存] ✅ 缓存已更新，共 ${carouselList.length} 项`);
     console.log(`[轮播缓存] 📅 生成时间: ${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`);
@@ -79,7 +74,7 @@ export async function setCachedCarousel(carouselList: any[]): Promise<void> {
  */
 export async function clearCarouselCache(): Promise<void> {
   try {
-    await db.del(CAROUSEL_CACHE_KEY);
+    await db.clearCarouselCache();
     console.log('[轮播缓存] 🗑️ 缓存已清除');
   } catch (error) {
     console.error('[轮播缓存] ❌ 清除缓存失败:', error);

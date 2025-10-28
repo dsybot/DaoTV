@@ -585,7 +585,7 @@ async function optimizeActiveUserLevels() {
 async function refreshCarousel() {
   try {
     console.log('🎬 开始刷新轮播图缓存...');
-    
+
     // 查看当前缓存状态
     const beforeStatus = await getCarouselCacheStatus();
     if (beforeStatus.exists) {

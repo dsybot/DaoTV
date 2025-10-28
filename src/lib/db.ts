@@ -394,6 +394,26 @@ export class DbManager {
     }
   }
 
+  // ---------- 轮播图缓存 ----------
+  async getCarouselCache(): Promise<any | null> {
+    if (typeof (this.storage as any).getCarouselCache === 'function') {
+      return (this.storage as any).getCarouselCache();
+    }
+    return null;
+  }
+
+  async setCarouselCache(data: any): Promise<void> {
+    if (typeof (this.storage as any).setCarouselCache === 'function') {
+      await (this.storage as any).setCarouselCache(data);
+    }
+  }
+
+  async clearCarouselCache(): Promise<void> {
+    if (typeof (this.storage as any).clearCarouselCache === 'function') {
+      await (this.storage as any).clearCarouselCache();
+    }
+  }
+
   // 检查存储类型是否支持统计功能
   isStatsSupported(): boolean {
     const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
