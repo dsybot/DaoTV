@@ -7,6 +7,8 @@ import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
+import { generateCarouselData } from '@/lib/carousel-generator';
+import { setCachedCarousel, getCarouselCacheStatus } from '@/lib/carousel-cache';
 
 export const runtime = 'nodejs';
 
@@ -584,10 +586,6 @@ async function refreshCarousel() {
   try {
     console.log('🎬 开始刷新轮播图缓存...');
     
-    // 动态导入，避免循环依赖
-    const { generateCarouselData } = await import('@/lib/carousel-generator');
-    const { setCachedCarousel, getCarouselCacheStatus } = await import('@/lib/carousel-cache');
-    
     // 查看当前缓存状态
     const beforeStatus = await getCarouselCacheStatus();
     if (beforeStatus.exists) {
@@ -595,30 +593,30 @@ async function refreshCarousel() {
     } else {
       console.log('📊 当前无缓存');
     }
-    
+
     // 生成新数据
     const startTime = Date.now();
     const carouselList = await generateCarouselData();
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    
+
     if (carouselList.length === 0) {
       console.error('❌ 生成失败，未获取到数据');
       return;
     }
-    
+
     console.log(`✅ 数据生成成功，共 ${carouselList.length} 项（耗时 ${duration}秒）`);
-    
+
     // 保存到缓存
     await setCachedCarousel(carouselList);
-    
+
     // 输出示例
     if (carouselList.length > 0) {
       const sampleTitles = carouselList.slice(0, 3).map((item: any) => item.title).join(', ');
       console.log(`📝 示例内容: ${sampleTitles}...`);
     }
-    
+
     console.log('🎉 轮播图缓存刷新完成');
-    
+
   } catch (error) {
     console.error('❌ 刷新轮播图失败:', error);
     throw error;

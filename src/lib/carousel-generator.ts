@@ -182,7 +182,7 @@ async function fetchDoubanHot(
 ): Promise<{ code: number; list: any[] }> {
   try {
     const url = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=0&limit=20&category=${category}&type=${type}&_t=${Date.now()}`;
-    
+
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
@@ -197,7 +197,7 @@ async function fetchDoubanHot(
     }
 
     const data = await response.json();
-    
+
     return {
       code: 200,
       list: data.items?.map((item: any) => ({
