@@ -648,11 +648,11 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
 
     const data = await response.json();
     console.log(`📡 用户弹幕API响应:`, { success: data.success, count: data.count || data.comments?.length });
-    
+
     // danmu_api 返回格式: { errorCode: 0, success: true, comments: [...] }
     // 或者弹弹play格式: { code: 0, data: [...] }
     let comments: any[] = [];
-    
+
     if (data.success && Array.isArray(data.comments)) {
       // danmu_api 格式
       comments = data.comments;
@@ -660,7 +660,7 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
       // 弹弹play 格式
       comments = data.data;
     }
-    
+
     if (comments.length > 0) {
       const danmuList: DanmuItem[] = comments.map((item: any) => {
         // 解析 danmu_api 的 p 参数格式: "time,mode,color,[source]"
@@ -669,7 +669,7 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
           const time = parseFloat(parts[0]) || 0;
           const mode = parseInt(parts[1]) || 0;
           const color = parseInt(parts[2]) || 16777215;
-          
+
           return {
             text: item.m || item.text || '',
             time: time,
@@ -677,7 +677,7 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
             mode: mode === 4 ? 1 : mode === 5 ? 2 : 0,
           };
         }
-        
+
         // 标准格式
         return {
           text: item.text || item.m || '',
@@ -686,11 +686,11 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
           mode: item.mode || 0,
         };
       }).filter((item: DanmuItem) => item.text.length > 0);
-      
+
       console.log(`✅ 用户弹幕API返回 ${danmuList.length} 条弹幕`);
       return danmuList;
     }
-    
+
     console.warn('⚠️ 用户弹幕API响应格式不正确或无数据');
     return [];
   } catch (error) {
