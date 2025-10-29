@@ -625,6 +625,10 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
     'https://danmu.smone.us'
   ];
 
+  // 🎯 弹幕数量阈值：低于此数量时尝试下一个API
+  const MIN_DANMU_THRESHOLD = 100;
+  let bestResult: DanmuItem[] = [];
+
   // 尝试每个API URL
   for (let i = 0; i < xmlApiUrls.length; i++) {
     const baseUrl = xmlApiUrls[i];
@@ -829,9 +833,19 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
             `${Math.floor(item.time / 60)}:${String(Math.floor(item.time % 60)).padStart(2, '0')} "${item.text.substring(0, 15)}"`
           ).join(', '));
         }
-
+        
         // 🔍 额外显示各个过滤阶段的数量对比
         console.log(`📉 [${platformType}] 弹幕过滤统计: 原始${rawMatchCount} -> 预过滤${totalProcessed} -> 分段${danmuList.length} -> 最终${finalDanmu.length}`);
+      }
+
+      // 🎯 智能备用策略：如果弹幕数量太少，尝试下一个API
+      if (finalDanmu.length < MIN_DANMU_THRESHOLD) {
+        console.warn(`⚠️ [${platformType}] ${apiName}弹幕数量较少(${finalDanmu.length}条 < ${MIN_DANMU_THRESHOLD}条阈值)，尝试下一个API...`);
+        // 保存当前最佳结果
+        if (finalDanmu.length > bestResult.length) {
+          bestResult = finalDanmu;
+        }
+        continue; // 尝试下一个API
       }
 
       return finalDanmu; // 成功获取优化后的弹幕
@@ -847,7 +861,12 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
     }
   }
 
-  // 所有API都失败了
+  // 所有API都尝试完毕
+  if (bestResult.length > 0) {
+    console.log(`✅ 返回最佳结果: ${bestResult.length} 条弹幕 (虽然少于${MIN_DANMU_THRESHOLD}条阈值，但这是所有API中最好的)`);
+    return bestResult;
+  }
+  
   console.log('❌ 所有XML API都无法获取弹幕数据');
   return [];
 }
