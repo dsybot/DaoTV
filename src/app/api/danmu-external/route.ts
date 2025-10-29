@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-console */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getConfig } from '@/lib/config';
 
 interface PlatformUrl {
   platform: string;
@@ -618,8 +619,91 @@ async function extractPlatformUrls(doubanId: string, episode?: string | null): P
   }
 }
 
+// 从用户自建的 danmu_api 获取弹幕
+async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: string): Promise<DanmuItem[]> {
+  try {
+    // 构建 danmu_api 的请求URL
+    // 格式: https://your-danmu-api.vercel.app/{token}/api/v2/comment?url={videoUrl}
+    const apiUrl = `${endpoint.replace(/\/$/, '')}/${token}/api/v2/comment?url=${encodeURIComponent(videoUrl)}`;
+    
+    console.log(`🎯 正在请求用户自建弹幕API: ${endpoint}`);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20秒超时
+    
+    const response = await fetch(apiUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.log(`❌ 用户弹幕API响应失败: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    console.log(`📡 用户弹幕API响应:`, data);
+    
+    // danmu_api 返回格式: { code: 0, data: [{text, time, color, mode}] }
+    if (data.code === 0 && Array.isArray(data.data)) {
+      const danmuList: DanmuItem[] = data.data.map((item: any) => ({
+        text: item.text || '',
+        time: item.time || 0,
+        color: item.color || '#FFFFFF',
+        mode: item.mode || 0,
+      })).filter((item: DanmuItem) => item.text.length > 0);
+      
+      console.log(`✅ 用户弹幕API返回 ${danmuList.length} 条弹幕`);
+      return danmuList;
+    }
+    
+    return [];
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.error('❌ 用户弹幕API请求超时');
+    } else {
+      console.error('❌ 用户弹幕API请求失败:', error);
+    }
+    return [];
+  }
+}
+
 // 从XML API获取弹幕数据（支持多个备用URL）
 async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
+  // 🎯 优先检查用户是否配置了自建弹幕API
+  try {
+    const config = await getConfig();
+    const userDanmuApi = {
+      endpoint: config?.SiteConfig?.DanmuApiEndpoint,
+      token: config?.SiteConfig?.DanmuApiToken,
+    };
+    
+    if (userDanmuApi.endpoint && userDanmuApi.token) {
+      console.log('🎯 检测到用户配置的自建弹幕API，优先使用');
+      const userResult = await fetchFromUserDanmuApi(videoUrl, userDanmuApi.endpoint, userDanmuApi.token);
+      
+      const MIN_DANMU_THRESHOLD = 100;
+      if (userResult.length >= MIN_DANMU_THRESHOLD) {
+        console.log(`✅ 用户自建弹幕API返回 ${userResult.length} 条（达到${MIN_DANMU_THRESHOLD}条阈值），使用该结果`);
+        return userResult;
+      }
+      
+      if (userResult.length > 0) {
+        console.warn(`⚠️ 用户自建弹幕API返回 ${userResult.length} 条（少于${MIN_DANMU_THRESHOLD}条阈值），降级到第三方API`);
+      } else {
+        console.warn('⚠️ 用户自建弹幕API无结果，降级到第三方API');
+      }
+    }
+  } catch (error) {
+    console.error('读取弹幕API配置失败:', error);
+  }
+  
+  // 降级到第三方XML API
   const xmlApiUrls = [
     'https://fc.lyz05.cn',
     'https://danmu.smone.us'
@@ -833,7 +917,7 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
             `${Math.floor(item.time / 60)}:${String(Math.floor(item.time % 60)).padStart(2, '0')} "${item.text.substring(0, 15)}"`
           ).join(', '));
         }
-        
+
         // 🔍 额外显示各个过滤阶段的数量对比
         console.log(`📉 [${platformType}] 弹幕过滤统计: 原始${rawMatchCount} -> 预过滤${totalProcessed} -> 分段${danmuList.length} -> 最终${finalDanmu.length}`);
       }
@@ -866,7 +950,7 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
     console.log(`✅ 返回最佳结果: ${bestResult.length} 条弹幕 (虽然少于${MIN_DANMU_THRESHOLD}条阈值，但这是所有API中最好的)`);
     return bestResult;
   }
-  
+
   console.log('❌ 所有XML API都无法获取弹幕数据');
   return [];
 }

@@ -23,6 +23,9 @@ export interface AdminConfig {
     EnableTMDBCarousel?: boolean;
     // 上映日程代理配置
     ReleaseCalendarProxy?: string;
+    // 弹幕API配置
+    DanmuApiEndpoint?: string;  // 自建弹幕API地址（如：https://your-danmu-api.vercel.app）
+    DanmuApiToken?: string;      // 弹幕API访问Token
   };
   UserConfig: {
     AllowRegister?: boolean; // 是否允许用户注册，默认 true

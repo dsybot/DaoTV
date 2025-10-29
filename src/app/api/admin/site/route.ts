@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
       EnableTMDBActorSearch,
       EnableTMDBCarousel,
       ReleaseCalendarProxy,
+      DanmuApiEndpoint,
+      DanmuApiToken,
     } = body as {
       SiteName: string;
       Announcement: string;
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest) {
       EnableTMDBActorSearch?: boolean;
       EnableTMDBCarousel?: boolean;
       ReleaseCalendarProxy?: string;
+      DanmuApiEndpoint?: string;
+      DanmuApiToken?: string;
     };
 
     // 参数校验
@@ -129,6 +133,8 @@ export async function POST(request: NextRequest) {
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
       EnableTMDBCarousel: finalEnableTMDBCarousel,
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
+      DanmuApiEndpoint: DanmuApiEndpoint || '',
+      DanmuApiToken: DanmuApiToken || '',
     };
 
     console.log('[API] 将要保存到数据库的 TMDB 设置:', {

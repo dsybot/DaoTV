@@ -287,6 +287,9 @@ interface SiteConfig {
   EnableTMDBCarousel?: boolean;
   // 上映日程代理配置
   ReleaseCalendarProxy?: string;
+  // 弹幕API配置
+  DanmuApiEndpoint?: string;
+  DanmuApiToken?: string;
 }
 
 // 视频源数据类型
@@ -4068,6 +4071,9 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     EnableTMDBCarousel: false,
     // 上映日程代理配置
     ReleaseCalendarProxy: '',
+    // 弹幕API配置
+    DanmuApiEndpoint: '',
+    DanmuApiToken: '',
   });
 
   // 豆瓣数据源相关状态
@@ -4145,6 +4151,9 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? false,
         // 上映日程代理配置
         ReleaseCalendarProxy: config.SiteConfig.ReleaseCalendarProxy || '',
+        // 弹幕API配置
+        DanmuApiEndpoint: config.SiteConfig.DanmuApiEndpoint || '',
+        DanmuApiToken: config.SiteConfig.DanmuApiToken || '',
       });
     }
   }, [config]);
@@ -4754,6 +4763,66 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 }`}
             />
           </button>
+        </div>
+      </div>
+
+      {/* 弹幕API配置 */}
+      <div className='border-t border-gray-200 dark:border-gray-700 pt-6'>
+        <h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-4'>
+          弹幕 API 配置（可选）
+        </h3>
+
+        {/* 弹幕API地址 */}
+        <div className='mb-6'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            自建弹幕 API 地址
+          </label>
+          <input
+            type='url'
+            value={siteSettings.DanmuApiEndpoint || ''}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({ ...prev, DanmuApiEndpoint: e.target.value }))
+            }
+            placeholder='https://your-danmu-api.vercel.app'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            配置后将优先使用自建的弹幕API，失败时自动降级到第三方API。部署教程：
+            <a href='https://github.com/dsjbot/danmu_api' target='_blank' rel='noopener noreferrer' className='text-blue-500 hover:text-blue-600 ml-1'>
+              danmu_api
+            </a>
+          </p>
+        </div>
+
+        {/* 弹幕API Token */}
+        <div className='mb-6'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            弹幕 API Token
+          </label>
+          <input
+            type='password'
+            value={siteSettings.DanmuApiToken || ''}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({ ...prev, DanmuApiToken: e.target.value }))
+            }
+            placeholder='请输入弹幕API的访问Token'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            如果您的 danmu_api 配置了 TOKEN，请在此填写
+          </p>
+        </div>
+
+        {/* 说明文档 */}
+        <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+          <h4 className='text-sm font-medium text-blue-900 dark:text-blue-300 mb-2'>
+            💡 为什么要自建弹幕API？
+          </h4>
+          <ul className='text-xs text-blue-700 dark:text-blue-400 space-y-1'>
+            <li>• 不配置：使用第三方弹幕API（开箱即用）</li>
+            <li>• 自己部署：更稳定，支持更多平台（芒果TV、人人视频等），可自定义过滤规则</li>
+            <li>• 智能降级：自建API失败时自动使用第三方API，确保弹幕功能始终可用</li>
+          </ul>
         </div>
       </div>
 
