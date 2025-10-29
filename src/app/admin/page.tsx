@@ -4131,7 +4131,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch,
         EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel,
       });
-      
+
       setSiteSettings({
         SiteName: config.SiteConfig.SiteName,
         Announcement: config.SiteConfig.Announcement,
@@ -4217,7 +4217,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch,
           EnableTMDBCarousel: siteSettings.EnableTMDBCarousel,
         });
-        
+
         // 确保布尔值被明确设置
         const dataToSave = {
           ...siteSettings,
@@ -4226,12 +4226,12 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch ?? false,
           EnableTMDBCarousel: siteSettings.EnableTMDBCarousel ?? false,
         };
-        
+
         console.log('[SiteConfig] 将要保存 TMDB 设置:', {
           EnableTMDBActorSearch: dataToSave.EnableTMDBActorSearch,
           EnableTMDBCarousel: dataToSave.EnableTMDBCarousel,
         });
-        
+
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -4245,7 +4245,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
 
         await refreshConfig();
         showSuccess('保存成功，即将刷新页面...', showAlert);
-        
+
         // 延迟 1 秒后刷新整个页面，让用户看到成功提示
         setTimeout(() => {
           window.location.reload();

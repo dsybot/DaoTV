@@ -625,12 +625,12 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
     // 构建 danmu_api 的请求URL
     // 格式: https://your-danmu-api.vercel.app/{token}/api/v2/comment?url={videoUrl}
     const apiUrl = `${endpoint.replace(/\/$/, '')}/${token}/api/v2/comment?url=${encodeURIComponent(videoUrl)}`;
-    
+
     console.log(`🎯 正在请求用户自建弹幕API: ${endpoint}`);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000); // 20秒超时
-    
+
     const response = await fetch(apiUrl, {
       signal: controller.signal,
       headers: {
@@ -638,30 +638,60 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
         'Accept': 'application/json',
       },
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (!response.ok) {
       console.log(`❌ 用户弹幕API响应失败: ${response.status}`);
       return [];
     }
-    
+
     const data = await response.json();
-    console.log(`📡 用户弹幕API响应:`, data);
+    console.log(`📡 用户弹幕API响应:`, { success: data.success, count: data.count || data.comments?.length });
     
-    // danmu_api 返回格式: { code: 0, data: [{text, time, color, mode}] }
-    if (data.code === 0 && Array.isArray(data.data)) {
-      const danmuList: DanmuItem[] = data.data.map((item: any) => ({
-        text: item.text || '',
-        time: item.time || 0,
-        color: item.color || '#FFFFFF',
-        mode: item.mode || 0,
-      })).filter((item: DanmuItem) => item.text.length > 0);
+    // danmu_api 返回格式: { errorCode: 0, success: true, comments: [...] }
+    // 或者弹弹play格式: { code: 0, data: [...] }
+    let comments: any[] = [];
+    
+    if (data.success && Array.isArray(data.comments)) {
+      // danmu_api 格式
+      comments = data.comments;
+    } else if (data.code === 0 && Array.isArray(data.data)) {
+      // 弹弹play 格式
+      comments = data.data;
+    }
+    
+    if (comments.length > 0) {
+      const danmuList: DanmuItem[] = comments.map((item: any) => {
+        // 解析 danmu_api 的 p 参数格式: "time,mode,color,[source]"
+        if (item.p && typeof item.p === 'string') {
+          const parts = item.p.split(',');
+          const time = parseFloat(parts[0]) || 0;
+          const mode = parseInt(parts[1]) || 0;
+          const color = parseInt(parts[2]) || 16777215;
+          
+          return {
+            text: item.m || item.text || '',
+            time: time,
+            color: '#' + color.toString(16).padStart(6, '0').toUpperCase(),
+            mode: mode === 4 ? 1 : mode === 5 ? 2 : 0,
+          };
+        }
+        
+        // 标准格式
+        return {
+          text: item.text || item.m || '',
+          time: item.time || item.t || 0,
+          color: item.color || '#FFFFFF',
+          mode: item.mode || 0,
+        };
+      }).filter((item: DanmuItem) => item.text.length > 0);
       
       console.log(`✅ 用户弹幕API返回 ${danmuList.length} 条弹幕`);
       return danmuList;
     }
     
+    console.warn('⚠️ 用户弹幕API响应格式不正确或无数据');
     return [];
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
@@ -682,17 +712,17 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
       endpoint: config?.SiteConfig?.DanmuApiEndpoint,
       token: config?.SiteConfig?.DanmuApiToken,
     };
-    
+
     if (userDanmuApi.endpoint && userDanmuApi.token) {
       console.log('🎯 检测到用户配置的自建弹幕API，优先使用');
       const userResult = await fetchFromUserDanmuApi(videoUrl, userDanmuApi.endpoint, userDanmuApi.token);
-      
+
       const MIN_DANMU_THRESHOLD = 100;
       if (userResult.length >= MIN_DANMU_THRESHOLD) {
         console.log(`✅ 用户自建弹幕API返回 ${userResult.length} 条（达到${MIN_DANMU_THRESHOLD}条阈值），使用该结果`);
         return userResult;
       }
-      
+
       if (userResult.length > 0) {
         console.warn(`⚠️ 用户自建弹幕API返回 ${userResult.length} 条（少于${MIN_DANMU_THRESHOLD}条阈值），降级到第三方API`);
       } else {
@@ -702,7 +732,7 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
   } catch (error) {
     console.error('读取弹幕API配置失败:', error);
   }
-  
+
   // 降级到第三方XML API
   const xmlApiUrls = [
     'https://fc.lyz05.cn',
