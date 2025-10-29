@@ -662,32 +662,85 @@ async function fetchFromUserDanmuApi(videoUrl: string, endpoint: string, token: 
     }
 
     if (comments.length > 0) {
-      const danmuList: DanmuItem[] = comments.map((item: any) => {
+      console.log(`📥 开始处理用户弹幕API的 ${comments.length} 条原始弹幕`);
+      
+      // 🚀 应用与XML API相同的性能优化策略
+      const SEGMENT_DURATION = 300; // 5分钟分段
+      const MAX_DANMU_PER_SEGMENT = 500; // 每段最大弹幕数
+      const timeSegments: { [key: number]: DanmuItem[] } = {};
+      let totalProcessed = 0;
+      
+      for (const item of comments) {
         // 解析 danmu_api 的 p 参数格式: "time,mode,color,[source]"
+        let danmuItem: DanmuItem;
+        
         if (item.p && typeof item.p === 'string') {
           const parts = item.p.split(',');
           const time = parseFloat(parts[0]) || 0;
           const mode = parseInt(parts[1]) || 0;
           const color = parseInt(parts[2]) || 16777215;
-
-          return {
+          
+          danmuItem = {
             text: item.m || item.text || '',
             time: time,
             color: '#' + color.toString(16).padStart(6, '0').toUpperCase(),
             mode: mode === 4 ? 1 : mode === 5 ? 2 : 0,
           };
+        } else {
+          // 标准格式
+          danmuItem = {
+            text: item.text || item.m || '',
+            time: item.time || item.t || 0,
+            color: item.color || '#FFFFFF',
+            mode: item.mode || 0,
+          };
         }
-
-        // 标准格式
-        return {
-          text: item.text || item.m || '',
-          time: item.time || item.t || 0,
-          color: item.color || '#FFFFFF',
-          mode: item.mode || 0,
-        };
-      }).filter((item: DanmuItem) => item.text.length > 0);
-
-      console.log(`✅ 用户弹幕API返回 ${danmuList.length} 条弹幕`);
+        
+        // 基本过滤
+        const text = danmuItem.text.trim();
+        if (text.length === 0 || text.length > 50 || text.length < 2) {
+          continue;
+        }
+        
+        // 时间有效性检查
+        if (danmuItem.time < 0 || danmuItem.time > 86400 || !Number.isFinite(danmuItem.time)) {
+          continue;
+        }
+        
+        // 🎯 智能分段存储
+        const segmentIndex = Math.floor(danmuItem.time / SEGMENT_DURATION);
+        if (!timeSegments[segmentIndex]) {
+          timeSegments[segmentIndex] = [];
+        }
+        
+        // 🎯 密度控制：每段限制弹幕数量
+        if (timeSegments[segmentIndex].length >= MAX_DANMU_PER_SEGMENT) {
+          // 如果当前段已满，随机替换（保持弹幕多样性）
+          if (Math.random() < 0.1) { // 10%概率替换
+            const randomIndex = Math.floor(Math.random() * timeSegments[segmentIndex].length);
+            timeSegments[segmentIndex][randomIndex] = danmuItem;
+          }
+          continue;
+        }
+        
+        timeSegments[segmentIndex].push(danmuItem);
+        totalProcessed++;
+      }
+      
+      // 整合分段数据并排序
+      const danmuList: DanmuItem[] = [];
+      for (const segmentIndex of Object.keys(timeSegments).sort((a, b) => parseInt(a) - parseInt(b))) {
+        const segment = timeSegments[parseInt(segmentIndex)];
+        segment.sort((a, b) => a.time - b.time);
+        danmuList.push(...segment);
+      }
+      
+      console.log(`✅ 用户弹幕API性能优化完成:`);
+      console.log(`  - 原始弹幕: ${comments.length} 条`);
+      console.log(`  - 预过滤后: ${totalProcessed} 条`);
+      console.log(`  - 分段优化后: ${danmuList.length} 条`);
+      console.log(`  - 时间段数: ${Object.keys(timeSegments).length} 个`);
+      
       return danmuList;
     }
 
