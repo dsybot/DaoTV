@@ -288,10 +288,12 @@ function extractEpisodeFromUrl(url: string, platform: string): ExtractedUrlInfo 
 
     // 芒果TV：提取视频ID作为集数标识
     if (platform.includes('mgtv') || url.includes('mgtv.com')) {
-      // 格式: https://www.mgtv.com/b/12345/67890.html
-      const idMatch = url.match(/\/b\/\d+\/(\d+)/);
+      // 芒果TV URL格式多样：
+      // - https://www.mgtv.com/b/337650/12345678.html
+      // - https://www.mgtv.com/b/337650/p/12345.html
+      const idMatch = url.match(/\/b\/\d+\/(?:p\/)?(\d+)/);
       if (idMatch) {
-        result.episodeCode = idMatch[1]; // 如 "67890"
+        result.episodeCode = idMatch[1]; // 如 "12345678" 或 "12345"
       }
       return result;
     }
@@ -655,11 +657,21 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
       const responseText = await response.text();
       console.log(`📄 ${apiName}原始响应长度:`, responseText.length);
 
+      // 🔍 调试：检测平台类型和URL格式
+      let platformType = 'unknown';
+      if (videoUrl.includes('v.qq.com')) platformType = 'tencent';
+      else if (videoUrl.includes('iqiyi.com')) platformType = 'iqiyi';
+      else if (videoUrl.includes('youku.com')) platformType = 'youku';
+      else if (videoUrl.includes('bilibili.com')) platformType = 'bilibili';
+      else if (videoUrl.includes('mgtv.com')) platformType = 'mgtv';
+
+      console.log(`🎬 检测到平台: ${platformType}, URL: ${videoUrl.substring(0, 100)}`);
+
       // 使用正则表达式解析XML（Node.js兼容）
       const danmakuRegex = /<d p="([^"]*)"[^>]*>([^<]*)<\/d>/g;
       const danmuList: DanmuItem[] = [];
       let match;
-      const count = 0;
+      let rawMatchCount = 0; // 原始匹配数量
 
       // 🚀 激进性能优化策略 - 基于ArtPlayer源码深度分析
       // 核心问题: 大量弹幕导致内存占用和计算密集
@@ -675,6 +687,7 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
       let batchCount = 0;
 
       while ((match = danmakuRegex.exec(responseText)) !== null) {
+        rawMatchCount++; // 统计原始匹配数
         try {
           const pAttr = match[1];
           const text = match[2];
@@ -762,10 +775,16 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
         danmuList.push(...segment);
       }
 
-      console.log(`📊 ${apiName}找到 ${danmuList.length} 条弹幕数据`);
+      console.log(`🎯 ${apiName}XML解析完成 [${platformType}平台]:`);
+      console.log(`  - 原始响应: ${responseText.length}字节`);
+      console.log(`  - 正则匹配: ${rawMatchCount}条`);
+      console.log(`  - 预过滤后: ${totalProcessed}条`);
+      console.log(`  - 分段优化后: ${danmuList.length}条`);
+      console.log(`  - 时间段数: ${Object.keys(timeSegments).length}个`);
+      console.log(`  - 批次处理: ${batchCount}次`);
 
       if (danmuList.length === 0) {
-        console.log(`📭 ${apiName}未返回弹幕数据`);
+        console.log(`❌ [${platformType}] 未解析到任何弹幕数据，尝试下一个API...`);
         console.log(`🔍 ${apiName}响应前500字符:`, responseText.substring(0, 500));
         continue; // 尝试下一个API
       }
@@ -794,7 +813,7 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
         }).slice(0, maxAllowedDanmu);
       }
 
-      console.log(`✅ ${apiName}优化处理完成: ${finalDanmu.length} 条优质弹幕`);
+      console.log(`✅ [${platformType}] ${apiName}优化处理完成: ${finalDanmu.length} 条优质弹幕`);
 
       // 🎯 优化统计信息，减少不必要的计算
       if (finalDanmu.length > 0) {
@@ -802,14 +821,17 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
         const lastTime = finalDanmu[finalDanmu.length - 1].time;
         const duration = lastTime - firstTime;
 
-        console.log(`📊 ${apiName}弹幕概览: ${Math.floor(firstTime / 60)}:${String(Math.floor(firstTime % 60)).padStart(2, '0')} - ${Math.floor(lastTime / 60)}:${String(Math.floor(lastTime % 60)).padStart(2, '0')} (${Math.floor(duration / 60)}分钟)`);
+        console.log(`📊 [${platformType}] ${apiName}弹幕时间跨度: ${Math.floor(firstTime / 60)}:${String(Math.floor(firstTime % 60)).padStart(2, '0')} - ${Math.floor(lastTime / 60)}:${String(Math.floor(lastTime % 60)).padStart(2, '0')} (${Math.floor(duration / 60)}分钟)`);
 
         // 只在弹幕较少时显示详细统计
         if (finalDanmu.length <= 1000) {
-          console.log(`📋 ${apiName}弹幕样例:`, finalDanmu.slice(0, 5).map(item =>
+          console.log(`📋 [${platformType}] ${apiName}弹幕样例:`, finalDanmu.slice(0, 5).map(item =>
             `${Math.floor(item.time / 60)}:${String(Math.floor(item.time % 60)).padStart(2, '0')} "${item.text.substring(0, 15)}"`
           ).join(', '));
         }
+
+        // 🔍 额外显示各个过滤阶段的数量对比
+        console.log(`📉 [${platformType}] 弹幕过滤统计: 原始${rawMatchCount} -> 预过滤${totalProcessed} -> 分段${danmuList.length} -> 最终${finalDanmu.length}`);
       }
 
       return finalDanmu; // 成功获取优化后的弹幕
