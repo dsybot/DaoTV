@@ -542,8 +542,8 @@ function HomeClient() {
             <ContinueWatching />
 
             {/* 热门电影 */}
-            <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
+            <section className='mb-4 sm:mb-8'>
+              <div className='mb-3 sm:mb-4 flex items-center justify-between'>
                 <SectionTitle title="热门电影" icon={Film} iconColor="text-red-500" />
                 <Link
                   href='/douban?type=movie'
@@ -580,8 +580,8 @@ function HomeClient() {
             </section>
 
             {/* 热门剧集 */}
-            <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
+            <section className='mb-4 sm:mb-8'>
+              <div className='mb-3 sm:mb-4 flex items-center justify-between'>
                 <SectionTitle title="热门剧集" icon={Tv} iconColor="text-blue-500" />
                 <Link
                   href='/douban?type=tv'
@@ -617,8 +617,8 @@ function HomeClient() {
             </section>
 
             {/* 每日新番放送 */}
-            <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
+            <section className='mb-4 sm:mb-8'>
+              <div className='mb-3 sm:mb-4 flex items-center justify-between'>
                 <SectionTitle title="新番放送" icon={Calendar} iconColor="text-purple-500" />
                 <Link
                   href='/douban?type=anime'
@@ -683,8 +683,8 @@ function HomeClient() {
             </section>
 
             {/* 热门综艺 */}
-            <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
+            <section className='mb-4 sm:mb-8'>
+              <div className='mb-3 sm:mb-4 flex items-center justify-between'>
                 <SectionTitle title="热门综艺" icon={Sparkles} iconColor="text-pink-500" />
                 <Link
                   href='/douban?type=show'
@@ -720,8 +720,8 @@ function HomeClient() {
             </section>
 
             {/* 热门短剧 */}
-            <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
+            <section className='mb-4 sm:mb-8'>
+              <div className='mb-3 sm:mb-4 flex items-center justify-between'>
                 <SectionTitle title="热门短剧" icon={Play} iconColor="text-orange-500" />
                 <Link
                   href='/shortdrama'
