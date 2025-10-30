@@ -15,6 +15,7 @@ export interface AdminConfig {
     DoubanImageProxyType: string;
     DoubanImageProxy: string;
     DisableYellowFilter: boolean;
+    ShowAdultContent: boolean; // 是否显示成人内容，默认 false
     FluidSearch: boolean;
     // TMDB配置
     TMDBApiKey?: string;
@@ -53,6 +54,7 @@ export interface AdminConfig {
     detail?: string;
     from: 'config' | 'custom';
     disabled?: boolean;
+    is_adult?: boolean;
   }[];
   CustomCategories: {
     name?: string;

@@ -502,7 +502,12 @@ export async function getCacheTime(): Promise<number> {
 
 export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
   const config = await getConfig();
-  const allApiSites = config.SourceConfig.filter((s) => !s.disabled);
+  // 过滤掉禁用的源，如果未启用成人内容则同时过滤掉成人资源
+  const allApiSites = config.SourceConfig.filter((s) => {
+    if (s.disabled) return false;
+    if (!config.SiteConfig.ShowAdultContent && s.is_adult) return false;
+    return true;
+  });
 
   if (!user) {
     return allApiSites;
