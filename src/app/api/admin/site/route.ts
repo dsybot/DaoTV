@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       DoubanImageProxyType,
       DoubanImageProxy,
       DisableYellowFilter,
+      ShowAdultContent,
       FluidSearch,
       TMDBApiKey,
       TMDBLanguage,
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       DoubanImageProxyType: string;
       DoubanImageProxy: string;
       DisableYellowFilter: boolean;
+      ShowAdultContent: boolean;
       FluidSearch: boolean;
       TMDBApiKey?: string;
       TMDBLanguage?: string;
@@ -127,6 +129,7 @@ export async function POST(request: NextRequest) {
       DoubanImageProxyType,
       DoubanImageProxy,
       DisableYellowFilter,
+      ShowAdultContent,
       FluidSearch,
       TMDBApiKey: TMDBApiKey || '',
       TMDBLanguage: TMDBLanguage || 'zh-CN',
