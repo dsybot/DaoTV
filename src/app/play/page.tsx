@@ -762,7 +762,7 @@ function PlayPageClient() {
     // 逐个测速以实时更新进度
     for (let i = 0; i < sources.length; i++) {
       const source = sources[i];
-      
+
       // 更新当前测速源
       setSpeedTestProgress(prev => ({
         ...prev,
@@ -773,7 +773,7 @@ function PlayPageClient() {
       try {
         if (!source.episodes || source.episodes.length === 0) {
           results.push({ source, pingTime: 9999, available: false });
-          
+
           // 更新结果列表
           setSpeedTestProgress(prev => ({
             ...prev,
@@ -827,7 +827,7 @@ function PlayPageClient() {
       } catch (error) {
         console.warn(`轻量级测速失败: ${source.source_name}`, error);
         results.push({ source, pingTime: 9999, available: false });
-        
+
         // 更新结果列表
         setSpeedTestProgress(prev => ({
           ...prev,
@@ -888,7 +888,7 @@ function PlayPageClient() {
       const batchResults = await Promise.all(
         batch.map(async (source, batchIndex) => {
           const globalIndex = i + batchIndex;
-          
+
           // 更新当前测速源
           setSpeedTestProgress(prev => ({
             ...prev,
@@ -920,7 +920,7 @@ function PlayPageClient() {
               : source.episodes[0];
 
             const testResult = await getVideoResolutionFromM3u8(episodeUrl);
-            
+
             // 更新成功结果
             setSpeedTestProgress(prev => ({
               ...prev,
@@ -939,7 +939,7 @@ function PlayPageClient() {
             return { source, testResult };
           } catch (error) {
             console.warn(`测速失败: ${source.source_name}`, error);
-            
+
             // 更新失败结果
             setSpeedTestProgress(prev => ({
               ...prev,
@@ -1720,7 +1720,7 @@ function PlayPageClient() {
       if (!query) {
         throw new Error('缺少搜索标题');
       }
-      
+
       // 使用智能搜索变体获取全部源信息
       const searchVariants = generateSearchVariants(query.trim());
       const allResults: SearchResult[] = [];
@@ -1732,11 +1732,11 @@ function PlayPageClient() {
           `/api/search?q=${encodeURIComponent(variant)}`
         );
         if (!response.ok) continue;
-        
+
         const data = await response.json();
         if (data.results && data.results.length > 0) {
           allResults.push(...data.results);
-          
+
           const filteredResults = data.results.filter(
             (result: SearchResult) => {
               const queryTitle = videoTitle.replaceAll(' ', '').toLowerCase();
@@ -1756,7 +1756,7 @@ function PlayPageClient() {
 
       const finalResults = bestResults.length > 0 ? bestResults : allResults;
       setAvailableSources(finalResults);
-      
+
       if (finalResults.length === 0) {
         setSourceSearchError('未找到匹配结果');
       } else {
@@ -3284,13 +3284,13 @@ function PlayPageClient() {
         artPlayerRef.current.on('fullscreen', (isFullscreenNow: boolean) => {
           console.log('Fullscreen state changed:', isFullscreenNow);
           setIsFullscreen(isFullscreenNow);
-          
+
           // 更新 Portal 容器：全屏时使用播放器容器，非全屏时使用 body
           if (isFullscreenNow) {
             // 全屏时，使用 ArtPlayer 的容器元素
-            const fullscreenElement = document.fullscreenElement || 
-                                     (document as any).webkitFullscreenElement || 
-                                     (document as any).mozFullScreenElement;
+            const fullscreenElement = document.fullscreenElement ||
+              (document as any).webkitFullscreenElement ||
+              (document as any).mozFullScreenElement;
             if (fullscreenElement) {
               setPortalContainer(fullscreenElement as HTMLElement);
             }
@@ -3340,6 +3340,23 @@ function PlayPageClient() {
               display: none !important;
             }
 
+            /* 🔧 修复全屏模式下弹幕时隐时现的问题 */
+            /* 确保弹幕容器始终在正确的层级，不受控制栏影响 */
+            .art-danmuku {
+              z-index: 20 !important; /* 高于控制栏(z-index: 10)，但低于设置面板(z-index: 30+) */
+              pointer-events: none !important; /* 弹幕不阻止视频点击 */
+            }
+            
+            /* 弹幕容器内的每条弹幕可以接收点击事件（用于暂停等） */
+            .art-danmuku > div {
+              pointer-events: auto !important;
+            }
+            
+            /* 全屏和网页全屏模式下的弹幕容器优化 */
+            .artplayer[data-fullscreen="true"] .art-danmuku,
+            .artplayer[data-fullscreen-web="true"] .art-danmuku {
+              z-index: 20 !important; /* 确保在全屏模式下也保持正确层级 */
+            }
             
             /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
             .artplayer-plugin-danmuku .apd-config {
@@ -4076,10 +4093,10 @@ function PlayPageClient() {
 
       // 检查是否是网页全屏
       const isWebFullscreen = artPlayerRef.current?.fullscreenWeb || false;
-      
+
       // 显示条件：全屏 OR 网页全屏 OR 隐藏了选集面板
       const shouldShow = isFullscreen || isWebFullscreen || isEpisodeSelectorCollapsed;
-      
+
       const parentElement = button.closest('.art-control') as HTMLElement;
       if (parentElement) {
         parentElement.style.display = shouldShow ? '' : 'none';
@@ -4262,7 +4279,7 @@ function PlayPageClient() {
               <p className='text-xl font-semibold text-gray-800 dark:text-gray-200 animate-pulse'>
                 {loadingMessage}
               </p>
-              
+
               {/* 实时测速进度 */}
               {loadingStage === 'preferring' && speedTestProgress.total > 0 && (
                 <div className='mt-6 w-full max-w-xl mx-auto space-y-4'>
@@ -4276,7 +4293,7 @@ function PlayPageClient() {
                         {speedTestProgress.current} / {speedTestProgress.total}
                       </span>
                     </div>
-                    
+
                     {/* 进度条 */}
                     <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden mb-3'>
                       <div
@@ -4308,13 +4325,12 @@ function PlayPageClient() {
                         {speedTestProgress.results.map((result, index) => (
                           <div
                             key={index}
-                            className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 ${
-                              result.status === 'success'
+                            className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 ${result.status === 'success'
                                 ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                                 : result.status === 'failed'
-                                ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                                : 'bg-gray-50 dark:bg-gray-700/50'
-                            }`}
+                                  ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                                  : 'bg-gray-50 dark:bg-gray-700/50'
+                              }`}
                           >
                             <div className='flex items-center space-x-2 flex-1 min-w-0'>
                               {result.status === 'success' ? (
@@ -4330,7 +4346,7 @@ function PlayPageClient() {
                                 {result.sourceName}
                               </span>
                             </div>
-                            
+
                             {result.status === 'success' && (
                               <div className='flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-400 flex-shrink-0'>
                                 {result.quality !== '未知' && (
@@ -4344,7 +4360,7 @@ function PlayPageClient() {
                                 </span>
                               </div>
                             )}
-                            
+
                             {result.status === 'failed' && (
                               <span className='text-xs text-red-600 dark:text-red-400 flex-shrink-0'>
                                 测速失败
@@ -4728,8 +4744,8 @@ function PlayPageClient() {
                                 <svg
                                   key={i}
                                   className={`w-4 h-4 transition-all duration-300 ${i < Math.floor(parseFloat(bangumiDetails.rating.score) / 2)
-                                      ? 'text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.5)] group-hover:scale-110'
-                                      : 'text-gray-300 dark:text-gray-600'
+                                    ? 'text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.5)] group-hover:scale-110'
+                                    : 'text-gray-300 dark:text-gray-600'
                                     }`}
                                   fill='currentColor'
                                   viewBox='0 0 20 20'
@@ -4808,8 +4824,8 @@ function PlayPageClient() {
                                 <svg
                                   key={i}
                                   className={`w-4 h-4 transition-all duration-300 ${i < Math.floor(parseFloat(movieDetails.rate) / 2)
-                                      ? 'text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)] group-hover:scale-110'
-                                      : 'text-gray-300 dark:text-gray-600'
+                                    ? 'text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)] group-hover:scale-110'
+                                    : 'text-gray-300 dark:text-gray-600'
                                     }`}
                                   fill='currentColor'
                                   viewBox='0 0 20 20'
@@ -5050,8 +5066,8 @@ function PlayPageClient() {
       <button
         onClick={scrollToTop}
         className={`fixed bottom-6 right-6 z-[500] w-12 h-12 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group relative overflow-hidden ${showBackToTop
-            ? 'opacity-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 translate-y-4 pointer-events-none'
+          ? 'opacity-100 translate-y-0 pointer-events-auto'
+          : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
         style={{ position: 'fixed', right: '1.5rem', bottom: '1.5rem', left: 'auto' }}
         aria-label='返回顶部'
@@ -5070,7 +5086,7 @@ function PlayPageClient() {
 
       {/* 使用 Portal 的统一浮层 - 自动适应全屏和非全屏模式 */}
       {showEpisodePopup && portalContainer && createPortal(
-        <div 
+        <div
           className='fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center transition-all duration-300'
           style={{ zIndex: 99999 }}
           onClick={(e) => {
@@ -5091,7 +5107,7 @@ function PlayPageClient() {
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2.5} d='M6 18L18 6M6 6l12 12' />
               </svg>
             </button>
-            
+
             {/* 选集内容 - 增加更多 padding 避免 hover 放大时被裁切 */}
             <div className='relative w-full h-full overflow-y-auto px-12'>
               <EpisodeSelector
