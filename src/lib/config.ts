@@ -217,6 +217,7 @@ async function getInitConfig(configFile: string, subConfig: {
       DoubanImageProxy: process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
+      ShowAdultContent: false, // 默认不显示成人内容，可在管理面板修改
       FluidSearch:
         process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
       // TMDB配置默认值
