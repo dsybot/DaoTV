@@ -3341,10 +3341,13 @@ function PlayPageClient() {
             }
 
             /* 🔧 修复全屏模式下弹幕时隐时现的问题 */
-            /* 确保弹幕容器始终在正确的层级，不受控制栏影响 */
+            /* 核心修复：弹幕容器不应受控制栏显示/隐藏的影响 */
             .art-danmuku {
               z-index: 20 !important; /* 高于控制栏(z-index: 10)，但低于设置面板(z-index: 30+) */
               pointer-events: none !important; /* 弹幕不阻止视频点击 */
+              opacity: 1 !important; /* 🔑 关键修复：强制保持可见，不受控制栏影响 */
+              visibility: visible !important; /* 🔑 关键修复：防止被隐藏 */
+              display: block !important; /* 🔑 关键修复：确保始终显示 */
             }
             
             /* 弹幕容器内的每条弹幕可以接收点击事件（用于暂停等） */
@@ -3356,6 +3359,15 @@ function PlayPageClient() {
             .artplayer[data-fullscreen="true"] .art-danmuku,
             .artplayer[data-fullscreen-web="true"] .art-danmuku {
               z-index: 20 !important; /* 确保在全屏模式下也保持正确层级 */
+              opacity: 1 !important; /* 🔑 全屏模式强制可见 */
+              visibility: visible !important; /* 🔑 全屏模式强制显示 */
+            }
+            
+            /* 🔑 防止 ArtPlayer 的控制栏隐藏事件影响弹幕 */
+            .artplayer.art-hide-cursor .art-danmuku,
+            .artplayer.art-control-hide .art-danmuku {
+              opacity: 1 !important; /* 控制栏隐藏时弹幕仍然可见 */
+              visibility: visible !important;
             }
             
             /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
@@ -4326,10 +4338,10 @@ function PlayPageClient() {
                           <div
                             key={index}
                             className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 ${result.status === 'success'
-                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                                : result.status === 'failed'
-                                  ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                                  : 'bg-gray-50 dark:bg-gray-700/50'
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                              : result.status === 'failed'
+                                ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                                : 'bg-gray-50 dark:bg-gray-700/50'
                               }`}
                           >
                             <div className='flex items-center space-x-2 flex-1 min-w-0'>
