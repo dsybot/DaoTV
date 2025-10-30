@@ -3341,32 +3341,55 @@ function PlayPageClient() {
             }
 
             /* 🔧 修复全屏模式下弹幕时隐时现的问题 */
-            /* 核心修复：弹幕容器不应受控制栏显示/隐藏的影响 */
+            /* 核心修复：确保弹幕容器及其父容器不受控制栏影响 */
+            
+            /* 修复父容器 art-layers 的显示问题 */
+            .art-layers,
+            .art-subtitle,
+            .art-danmuku {
+              opacity: 1 !important; /* 强制可见 */
+              visibility: visible !important; /* 防止被隐藏 */
+            }
+            
+            /* 弹幕容器样式 */
             .art-danmuku {
               z-index: 20 !important; /* 高于控制栏(z-index: 10)，但低于设置面板(z-index: 30+) */
               pointer-events: none !important; /* 弹幕不阻止视频点击 */
-              opacity: 1 !important; /* 🔑 关键修复：强制保持可见，不受控制栏影响 */
-              visibility: visible !important; /* 🔑 关键修复：防止被隐藏 */
-              display: block !important; /* 🔑 关键修复：确保始终显示 */
+              display: block !important; /* 确保始终显示 */
+              transition: none !important; /* 🔑 移除所有过渡动画，防止闪烁 */
             }
             
-            /* 弹幕容器内的每条弹幕可以接收点击事件（用于暂停等） */
+            /* 弹幕容器内的每条弹幕 */
             .art-danmuku > div {
               pointer-events: auto !important;
+              opacity: 1 !important; /* 确保每条弹幕都可见 */
             }
             
-            /* 全屏和网页全屏模式下的弹幕容器优化 */
+            /* 全屏和网页全屏模式下的优化 */
+            .artplayer[data-fullscreen="true"] .art-layers,
+            .artplayer[data-fullscreen-web="true"] .art-layers,
             .artplayer[data-fullscreen="true"] .art-danmuku,
             .artplayer[data-fullscreen-web="true"] .art-danmuku {
-              z-index: 20 !important; /* 确保在全屏模式下也保持正确层级 */
-              opacity: 1 !important; /* 🔑 全屏模式强制可见 */
-              visibility: visible !important; /* 🔑 全屏模式强制显示 */
+              z-index: 20 !important;
+              opacity: 1 !important;
+              visibility: visible !important;
+              display: block !important;
             }
             
-            /* 🔑 防止 ArtPlayer 的控制栏隐藏事件影响弹幕 */
+            /* 🔑 防止 ArtPlayer 的任何状态影响弹幕和父容器 */
+            .artplayer.art-hide-cursor .art-layers,
+            .artplayer.art-control-hide .art-layers,
             .artplayer.art-hide-cursor .art-danmuku,
             .artplayer.art-control-hide .art-danmuku {
-              opacity: 1 !important; /* 控制栏隐藏时弹幕仍然可见 */
+              opacity: 1 !important;
+              visibility: visible !important;
+              transition: none !important; /* 移除过渡效果 */
+            }
+            
+            /* 确保弹幕内的元素始终可见 */
+            .art-danmuku [data-state="emit"],
+            .art-danmuku [data-state="emiting"] {
+              opacity: 1 !important;
               visibility: visible !important;
             }
             
