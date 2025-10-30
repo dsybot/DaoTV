@@ -41,10 +41,12 @@ export interface AdminConfig {
       createdAt?: number; // 用户注册时间戳
       tvboxToken?: string; // 用户专属的 TVBox Token
       tvboxEnabledSources?: string[]; // TVBox 可访问的源（为空则返回所有源）
+      showAdultContent?: boolean; // 用户级别的成人内容显示控制
     }[];
     Tags?: {
       name: string;
       enabledApis: string[];
+      showAdultContent?: boolean; // 用户组级别的成人内容显示控制
     }[];
   };
   SourceConfig: {
