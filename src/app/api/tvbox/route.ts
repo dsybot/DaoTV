@@ -292,7 +292,7 @@ export async function GET(request: NextRequest) {
       }
       // 如果用户没有设置，检查用户组设置
       else {
-        const user = config.UserConfig.Users.find(u => u.username === currentUser.username);
+        const user = config.UserConfig.Users.find(u => u.username === currentUser!.username);
         if (user?.tags && user.tags.length > 0 && config.UserConfig.Tags) {
           // 如果用户有多个用户组，只要有一个用户组允许就允许（取并集）
           const hasAnyTagAllowAdult = user.tags.some(tagName => {
