@@ -2596,7 +2596,11 @@ const VideoSourceConfig = ({
 
   const handleBatchMarkAdult = async (markAsAdult: boolean) => {
     if (selectedSources.size === 0) {
-      showAlert({ type: 'warning', message: '请先选择要操作的视频源' });
+      showAlert({
+        type: 'warning',
+        title: '提示',
+        message: '请先选择要操作的视频源'
+      });
       return;
     }
 
@@ -2607,12 +2611,14 @@ const VideoSourceConfig = ({
       await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys }));
       showAlert({
         type: 'success',
+        title: '操作成功',
         message: `${markAsAdult ? '标记' : '取消标记'}成功！共处理 ${keys.length} 个视频源`
       });
       setSelectedSources(new Set());
     } catch {
       showAlert({
         type: 'error',
+        title: '操作失败',
         message: `${markAsAdult ? '标记' : '取消标记'}失败，请重试`
       });
     }
@@ -4688,13 +4694,13 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         />
       </div>
 
-      {/* 禁用黄色过滤器 */}
+      {/* 启用关键词过滤 */}
       <div>
         <div className='flex items-center justify-between'>
           <label
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
-            禁用黄色过滤器
+            启用关键词过滤
           </label>
           <button
             type='button'
@@ -4704,13 +4710,13 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 DisableYellowFilter: !prev.DisableYellowFilter,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${siteSettings.DisableYellowFilter
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${!siteSettings.DisableYellowFilter
               ? buttonStyles.toggleOn
               : buttonStyles.toggleOff
               }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${siteSettings.DisableYellowFilter
+              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${!siteSettings.DisableYellowFilter
                 ? buttonStyles.toggleThumbOn
                 : buttonStyles.toggleThumbOff
                 }`}
@@ -4718,7 +4724,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           </button>
         </div>
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-          禁用黄色内容的过滤功能，允许显示所有内容。
+          开启后将过滤包含敏感关键词的视频分类（如"伦理"、"福利"等）。关闭后显示所有分类。
         </p>
       </div>
 
