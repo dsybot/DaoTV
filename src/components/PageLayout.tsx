@@ -15,9 +15,27 @@ interface PageLayoutProps {
   activePath?: string;
 }
 
+// 布局模式类型
+type LayoutMode = 'sidebar' | 'bottom';
+
 const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(false); // 默认不显示，检查后再决定
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('sidebar'); // 布局模式状态
+
+  // 从 localStorage 初始化布局模式
+  useEffect(() => {
+    const savedLayout = localStorage.getItem('layoutMode') as LayoutMode;
+    if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
+      setLayoutMode(savedLayout);
+    }
+  }, []);
+
+  // 切换布局模式的函数
+  const toggleLayoutMode = (mode: LayoutMode) => {
+    setLayoutMode(mode);
+    localStorage.setItem('layoutMode', mode);
+  };
 
   // 检查AI功能是否启用
   useEffect(() => {
@@ -63,11 +81,16 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
       />
 
       {/* 主要布局容器 */}
-      <div className='flex md:grid md:grid-cols-[auto_1fr] w-full min-h-screen md:min-h-auto'>
-        {/* 侧边栏 - 桌面端显示，移动端隐藏 */}
-        <div className='hidden md:block'>
-          <Sidebar activePath={activePath} />
-        </div>
+      <div className={`flex w-full min-h-screen md:min-h-auto ${layoutMode === 'sidebar' ? 'md:grid md:grid-cols-[auto_1fr]' : ''}`}>
+        {/* 侧边栏 - 根据布局模式显示 */}
+        {layoutMode === 'sidebar' && (
+          <div className='hidden md:block'>
+            <Sidebar 
+              activePath={activePath} 
+              onLayoutModeChange={toggleLayoutMode}
+            />
+          </div>
+        )}
 
         {/* 主内容区域 */}
         <div className='relative min-w-0 flex-1 transition-all duration-300'>
@@ -105,9 +128,9 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
           {/* 主内容 */}
           <main
-            className='flex-1 md:min-h-0 mb-14 md:mb-0 md:mt-0 mt-12'
+            className={`flex-1 md:min-h-0 mt-12 md:mt-0 ${layoutMode === 'bottom' ? 'mb-14' : 'md:mb-0 mb-14'}`}
             style={{
-              paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom))',
+              paddingBottom: layoutMode === 'bottom' ? 'calc(3.5rem + env(safe-area-inset-bottom))' : undefined,
             }}
           >
             {children}
@@ -115,9 +138,12 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         </div>
       </div>
 
-      {/* 移动端底部导航 */}
-      <div className='md:hidden'>
-        <MobileBottomNav activePath={activePath} />
+      {/* 底部导航 - 移动端始终显示，桌面端根据布局模式显示 */}
+      <div className={layoutMode === 'bottom' ? '' : 'md:hidden'}>
+        <MobileBottomNav 
+          activePath={activePath} 
+          onLayoutModeChange={layoutMode === 'bottom' ? toggleLayoutMode : undefined}
+        />
       </div>
 
       {/* AI推荐模态框 - 全局显示 */}

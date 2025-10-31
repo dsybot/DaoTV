@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Box, Cat, Clover, Film, Globe, Home, PlaySquare, Radio, Star, Tv } from 'lucide-react';
+import { Box, Cat, Clover, Film, Globe, Home, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,9 +12,13 @@ interface MobileBottomNavProps {
    * 主动指定当前激活的路径。当未提供时，自动使用 usePathname() 获取的路径。
    */
   activePath?: string;
+  /**
+   * 切换布局模式的回调函数
+   */
+  onLayoutModeChange?: (mode: 'sidebar' | 'bottom') => void;
 }
 
-const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
+const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProps) => {
   const pathname = usePathname();
 
   // 当前激活路径：优先使用传入的 activePath，否则回退到浏览器地址
@@ -88,9 +92,12 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     );
   };
 
+  // 计算总项数
+  const totalItemsMobile = navItems.length;
+
   return (
     <nav
-      className='md:hidden fixed left-0 right-0 z-[600] bg-white/90 backdrop-blur-xl border-t border-gray-200/50 overflow-hidden dark:bg-gray-900/80 dark:border-gray-700/50'
+      className='fixed left-0 right-0 z-[600] bg-white/90 backdrop-blur-xl border-t border-gray-200/50 dark:bg-gray-900/80 dark:border-gray-700/50 shadow-lg'
       style={{
         /* 紧贴视口底部，同时在内部留出安全区高度 */
         bottom: 0,
@@ -98,7 +105,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
         minHeight: 'calc(3.5rem + env(safe-area-inset-bottom))',
       }}
     >
-      <ul className='flex items-center overflow-x-auto scrollbar-hide'>
+      <ul className='flex items-center overflow-x-auto md:overflow-visible scrollbar-hide md:justify-center md:gap-1 md:px-4'>
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
@@ -106,26 +113,26 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
               key={item.href}
               className='flex-shrink-0'
               style={{ 
-                width: `${100 / navItems.length}vw`, 
-                minWidth: `${100 / navItems.length}vw` 
+                width: `${100 / totalItemsMobile}vw`, 
+                minWidth: `${100 / totalItemsMobile}vw` 
               }}
             >
               <Link
                 href={item.href}
-                className='flex flex-col items-center justify-center w-full h-14 gap-1 text-xs'
+                className='flex flex-col items-center justify-center w-full h-14 gap-1 text-xs md:w-auto md:min-w-[80px] md:px-3 md:rounded-lg md:hover:bg-white/60 md:dark:hover:bg-gray-800/60 transition-all duration-200'
               >
                 <item.icon
-                  className={`h-6 w-6 ${active
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-gray-500 dark:text-gray-400'
+                  className={`h-6 w-6 transition-all duration-200 ${active
+                    ? 'text-green-600 dark:text-green-400 md:scale-110'
+                    : 'text-gray-500 dark:text-gray-400 md:hover:text-green-600 md:dark:hover:text-green-400 md:hover:scale-110'
                     }`}
                 />
                 <span
-                  className={
+                  className={`transition-all duration-200 ${
                     active
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-gray-600 dark:text-gray-300'
-                  }
+                      ? 'text-green-600 dark:text-green-400 font-semibold'
+                      : 'text-gray-600 dark:text-gray-300 md:hover:text-green-600 md:dark:hover:text-green-400'
+                  }`}
                 >
                   {item.label}
                 </span>
@@ -133,6 +140,32 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
             </li>
           );
         })}
+        {/* 搜索按钮 - 仅在桌面端且提供了回调函数时显示 */}
+        {onLayoutModeChange && (
+          <li className='hidden md:block'>
+            <Link
+              href='/search'
+              className='flex flex-col items-center justify-center h-14 gap-1 text-xs min-w-[80px] px-3 rounded-lg hover:bg-white/60 dark:hover:bg-gray-800/60 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-all duration-200 group'
+              title='搜索'
+            >
+              <Search className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' />
+              <span>搜索</span>
+            </Link>
+          </li>
+        )}
+        {/* 切换到侧边栏按钮 - 仅在桌面端且提供了回调函数时显示 */}
+        {onLayoutModeChange && (
+          <li className='hidden md:block'>
+            <button
+              onClick={() => onLayoutModeChange('sidebar')}
+              className='flex flex-col items-center justify-center h-14 gap-1 text-xs min-w-[80px] px-3 rounded-lg hover:bg-white/60 dark:hover:bg-gray-800/60 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-all duration-200 group'
+              title='切换到侧边栏'
+            >
+              <Box className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' />
+              <span>侧边栏</span>
+            </button>
+          </li>
+        )}
       </ul>
     </nav>
   );
