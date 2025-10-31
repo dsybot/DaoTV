@@ -649,6 +649,117 @@ export default function TVBoxConfigPage() {
             </div>
           </div>
 
+          {/* ⚡ 快捷复制配置链接 */}
+          <div className="mb-4">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+              <div className="mb-3">
+                <h3 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                  ⚡ 快捷复制配置
+                </h3>
+                <p className="text-xs text-purple-700 dark:text-purple-300">
+                  一键复制不同模式的配置链接，无需手动调整参数
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 家庭安全模式按钮 */}
+                <button
+                  onClick={async () => {
+                    const baseUrl = window.location.origin;
+                    const params = new URLSearchParams();
+                    params.append('format', format);
+                    if (userToken) {
+                      params.append('token', userToken);
+                    } else if (securityConfig?.enableAuth && securityConfig.token) {
+                      params.append('token', securityConfig.token);
+                    }
+                    if (configMode !== 'standard') {
+                      params.append('mode', configMode);
+                    }
+                    const url = `${baseUrl}/api/tvbox?${params.toString()}`;
+
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch (err) {
+                      console.error('Copy failed:', err);
+                    }
+                  }}
+                  className="group flex items-center justify-between px-3 py-2.5 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-lg hover:border-green-400 dark:hover:border-green-500 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <span className="text-xl">🏠</span>
+                    <div className="text-left">
+                      <div className="text-xs font-semibold text-green-700 dark:text-green-300">
+                        家庭安全模式
+                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400">
+                        过滤成人内容 + 智能搜索
+                      </div>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* 完整内容模式按钮 */}
+                <button
+                  onClick={async () => {
+                    const baseUrl = window.location.origin;
+                    const params = new URLSearchParams();
+                    params.append('format', format);
+                    if (userToken) {
+                      params.append('token', userToken);
+                    } else if (securityConfig?.enableAuth && securityConfig.token) {
+                      params.append('token', securityConfig.token);
+                    }
+                    if (configMode !== 'standard') {
+                      params.append('mode', configMode);
+                    }
+                    params.append('filter', 'off'); // 关闭过滤
+                    const url = `${baseUrl}/api/tvbox?${params.toString()}`;
+
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch (err) {
+                      console.error('Copy failed:', err);
+                    }
+                  }}
+                  className="group flex items-center justify-between px-3 py-2.5 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-700 rounded-lg hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <span className="text-xl">🔓</span>
+                    <div className="text-left">
+                      <div className="text-xs font-semibold text-orange-700 dark:text-orange-300">
+                        完整内容模式
+                      </div>
+                      <div className="text-xs text-orange-600 dark:text-orange-400">
+                        显示所有内容（无过滤）
+                      </div>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+
+              <div className="mt-3 p-2.5 bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg">
+                <p className="text-xs text-purple-800 dark:text-purple-200">
+                  💡 <strong>提示：</strong>点击按钮即可复制对应模式的配置链接。家庭用户推荐使用"家庭安全模式"。
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center space-x-2">
             <input
               type="text"
