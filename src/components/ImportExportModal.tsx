@@ -279,7 +279,7 @@ export default function ImportExportModal({
                         数组格式（推荐）
                       </div>
                       <div className='text-xs text-blue-700 dark:text-blue-300 mt-0.5'>
-                        适用于批量导入功能，结构：<code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>[{'{'...{'}'}]</code>
+                        适用于批量导入功能，结构：<code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>[&#123;...&#125;]</code>
                       </div>
                     </div>
                   </label>
@@ -299,7 +299,7 @@ export default function ImportExportModal({
                         配置文件格式
                       </div>
                       <div className='text-xs text-blue-700 dark:text-blue-300 mt-0.5'>
-                        适用于直接插入配置文件，结构：<code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>{'{'api_site: {'{'key: {...{'}'}{'}'}{'}'}</code>
+                        适用于直接插入配置文件，结构：<code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>&#123;api_site: &#123;key: &#123;...&#125;&#125;&#125;</code>
                       </div>
                     </div>
                   </label>
