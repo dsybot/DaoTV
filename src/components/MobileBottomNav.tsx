@@ -27,6 +27,12 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const [navItems, setNavItems] = useState([
     { icon: Home, label: '首页', href: '/' },
     {
+      icon: Search,
+      label: '搜索',
+      href: '/search',
+      desktopOnly: true, // 桌面端底栏模式下显示
+    },
+    {
       icon: Globe,
       label: '源浏览',
       href: '/source-browser',
@@ -92,8 +98,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     );
   };
 
-  // 计算总项数
-  const totalItemsMobile = navItems.length;
+  // 计算总项数（移动端不包含桌面端专属项）
+  const totalItemsMobile = navItems.filter(item => !(item as any).desktopOnly).length;
 
   return (
     <nav
@@ -113,12 +119,15 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             minHeight: '3.5rem',
           }}
         >
-          {navItems.map((item) => {
+          {navItems.map((item: any) => {
             const active = isActive(item.href);
+            // 移动端隐藏桌面端专属项
+            const hideOnMobile = item.desktopOnly && !onLayoutModeChange;
+            
             return (
               <li
                 key={item.href}
-                className='flex-1 md:flex-initial flex-shrink-0 md:flex-shrink-0'
+                className={`flex-1 md:flex-initial flex-shrink-0 md:flex-shrink-0 ${hideOnMobile ? 'hidden md:flex' : ''}`}
               >
                 <Link
                   href={item.href}
@@ -143,32 +152,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               </li>
             );
           })}
-          {/* 搜索按钮 - 仅在桌面端且提供了回调函数时显示 */}
-          {onLayoutModeChange && (
-            <li className='hidden md:flex flex-shrink-0'>
-              <Link
-                href='/search'
-                className='flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-all duration-200 group'
-                title='搜索'
-              >
-                <Search className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' />
-                <span>搜索</span>
-              </Link>
-            </li>
-          )}
-          {/* 切换到侧边栏按钮 - 仅在桌面端且提供了回调函数时显示 */}
-          {onLayoutModeChange && (
-            <li className='hidden md:flex flex-shrink-0'>
-              <button
-                onClick={() => onLayoutModeChange('sidebar')}
-                className='flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-all duration-200 group'
-                title='切换到侧边栏'
-              >
-                <Box className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' />
-                <span>侧边栏</span>
-              </button>
-            </li>
-          )}
         </ul>
       </div>
     </nav>

@@ -142,9 +142,26 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
       <div className={layoutMode === 'bottom' ? '' : 'md:hidden'}>
         <MobileBottomNav 
           activePath={activePath} 
-          onLayoutModeChange={layoutMode === 'bottom' ? toggleLayoutMode : undefined}
         />
       </div>
+
+      {/* 独立的布局切换按钮 - 仅在桌面端底栏模式下显示 */}
+      {layoutMode === 'bottom' && (
+        <button
+          onClick={() => toggleLayoutMode('sidebar')}
+          className='hidden md:flex fixed right-4 z-[601] flex-col items-center justify-center gap-0.5 text-xs w-16 h-16 rounded-full bg-white/40 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/30 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 hover:bg-white/50 dark:hover:bg-gray-900/40 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-all duration-200 group'
+          style={{
+            bottom: 'max(5.5rem, calc(3.5rem + env(safe-area-inset-bottom) + 1rem))',
+          }}
+          title='切换到侧边栏'
+        >
+          <svg className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
+            <rect x='3' y='3' width='18' height='18' rx='2' ry='2'></rect>
+            <line x1='9' y1='3' x2='9' y2='21'></line>
+          </svg>
+          <span className='text-[10px]'>侧边栏</span>
+        </button>
+      )}
 
       {/* AI推荐模态框 - 全局显示 */}
       {shouldShowAIButton && (
