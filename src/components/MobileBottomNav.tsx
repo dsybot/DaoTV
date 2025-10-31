@@ -24,6 +24,9 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   // 当前激活路径：优先使用传入的 activePath，否则回退到浏览器地址
   const currentActive = activePath ?? pathname;
 
+  // 控制底栏弹出动画（仅在桌面端底栏模式下）
+  const [isVisible, setIsVisible] = useState(false);
+
   const [navItems, setNavItems] = useState([
     { icon: Home, label: '首页', href: '/' },
     {
@@ -69,6 +72,22 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     },
   ]);
 
+  // 监听桌面端底栏模式，触发弹出动画
+  useEffect(() => {
+    if (onLayoutModeChange) {
+      // 重置为隐藏状态
+      setIsVisible(false);
+      // 延迟一小段时间触发弹出动画
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      // 移动端始终显示，不需要动画
+      setIsVisible(true);
+    }
+  }, [onLayoutModeChange]);
+
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
@@ -103,7 +122,10 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   return (
     <nav
-      className='fixed left-0 right-0 z-[600] flex justify-center pointer-events-none'
+      className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${onLayoutModeChange
+          ? `transition-transform duration-500 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`
+          : ''
+        }`}
       style={{
         /* 紧贴视口底部，同时在内部留出安全区高度 */
         bottom: 0,
@@ -158,8 +180,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   />
                   <span
                     className={`text-[10px] md:text-xs transition-all duration-200 ${active
-                        ? `${theme.active} font-semibold`
-                        : `text-gray-700 dark:text-gray-200 ${theme.hover}`
+                      ? `${theme.active} font-semibold`
+                      : `text-gray-700 dark:text-gray-200 ${theme.hover}`
                       }`}
                     style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
                   >
