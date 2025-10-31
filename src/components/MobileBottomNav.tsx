@@ -111,7 +111,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       }}
     >
       <div 
-        className='pointer-events-auto w-full md:w-auto bg-white/40 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/30 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-hidden md:mx-4'
+        className='pointer-events-auto w-full md:w-auto bg-white/45 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/35 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-hidden md:mx-4'
       >
         <ul className='flex items-center overflow-x-auto md:overflow-visible scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2'
           style={{
@@ -143,8 +143,9 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                     className={`text-[10px] md:text-xs transition-all duration-200 ${
                       active
                         ? 'text-green-600 dark:text-green-400 font-semibold'
-                        : 'text-gray-600 dark:text-gray-300 md:hover:text-green-600 md:dark:hover:text-green-400'
+                        : 'text-gray-700 dark:text-gray-200 md:hover:text-green-600 md:dark:hover:text-green-400'
                     }`}
+                    style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
                   >
                     {item.label}
                   </span>
@@ -165,11 +166,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             <li className='hidden md:flex flex-shrink-0'>
               <button
                 onClick={() => onLayoutModeChange('sidebar')}
-                className='flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-all duration-200 group'
+                className='flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-700 hover:text-indigo-600 dark:text-gray-200 dark:hover:text-indigo-400 transition-all duration-200 group'
                 title='切换到侧边栏'
               >
                 <PanelLeft className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' />
-                <span>侧边栏</span>
+                <span style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>侧边栏</span>
               </button>
             </li>
           )}
