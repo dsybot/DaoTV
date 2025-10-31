@@ -5,7 +5,7 @@
 import { Box, Cat, Clover, Film, Globe, Home, PanelLeft, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface MobileBottomNavProps {
   /**
@@ -26,6 +26,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   // 控制底栏弹出动画（仅在桌面端底栏模式下）
   const [isVisible, setIsVisible] = useState(false);
+  // 记录上一次的 onLayoutModeChange 状态
+  const prevLayoutModeRef = useRef<boolean>(false);
 
   const [navItems, setNavItems] = useState([
     { icon: Home, label: '首页', href: '/' },
@@ -72,20 +74,25 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     },
   ]);
 
-  // 组件挂载时触发弹出动画（仅在桌面端底栏模式下）
+  // 监听桌面端底栏模式切换，触发弹出动画
   useEffect(() => {
-    if (onLayoutModeChange) {
-      // 延迟一小段时间触发弹出动画
+    const isBottomMode = !!onLayoutModeChange;
+    const wasBottomMode = prevLayoutModeRef.current;
+
+    if (isBottomMode && !wasBottomMode) {
+      // 从非底栏模式切换到底栏模式，或初始加载时就是底栏模式
+      setIsVisible(false);
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, 100);
+      prevLayoutModeRef.current = true;
       return () => clearTimeout(timer);
-    } else {
-      // 移动端始终显示，不需要动画
+    } else if (!isBottomMode) {
+      // 移动端或侧边栏模式，直接显示
       setIsVisible(true);
+      prevLayoutModeRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [onLayoutModeChange]);
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
