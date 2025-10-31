@@ -87,6 +87,10 @@ const config: Config = {
           '0%': { transform: 'translateX(-20px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
+        slideInFromBottom: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
       },
       animation: {
         flicker: 'flicker 3s linear infinite',
@@ -96,6 +100,7 @@ const config: Config = {
         'slide-down': 'slideDown 0.3s ease-in-out',
         'slide-in-from-right': 'slideInFromRight 0.3s ease-out',
         'slide-in-from-left': 'slideInFromLeft 0.3s ease-out',
+        'slide-in-from-bottom': 'slideInFromBottom 0.3s ease-out',
         'ken-burns': 'kenBurns 20s ease-out infinite alternate',
         wave: 'wave 2s ease-in-out infinite',
       },

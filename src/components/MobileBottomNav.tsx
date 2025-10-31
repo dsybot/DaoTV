@@ -5,7 +5,7 @@
 import { Box, Cat, Clover, Film, Globe, Home, PanelLeft, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface MobileBottomNavProps {
   /**
@@ -23,11 +23,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   // 当前激活路径：优先使用传入的 activePath，否则回退到浏览器地址
   const currentActive = activePath ?? pathname;
-
-  // 控制底栏弹出动画（仅在桌面端底栏模式下）
-  const [isVisible, setIsVisible] = useState(false);
-  // 记录上一次的 onLayoutModeChange 状态
-  const prevLayoutModeRef = useRef<boolean>(false);
 
   const [navItems, setNavItems] = useState([
     { icon: Home, label: '首页', href: '/' },
@@ -74,26 +69,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     },
   ]);
 
-  // 监听桌面端底栏模式切换，触发弹出动画
-  useEffect(() => {
-    const isBottomMode = !!onLayoutModeChange;
-    const wasBottomMode = prevLayoutModeRef.current;
-
-    if (isBottomMode && !wasBottomMode) {
-      // 从非底栏模式切换到底栏模式，或初始加载时就是底栏模式
-      setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 100);
-      prevLayoutModeRef.current = true;
-      return () => clearTimeout(timer);
-    } else if (!isBottomMode) {
-      // 移动端或侧边栏模式，直接显示
-      setIsVisible(true);
-      prevLayoutModeRef.current = false;
-    }
-  }, [onLayoutModeChange]);
-
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
@@ -128,10 +103,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   return (
     <nav
-      className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${onLayoutModeChange
-        ? `transition-transform duration-1000 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`
-        : ''
-        }`}
+      className='fixed left-0 right-0 z-[600] flex justify-center pointer-events-none'
       style={{
         /* 紧贴视口底部，同时在内部留出安全区高度 */
         bottom: 0,
@@ -147,7 +119,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             minHeight: '3.5rem',
           }}
         >
-          {navItems.map((item: any) => {
+          {navItems.map((item: any, index: number) => {
             const active = isActive(item.href);
             // 移动端隐藏桌面端专属项
             const hideOnMobile = item.desktopOnly && !onLayoutModeChange;
@@ -171,7 +143,16 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             return (
               <li
                 key={item.href}
-                className={`flex-1 md:flex-initial flex-shrink-0 md:flex-shrink-0 ${hideOnMobile ? 'hidden md:flex' : ''}`}
+                className={`flex-1 md:flex-initial flex-shrink-0 md:flex-shrink-0 ${hideOnMobile ? 'hidden md:flex' : ''} ${
+                  onLayoutModeChange ? 'md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0' : ''
+                }`}
+                style={
+                  onLayoutModeChange
+                    ? {
+                        animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards`,
+                      }
+                    : undefined
+                }
               >
                 <Link
                   href={item.href}
@@ -200,14 +181,24 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
           {/* 分隔线 - 仅在桌面端且提供了回调函数时显示 */}
           {onLayoutModeChange && (
-            <li className='hidden md:flex items-center px-2'>
+            <li 
+              className='hidden md:flex items-center px-2 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
+              style={{
+                animation: `slideInFromBottom 0.3s ease-out ${navItems.length * 0.05}s forwards`,
+              }}
+            >
               <div className='w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600'></div>
             </li>
           )}
 
           {/* 切换到侧边栏按钮 - 仅在桌面端且提供了回调函数时显示 */}
           {onLayoutModeChange && (
-            <li className='hidden md:flex flex-shrink-0'>
+            <li 
+              className='hidden md:flex flex-shrink-0 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
+              style={{
+                animation: `slideInFromBottom 0.3s ease-out ${(navItems.length + 1) * 0.05}s forwards`,
+              }}
+            >
               <button
                 onClick={() => onLayoutModeChange('sidebar')}
                 className='group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-700 hover:text-indigo-600 dark:text-gray-200 dark:hover:text-indigo-400 transition-all duration-200'
