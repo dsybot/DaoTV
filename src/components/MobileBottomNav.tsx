@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Box, Cat, Clover, Film, Globe, Home, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
+import { Box, Cat, Clover, Film, Globe, Home, PanelLeft, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -168,10 +168,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 className='flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-all duration-200 group'
                 title='切换到侧边栏'
               >
-                <svg className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                  <rect x='3' y='3' width='18' height='18' rx='2' ry='2'></rect>
-                  <line x='9' y1='3' x2='9' y2='21'></line>
-                </svg>
+                <PanelLeft className='h-6 w-6 group-hover:scale-110 transition-transform duration-200' />
                 <span>侧边栏</span>
               </button>
             </li>
