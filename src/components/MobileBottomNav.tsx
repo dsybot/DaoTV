@@ -72,21 +72,20 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     },
   ]);
 
-  // 监听桌面端底栏模式，触发弹出动画
+  // 组件挂载时触发弹出动画（仅在桌面端底栏模式下）
   useEffect(() => {
     if (onLayoutModeChange) {
-      // 重置为隐藏状态
-      setIsVisible(false);
       // 延迟一小段时间触发弹出动画
       const timer = setTimeout(() => {
         setIsVisible(true);
-      }, 50);
+      }, 100);
       return () => clearTimeout(timer);
     } else {
       // 移动端始终显示，不需要动画
       setIsVisible(true);
     }
-  }, [onLayoutModeChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
@@ -123,8 +122,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   return (
     <nav
       className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${onLayoutModeChange
-          ? `transition-transform duration-500 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`
-          : ''
+        ? `transition-transform duration-1000 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`
+        : ''
         }`}
       style={{
         /* 紧贴视口底部，同时在内部留出安全区高度 */
