@@ -124,6 +124,22 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             // 移动端隐藏桌面端专属项
             const hideOnMobile = item.desktopOnly && !onLayoutModeChange;
             
+            // 为每个菜单项定义独特的颜色主题（与侧边栏保持一致）
+            const colorThemes: Record<string, { hover: string; active: string }> = {
+              '/': { hover: 'md:group-hover:text-green-600 md:dark:group-hover:text-green-400', active: 'text-green-600 dark:text-green-400' }, // 首页
+              '/search': { hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400', active: 'text-blue-600 dark:text-blue-400' }, // 搜索
+              '/source-browser': { hover: 'md:group-hover:text-emerald-600 md:dark:group-hover:text-emerald-400', active: 'text-emerald-600 dark:text-emerald-400' }, // 源浏览器
+              '/douban?type=movie': { hover: 'md:group-hover:text-red-600 md:dark:group-hover:text-red-400', active: 'text-red-600 dark:text-red-400' }, // 电影
+              '/douban?type=tv': { hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400', active: 'text-blue-600 dark:text-blue-400' }, // 剧集
+              '/shortdrama': { hover: 'md:group-hover:text-purple-600 md:dark:group-hover:text-purple-400', active: 'text-purple-600 dark:text-purple-400' }, // 短剧
+              '/douban?type=anime': { hover: 'md:group-hover:text-pink-600 md:dark:group-hover:text-pink-400', active: 'text-pink-600 dark:text-pink-400' }, // 动漫
+              '/douban?type=show': { hover: 'md:group-hover:text-orange-600 md:dark:group-hover:text-orange-400', active: 'text-orange-600 dark:text-orange-400' }, // 综艺
+              '/live': { hover: 'md:group-hover:text-teal-600 md:dark:group-hover:text-teal-400', active: 'text-teal-600 dark:text-teal-400' }, // 直播
+              '/douban?type=custom': { hover: 'md:group-hover:text-yellow-600 md:dark:group-hover:text-yellow-400', active: 'text-yellow-600 dark:text-yellow-400' }, // 自定义
+            };
+            
+            const theme = colorThemes[item.href] || colorThemes['/'];
+            
             return (
               <li
                 key={item.href}
@@ -135,16 +151,16 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 >
                   <item.icon
                     className={`h-6 w-6 transition-all duration-200 ${active
-                      ? 'text-green-600 dark:text-green-400 md:scale-110'
-                      : 'text-gray-700 dark:text-gray-200 md:group-hover:text-green-600 md:dark:group-hover:text-green-400 md:group-hover:scale-110'
+                      ? `${theme.active} md:scale-110`
+                      : `text-gray-700 dark:text-gray-200 ${theme.hover} md:group-hover:scale-110`
                       }`}
                     style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
                   />
                   <span
                     className={`text-[10px] md:text-xs transition-all duration-200 ${
                       active
-                        ? 'text-green-600 dark:text-green-400 font-semibold'
-                        : 'text-gray-700 dark:text-gray-200 md:group-hover:text-green-600 md:dark:group-hover:text-green-400'
+                        ? `${theme.active} font-semibold`
+                        : `text-gray-700 dark:text-gray-200 ${theme.hover}`
                     }`}
                     style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
                   >
