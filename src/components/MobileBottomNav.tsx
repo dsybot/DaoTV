@@ -105,7 +105,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       }}
     >
       <div 
-        className='pointer-events-auto w-full md:w-auto bg-white/70 backdrop-blur-2xl border border-gray-200/30 dark:bg-gray-900/60 dark:border-gray-700/30 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-hidden md:mx-4'
+        className='pointer-events-auto w-full md:w-auto bg-white/40 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/30 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-hidden md:mx-4'
       >
         <ul className='flex items-center overflow-x-auto md:overflow-visible scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2'
           style={{
