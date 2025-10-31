@@ -262,9 +262,9 @@ export default function ShortDramaPage() {
           {loading && (isInitialLoad || page > 1) && (
             <div className="mt-8">
               <div className="flex justify-center mb-6">
-                <div className='flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50 shadow-md'>
-                  <div className='animate-spin rounded-full h-5 w-5 border-2 border-purple-300 border-t-purple-600 dark:border-purple-700 dark:border-t-purple-400'></div>
-                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>加载更多短剧...</span>
+                <div className='flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-purple-500/20 dark:border-purple-700/50 shadow-lg shadow-purple-500/10 backdrop-blur-sm'>
+                  <div className='animate-spin rounded-full h-5 w-5 border-2 border-purple-400/30 border-t-purple-600 dark:border-purple-700 dark:border-t-purple-400'></div>
+                  <span className='text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent'>加载更多短剧...</span>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
