@@ -385,7 +385,7 @@ function HomeClient() {
 
         {/* 轮播图 - 在所有tab显示（根据配置） */}
         {enableTMDBCarousel && (
-          <div className='mt-8 sm:mt-12 mb-8'>
+          <div className='mt-8 sm:mt-12 md:-mt-4 mb-8'>
             <HomeCarousel />
           </div>
         )}
