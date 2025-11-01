@@ -211,8 +211,13 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       )}
 
       <nav
-        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none bottom-0 pb-16 ${onLayoutModeChange ? 'md:top-4 md:bottom-auto md:pb-0' : ''
-          }`}
+        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${
+          onLayoutModeChange ? 'bottom-0 md:top-4 md:bottom-auto' : 'bottom-0'
+        }`}
+        style={{
+          /* 移动端：紧贴视口底部，同时在内部留出安全区高度 */
+          paddingBottom: onLayoutModeChange ? 'max(1rem, env(safe-area-inset-bottom))' : 'max(1rem, env(safe-area-inset-bottom))',
+        }}
       >
         <div
           className='pointer-events-auto w-full md:w-auto bg-white/30 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/20 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-hidden md:mx-4'
