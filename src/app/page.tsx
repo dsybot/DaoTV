@@ -48,6 +48,7 @@ function HomeClient() {
   const [loading, setLoading] = useState(true);
   const { announcement, enableTMDBCarousel } = useSite();
   const [username, setUsername] = useState<string>('');
+  const [layoutMode, setLayoutMode] = useState<'sidebar' | 'bottom'>('sidebar');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
@@ -61,6 +62,14 @@ function HomeClient() {
     const authInfo = getAuthInfoFromBrowserCookie();
     if (authInfo?.username) {
       setUsername(authInfo.username);
+    }
+
+    // 读取布局模式
+    if (typeof window !== 'undefined') {
+      const savedLayout = localStorage.getItem('layoutMode') as 'sidebar' | 'bottom';
+      if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
+        setLayoutMode(savedLayout);
+      }
     }
 
     // 检查公告弹窗状态
@@ -385,7 +394,7 @@ function HomeClient() {
 
         {/* 轮播图 - 在所有tab显示（根据配置） */}
         {enableTMDBCarousel && (
-          <div className='mt-8 sm:mt-12 md:-mt-4 mb-8'>
+          <div className={`mt-8 sm:mt-12 mb-8 ${layoutMode === 'bottom' ? 'md:-mt-4' : ''}`}>
             <HomeCarousel />
           </div>
         )}
