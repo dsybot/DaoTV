@@ -24,13 +24,17 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const { siteName } = useSite();
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(false); // 默认不显示，检查后再决定
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('sidebar'); // 布局模式状态
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('bottom'); // 布局模式状态，默认顶栏模式
 
   // 从 localStorage 初始化布局模式
   useEffect(() => {
     const savedLayout = localStorage.getItem('layoutMode') as LayoutMode;
     if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
       setLayoutMode(savedLayout);
+    } else {
+      // 如果没有保存过布局模式，设置默认值为顶栏模式
+      setLayoutMode('bottom');
+      localStorage.setItem('layoutMode', 'bottom');
     }
   }, []);
 

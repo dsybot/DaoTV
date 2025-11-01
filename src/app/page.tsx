@@ -48,7 +48,7 @@ function HomeClient() {
   const [loading, setLoading] = useState(true);
   const { announcement, enableTMDBCarousel } = useSite();
   const [username, setUsername] = useState<string>('');
-  const [layoutMode, setLayoutMode] = useState<'sidebar' | 'bottom'>('sidebar');
+  const [layoutMode, setLayoutMode] = useState<'sidebar' | 'bottom'>('bottom');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
@@ -69,6 +69,10 @@ function HomeClient() {
       const savedLayout = localStorage.getItem('layoutMode') as 'sidebar' | 'bottom';
       if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
         setLayoutMode(savedLayout);
+      } else {
+        // 如果没有保存过布局模式，设置默认值为顶栏模式
+        setLayoutMode('bottom');
+        localStorage.setItem('layoutMode', 'bottom');
       }
     }
 
