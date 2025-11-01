@@ -228,7 +228,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                   key={record.key}
                   className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44 relative group/card pt-2 pr-2'
                 >
-                  <div className='relative group-hover/card:z-[500] transition-all duration-300'>
+                  <div className='relative group-hover/card:z-[5] transition-all duration-300'>
                     <VideoCard
                       id={id}
                       title={record.title}

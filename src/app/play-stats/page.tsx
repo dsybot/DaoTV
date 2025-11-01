@@ -1404,7 +1404,7 @@ const PlayStatsPage: React.FC = () => {
                         .filter(series => series.hasNewEpisode)
                         .map((series, index) => (
                           <div key={`new-${series.title}_${series.year}_${index}`} className="relative w-full group/card">
-                            <div className="relative group-hover/card:z-[500] transition-all duration-300 ease-in-out">
+                            <div className="relative group-hover/card:z-[5] transition-all duration-300 ease-in-out">
                               <VideoCard
                                 title={series.title}
                                 poster={series.cover || ''}
@@ -1437,7 +1437,7 @@ const PlayStatsPage: React.FC = () => {
                         .filter(series => series.hasNewEpisode)
                         .map((series, index) => (
                           <div key={`new-${series.title}_${series.year}_${index}`} className="relative w-full group/card">
-                            <div className="relative group-hover/card:z-[500] transition-all duration-300 ease-in-out">
+                            <div className="relative group-hover/card:z-[5] transition-all duration-300 ease-in-out">
                               <VideoCard
                                 title={series.title}
                                 poster={series.cover || ''}
@@ -1487,7 +1487,7 @@ const PlayStatsPage: React.FC = () => {
                         .filter(series => series.hasContinueWatching && !series.hasNewEpisode)
                         .map((series, index) => (
                           <div key={`continue-${series.title}_${series.year}_${index}`} className="relative w-full group/card">
-                            <div className="relative group-hover/card:z-[500] transition-all duration-300 ease-in-out">
+                            <div className="relative group-hover/card:z-[5] transition-all duration-300 ease-in-out">
                               <VideoCard
                                 title={series.title}
                                 poster={series.cover || ''}
@@ -1520,7 +1520,7 @@ const PlayStatsPage: React.FC = () => {
                         .filter(series => series.hasContinueWatching && !series.hasNewEpisode)
                         .map((series, index) => (
                           <div key={`continue-${series.title}_${series.year}_${index}`} className="relative w-full group/card">
-                            <div className="relative group-hover/card:z-[500] transition-all duration-300 ease-in-out">
+                            <div className="relative group-hover/card:z-[5] transition-all duration-300 ease-in-out">
                               <VideoCard
                                 title={series.title}
                                 poster={series.cover || ''}
@@ -1652,7 +1652,7 @@ const PlayStatsPage: React.FC = () => {
         </div>
         <button
           onClick={scrollToTop}
-          className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
+          className={`fixed bottom-20 md:bottom-6 right-6 z-[5] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
             }`}
@@ -2249,7 +2249,7 @@ const PlayStatsPage: React.FC = () => {
         {/* 返回顶部悬浮按钮 */}
         <button
           onClick={scrollToTop}
-          className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
+          className={`fixed bottom-20 md:bottom-6 right-6 z-[5] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
             }`}
@@ -2280,7 +2280,7 @@ const PlayStatsPage: React.FC = () => {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
+        className={`fixed bottom-20 md:bottom-6 right-6 z-[5] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
           ? 'opacity-100 translate-y-0 pointer-events-auto'
           : 'opacity-0 translate-y-4 pointer-events-none'
           }`}

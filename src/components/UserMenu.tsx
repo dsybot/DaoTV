@@ -1843,7 +1843,7 @@ export const UserMenu: React.FC = () => {
                     .filter(series => series.hasNewEpisode)
                     .map((series, index) => (
                       <div key={`new-${series.title}_${series.year}_${index}`} className='relative group/card'>
-                        <div className='relative group-hover/card:z-[500] transition-all duration-300'>
+                        <div className='relative group-hover/card:z-[5] transition-all duration-300'>
                           <VideoCard
                             title={series.title}
                             poster={series.cover}
@@ -2013,7 +2013,7 @@ export const UserMenu: React.FC = () => {
                           const newEpisodesCount = getNewEpisodesCount(record);
                           return (
                             <div key={record.key} className='relative group/card'>
-                              <div className='relative group-hover/card:z-[500] transition-all duration-300'>
+                              <div className='relative group-hover/card:z-[5] transition-all duration-300'>
                                 <VideoCard
                                   id={id}
                                   title={record.title}
