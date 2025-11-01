@@ -171,14 +171,14 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setMenuItems((prevItems) => [
-        ...prevItems,
-        {
-          icon: Star,
-          label: '自定义',
-          href: '/douban?type=custom',
-        },
-      ]);
+      // 为每个自定义分类创建导航项
+      const customItems = runtimeConfig.CUSTOM_CATEGORIES.map((category: any, index: number) => ({
+        icon: Star,
+        label: category.name || category.label || '自定义',
+        href: `/douban?type=custom&customIndex=${index}`,
+      }));
+      
+      setMenuItems((prevItems) => [...prevItems, ...customItems]);
     }
   }, []);
 
@@ -277,6 +277,7 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                   const isActive =
                     decodedActive === decodedItemHref ||
                     (decodedActive.startsWith('/douban') &&
+                      typeMatch &&
                       decodedActive.includes(`type=${typeMatch}`));
                   const Icon = item.icon;
 
@@ -292,11 +293,12 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                     { hover: 'hover:from-yellow-50 hover:to-amber-50 dark:hover:from-yellow-500/10 dark:hover:to-amber-500/10', active: 'data-[active=true]:from-yellow-500/20 data-[active=true]:to-amber-500/20 dark:data-[active=true]:from-yellow-500/15 dark:data-[active=true]:to-amber-500/15', text: 'hover:text-yellow-600 data-[active=true]:text-yellow-700 dark:hover:text-yellow-400 dark:data-[active=true]:text-yellow-400', icon: 'group-hover:text-yellow-600 data-[active=true]:text-yellow-700 dark:group-hover:text-yellow-400 dark:data-[active=true]:text-yellow-400', shadow: 'hover:shadow-yellow-500/10 data-[active=true]:shadow-yellow-500/20', border: 'from-yellow-500 to-amber-500' }, // 自定义
                   ];
 
-                  const theme = colorThemes[index] || colorThemes[0];
+                  // 对于自定义分类（index >= 7），使用黄色主题
+                  const theme = colorThemes[index] || colorThemes[7];
 
                   return (
                     <Link
-                      key={item.label}
+                      key={item.href}
                       href={item.href}
                       onClick={() => setActive(item.href)}
                       data-active={isActive}
