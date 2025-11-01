@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
 }
 
 // 提取认证处理逻辑为单独的函数
-function handleAuthentication(
+async function handleAuthentication(
   request: NextRequest,
   pathname: string,
   requestId: string,
