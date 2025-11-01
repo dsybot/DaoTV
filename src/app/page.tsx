@@ -83,6 +83,36 @@ function HomeClient() {
     }
   }, [announcement]);
 
+  // 监听布局模式变化
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'layoutMode' && (e.newValue === 'sidebar' || e.newValue === 'bottom')) {
+        setLayoutMode(e.newValue);
+      }
+    };
+
+    // 监听 storage 事件（跨标签页）
+    window.addEventListener('storage', handleStorageChange);
+
+    // 监听同一页面内的变化
+    const handleLayoutChange = () => {
+      const savedLayout = localStorage.getItem('layoutMode') as 'sidebar' | 'bottom';
+      if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
+        setLayoutMode(savedLayout);
+      }
+    };
+
+    // 使用 setInterval 定期检查（作为后备方案）
+    const intervalId = setInterval(handleLayoutChange, 100);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(intervalId);
+    };
+  }, []);
+
   // 欢迎提示窗 - 每次打开网站时显示一次（关闭浏览器标签页后重新打开才再次显示）
   useEffect(() => {
     if (typeof window !== 'undefined') {
