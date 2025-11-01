@@ -99,7 +99,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         <div className='relative min-w-0 flex-1 transition-all duration-300'>
           {/* 桌面端顶部栏 - 仅底栏模式显示 */}
           {layoutMode === 'bottom' && (
-            <div className='hidden md:flex fixed top-0 left-0 right-0 z-50 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50'>
+            <div className='hidden md:flex fixed top-0 left-0 right-0 z-[999] h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50'>
               <div className='w-full max-w-[1920px] mx-auto px-6 flex items-center justify-between'>
                 {/* 左侧：网站标题 */}
                 <Link href='/' className='flex-shrink-0'>
