@@ -130,7 +130,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
             {/* 所有菜单项的网格布局 */}
             <div className='grid grid-cols-4 gap-4 p-4'>
-              {navItems.map((item: any) => {
+              {navItems.filter((item: any) => !item.desktopOnly).map((item: any) => {
                 const active = isActive(item.href);
                 const Icon = item.icon;
 
@@ -175,21 +175,21 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   >
                     <div
                       className={`flex items-center justify-center w-12 h-12 rounded-2xl ${active
-                          ? `bg-gradient-to-br ${gradient}`
-                          : 'bg-gray-100 dark:bg-gray-800'
+                        ? `bg-gradient-to-br ${gradient}`
+                        : 'bg-gray-100 dark:bg-gray-800'
                         }`}
                     >
                       <Icon
                         className={`w-6 h-6 ${active
-                            ? 'text-white'
-                            : 'text-gray-600 dark:text-gray-400'
+                          ? 'text-white'
+                          : 'text-gray-600 dark:text-gray-400'
                           }`}
                       />
                     </div>
                     <span
                       className={`text-xs font-medium ${active
-                          ? color
-                          : 'text-gray-700 dark:text-gray-300'
+                        ? color
+                        : 'text-gray-700 dark:text-gray-300'
                         }`}
                     >
                       {item.label}
@@ -221,11 +221,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
           >
             {navItems.map((item: any, index: number) => {
               const active = isActive(item.href);
-              // 移动端隐藏桌面端专属项
+              // 移动端隐藏桌面端专属项（搜索）
               const hideOnMobile = item.desktopOnly && !onLayoutModeChange;
 
-              // 移动端只显示前4个项目，其余隐藏（由更多按钮显示）
-              const hideOnMobileAfterFour = index >= 4;
+              // 移动端只显示前4个非搜索项（首页、源浏览、电影、剧集），index 5+ 的项隐藏到"更多"菜单
+              const hideOnMobileAfterFour = index >= 5;
 
               // 为每个菜单项定义独特的颜色主题（与侧边栏保持一致）
               const colorThemes: Record<string, { hover: string; active: string }> = {
