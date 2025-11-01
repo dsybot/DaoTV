@@ -46,13 +46,13 @@ async function searchShortDramasInternal(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    const query = searchParams.get('query');
+    const query = searchParams.get('name'); // 修改为name，与外部API保持一致
     const page = searchParams.get('page');
     const size = searchParams.get('size');
 
     if (!query) {
       return NextResponse.json(
-        { error: '缺少必要参数: query' },
+        { error: '缺少必要参数: name' },
         { status: 400 }
       );
     }
