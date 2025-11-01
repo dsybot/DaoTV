@@ -247,7 +247,7 @@ export default function ShortDramaPage() {
           )}
 
           {/* 短剧网格 */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-3 gap-4 md:grid-cols-7">
             {dramas.map((drama, index) => (
               <div
                 key={`${drama.id}-${index}`}
@@ -267,8 +267,8 @@ export default function ShortDramaPage() {
                   <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>加载更多短剧...</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {Array.from({ length: 12 }).map((_, index) => (
+              <div className="grid grid-cols-3 gap-4 md:grid-cols-7">
+                {Array.from({ length: 14 }).map((_, index) => (
                   <div key={index} className="relative overflow-hidden">
                     <div className="aspect-[2/3] w-full rounded-lg bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
                       <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent'></div>
