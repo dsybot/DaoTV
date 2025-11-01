@@ -75,14 +75,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setNavItems((prevItems) => [
-        ...prevItems,
-        {
-          icon: Star,
-          label: '自定义',
-          href: '/douban?type=custom',
-        },
-      ]);
+      // 为每个自定义分类创建导航项
+      const customItems = runtimeConfig.CUSTOM_CATEGORIES.map((category: any, index: number) => ({
+        icon: Star,
+        label: category.name || category.label || '自定义',
+        href: `/douban?type=custom&customIndex=${index}`,
+      }));
+      
+      setNavItems((prevItems) => [...prevItems, ...customItems]);
     }
   }, []);
 
@@ -145,10 +145,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   '/douban?type=anime': 'from-pink-500 to-rose-500',
                   '/douban?type=show': 'from-orange-500 to-amber-500',
                   '/live': 'from-teal-500 to-cyan-500',
-                  '/douban?type=custom': 'from-yellow-500 to-amber-500',
                 };
 
-                const gradient = gradientMap[item.href] || 'from-gray-500 to-slate-500';
+                // 对于自定义分类，使用黄色渐变
+                let gradient = gradientMap[item.href];
+                if (!gradient && item.href.includes('type=custom')) {
+                  gradient = 'from-yellow-500 to-amber-500';
+                }
+                gradient = gradient || 'from-gray-500 to-slate-500';
 
                 // 颜色主题映射
                 const colorMap: Record<string, string> = {
@@ -161,10 +165,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   '/douban?type=anime': 'text-pink-500',
                   '/douban?type=show': 'text-orange-500',
                   '/live': 'text-teal-500',
-                  '/douban?type=custom': 'text-yellow-500',
                 };
 
-                const color = colorMap[item.href] || 'text-gray-500';
+                // 对于自定义分类，使用黄色
+                let color = colorMap[item.href];
+                if (!color && item.href.includes('type=custom')) {
+                  color = 'text-yellow-500';
+                }
+                color = color || 'text-gray-500';
 
                 return (
                   <Link
@@ -238,10 +246,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 '/douban?type=anime': { hover: 'md:group-hover:text-pink-600 md:dark:group-hover:text-pink-400', active: 'text-pink-600 dark:text-pink-400' }, // 动漫
                 '/douban?type=show': { hover: 'md:group-hover:text-orange-600 md:dark:group-hover:text-orange-400', active: 'text-orange-600 dark:text-orange-400' }, // 综艺
                 '/live': { hover: 'md:group-hover:text-teal-600 md:dark:group-hover:text-teal-400', active: 'text-teal-600 dark:text-teal-400' }, // 直播
-                '/douban?type=custom': { hover: 'md:group-hover:text-yellow-600 md:dark:group-hover:text-yellow-400', active: 'text-yellow-600 dark:text-yellow-400' }, // 自定义
               };
 
-              const theme = colorThemes[item.href] || colorThemes['/'];
+              // 对于自定义分类，使用黄色主题
+              let theme = colorThemes[item.href];
+              if (!theme && item.href.includes('type=custom')) {
+                theme = { hover: 'md:group-hover:text-yellow-600 md:dark:group-hover:text-yellow-400', active: 'text-yellow-600 dark:text-yellow-400' };
+              }
+              theme = theme || colorThemes['/'];
 
               return (
                 <li
