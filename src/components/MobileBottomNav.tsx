@@ -81,7 +81,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         label: category.name || category.label || '自定义',
         href: `/douban?type=custom&customIndex=${index}`,
       }));
-      
+
       setNavItems((prevItems) => [...prevItems, ...customItems]);
     }
   }, []);
@@ -211,9 +211,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       )}
 
       <nav
-        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${
-          onLayoutModeChange ? 'md:top-4 md:bottom-auto' : ''
-        }`}
+        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${onLayoutModeChange ? 'md:top-4 md:bottom-auto' : ''
+          }`}
         style={{
           /* 移动端：紧贴视口底部，同时在内部留出安全区高度 */
           bottom: 0,
