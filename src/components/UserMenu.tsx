@@ -1859,7 +1859,7 @@ export const UserMenu: React.FC = () => {
                           />
                         </div>
                         {/* 新集数徽章 */}
-                        <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
+                        <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
                           +{series.newEpisodes}集
                         </div>
                       </div>
@@ -2031,7 +2031,7 @@ export const UserMenu: React.FC = () => {
                                 />
                                 {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
                                 {getProgress(record) > 0 && getProgress(record) < 95 && (
-                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[501] pointer-events-none ${
+                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[9] pointer-events-none ${
                                     record.remarks && isSeriesCompleted(record.remarks)
                                       ? 'bottom-28 sm:bottom-28'
                                       : 'bottom-20 sm:bottom-20'
@@ -2042,7 +2042,7 @@ export const UserMenu: React.FC = () => {
                               </div>
                               {/* 新集数徽章 */}
                               {newEpisodesCount > 0 && (
-                                <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
+                                <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
                                   +{newEpisodesCount}集
                                 </div>
                               )}
