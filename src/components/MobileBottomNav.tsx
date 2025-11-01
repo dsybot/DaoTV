@@ -211,9 +211,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       )}
 
       <nav
-        className='fixed left-0 right-0 z-[600] flex justify-center pointer-events-none'
+        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${
+          onLayoutModeChange ? 'md:top-4 md:bottom-auto' : ''
+        }`}
         style={{
-          /* 紧贴视口底部，同时在内部留出安全区高度 */
+          /* 移动端：紧贴视口底部，同时在内部留出安全区高度 */
           bottom: 0,
           paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
         }}
