@@ -157,7 +157,25 @@ LunaTV 默认启用智能搜索代理，解决 TVBox 搜索结果不精确的问
 - 被标记为成人内容的源会被完全过滤
 - 分类名称包含敏感词的结果会被移除
 
-**URL 参数控制：**
+**过滤控制方式：**
+
+⭐ **方式一：路径前缀（推荐）**
+
+适用于 OrionTV 等不支持 URL 参数的客户端：
+
+```bash
+# 家庭安全模式（默认，启用过滤）
+https://your-domain.com/api/tvbox
+
+# 完整内容模式（禁用过滤）
+https://your-domain.com/adult/api/tvbox
+```
+
+访问 `/adult/` 开头的路径会自动重写为带 `?adult=1` 参数的请求，无需手动配置。
+
+💡 **方式二：URL 参数**
+
+适用于 TVBox、浏览器等标准客户端：
 
 ```bash
 # 默认模式（启用过滤和智能搜索）
@@ -176,14 +194,16 @@ https://your-domain.com/api/tvbox?strict=1
 ```
 
 **参数优先级：**
-1. URL 参数 `?filter=off` → 禁用过滤
-2. URL 参数 `?adult=1` → 显示成人内容
-3. 全局配置 `DisableYellowFilter` → 默认策略
+1. 路径前缀 `/adult/` → 显示成人内容
+2. URL 参数 `?filter=off` → 禁用过滤
+3. URL 参数 `?adult=1` → 显示成人内容
+4. 全局配置 `DisableYellowFilter` → 默认策略
 
 **使用场景：**
 - **家庭模式**：使用默认配置，自动过滤不良内容
+- **OrionTV**：使用 `/adult/` 路径前缀控制
 - **多设备**：不同设备使用不同 URL，灵活控制
-- **个人使用**：添加 `?adult=1` 查看完整内容
+- **个人使用**：添加 `?adult=1` 或使用 `/adult/` 路径查看完整内容
 
 ### 🔄 Spider Jar 智能管理
 

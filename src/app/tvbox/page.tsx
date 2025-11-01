@@ -657,11 +657,11 @@ export default function TVBoxConfigPage() {
                   ⚡ 快捷复制配置
                 </h3>
                 <p className="text-xs text-purple-700 dark:text-purple-300">
-                  一键复制不同模式的配置链接，无需手动调整参数
+                  一键复制不同模式的配置链接，支持 URL 参数和路径前缀两种方式
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {/* 家庭安全模式按钮 */}
                 <button
                   onClick={async () => {
@@ -706,7 +706,7 @@ export default function TVBoxConfigPage() {
                   </div>
                 </button>
 
-                {/* 完整内容模式按钮 */}
+                {/* 完整内容模式按钮（URL 参数） */}
                 <button
                   onClick={async () => {
                     const baseUrl = window.location.origin;
@@ -740,7 +740,7 @@ export default function TVBoxConfigPage() {
                         完整内容模式
                       </div>
                       <div className="text-xs text-orange-600 dark:text-orange-400">
-                        显示所有内容（无过滤）
+                        URL 参数模式
                       </div>
                     </div>
                   </div>
@@ -750,12 +750,62 @@ export default function TVBoxConfigPage() {
                     </svg>
                   </div>
                 </button>
+
+                {/* 完整内容模式按钮（路径前缀） */}
+                <button
+                  onClick={async () => {
+                    const baseUrl = window.location.origin;
+                    const params = new URLSearchParams();
+                    params.append('format', format);
+                    if (userToken) {
+                      params.append('token', userToken);
+                    } else if (securityConfig?.enableAuth && securityConfig.token) {
+                      params.append('token', securityConfig.token);
+                    }
+                    if (configMode !== 'standard') {
+                      params.append('mode', configMode);
+                    }
+                    // 使用 /adult/ 路径前缀
+                    const url = `${baseUrl}/adult/api/tvbox?${params.toString()}`;
+
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch (err) {
+                      console.error('Copy failed:', err);
+                    }
+                  }}
+                  className="group flex items-center justify-between px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <span className="text-xl">⭐</span>
+                    <div className="text-left">
+                      <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                        完整内容模式
+                      </div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400">
+                        路径前缀（OrionTV）
+                      </div>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </button>
               </div>
 
               <div className="mt-3 p-2.5 bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg">
-                <p className="text-xs text-purple-800 dark:text-purple-200">
-                  💡 <strong>提示：</strong>点击按钮即可复制对应模式的配置链接。家庭用户推荐使用"家庭安全模式"。
+                <p className="text-xs text-purple-800 dark:text-purple-200 mb-1.5">
+                  💡 <strong>提示：</strong>点击按钮即可复制对应模式的配置链接
                 </p>
+                <ul className="text-xs text-purple-700 dark:text-purple-300 space-y-0.5 ml-4">
+                  <li>🏠 <strong>家庭安全模式：</strong>过滤成人内容（推荐家庭用户）</li>
+                  <li>🔓 <strong>URL 参数模式：</strong>适用于 TVBox 等标准客户端</li>
+                  <li>⭐ <strong>路径前缀模式：</strong>适用于 OrionTV 等不支持 URL 参数的客户端</li>
+                </ul>
               </div>
             </div>
           </div>
