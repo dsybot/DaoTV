@@ -49,7 +49,7 @@ const Logo = () => {
 interface SidebarProps {
   onToggle?: (collapsed: boolean) => void;
   activePath?: string;
-  onLayoutModeChange?: (mode: 'sidebar' | 'bottom') => void;
+  onLayoutModeChange?: (mode: 'sidebar' | 'top') => void;
 }
 
 // 在浏览器环境下通过全局变量缓存折叠状态，避免组件重新挂载时出现初始值闪烁
@@ -328,7 +328,7 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
             {onLayoutModeChange && (
               <div className='px-2 pb-4 pt-2 border-t border-gray-200/50 dark:border-gray-700/50'>
                 <button
-                  onClick={() => onLayoutModeChange('bottom')}
+                  onClick={() => onLayoutModeChange('top')}
                   className='group relative flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-600 transition-colors duration-150 min-h-[40px] dark:text-gray-300 dark:hover:from-indigo-500/10 dark:hover:to-purple-500/10 dark:hover:text-indigo-400 w-full gap-3 justify-start'
                   title='切换到顶栏模式'
                 >

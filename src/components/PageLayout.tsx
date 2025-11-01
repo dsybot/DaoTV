@@ -18,23 +18,27 @@ interface PageLayoutProps {
 }
 
 // 布局模式类型
-type LayoutMode = 'sidebar' | 'bottom';
+type LayoutMode = 'sidebar' | 'top';
 
 const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const { siteName } = useSite();
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(false); // 默认不显示，检查后再决定
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('bottom'); // 布局模式状态，默认顶栏模式
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('top'); // 布局模式状态，默认顶栏模式
 
   // 从 localStorage 初始化布局模式
   useEffect(() => {
-    const savedLayout = localStorage.getItem('layoutMode') as LayoutMode;
-    if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
-      setLayoutMode(savedLayout);
+    const savedLayout = localStorage.getItem('layoutMode');
+    // 兼容旧版本的 'bottom' 值
+    if (savedLayout === 'bottom') {
+      setLayoutMode('top');
+      localStorage.setItem('layoutMode', 'top');
+    } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
+      setLayoutMode(savedLayout as LayoutMode);
     } else {
       // 如果没有保存过布局模式，设置默认值为顶栏模式
-      setLayoutMode('bottom');
-      localStorage.setItem('layoutMode', 'bottom');
+      setLayoutMode('top');
+      localStorage.setItem('layoutMode', 'top');
     }
   }, []);
 
@@ -101,8 +105,8 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
         {/* 主内容区域 */}
         <div className='relative min-w-0 flex-1 transition-all duration-300'>
-          {/* 桌面端顶部栏 - 仅底栏模式显示，采用悬浮样式 */}
-          {layoutMode === 'bottom' && (
+          {/* 桌面端顶部栏 - 仅顶栏模式显示，采用悬浮样式 */}
+          {layoutMode === 'top' && (
             <div className='hidden md:flex fixed top-4 left-0 right-0 z-[999] pointer-events-none'>
               <div className='w-full max-w-[1920px] mx-auto px-6 flex items-center justify-between'>
                 {/* 左侧：网站标题 - 悬浮样式 */}
@@ -174,18 +178,18 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
           {/* 主内容 */}
           <main
-            className={`flex-1 md:min-h-0 mt-12 ${layoutMode === 'bottom' ? 'md:mt-24 mb-14 md:mb-0' : 'md:mt-0 md:mb-0 mb-14'}`}
+            className={`flex-1 md:min-h-0 mt-12 ${layoutMode === 'top' ? 'md:mt-24 mb-14 md:mb-0' : 'md:mt-0 md:mb-0 mb-14'}`}
           >
             {children}
           </main>
         </div>
       </div>
 
-      {/* 底部导航 - 移动端始终显示，桌面端根据布局模式显示 */}
-      <div className={layoutMode === 'bottom' ? '' : 'md:hidden'}>
+      {/* 导航栏 - 移动端在底部显示，桌面端在顶栏模式下显示在顶部，侧边栏模式下隐藏 */}
+      <div className={layoutMode === 'top' ? '' : 'md:hidden'}>
         <MobileBottomNav
           activePath={activePath}
-          onLayoutModeChange={layoutMode === 'bottom' ? toggleLayoutMode : undefined}
+          onLayoutModeChange={layoutMode === 'top' ? toggleLayoutMode : undefined}
         />
       </div>
 

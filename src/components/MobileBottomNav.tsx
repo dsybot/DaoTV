@@ -15,7 +15,7 @@ interface MobileBottomNavProps {
   /**
    * 切换布局模式的回调函数
    */
-  onLayoutModeChange?: (mode: 'sidebar' | 'bottom') => void;
+  onLayoutModeChange?: (mode: 'sidebar' | 'top') => void;
 }
 
 const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProps) => {
@@ -33,7 +33,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       icon: Search,
       label: '搜索',
       href: '/search',
-      desktopOnly: true, // 桌面端底栏模式下显示
+      desktopOnly: true, // 桌面端顶栏模式下显示
     },
     {
       icon: Globe,
@@ -211,9 +211,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       )}
 
       <nav
-        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${
-          onLayoutModeChange ? 'bottom-0 md:top-4 md:bottom-auto' : 'bottom-0'
-        }`}
+        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${onLayoutModeChange ? 'bottom-0 md:top-4 md:bottom-auto' : 'bottom-0'
+          }`}
         style={{
           /* 移动端：紧贴视口底部，同时在内部留出安全区高度 */
           paddingBottom: onLayoutModeChange ? 'max(1rem, env(safe-area-inset-bottom))' : 'max(1rem, env(safe-area-inset-bottom))',

@@ -48,7 +48,7 @@ function HomeClient() {
   const [loading, setLoading] = useState(true);
   const { announcement, enableTMDBCarousel } = useSite();
   const [username, setUsername] = useState<string>('');
-  const [layoutMode, setLayoutMode] = useState<'sidebar' | 'bottom'>('bottom');
+  const [layoutMode, setLayoutMode] = useState<'sidebar' | 'top'>('top');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
@@ -66,13 +66,17 @@ function HomeClient() {
 
     // 读取布局模式
     if (typeof window !== 'undefined') {
-      const savedLayout = localStorage.getItem('layoutMode') as 'sidebar' | 'bottom';
-      if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
-        setLayoutMode(savedLayout);
+      const savedLayout = localStorage.getItem('layoutMode');
+      // 兼容旧版本的 'bottom' 值
+      if (savedLayout === 'bottom') {
+        setLayoutMode('top');
+        localStorage.setItem('layoutMode', 'top');
+      } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
+        setLayoutMode(savedLayout as 'sidebar' | 'top');
       } else {
         // 如果没有保存过布局模式，设置默认值为顶栏模式
-        setLayoutMode('bottom');
-        localStorage.setItem('layoutMode', 'bottom');
+        setLayoutMode('top');
+        localStorage.setItem('layoutMode', 'top');
       }
     }
 
@@ -92,8 +96,14 @@ function HomeClient() {
     if (typeof window === 'undefined') return;
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'layoutMode' && (e.newValue === 'sidebar' || e.newValue === 'bottom')) {
-        setLayoutMode(e.newValue);
+      if (e.key === 'layoutMode') {
+        // 兼容旧版本的 'bottom' 值
+        if (e.newValue === 'bottom') {
+          setLayoutMode('top');
+          localStorage.setItem('layoutMode', 'top');
+        } else if (e.newValue === 'sidebar' || e.newValue === 'top') {
+          setLayoutMode(e.newValue as 'sidebar' | 'top');
+        }
       }
     };
 
@@ -102,9 +112,13 @@ function HomeClient() {
 
     // 监听同一页面内的变化
     const handleLayoutChange = () => {
-      const savedLayout = localStorage.getItem('layoutMode') as 'sidebar' | 'bottom';
-      if (savedLayout === 'sidebar' || savedLayout === 'bottom') {
-        setLayoutMode(savedLayout);
+      const savedLayout = localStorage.getItem('layoutMode');
+      // 兼容旧版本的 'bottom' 值
+      if (savedLayout === 'bottom') {
+        setLayoutMode('top');
+        localStorage.setItem('layoutMode', 'top');
+      } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
+        setLayoutMode(savedLayout as 'sidebar' | 'top');
       }
     };
 
@@ -428,7 +442,7 @@ function HomeClient() {
 
         {/* 轮播图 - 在所有tab显示（根据配置） */}
         {enableTMDBCarousel && (
-          <div className={`mt-8 sm:mt-12 mb-8 ${layoutMode === 'bottom' ? 'md:-mt-4' : ''}`}>
+          <div className={`mt-8 sm:mt-12 mb-8 ${layoutMode === 'top' ? 'md:-mt-4' : ''}`}>
             <HomeCarousel />
           </div>
         )}
