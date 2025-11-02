@@ -4,6 +4,7 @@
 import { ChevronLeft, ChevronRight, Play, Star } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface CarouselItem {
   id: number;
@@ -24,6 +25,7 @@ interface CarouselResponse {
 }
 
 export default function HomeCarousel() {
+  const router = useRouter();
   const [items, setItems] = useState<CarouselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,14 @@ export default function HomeCarousel() {
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext]);
+
+  // 处理播放点击
+  const handlePlay = useCallback((item: CarouselItem) => {
+    const doubanIdParam = item.id ? `&douban_id=${item.id}` : '';
+    const stypeParam = item.type ? `&stype=${item.type}` : '';
+    const url = `/play?title=${encodeURIComponent(item.title)}${item.year ? `&year=${item.year}` : ''}${doubanIdParam}${stypeParam}`;
+    router.push(url);
+  }, [router]);
 
   const containerClass = "w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl";
 
@@ -150,13 +160,13 @@ export default function HomeCarousel() {
 
           {/* 操作按钮 */}
           <div className="flex items-center gap-3">
-            <Link
-              href={`/play?title=${encodeURIComponent(currentItem.title)}&year=${currentItem.year}&douban_id=${currentItem.id}`}
+            <button
+              onClick={() => handlePlay(currentItem)}
               className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-lg"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
               <span className="text-sm sm:text-base font-medium">立即播放</span>
-            </Link>
+            </button>
             <Link
               href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
               className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors"
