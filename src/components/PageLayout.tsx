@@ -31,6 +31,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const { siteName } = useSite();
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(false); // 默认不显示，检查后再决定
+  const [isMounted, setIsMounted] = useState(false); // 标记客户端是否已挂载
   
   // 若同一次 SPA 会话中已经读取过布局模式，则直接复用，避免闪烁
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
@@ -42,6 +43,11 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
     }
     return 'top'; // 默认顶栏模式
   });
+  
+  // 在客户端挂载后立即标记，避免服务端渲染的内容闪烁
+  useLayoutEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 切换布局模式的函数
   const toggleLayoutMode = (mode: LayoutMode) => {
@@ -95,10 +101,10 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         onAIClick={() => setShowAIRecommendModal(true)}
       />
 
-      {/* 主要布局容器 - suppressHydrationWarning 允许服务端和客户端的布局模式不同 */}
-      <div className={`flex w-full min-h-screen md:min-h-auto ${layoutMode === 'sidebar' ? 'md:grid md:grid-cols-[auto_1fr]' : ''}`} suppressHydrationWarning>
-        {/* 侧边栏 - 根据布局模式显示 */}
-        {layoutMode === 'sidebar' && (
+      {/* 主要布局容器 */}
+      <div className={`flex w-full min-h-screen md:min-h-auto ${isMounted && layoutMode === 'sidebar' ? 'md:grid md:grid-cols-[auto_1fr]' : ''}`}>
+        {/* 侧边栏 - 根据布局模式显示，仅在客户端挂载后显示 */}
+        {isMounted && layoutMode === 'sidebar' && (
           <div className='hidden md:block'>
             <Sidebar
               activePath={activePath}
@@ -109,8 +115,8 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
         {/* 主内容区域 */}
         <div className='relative min-w-0 flex-1 transition-all duration-300'>
-          {/* 桌面端顶部栏 - 仅顶栏模式显示，采用悬浮样式 */}
-          {layoutMode === 'top' && (
+          {/* 桌面端顶部栏 - 仅顶栏模式显示，采用悬浮样式，仅在客户端挂载后显示 */}
+          {isMounted && layoutMode === 'top' && (
             <div className='hidden md:flex fixed top-4 left-0 right-0 z-[999] pointer-events-none'>
               <div className='w-full max-w-[1920px] mx-auto px-6 flex items-center justify-between'>
                 {/* 左侧：网站标题 - 悬浮样式 */}
@@ -146,15 +152,15 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
             </div>
           )}
 
-          {/* 桌面端左上角返回按钮 - 仅侧边栏模式显示 */}
-          {layoutMode === 'sidebar' && ['/play', '/live'].includes(activePath) && (
+          {/* 桌面端左上角返回按钮 - 仅侧边栏模式显示，仅在客户端挂载后显示 */}
+          {isMounted && layoutMode === 'sidebar' && ['/play', '/live'].includes(activePath) && (
             <div className='absolute top-3 left-1 z-20 hidden md:flex'>
               <BackButton />
             </div>
           )}
 
-          {/* 桌面端顶部按钮 - 仅侧边栏模式显示 */}
-          {layoutMode === 'sidebar' && (
+          {/* 桌面端顶部按钮 - 仅侧边栏模式显示，仅在客户端挂载后显示 */}
+          {isMounted && layoutMode === 'sidebar' && (
             <div className='absolute top-2 right-4 z-20 hidden md:flex items-center gap-2'>
               {/* AI推荐按钮 */}
               {shouldShowAIButton && (
@@ -190,10 +196,10 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
       </div>
 
       {/* 导航栏 - 移动端在底部显示，桌面端在顶栏模式下显示在顶部，侧边栏模式下隐藏 */}
-      <div className={layoutMode === 'top' ? '' : 'md:hidden'}>
+      <div className={isMounted && layoutMode === 'top' ? '' : 'md:hidden'}>
         <MobileBottomNav
           activePath={activePath}
-          onLayoutModeChange={layoutMode === 'top' ? toggleLayoutMode : undefined}
+          onLayoutModeChange={isMounted && layoutMode === 'top' ? toggleLayoutMode : undefined}
         />
       </div>
 
