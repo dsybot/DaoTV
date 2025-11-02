@@ -20,32 +20,57 @@ interface PageLayoutProps {
 // 布局模式类型
 type LayoutMode = 'sidebar' | 'top';
 
+// 在浏览器环境下通过全局变量缓存布局模式，避免组件重新挂载时出现初始值闪烁
+declare global {
+  interface Window {
+    __layoutMode?: LayoutMode;
+  }
+}
+
 const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const { siteName } = useSite();
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(false); // 默认不显示，检查后再决定
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('top'); // 布局模式状态，默认顶栏模式
+  
+  // 若同一次 SPA 会话中已经读取过布局模式，则直接复用，避免闪烁
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
+    if (
+      typeof window !== 'undefined' &&
+      (window.__layoutMode === 'sidebar' || window.__layoutMode === 'top')
+    ) {
+      return window.__layoutMode;
+    }
+    return 'top'; // 默认顶栏模式
+  });
 
-  // 从 localStorage 初始化布局模式
+  // 首次挂载时读取 localStorage，以便刷新后仍保持上次的布局模式
   useEffect(() => {
     const savedLayout = localStorage.getItem('layoutMode');
+    let finalMode: LayoutMode = 'top';
+    
     // 兼容旧版本的 'bottom' 值
     if (savedLayout === 'bottom') {
-      setLayoutMode('top');
+      finalMode = 'top';
       localStorage.setItem('layoutMode', 'top');
     } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
-      setLayoutMode(savedLayout as LayoutMode);
+      finalMode = savedLayout as LayoutMode;
     } else {
       // 如果没有保存过布局模式，设置默认值为顶栏模式
-      setLayoutMode('top');
+      finalMode = 'top';
       localStorage.setItem('layoutMode', 'top');
     }
+    
+    setLayoutMode(finalMode);
+    window.__layoutMode = finalMode;
   }, []);
 
   // 切换布局模式的函数
   const toggleLayoutMode = (mode: LayoutMode) => {
     setLayoutMode(mode);
     localStorage.setItem('layoutMode', mode);
+    if (typeof window !== 'undefined') {
+      window.__layoutMode = mode;
+    }
   };
 
   // 检查AI功能是否启用
