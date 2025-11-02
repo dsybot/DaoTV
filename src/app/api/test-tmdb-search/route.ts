@@ -29,10 +29,8 @@ export async function GET(request: Request) {
           poster: result.poster,
           rate: result.rate,
           year: result.year,
-          trailerKey: result.trailerKey,
           hasBackdrop: !!result.backdrop,
-          hasPoster: !!result.poster,
-          hasTrailer: !!result.trailerKey
+          hasPoster: !!result.poster
         }
       });
     } else {
