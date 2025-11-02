@@ -121,51 +121,51 @@ export default function HomeCarousel() {
 
       {/* 内容区域 */}
       <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8 md:p-12">
-          <div className="max-w-2xl">
-            {/* 标题 */}
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-4 drop-shadow-lg line-clamp-2">
-              {currentItem.title}
-            </h2>
+        <div className="max-w-2xl">
+          {/* 标题 */}
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-4 drop-shadow-lg line-clamp-2">
+            {currentItem.title}
+          </h2>
 
-            {/* 元信息 */}
-            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4 text-sm sm:text-base">
-              {currentItem.rate > 0 && (
-                <div className="flex items-center gap-1 text-yellow-400">
-                  <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                  <span className="font-semibold">{currentItem.rate.toFixed(1)}</span>
-                </div>
-              )}
-              <span className="text-gray-300">{currentItem.year}</span>
-              <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs sm:text-sm rounded">
-                {currentItem.source === 'movie' ? '电影' : currentItem.source === 'variety' ? '综艺' : '电视剧'}
-              </span>
-            </div>
-
-            {/* 简介 */}
-            {currentItem.overview && (
-              <p className="text-gray-200 text-sm sm:text-base mb-4 sm:mb-6 line-clamp-2 sm:line-clamp-3 max-w-xl">
-                {currentItem.overview}
-              </p>
+          {/* 元信息 */}
+          <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4 text-sm sm:text-base">
+            {currentItem.rate > 0 && (
+              <div className="flex items-center gap-1 text-yellow-400">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+                <span className="font-semibold">{currentItem.rate.toFixed(1)}</span>
+              </div>
             )}
+            <span className="text-gray-300">{currentItem.year}</span>
+            <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs sm:text-sm rounded">
+              {currentItem.source === 'movie' ? '电影' : currentItem.source === 'variety' ? '综艺' : '电视剧'}
+            </span>
+          </div>
 
-            {/* 操作按钮 */}
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
-                className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-lg"
-              >
-                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                <span className="text-sm sm:text-base font-medium">立即播放</span>
-              </Link>
-              <Link
-                href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
-                className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors"
-              >
-                <span className="text-sm sm:text-base font-medium">了解更多</span>
-              </Link>
-            </div>
+          {/* 简介 */}
+          {currentItem.overview && (
+            <p className="text-gray-200 text-sm sm:text-base mb-4 sm:mb-6 line-clamp-2 sm:line-clamp-3 max-w-xl">
+              {currentItem.overview}
+            </p>
+          )}
+
+          {/* 操作按钮 */}
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/play?title=${encodeURIComponent(currentItem.title)}&year=${currentItem.year}&douban_id=${currentItem.id}`}
+              className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-lg"
+            >
+              <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+              <span className="text-sm sm:text-base font-medium">立即播放</span>
+            </Link>
+            <Link
+              href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
+              className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors"
+            >
+              <span className="text-sm sm:text-base font-medium">了解更多</span>
+            </Link>
           </div>
         </div>
+      </div>
 
       {/* 左右切换按钮 */}
       {items.length > 1 && (
@@ -198,8 +198,8 @@ export default function HomeCarousel() {
                 setIsAutoPlaying(false);
               }}
               className={`h-1 sm:h-1.5 rounded-full transition-all ${index === currentIndex
-                  ? 'w-8 sm:w-12 bg-white'
-                  : 'w-4 sm:w-6 bg-white/50 hover:bg-white/70'
+                ? 'w-8 sm:w-12 bg-white'
+                : 'w-4 sm:w-6 bg-white/50 hover:bg-white/70'
                 }`}
               aria-label={`切换到第 ${index + 1} 个`}
             />
