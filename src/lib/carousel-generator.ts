@@ -61,19 +61,19 @@ export async function generateCarouselData(): Promise<any[]> {
       title: m.title,
       type: 'movie' as const,
       source: 'movie' as const,
-      doubanData: { rate: m.rate, year: m.year }
+      doubanData: { id: m.id, rate: m.rate, year: m.year }
     })),
     ...tvShows.map((t: any) => ({
       title: t.title,
       type: 'tv' as const,
       source: 'tv' as const,
-      doubanData: { rate: t.rate, year: t.year }
+      doubanData: { id: t.id, rate: t.rate, year: t.year }
     })),
     ...varietyShows.map((v: any) => ({
       title: v.title,
       type: 'tv' as const,
       source: 'variety' as const,
-      doubanData: { rate: v.rate, year: v.year }
+      doubanData: { id: v.id, rate: v.rate, year: v.year }
     })),
   ];
 
@@ -139,6 +139,7 @@ export async function generateCarouselData(): Promise<any[]> {
   let carouselList = [
     ...finalMovieItems.map(x => ({
       ...x.item,
+      id: x.doubanData.id || x.item.id, // 使用豆瓣ID而不是TMDB ID
       source: x.source,
       rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
         ? parseFloat(x.doubanData.rate)
@@ -147,6 +148,7 @@ export async function generateCarouselData(): Promise<any[]> {
     })),
     ...finalTvItems.map(x => ({
       ...x.item,
+      id: x.doubanData.id || x.item.id, // 使用豆瓣ID而不是TMDB ID
       source: x.source,
       rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
         ? parseFloat(x.doubanData.rate)
@@ -155,6 +157,7 @@ export async function generateCarouselData(): Promise<any[]> {
     })),
     ...finalVarietyItems.map(x => ({
       ...x.item,
+      id: x.doubanData.id || x.item.id, // 使用豆瓣ID而不是TMDB ID
       source: x.source,
       rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
         ? parseFloat(x.doubanData.rate)
