@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { BackButton } from './BackButton';
@@ -42,27 +42,6 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
     }
     return 'top'; // 默认顶栏模式
   });
-
-  // 首次挂载时读取 localStorage，以便刷新后仍保持上次的布局模式
-  useEffect(() => {
-    const savedLayout = localStorage.getItem('layoutMode');
-    let finalMode: LayoutMode = 'top';
-    
-    // 兼容旧版本的 'bottom' 值
-    if (savedLayout === 'bottom') {
-      finalMode = 'top';
-      localStorage.setItem('layoutMode', 'top');
-    } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
-      finalMode = savedLayout as LayoutMode;
-    } else {
-      // 如果没有保存过布局模式，设置默认值为顶栏模式
-      finalMode = 'top';
-      localStorage.setItem('layoutMode', 'top');
-    }
-    
-    setLayoutMode(finalMode);
-    window.__layoutMode = finalMode;
-  }, []);
 
   // 切换布局模式的函数
   const toggleLayoutMode = (mode: LayoutMode) => {
@@ -116,8 +95,8 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         onAIClick={() => setShowAIRecommendModal(true)}
       />
 
-      {/* 主要布局容器 */}
-      <div className={`flex w-full min-h-screen md:min-h-auto ${layoutMode === 'sidebar' ? 'md:grid md:grid-cols-[auto_1fr]' : ''}`}>
+      {/* 主要布局容器 - suppressHydrationWarning 允许服务端和客户端的布局模式不同 */}
+      <div className={`flex w-full min-h-screen md:min-h-auto ${layoutMode === 'sidebar' ? 'md:grid md:grid-cols-[auto_1fr]' : ''}`} suppressHydrationWarning>
         {/* 侧边栏 - 根据布局模式显示 */}
         {layoutMode === 'sidebar' && (
           <div className='hidden md:block'>
