@@ -109,33 +109,6 @@ export default async function RootLayout({
             __html: `window.RUNTIME_CONFIG = ${JSON.stringify(runtimeConfig)};`,
           }}
         />
-        {/* 在 React hydration 之前读取布局模式，避免闪烁 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var savedLayout = localStorage.getItem('layoutMode');
-                  // 兼容旧版本的 'bottom' 值
-                  if (savedLayout === 'bottom') {
-                    savedLayout = 'top';
-                    localStorage.setItem('layoutMode', 'top');
-                  }
-                  // 设置到全局变量，供 React 读取
-                  if (savedLayout === 'sidebar' || savedLayout === 'top') {
-                    window.__layoutMode = savedLayout;
-                  } else {
-                    window.__layoutMode = 'top';
-                    localStorage.setItem('layoutMode', 'top');
-                  }
-                } catch (e) {
-                  // localStorage 不可用时使用默认值
-                  window.__layoutMode = 'top';
-                }
-              })();
-            `,
-          }}
-        />
       </head>
       <body
         className={`${inter.className} min-h-screen bg-white text-gray-900 dark:bg-black dark:text-gray-200`}
