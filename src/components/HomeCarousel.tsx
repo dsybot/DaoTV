@@ -14,7 +14,6 @@ interface CarouselItem {
   rate: number;
   year: string;
   type: 'movie' | 'tv';
-  trailerKey?: string;
   source?: 'movie' | 'tv' | 'variety'; // 豆瓣来源：电影、剧集、综艺
 }
 
@@ -30,7 +29,6 @@ export default function HomeCarousel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [showTrailer, setShowTrailer] = useState(false);
 
   // 获取轮播数据
   useEffect(() => {
@@ -63,25 +61,23 @@ export default function HomeCarousel() {
   // 切换到下一个
   const goToNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    setShowTrailer(false);
   }, [items.length]);
 
   // 切换到上一个
   const goToPrev = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    setShowTrailer(false);
   }, [items.length]);
 
   // 自动播放
   useEffect(() => {
-    if (!isAutoPlaying || items.length === 0 || showTrailer) return;
+    if (!isAutoPlaying || items.length === 0) return;
 
     const interval = setInterval(() => {
       goToNext();
     }, 5000); // 每5秒切换
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying, items.length, goToNext, showTrailer]);
+  }, [isAutoPlaying, items.length, goToNext]);
 
   const containerClass = "w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl";
 
@@ -115,30 +111,16 @@ export default function HomeCarousel() {
 
   return (
     <div className={`relative ${containerClass} overflow-hidden group`}>
-      {/* 背景图片或预告片 */}
-      {showTrailer && currentItem.trailerKey ? (
-        <div className="absolute inset-0 w-full h-full">
-          <iframe
-            src={`https://www.youtube.com/embed/${currentItem.trailerKey}?autoplay=1&controls=1&rel=0`}
-            className="w-full h-full"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-          />
-        </div>
-      ) : (
-        <>
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-            style={{ backgroundImage: `url(${currentItem.backdrop})` }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-        </>
-      )}
+      {/* 背景图片 */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-all duration-700"
+        style={{ backgroundImage: `url(${currentItem.backdrop})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
       {/* 内容区域 */}
-      {!showTrailer && (
-        <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8 md:p-12">
+      <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8 md:p-12">
           <div className="max-w-2xl">
             {/* 标题 */}
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-4 drop-shadow-lg line-clamp-2">
@@ -168,18 +150,13 @@ export default function HomeCarousel() {
 
             {/* 操作按钮 */}
             <div className="flex items-center gap-3">
-              {currentItem.trailerKey && (
-                <button
-                  onClick={() => {
-                    setShowTrailer(true);
-                    setIsAutoPlaying(false);
-                  }}
-                  className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-lg"
-                >
-                  <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                  <span className="text-sm sm:text-base font-medium">播放预告</span>
-                </button>
-              )}
+              <Link
+                href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
+                className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-lg"
+              >
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+                <span className="text-sm sm:text-base font-medium">立即播放</span>
+              </Link>
               <Link
                 href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
                 className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors"
@@ -189,23 +166,9 @@ export default function HomeCarousel() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* 关闭预告片按钮 */}
-      {showTrailer && (
-        <button
-          onClick={() => {
-            setShowTrailer(false);
-            setIsAutoPlaying(true);
-          }}
-          className="absolute top-4 right-4 z-20 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-lg transition-colors"
-        >
-          关闭
-        </button>
-      )}
 
       {/* 左右切换按钮 */}
-      {!showTrailer && items.length > 1 && (
+      {items.length > 1 && (
         <>
           <button
             onClick={goToPrev}
@@ -225,7 +188,7 @@ export default function HomeCarousel() {
       )}
 
       {/* 指示器 */}
-      {!showTrailer && items.length > 1 && (
+      {items.length > 1 && (
         <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {items.map((_, index) => (
             <button

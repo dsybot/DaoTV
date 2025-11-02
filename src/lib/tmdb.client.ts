@@ -496,24 +496,6 @@ interface TMDBTVShow {
   genre_ids?: number[];
 }
 
-// 视频信息
-interface TMDBVideo {
-  id: string;
-  key: string;
-  name: string;
-  site: string;
-  size: number;
-  type: string;
-  official: boolean;
-  published_at: string;
-}
-
-// 视频列表响应
-interface TMDBVideosResponse {
-  id: number;
-  results: TMDBVideo[];
-}
-
 // 轮播图项目
 export interface CarouselItem {
   id: number;
@@ -524,7 +506,6 @@ export interface CarouselItem {
   rate: number;
   year: string;
   type: 'movie' | 'tv';
-  trailerKey?: string; // YouTube视频key
 }
 
 /**
@@ -610,44 +591,6 @@ export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearc
 }
 
 /**
- * 获取电影预告片
- */
-export async function getTMDBMovieVideos(movieId: number): Promise<TMDBVideosResponse> {
-  const cacheKey = getCacheKey('movie_videos', { movieId });
-  const cached = await getCache(cacheKey);
-  if (cached) {
-    console.log(`TMDB电影视频缓存命中: ${movieId}`);
-    return cached;
-  }
-
-  const result = await fetchTMDB<TMDBVideosResponse>(`/movie/${movieId}/videos`);
-
-  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.movie_credits);
-  console.log(`TMDB电影视频已缓存: ${movieId}`);
-
-  return result;
-}
-
-/**
- * 获取电视剧预告片
- */
-export async function getTMDBTVVideos(tvId: number): Promise<TMDBVideosResponse> {
-  const cacheKey = getCacheKey('tv_videos', { tvId });
-  const cached = await getCache(cacheKey);
-  if (cached) {
-    console.log(`TMDB电视剧视频缓存命中: ${tvId}`);
-    return cached;
-  }
-
-  const result = await fetchTMDB<TMDBVideosResponse>(`/tv/${tvId}/videos`);
-
-  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.tv_credits);
-  console.log(`TMDB电视剧视频已缓存: ${tvId}`);
-
-  return result;
-}
-
-/**
  * 通过豆瓣电影/电视剧名称获取TMDB轮播图数据
  */
 export async function getCarouselItemByTitle(
@@ -684,31 +627,7 @@ export async function getCarouselItemByTitle(
       return null;
     }
 
-    // 2. 获取预告片
-    let trailerKey: string | undefined;
-    try {
-      const videos = type === 'movie' 
-        ? await getTMDBMovieVideos(mediaId)
-        : await getTMDBTVVideos(mediaId);
-
-      // 优先选择官方预告片(Trailer)，其次是Teaser
-      const trailer = videos.results.find(
-        v => v.site === 'YouTube' && v.type === 'Trailer' && v.official
-      ) || videos.results.find(
-        v => v.site === 'YouTube' && v.type === 'Trailer'
-      ) || videos.results.find(
-        v => v.site === 'YouTube' && v.type === 'Teaser'
-      );
-
-      if (trailer) {
-        trailerKey = trailer.key;
-        console.log(`[TMDB轮播] 找到预告片: ${title} - ${trailerKey}`);
-      }
-    } catch (error) {
-      console.warn(`[TMDB轮播] 获取预告片失败: ${title}`, error);
-    }
-
-    // 3. 构建轮播图项
+    // 2. 构建轮播图项（移除预告片获取，提升性能）
     const carouselItem: CarouselItem = {
       id: searchResult.id,
       title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
@@ -720,10 +639,9 @@ export async function getCarouselItemByTitle(
         ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
         : ((searchResult as TMDBTVShow).first_air_date?.split('-')[0] || ''),
       type,
-      trailerKey
     };
 
-    console.log(`[TMDB轮播] 📸 海报情况: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}, trailer=${!!carouselItem.trailerKey}`);
+    console.log(`[TMDB轮播] 📸 海报情况: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`);
     
     if (!carouselItem.backdrop && !carouselItem.poster) {
       console.warn(`[TMDB轮播] ⚠️  ${title} 缺少所有海报，将被过滤`);
