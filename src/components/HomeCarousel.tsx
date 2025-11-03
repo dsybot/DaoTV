@@ -135,15 +135,12 @@ export default function HomeCarousel() {
       onMouseLeave={handleMouseLeave}
     >
       {/* 背景图片 */}
-      <div
-        className="absolute inset-0 transition-opacity duration-700"
-        style={{
-          backgroundImage: `url(${currentItem.backdrop})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          backgroundRepeat: 'no-repeat',
-          willChange: 'opacity'
-        }}
+      <img
+        key={currentItem.id}
+        src={currentItem.backdrop}
+        alt={currentItem.title}
+        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ease-in-out"
+        style={{ animation: 'fadeIn 0.7s ease-in-out' }}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
