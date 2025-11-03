@@ -30,7 +30,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   // 在客户端挂载后立即读取 localStorage 并设置布局模式
   useLayoutEffect(() => {
     const savedLayout = localStorage.getItem('layoutMode');
-    
+
     // 兼容旧版本的 'bottom' 值
     if (savedLayout === 'bottom') {
       setLayoutMode('top');
@@ -41,7 +41,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
       // 如果没有保存过布局模式，设置默认值为顶栏模式
       localStorage.setItem('layoutMode', 'top');
     }
-    
+
     setIsMounted(true);
   }, []);
 

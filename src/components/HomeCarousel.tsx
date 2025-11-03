@@ -119,8 +119,21 @@ export default function HomeCarousel() {
 
   const currentItem = items[currentIndex];
 
+  // 处理鼠标悬停事件
+  const handleMouseEnter = () => {
+    setIsAutoPlaying(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsAutoPlaying(true);
+  };
+
   return (
-    <div className={`relative ${containerClass} overflow-hidden group`}>
+    <div
+      className={`relative ${containerClass} overflow-hidden group`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* 背景图片 */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-all duration-700"
