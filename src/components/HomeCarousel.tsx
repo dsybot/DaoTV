@@ -136,8 +136,14 @@ export default function HomeCarousel() {
     >
       {/* 背景图片 */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-        style={{ backgroundImage: `url(${currentItem.backdrop})` }}
+        className="absolute inset-0 transition-opacity duration-700"
+        style={{
+          backgroundImage: `url(${currentItem.backdrop})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          willChange: 'opacity'
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
