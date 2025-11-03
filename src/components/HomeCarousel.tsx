@@ -134,16 +134,21 @@ export default function HomeCarousel() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* 背景图片 */}
-      <img
-        key={currentItem.id}
-        src={currentItem.backdrop}
-        alt={currentItem.title}
-        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ease-in-out"
-        style={{ animation: 'fadeIn 0.7s ease-in-out' }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+      {/* 背景图片层 - 渲染所有图片实现交叉淡入淡出 */}
+      {items.map((item, index) => (
+        <img
+          key={item.id}
+          src={item.backdrop}
+          alt={item.title}
+          className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ease-in-out"
+          style={{
+            opacity: index === currentIndex ? 1 : 0,
+            zIndex: index === currentIndex ? 1 : 0
+          }}
+        />
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-[2]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-[2]" />
 
       {/* 内容区域 */}
       <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8 md:p-12">
