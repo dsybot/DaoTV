@@ -36,12 +36,12 @@ export async function generateCarouselData(): Promise<any[]> {
   // 获取更多候选数据，以防有些获取不到TMDB数据
   const movies =
     moviesResult.status === 'fulfilled' && moviesResult.value?.code === 200
-      ? moviesResult.value.list.slice(0, 15) // 获取15个候选，目标是3个
+      ? moviesResult.value.list.slice(0, 20) // 获取20个候选，目标是5个
       : [];
 
   const tvShows =
     tvShowsResult.status === 'fulfilled' && tvShowsResult.value?.code === 200
-      ? tvShowsResult.value.list.slice(0, 20) // 获取20个候选，目标是5个
+      ? tvShowsResult.value.list.slice(0, 25) // 获取25个候选，目标是8个
       : [];
 
   const varietyShows =
@@ -134,17 +134,17 @@ export async function generateCarouselData(): Promise<any[]> {
 
   console.log(`[轮播生成器] 第4步: 可用数据 - 电视剧:${tvItems.length}, 电影:${movieItems.length}, 综艺:${varietyItems.length}, 总计:${carouselWithSource.length}`);
 
-  // 目标配额：5个电视剧 + 3个电影 + 2个综艺 = 10个
-  let finalTvItems = tvItems.slice(0, 5);
-  let finalMovieItems = movieItems.slice(0, 3);
+  // 目标配额：8个电视剧 + 5个电影 + 2个综艺 = 15个
+  let finalTvItems = tvItems.slice(0, 8);
+  let finalMovieItems = movieItems.slice(0, 5);
   let finalVarietyItems = varietyItems.slice(0, 2);
 
   // 智能补充机制：如果某类不足，用其他类型补充
-  const targetTotal = 10;
+  const targetTotal = 15;
   let currentTotal = finalTvItems.length + finalMovieItems.length + finalVarietyItems.length;
 
   if (currentTotal < targetTotal) {
-    console.log(`[轮播生成器] 数量不足(${currentTotal}/10)，开始智能补充...`);
+    console.log(`[轮播生成器] 数量不足(${currentTotal}/15)，开始智能补充...`);
 
     // 尝试从剩余的项目中补充
     const usedIds = new Set([
@@ -173,7 +173,7 @@ export async function generateCarouselData(): Promise<any[]> {
     currentTotal = finalTvItems.length + finalMovieItems.length + finalVarietyItems.length;
   }
 
-  console.log(`[轮播生成器] 第5步: 最终分配 - 电视剧:${finalTvItems.length}, 电影:${finalMovieItems.length}, 综艺:${finalVarietyItems.length}, 总计:${currentTotal}/10`);
+  console.log(`[轮播生成器] 第5步: 最终分配 - 电视剧:${finalTvItems.length}/8, 电影:${finalMovieItems.length}/5, 综艺:${finalVarietyItems.length}/2, 总计:${currentTotal}/15`);
 
   // 合并并优先使用豆瓣数据
   let carouselList = [
