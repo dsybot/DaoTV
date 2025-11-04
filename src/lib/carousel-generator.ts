@@ -33,19 +33,20 @@ export async function generateCarouselData(): Promise<any[]> {
     variety: varietyShowsResult.status,
   });
 
+  // 获取更多候选数据，以防有些获取不到TMDB数据
   const movies =
     moviesResult.status === 'fulfilled' && moviesResult.value?.code === 200
-      ? moviesResult.value.list.slice(0, 6)
+      ? moviesResult.value.list.slice(0, 15) // 获取15个候选，目标是3个
       : [];
 
   const tvShows =
     tvShowsResult.status === 'fulfilled' && tvShowsResult.value?.code === 200
-      ? tvShowsResult.value.list.slice(0, 10)
+      ? tvShowsResult.value.list.slice(0, 20) // 获取20个候选，目标是5个
       : [];
 
   const varietyShows =
     varietyShowsResult.status === 'fulfilled' && varietyShowsResult.value?.code === 200
-      ? varietyShowsResult.value.list.slice(0, 10)
+      ? varietyShowsResult.value.list.slice(0, 10) // 获取10个候选，目标是2个
       : [];
 
   console.log(`[轮播生成器] 第2步: 豆瓣热门结果 - 电影:${movies.length}, 剧集:${tvShows.length}, 综艺:${varietyShows.length}`);
@@ -126,14 +127,12 @@ export async function generateCarouselData(): Promise<any[]> {
   const tvItems = carouselWithSource.filter(x => x.source === 'tv');
   const varietyItems = carouselWithSource.filter(x => x.source === 'variety');
 
-  // 目标配额：10剧集 + 4综艺 + 电影补足到20个
-  const finalTvItems = tvItems.slice(0, 10);
-  const finalVarietyItems = varietyItems.slice(0, 4);
-  const targetTotal = 20;
-  const neededMovies = targetTotal - finalTvItems.length - finalVarietyItems.length;
-  const finalMovieItems = movieItems.slice(0, Math.max(6, neededMovies));
+  // 目标配额：5个电视剧 + 3个电影 + 2个综艺 = 10个
+  const finalTvItems = tvItems.slice(0, 5);
+  const finalMovieItems = movieItems.slice(0, 3);
+  const finalVarietyItems = varietyItems.slice(0, 2);
 
-  console.log(`[轮播生成器] 第4步: 按类型分配 - 剧集:${finalTvItems.length}/10, 综艺:${finalVarietyItems.length}/4, 电影:${finalMovieItems.length}`);
+  console.log(`[轮播生成器] 第4步: 按类型分配 - 电视剧:${finalTvItems.length}/5, 电影:${finalMovieItems.length}/3, 综艺:${finalVarietyItems.length}/2, 总计:${finalTvItems.length + finalMovieItems.length + finalVarietyItems.length}/10`);
 
   // 合并并优先使用豆瓣数据
   let carouselList = [
@@ -184,7 +183,8 @@ async function fetchDoubanHot(
   type: string
 ): Promise<{ code: number; list: any[] }> {
   try {
-    const url = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=0&limit=20&category=${category}&type=${type}&_t=${Date.now()}`;
+    // 获取更多候选数据以确保成功率
+    const url = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=0&limit=30&category=${category}&type=${type}&_t=${Date.now()}`;
 
     const response = await fetch(url, {
       cache: 'no-store',
