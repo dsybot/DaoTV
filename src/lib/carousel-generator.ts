@@ -79,6 +79,7 @@ export async function generateCarouselData(): Promise<any[]> {
   ];
 
   console.log(`[轮播生成器] 第3步: 准备搜索TMDB，共${items.length}个标题...`);
+  console.log(`[轮播生成器] 候选标题列表: ${items.map(i => `${i.title}(${i.source})`).slice(0, 10).join(', ')}...`);
 
   // 并行搜索TMDB
   const carouselPromises = items.map(item =>
@@ -92,8 +93,10 @@ export async function generateCarouselData(): Promise<any[]> {
     (r): r is PromiseFulfilledResult<CarouselItem | null> => r.status === 'fulfilled'
   );
   const validResults = fulfilled.filter(r => r.value !== null);
+  const rejectedCount = carouselResults.filter(r => r.status === 'rejected').length;
+  const nullCount = fulfilled.filter(r => r.value === null).length;
 
-  console.log(`[轮播生成器] TMDB搜索完成 - 总数:${carouselResults.length}, 有效:${validResults.length}`);
+  console.log(`[轮播生成器] TMDB搜索完成 - 总数:${carouselResults.length}, 成功:${validResults.length}, 失败:${rejectedCount}, 未找到:${nullCount}`);
 
   // 处理结果
   const carouselWithSource = carouselResults
@@ -122,17 +125,55 @@ export async function generateCarouselData(): Promise<any[]> {
       return false;
     });
 
+  console.log(`[轮播生成器] 海报过滤后剩余${carouselWithSource.length}项`);
+
   // 按来源分类
   const movieItems = carouselWithSource.filter(x => x.source === 'movie');
   const tvItems = carouselWithSource.filter(x => x.source === 'tv');
   const varietyItems = carouselWithSource.filter(x => x.source === 'variety');
 
-  // 目标配额：5个电视剧 + 3个电影 + 2个综艺 = 10个
-  const finalTvItems = tvItems.slice(0, 5);
-  const finalMovieItems = movieItems.slice(0, 3);
-  const finalVarietyItems = varietyItems.slice(0, 2);
+  console.log(`[轮播生成器] 第4步: 可用数据 - 电视剧:${tvItems.length}, 电影:${movieItems.length}, 综艺:${varietyItems.length}, 总计:${carouselWithSource.length}`);
 
-  console.log(`[轮播生成器] 第4步: 按类型分配 - 电视剧:${finalTvItems.length}/5, 电影:${finalMovieItems.length}/3, 综艺:${finalVarietyItems.length}/2, 总计:${finalTvItems.length + finalMovieItems.length + finalVarietyItems.length}/10`);
+  // 目标配额：5个电视剧 + 3个电影 + 2个综艺 = 10个
+  let finalTvItems = tvItems.slice(0, 5);
+  let finalMovieItems = movieItems.slice(0, 3);
+  let finalVarietyItems = varietyItems.slice(0, 2);
+
+  // 智能补充机制：如果某类不足，用其他类型补充
+  const targetTotal = 10;
+  let currentTotal = finalTvItems.length + finalMovieItems.length + finalVarietyItems.length;
+
+  if (currentTotal < targetTotal) {
+    console.log(`[轮播生成器] 数量不足(${currentTotal}/10)，开始智能补充...`);
+
+    // 尝试从剩余的项目中补充
+    const usedIds = new Set([
+      ...finalTvItems.map(x => x.doubanData.id),
+      ...finalMovieItems.map(x => x.doubanData.id),
+      ...finalVarietyItems.map(x => x.doubanData.id)
+    ]);
+
+    const remainingItems = carouselWithSource.filter(x => !usedIds.has(x.doubanData.id));
+    const needed = targetTotal - currentTotal;
+    const supplementItems = remainingItems.slice(0, needed);
+
+    console.log(`[轮播生成器] 从剩余${remainingItems.length}项中补充${supplementItems.length}项`);
+
+    // 将补充的项目按类型分配
+    for (const item of supplementItems) {
+      if (item.source === 'tv' && finalTvItems.length < 10) {
+        finalTvItems.push(item);
+      } else if (item.source === 'movie' && finalMovieItems.length < 10) {
+        finalMovieItems.push(item);
+      } else if (item.source === 'variety' && finalVarietyItems.length < 10) {
+        finalVarietyItems.push(item);
+      }
+    }
+
+    currentTotal = finalTvItems.length + finalMovieItems.length + finalVarietyItems.length;
+  }
+
+  console.log(`[轮播生成器] 第5步: 最终分配 - 电视剧:${finalTvItems.length}, 电影:${finalMovieItems.length}, 综艺:${finalVarietyItems.length}, 总计:${currentTotal}/10`);
 
   // 合并并优先使用豆瓣数据
   let carouselList = [
@@ -168,7 +209,7 @@ export async function generateCarouselData(): Promise<any[]> {
   // 随机打乱
   carouselList = carouselList.sort(() => Math.random() - 0.5);
 
-  console.log(`[轮播生成器] 第5步: 随机排序完成，共${carouselList.length}项`);
+  console.log(`[轮播生成器] 第6步: 随机排序完成，共${carouselList.length}项`);
   console.log('[轮播生成器] ===== 生成完成 =====');
 
   return carouselList;
