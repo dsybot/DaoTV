@@ -2606,6 +2606,41 @@ function PlayPageClient() {
     return unsubscribe;
   }, [currentSource, currentId]);
 
+  // 自动更新收藏的集数信息（解决即将上映占位符数据问题）
+  useEffect(() => {
+    if (!detail || !favorited || !currentSource || !currentId) return;
+
+    const updateFavoriteEpisodes = async () => {
+      try {
+        const realEpisodes = detail.episodes.length || 1;
+
+        // 获取当前收藏的数据
+        const favorites = await import('@/lib/db.client').then(m => m.getAllFavorites());
+        const key = `${currentSource}+${currentId}`;
+        const currentFavorite = favorites[key];
+
+        // 如果收藏的集数是占位符（99）或与真实集数不同，则更新
+        if (currentFavorite && (currentFavorite.total_episodes === 99 || currentFavorite.total_episodes !== realEpisodes)) {
+          console.log(`🔄 更新收藏集数: ${currentFavorite.total_episodes} → ${realEpisodes}`);
+
+          await saveFavorite(currentSource, currentId, {
+            title: videoTitleRef.current || detail.title,
+            source_name: detail.source_name || currentFavorite.source_name || '',
+            year: detail.year || currentFavorite.year || '',
+            cover: detail.poster || currentFavorite.cover || '',
+            total_episodes: realEpisodes, // 更新为真实集数
+            save_time: currentFavorite.save_time || Date.now(), // 保持原收藏时间
+            search_title: currentFavorite.search_title || searchTitle,
+          });
+        }
+      } catch (err) {
+        console.error('自动更新收藏集数失败:', err);
+      }
+    };
+
+    updateFavoriteEpisodes();
+  }, [detail, favorited, currentSource, currentId, searchTitle]);
+
   // 切换收藏
   const handleToggleFavorite = async () => {
     if (
