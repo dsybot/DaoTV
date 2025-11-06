@@ -584,7 +584,7 @@ export default function ReleaseCalendarPage() {
 
   return (
     <PageLayout activePath="/release-calendar">
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* 页面标题 */}
         <div className="mb-8">
