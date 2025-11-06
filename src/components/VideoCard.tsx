@@ -813,7 +813,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           )}
 
           {/* 集数徽章 - 左上角第二位（如果有类型徽章，则向下偏移）*/}
-          {actualEpisodes && actualEpisodes > 1 && (
+          {/* 即将上映的内容不显示集数徽章（因为是占位符数据）*/}
+          {actualEpisodes && actualEpisodes > 1 && !isUpcoming && (
             <div
               className={`absolute left-2 bg-gradient-to-br from-emerald-500/95 via-teal-500/95 to-cyan-600/95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-emerald-500/60 group-hover:ring-emerald-300/50 z-30 ${
                 remarks && remarks.includes('天后上映') && type ? 'top-[48px]' : 'top-2'
