@@ -812,6 +812,27 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
+          {/* 即将上映徽章 - 美化版，放在底部左侧 */}
+          {remarks && remarks.includes('天后上映') && (
+            <div
+              className="absolute bottom-2 left-2 bg-gradient-to-br from-orange-500/95 via-red-500/95 to-pink-600/95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-orange-500/60 group-hover:ring-orange-300/50 animate-pulse"
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              <span className="flex items-center gap-1">
+                <span className="text-[10px]">🔜</span>
+                {remarks}
+              </span>
+            </div>
+          )}
+
           {/* 评分徽章 - 动态颜色 */}
           {config.showRating && rate && (() => {
             const badgeStyle = getRatingBadgeStyle(rate);
