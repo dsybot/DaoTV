@@ -277,7 +277,13 @@ function HomeClient() {
             getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
             getRecommendedShortDramas(undefined, 8),
             GetBangumiCalendarData(),
-            fetch('/api/release-calendar?limit=10').then(res => res.json()),
+            fetch('/api/release-calendar?limit=20').then(res => {
+              if (!res.ok) {
+                console.error('获取即将上映数据失败，状态码:', res.status);
+                return { items: [] };
+              }
+              return res.json();
+            }),
           ]);
 
         // 处理电影数据
@@ -321,19 +327,21 @@ function HomeClient() {
         // 处理即将上映数据
         if (upcomingReleasesData.status === 'fulfilled' && upcomingReleasesData.value?.items) {
           const releases = upcomingReleasesData.value.items;
-          // 过滤出未来7-14天内上映的作品
+          console.log('📅 获取到的即将上映数据:', releases.length, '条');
+
+          // 过滤出未来上映的作品（未来30天内）
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          const sevenDaysLater = new Date(today);
-          sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
-          const fourteenDaysLater = new Date(today);
-          fourteenDaysLater.setDate(fourteenDaysLater.getDate() + 14);
+          const thirtyDaysLater = new Date(today);
+          thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
 
           const upcoming = releases.filter((item: ReleaseCalendarItem) => {
             const releaseDate = new Date(item.releaseDate);
-            return releaseDate >= sevenDaysLater && releaseDate <= fourteenDaysLater;
+            const isUpcoming = releaseDate >= today && releaseDate <= thirtyDaysLater;
+            return isUpcoming;
           });
 
+          console.log('📅 过滤后的即将上映数据:', upcoming.length, '条');
           setUpcomingReleases(upcoming.slice(0, 10)); // 最多显示10个
         } else {
           console.warn('获取即将上映数据失败:', upcomingReleasesData.status === 'rejected' ? upcomingReleasesData.reason : '数据格式错误');
@@ -623,6 +631,10 @@ function HomeClient() {
             <ContinueWatching />
 
             {/* 即将上映 */}
+            {(() => {
+              console.log('🔍 即将上映 section 渲染检查:', { loading, upcomingReleasesCount: upcomingReleases.length });
+              return null;
+            })()}
             {!loading && upcomingReleases.length > 0 && (
               <section className='mb-4 sm:mb-8'>
                 <div className='mb-3 sm:mb-4 flex items-center justify-between'>
