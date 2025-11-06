@@ -1376,7 +1376,7 @@ export default function ReleaseCalendarPage() {
         {showBackToTop && (
           <button
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-50 group bg-blue-600 dark:bg-blue-700 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-300 hover:scale-110"
+            className="fixed bottom-20 right-6 md:bottom-6 z-50 group bg-blue-600 dark:bg-blue-700 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-300 hover:scale-110"
             aria-label="返回顶部"
           >
             <ChevronUp className="w-6 h-6 transition-transform group-hover:scale-110" />
