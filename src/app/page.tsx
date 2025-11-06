@@ -341,8 +341,23 @@ function HomeClient() {
             return isUpcoming;
           });
 
-          console.log('📅 过滤后的即将上映数据:', upcoming.length, '条');
-          setUpcomingReleases(upcoming.slice(0, 10)); // 最多显示10个
+          // 去重：基于标题去重，保留最早的那条记录
+          const uniqueUpcoming = upcoming.reduce((acc: ReleaseCalendarItem[], current: ReleaseCalendarItem) => {
+            const existingItem = acc.find(item => item.title === current.title);
+            if (!existingItem) {
+              acc.push(current);
+            } else {
+              // 如果已存在，保留上映日期更早的
+              const existingIndex = acc.findIndex(item => item.title === current.title);
+              if (new Date(current.releaseDate) < new Date(existingItem.releaseDate)) {
+                acc[existingIndex] = current;
+              }
+            }
+            return acc;
+          }, []);
+
+          console.log('📅 去重后的即将上映数据:', uniqueUpcoming.length, '条');
+          setUpcomingReleases(uniqueUpcoming.slice(0, 10)); // 最多显示10个
         } else {
           console.warn('获取即将上映数据失败:', upcomingReleasesData.status === 'rejected' ? upcomingReleasesData.reason : '数据格式错误');
           setUpcomingReleases([]);

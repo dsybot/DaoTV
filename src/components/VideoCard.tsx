@@ -746,10 +746,37 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 集数徽章 - 左上角第一位 */}
+          {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
+          {remarks && remarks.includes('天后上映') && type && (
+            <div
+              className={`absolute top-2 left-2 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 z-30 ${
+                type === 'movie'
+                  ? 'bg-gradient-to-br from-red-500/95 via-rose-500/95 to-pink-600/95 group-hover:shadow-red-500/60 group-hover:ring-red-300/50'
+                  : 'bg-gradient-to-br from-blue-500/95 via-indigo-500/95 to-purple-600/95 group-hover:shadow-blue-500/60 group-hover:ring-blue-300/50'
+              }`}
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              <span className="flex items-center gap-1">
+                <span className="text-[10px]">{type === 'movie' ? '🎬' : '📺'}</span>
+                {type === 'movie' ? '电影' : '电视剧'}
+              </span>
+            </div>
+          )}
+
+          {/* 集数徽章 - 左上角第二位（如果有类型徽章，则向下偏移）*/}
           {actualEpisodes && actualEpisodes > 1 && (
             <div
-              className='absolute top-2 left-2 bg-gradient-to-br from-emerald-500/95 via-teal-500/95 to-cyan-600/95 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-emerald-500/60 group-hover:ring-emerald-300/50 z-30'
+              className={`absolute left-2 bg-gradient-to-br from-emerald-500/95 via-teal-500/95 to-cyan-600/95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-emerald-500/60 group-hover:ring-emerald-300/50 z-30 ${
+                remarks && remarks.includes('天后上映') && type ? 'top-[48px]' : 'top-2'
+              }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -769,11 +796,23 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 年份徽章 - 左上角第二位（如果有集数徽章，则向下偏移） */}
+          {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
-              className={`absolute left-2 bg-gradient-to-br from-indigo-500/90 via-purple-500/90 to-pink-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-purple-500/50 group-hover:ring-purple-300/50 ${actualEpisodes && actualEpisodes > 1 ? 'top-[48px]' : 'top-2'
-                }`}
+              className={`absolute left-2 bg-gradient-to-br from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-purple-500/50 group-hover:ring-purple-300/50 ${
+                (() => {
+                  let offset = 2; // 默认 top-2
+                  // 如果有即将上映的类型徽章
+                  if (remarks && remarks.includes('天后上映') && type) {
+                    offset += 46; // top-[48px]
+                  }
+                  // 如果有集数徽章
+                  if (actualEpisodes && actualEpisodes > 1) {
+                    offset += 46; // 再加 46px
+                  }
+                  return `top-[${offset}px]`;
+                })()
+              }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
