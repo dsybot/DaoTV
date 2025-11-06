@@ -45,6 +45,19 @@ function parseMovieHTML(html: string): ReleaseCalendarItem[] {
       // 提取主演 - 需要处理多个链接
       const actorsMatch = /<div class="dd-d2">主演：(.*?)<\/div>/.exec(block);
 
+      // 提取海报图片 - 从 dt 标签中的 img 标签
+      const coverMatch = /<dt[^>]*><a[^>]*><img[^>]*src="([^"]*)"/.exec(block);
+      let coverUrl = coverMatch ? coverMatch[1].trim() : undefined;
+
+      // 处理海报URL：添加协议前缀
+      if (coverUrl && coverUrl.startsWith('//')) {
+        coverUrl = 'https:' + coverUrl;
+      }
+      // 过滤掉占位符图片
+      if (coverUrl && coverUrl.includes('loadimg.gif')) {
+        coverUrl = undefined;
+      }
+
       if (titleMatch && dateMatch) {
         const title = titleMatch[1].trim();
         const dateStr = dateMatch[1].replace(/\//g, '-'); // 转换日期格式
@@ -76,6 +89,7 @@ function parseMovieHTML(html: string): ReleaseCalendarItem[] {
             region: region,
             genre: genre,
             releaseDate: dateStr,
+            cover: coverUrl,
             source: 'manmankan',
             createdAt: now,
             updatedAt: now,
@@ -124,6 +138,19 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
       // 提取主演 - 需要处理多个链接
       const actorsMatch = /<div class="dd-d2">主演：(.*?)<\/div>/.exec(block);
 
+      // 提取海报图片 - 从 dt 标签中的 img 标签
+      const coverMatch = /<dt[^>]*><a[^>]*><img[^>]*src="([^"]*)"/.exec(block);
+      let coverUrl = coverMatch ? coverMatch[1].trim() : undefined;
+
+      // 处理海报URL：添加协议前缀
+      if (coverUrl && coverUrl.startsWith('//')) {
+        coverUrl = 'https:' + coverUrl;
+      }
+      // 过滤掉占位符图片
+      if (coverUrl && coverUrl.includes('loadimg.gif')) {
+        coverUrl = undefined;
+      }
+
       if (titleMatch && dateMatch) {
         const title = titleMatch[1].trim();
         const dateStr = dateMatch[1].replace(/\//g, '-'); // 转换日期格式
@@ -155,6 +182,7 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
             region: region,
             genre: genre,
             releaseDate: dateStr,
+            cover: coverUrl,
             source: 'manmankan',
             createdAt: now,
             updatedAt: now,
