@@ -45,8 +45,8 @@ function parseMovieHTML(html: string): ReleaseCalendarItem[] {
       // 提取主演 - 需要处理多个链接
       const actorsMatch = /<div class="dd-d2">主演：(.*?)<\/div>/.exec(block);
 
-      // 提取海报图片 - 从 dt 标签中的 img 标签
-      const coverMatch = /<dt[^>]*><a[^>]*><img[^>]*src="([^"]*)"/.exec(block);
+      // 提取海报图片 - 匹配 <img src="..."> 标签
+      const coverMatch = /<img[^>]*src=["']([^"']+)["']/.exec(block);
       let coverUrl = coverMatch ? coverMatch[1].trim() : undefined;
 
       // 处理海报URL：添加协议前缀
@@ -138,8 +138,8 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
       // 提取主演 - 需要处理多个链接
       const actorsMatch = /<div class="dd-d2">主演：(.*?)<\/div>/.exec(block);
 
-      // 提取海报图片 - 从 dt 标签中的 img 标签
-      const coverMatch = /<dt[^>]*><a[^>]*><img[^>]*src="([^"]*)"/.exec(block);
+      // 提取海报图片 - 匹配 <img src="..."> 标签
+      const coverMatch = /<img[^>]*src=["']([^"']+)["']/.exec(block);
       let coverUrl = coverMatch ? coverMatch[1].trim() : undefined;
 
       // 处理海报URL：添加协议前缀
