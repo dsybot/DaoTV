@@ -129,9 +129,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
     : type;
 
-  // 获取收藏状态（搜索结果页面不检查）
+  // 获取收藏状态（搜索结果页面不检查，但即将上映需要检查）
   useEffect(() => {
-    if (from === 'douban' || from === 'search' || !actualSource || !actualId) return;
+    // 即将上映的内容需要检查收藏状态
+    const shouldCheckFavorite = isUpcoming || (from !== 'douban' && from !== 'search');
+
+    if (!shouldCheckFavorite || !actualSource || !actualId) return;
 
     const fetchFavoriteStatus = async () => {
       try {
@@ -156,13 +159,15 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     );
 
     return unsubscribe;
-  }, [from, actualSource, actualId]);
+  }, [from, actualSource, actualId, isUpcoming]);
 
   const handleToggleFavorite = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (from === 'douban' || !actualSource || !actualId) return;
+
+      // 即将上映的内容允许收藏
+      if ((from === 'douban' && !isUpcoming) || !actualSource || !actualId) return;
 
       try {
         // 确定当前收藏状态
@@ -180,11 +185,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           // 如果未收藏，添加收藏
           await saveFavorite(actualSource, actualId, {
             title: actualTitle,
-            source_name: source_name || '',
+            source_name: source_name || '即将上映',
             year: actualYear || '',
             cover: actualPoster,
             total_episodes: actualEpisodes ?? 1,
             save_time: Date.now(),
+            search_title: actualQuery || actualTitle, // 保存搜索标题用于后续查找资源
           });
           if (from === 'search') {
             setSearchFavorited(true);
@@ -198,6 +204,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     },
     [
       from,
+      isUpcoming,
       actualSource,
       actualId,
       actualTitle,
@@ -205,6 +212,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       actualYear,
       actualPoster,
       actualEpisodes,
+      actualQuery,
       favorited,
       searchFavorited,
     ]
@@ -225,7 +233,15 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     [from, actualSource, actualId, onDelete]
   );
 
+  // 判断是否为即将上映（未发布的内容）
+  const isUpcoming = remarks && remarks.includes('天后上映');
+
   const handleClick = useCallback(() => {
+    // 如果是即将上映的内容，不执行跳转，显示提示
+    if (isUpcoming) {
+      return;
+    }
+
     // 构建豆瓣ID参数
     const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
 
@@ -246,6 +262,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       router.push(url);
     }
   }, [
+    isUpcoming,
     origin,
     from,
     actualSource,
@@ -403,7 +420,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         showSourceName: false,
         showProgress: false,
         showPlayButton: true,
-        showHeart: false,
+        showHeart: isUpcoming, // 即将上映的内容显示收藏按钮
         showCheckCircle: false,
         showDoubanLink: true,
         showRating: !!rate,
@@ -411,14 +428,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       },
     };
     return configs[from] || configs.search;
-  }, [from, isAggregate, douban_id, rate]);
+  }, [from, isAggregate, douban_id, rate, isUpcoming]);
 
   // 移动端操作菜单配置
   const mobileActions = useMemo(() => {
     const actions = [];
 
-    // 播放操作
-    if (config.showPlayButton) {
+    // 播放操作（即将上映的内容不显示播放选项）
+    if (config.showPlayButton && !isUpcoming) {
       actions.push({
         id: 'play',
         label: origin === 'live' ? '观看直播' : '播放',
@@ -437,10 +454,22 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       });
     }
 
+    // 即将上映提示（替代播放操作）
+    if (isUpcoming) {
+      actions.push({
+        id: 'upcoming-notice',
+        label: '该影片尚未上映，敬请期待',
+        icon: <span className="text-lg">📅</span>,
+        onClick: () => {}, // 不执行任何操作
+        disabled: true,
+        color: 'default' as const,
+      });
+    }
+
     // 聚合源信息 - 直接在菜单中展示，不需要单独的操作项
 
-    // 收藏/取消收藏操作
-    if (config.showHeart && from !== 'douban' && actualSource && actualId) {
+    // 收藏/取消收藏操作（即将上映的内容也显示收藏选项）
+    if (config.showHeart && (isUpcoming || from !== 'douban') && actualSource && actualId) {
       const currentFavorited = from === 'search' ? searchFavorited : favorited;
 
       if (from === 'search') {
@@ -541,7 +570,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     isBangumi,
     isAggregate,
     dynamicSourceNames,
+    isUpcoming,
+    origin,
     handleClick,
+    handlePlayInNewTab,
     handleToggleFavorite,
     handleDeleteRecord,
   ]);
@@ -661,7 +693,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             }}
           />
 
-          {/* 播放按钮 */}
+          {/* 播放按钮 / 即将上映提示 */}
           {config.showPlayButton && (
             <div
               data-button="true"
@@ -676,20 +708,29 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <PlayCircleIcon
-                size={50}
-                strokeWidth={0.8}
-                className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1]'
-                style={{
-                  WebkitUserSelect: 'none',
-                  userSelect: 'none',
-                  WebkitTouchCallout: 'none',
-                } as React.CSSProperties}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  return false;
-                }}
-              />
+              {isUpcoming ? (
+                // 即将上映 - 显示敬请期待
+                <div className='flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md px-6 py-4 rounded-xl'>
+                  <span className='text-3xl'>📅</span>
+                  <span className='text-white font-bold text-sm whitespace-nowrap'>敬请期待</span>
+                </div>
+              ) : (
+                // 正常内容 - 显示播放按钮
+                <PlayCircleIcon
+                  size={50}
+                  strokeWidth={0.8}
+                  className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1]'
+                  style={{
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
+                    WebkitTouchCallout: 'none',
+                  } as React.CSSProperties}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    return false;
+                  }}
+                />
+              )}
             </div>
           )}
 

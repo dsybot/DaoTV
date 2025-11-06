@@ -670,21 +670,26 @@ function HomeClient() {
                     const releaseDate = new Date(release.releaseDate);
                     const daysUntilRelease = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-                    return (
-                      <div
-                        key={`${release.id}-${index}`}
-                        className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                      >
-                        <VideoCard
-                          from='douban'
-                          title={release.title}
-                          poster={release.cover || '/placeholder-poster.jpg'}
-                          year={release.releaseDate.split('-')[0]}
-                          type={release.type}
-                          remarks={`${daysUntilRelease}天后上映`}
-                        />
-                      </div>
-                    );
+                      return (
+                        <div
+                          key={`${release.id}-${index}`}
+                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                        >
+                          <VideoCard
+                            source='upcoming_release'
+                            id={release.id}
+                            source_name='即将上映'
+                            from='douban'
+                            title={release.title}
+                            poster={release.cover || '/placeholder-poster.jpg'}
+                            year={release.releaseDate.split('-')[0]}
+                            type={release.type}
+                            remarks={`${daysUntilRelease}天后上映`}
+                            query={release.title}
+                            episodes={release.type === 'tv' ? 99 : 1}
+                          />
+                        </div>
+                      );
                   })}
                 </ScrollableRow>
               </section>
