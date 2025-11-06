@@ -810,8 +810,12 @@ export async function savePlayRecord(
 ): Promise<void> {
   const key = generateStorageKey(source, id);
 
-  // 获取现有播放记录，检查是否需要设置原始集数
-  const existingRecords = await getAllPlayRecords();
+  // 🔧 优化：优先使用缓存数据，避免每次保存都请求服务器
+  // 只在缓存为空时才从服务器获取
+  let existingRecords = cacheManager.getCachedPlayRecords();
+  if (!existingRecords || Object.keys(existingRecords).length === 0) {
+    existingRecords = await getAllPlayRecords();
+  }
   const existingRecord = existingRecords[key];
 
   // 🔑 关键修复：确保 original_episodes 一定有值，否则新集数检测永远失效
@@ -889,25 +893,10 @@ export async function savePlayRecord(
         } catch (cacheError) {
           console.warn('清除缓存失败:', cacheError);
         }
-      } else {
-        // 🔧 优化：即使没有 _shouldClearCache 标志，也要从服务器同步最新数据以确保缓存一致性
-        // 特别是对于 kvrocks 等需要实时同步的场景
-        try {
-          const freshData = await fetchFromApi<Record<string, PlayRecord>>(`/api/playrecords`);
-          // 只有数据真正不同时才更新缓存
-          if (JSON.stringify(cachedRecords) !== JSON.stringify(freshData)) {
-            cacheManager.cachePlayRecords(freshData);
-            window.dispatchEvent(
-              new CustomEvent('playRecordsUpdated', {
-                detail: freshData,
-              })
-            );
-            console.log('✅ 播放记录已同步最新数据');
-          }
-        } catch (syncError) {
-          console.warn('同步最新播放记录失败:', syncError);
-        }
       }
+      // 🔧 优化：移除每次保存后的同步请求，因为我们已经使用乐观更新
+      // 缓存已在 line 848-850 更新，不需要每次都从服务器 GET 最新数据
+      // 只在更新集数时才需要同步（上面的 if 块已处理）
 
       // 异步更新用户统计数据（不阻塞主流程）
       updateUserStats(record).catch(err => {
