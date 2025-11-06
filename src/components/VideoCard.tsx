@@ -129,6 +129,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
     : type;
 
+  // 判断是否为即将上映（未发布的内容）
+  const isUpcoming = remarks && remarks.includes('天后上映');
+
   // 获取收藏状态（搜索结果页面不检查，但即将上映需要检查）
   useEffect(() => {
     // 即将上映的内容需要检查收藏状态
@@ -232,9 +235,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     },
     [from, actualSource, actualId, onDelete]
   );
-
-  // 判断是否为即将上映（未发布的内容）
-  const isUpcoming = remarks && remarks.includes('天后上映');
 
   const handleClick = useCallback(() => {
     // 如果是即将上映的内容，不执行跳转，显示提示
