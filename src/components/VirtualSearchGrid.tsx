@@ -74,6 +74,10 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
   const currentData = viewMode === 'agg' ? filteredAggResults : filteredResults;
   const totalItemCount = currentData.length;
 
+  // 实际显示的项目数量（考虑渐进式加载）
+  const displayItemCount = Math.min(visibleItemCount, totalItemCount);
+  const displayData = currentData.slice(0, displayItemCount);
+
   // 预加载图片 - 收集即将显示的图片 URLs
   const imagesToPreload = useMemo(() => {
     const urls: string[] = [];
@@ -93,10 +97,6 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
   }, [currentData, displayItemCount, totalItemCount, viewMode]);
 
   useImagePreload(imagesToPreload, totalItemCount > 0);
-
-  // 实际显示的项目数量（考虑渐进式加载）
-  const displayItemCount = Math.min(visibleItemCount, totalItemCount);
-  const displayData = currentData.slice(0, displayItemCount);
 
   // 重置可见项目数量（当搜索或过滤变化时）
   useEffect(() => {
