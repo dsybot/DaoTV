@@ -7,6 +7,7 @@
  */
 
 import { getCarouselItemByTitle, CarouselItem } from './tmdb.client';
+import { getDoubanDetailsServer } from './douban.server';
 
 /**
  * 生成轮播图数据（核心逻辑）
@@ -175,41 +176,54 @@ export async function generateCarouselData(): Promise<any[]> {
 
   console.log(`[轮播生成器] 第5步: 最终分配 - 电视剧:${finalTvItems.length}/8, 电影:${finalMovieItems.length}/5, 综艺:${finalVarietyItems.length}/2, 总计:${currentTotal}/15`);
 
-  // 合并并优先使用豆瓣数据
-  let carouselList = [
-    ...finalMovieItems.map(x => ({
-      ...x.item,
-      id: x.doubanData.id || x.item.id, // 使用豆瓣ID而不是TMDB ID
-      source: x.source,
-      rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
-        ? parseFloat(x.doubanData.rate)
-        : x.item.rate,
-      year: x.doubanData.year || x.item.year,
-    })),
-    ...finalTvItems.map(x => ({
-      ...x.item,
-      id: x.doubanData.id || x.item.id, // 使用豆瓣ID而不是TMDB ID
-      source: x.source,
-      rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
-        ? parseFloat(x.doubanData.rate)
-        : x.item.rate,
-      year: x.doubanData.year || x.item.year,
-    })),
-    ...finalVarietyItems.map(x => ({
-      ...x.item,
-      id: x.doubanData.id || x.item.id, // 使用豆瓣ID而不是TMDB ID
-      source: x.source,
-      rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
-        ? parseFloat(x.doubanData.rate)
-        : x.item.rate,
-      year: x.doubanData.year || x.item.year,
-    })),
+  // 合并数据
+  const allItems = [
+    ...finalMovieItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
+    ...finalTvItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
+    ...finalVarietyItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
   ];
+
+  console.log(`[轮播生成器] 第6步: 开始获取豆瓣详情（genres和首播）...`);
+
+  // 批量获取豆瓣详情
+  const detailsPromises = allItems.map(async (item) => {
+    try {
+      const details = await getDoubanDetailsServer(item.doubanData.id.toString());
+      if (details.code === 200 && details.data) {
+        return {
+          id: item.doubanData.id,
+          genres: details.data.genres || [],
+          first_aired: details.data.first_aired || '',
+        };
+      }
+    } catch (error) {
+      console.warn(`[轮播生成器] 获取豆瓣详情失败: ${item.title}`, error);
+    }
+    return null;
+  });
+
+  const detailsResults = await Promise.all(detailsPromises);
+  console.log(`[轮播生成器] 豆瓣详情获取完成: ${detailsResults.filter(d => d).length}/${allItems.length}`);
+
+  // 合并并优先使用豆瓣数据
+  let carouselList = allItems.map(x => {
+    const detail = detailsResults.find(d => d?.id === x.doubanData.id);
+    return {
+      ...x,
+      id: x.doubanData.id || x.id, // 使用豆瓣ID而不是TMDB ID
+      rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
+        ? parseFloat(x.doubanData.rate)
+        : x.rate,
+      year: x.doubanData.year || x.year,
+      genres: detail?.genres || [],
+      first_aired: detail?.first_aired || '',
+    };
+  });
 
   // 随机打乱
   carouselList = carouselList.sort(() => Math.random() - 0.5);
 
-  console.log(`[轮播生成器] 第6步: 随机排序完成，共${carouselList.length}项`);
+  console.log(`[轮播生成器] 第7步: 随机排序完成，共${carouselList.length}项`);
   console.log('[轮播生成器] ===== 生成完成 =====');
 
   return carouselList;
