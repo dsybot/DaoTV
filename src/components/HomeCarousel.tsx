@@ -2,7 +2,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, Play, Star } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { processImageUrl } from '@/lib/utils';
@@ -34,6 +34,7 @@ export default function HomeCarousel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // 获取轮播数据
   useEffect(() => {
@@ -94,6 +95,20 @@ export default function HomeCarousel() {
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext]);
+
+  // 移动端：同步滚动位置到当前索引
+  useEffect(() => {
+    if (!scrollContainerRef.current || items.length === 0) return;
+    
+    const container = scrollContainerRef.current;
+    const itemWidth = 60; // 56px宽度 + 8px间距
+    const targetScroll = (currentIndex + 2) * itemWidth; // +2因为前置了2个项目
+    
+    container.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth'
+    });
+  }, [currentIndex, items.length]);
 
   // 处理播放点击
   const handlePlay = useCallback((item: CarouselItem) => {
@@ -209,53 +224,149 @@ export default function HomeCarousel() {
         </div>
       </div>
 
-      {/* 底部导航区域 - 左侧封面缩略图 + 右侧圆形播放按钮 */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 md:px-8 pb-4 sm:pb-6">
-        {/* 左侧：豆瓣封面缩略图导航（按索引对应TMDB轮播） */}
-        {items.length > 1 && (
-          <div className="relative flex-1 max-w-[60%] sm:max-w-[65%] md:max-w-none md:flex-initial">
-            {/* 移动端渐隐遮罩（桌面端不需要） */}
-            <div className="md:hidden absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
+      {/* 底部导航区域 - 移动端和桌面端不同布局 */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        {/* 移动端：中心对齐无限循环缩略图 */}
+        <div className="md:hidden">
+          {items.length > 1 && (
+            <div className="relative pb-4">
+              {/* 左侧渐隐遮罩 */}
+              <div className="absolute top-0 left-0 bottom-0 w-16 bg-gradient-to-r from-black/80 to-transparent pointer-events-none z-10"></div>
+              
+              {/* 右侧渐隐遮罩 */}
+              <div className="absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
 
-            {/* 缩略图滚动容器 - 直接使用TMDB数据的poster（已经是豆瓣URL） */}
-            <div className="flex gap-2 sm:gap-3 overflow-x-auto md:overflow-visible scrollbar-hide snap-x snap-mandatory md:pr-0 pr-20">
-              {items.map((item, index) => (
+              {/* 缩略图滚动容器 - 中心对齐 */}
+              <div 
+                ref={scrollContainerRef}
+                className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-[calc(50vw-28px)]"
+                onScroll={(e) => {
+                  const container = e.currentTarget;
+                  const scrollLeft = container.scrollLeft;
+                  const itemWidth = 60; // 56px宽度 + 8px间距
+                  const centerOffset = container.clientWidth / 2;
+                  const centerIndex = Math.round((scrollLeft + centerOffset - itemWidth) / itemWidth) % items.length;
+                  
+                  if (centerIndex !== currentIndex && centerIndex >= 0 && centerIndex < items.length) {
+                    setCurrentIndex(centerIndex);
+                    setIsAutoPlaying(false);
+                  }
+                }}
+              >
+                {/* 无限循环：前置最后2个 */}
+                {items.slice(-2).map((item, idx) => (
+                  <div
+                    key={`pre-${idx}`}
+                    className="flex-shrink-0 snap-center transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ring-1 ring-white/50 opacity-60"
+                  >
+                    <img
+                      src={processImageUrl(item.poster)}
+                      alt={item.title}
+                      className="w-14 h-20 object-cover"
+                    />
+                  </div>
+                ))}
+                
+                {/* 主要内容 */}
+                {items.map((item, index) => {
+                  const isCurrent = index === currentIndex;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentIndex(index);
+                        setIsAutoPlaying(false);
+                      }}
+                      className={`flex-shrink-0 snap-center transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${
+                        isCurrent
+                          ? 'ring-2 ring-white shadow-2xl scale-125'
+                          : 'ring-1 ring-white/50 opacity-60'
+                      }`}
+                      aria-label={`切换到 ${item.title}`}
+                    >
+                      <img
+                        src={processImageUrl(item.poster)}
+                        alt={item.title}
+                        className="w-14 h-20 object-cover"
+                      />
+                    </button>
+                  );
+                })}
+
+                {/* 无限循环：后置前2个 */}
+                {items.slice(0, 2).map((item, idx) => (
+                  <div
+                    key={`post-${idx}`}
+                    className="flex-shrink-0 snap-center transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ring-1 ring-white/50 opacity-60"
+                  >
+                    <img
+                      src={processImageUrl(item.poster)}
+                      alt={item.title}
+                      className="w-14 h-20 object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* 圆形播放按钮 - 移动端右下角 */}
+              <div className="absolute right-4 bottom-0">
                 <button
-                  key={index}
-                  onMouseEnter={() => {
-                    setCurrentIndex(index);
-                    setIsAutoPlaying(false);
-                  }}
-                  onClick={() => {
-                    setCurrentIndex(index);
-                    setIsAutoPlaying(false);
-                  }}
-                  className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
-                    ? 'ring-2 ring-white shadow-2xl scale-105'
-                    : 'ring-1 ring-white/50'
-                    }`}
-                  aria-label={`切换到 ${item.title}`}
+                  onClick={() => handlePlay(currentItem)}
+                  className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
+                  aria-label="播放"
                 >
-                  <img
-                    src={processImageUrl(item.poster)}
-                    alt={item.title}
-                    className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
-                  />
+                  <Play className="w-6 h-6 text-white fill-current ml-0.5" />
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* 右侧：圆形播放按钮 - 模糊背景 */}
-        <div className="flex-shrink-0 ml-4">
-          <button
-            onClick={() => handlePlay(currentItem)}
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
-            aria-label="播放"
-          >
-            <Play className="w-6 h-6 sm:w-7 sm:h-7 text-white fill-current ml-0.5" />
-          </button>
+        {/* 桌面端：左侧缩略图 + 右侧播放按钮 */}
+        <div className="hidden md:flex items-center justify-between px-6 md:px-8 pb-4 sm:pb-6">
+          {/* 左侧：封面缩略图导航 */}
+          {items.length > 1 && (
+            <div className="relative flex-1 flex-initial">
+              {/* 缩略图滚动容器 */}
+              <div className="flex gap-3 overflow-visible">
+                {items.map((item, index) => (
+                  <button
+                    key={index}
+                    onMouseEnter={() => {
+                      setCurrentIndex(index);
+                      setIsAutoPlaying(false);
+                    }}
+                    onClick={() => {
+                      setCurrentIndex(index);
+                      setIsAutoPlaying(false);
+                    }}
+                    className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
+                      ? 'ring-2 ring-white shadow-2xl scale-105'
+                      : 'ring-1 ring-white/50'
+                      }`}
+                    aria-label={`切换到 ${item.title}`}
+                  >
+                    <img
+                      src={processImageUrl(item.poster)}
+                      alt={item.title}
+                      className="w-16 h-24 object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 右侧：圆形播放按钮 - 模糊背景 */}
+          <div className="flex-shrink-0 ml-4">
+            <button
+              onClick={() => handlePlay(currentItem)}
+              className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
+              aria-label="播放"
+            >
+              <Play className="w-7 h-7 text-white fill-current ml-0.5" />
+            </button>
+          </div>
         </div>
       </div>
 

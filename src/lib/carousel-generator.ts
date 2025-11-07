@@ -189,9 +189,9 @@ export async function generateCarouselData(): Promise<any[]> {
   const detailsPromises = allItems.map(async (item, index) => {
     try {
       console.log(`[轮播生成器] [${index + 1}/${allItems.length}] 获取详情: ${item.title} (ID: ${item.doubanData.id})`);
-      
+
       const details = await fetchDoubanDetailsForCarousel(item.doubanData.id.toString());
-      
+
       if (details) {
         console.log(`[轮播生成器] ✅ ${item.title} 详情获取成功: genres=${details.genres?.length || 0}, first_aired=${details.first_aired || 'N/A'}`);
         return {

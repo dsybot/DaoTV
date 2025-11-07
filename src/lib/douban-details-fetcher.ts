@@ -30,10 +30,10 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
 } | null> {
   try {
     const target = `https://movie.douban.com/subject/${doubanId}/`;
-    
+
     // 添加随机延时防止反爬
     await randomDelay();
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -47,7 +47,7 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
         'Cache-Control': 'no-cache',
       },
     });
-    
+
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -56,7 +56,7 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
     }
 
     const html = await response.text();
-    
+
     // 提取类型/genres
     const genreMatches = html.match(/<span[^>]*property="v:genre">([^<]+)<\/span>/g);
     const genres = genreMatches ? genreMatches.map(match => {
@@ -66,7 +66,7 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
 
     // 提取首播/上映日期
     let first_aired = '';
-    
+
     // 首播信息：<span class="pl">首播:</span> <span property="v:initialReleaseDate" content="2025-08-13(中国大陆)">
     const firstAiredMatch = html.match(/<span class="pl">首播:<\/span>\s*<span[^>]*property="v:initialReleaseDate"[^>]*content="([^"]*)"[^>]*>/);
     if (firstAiredMatch) {
