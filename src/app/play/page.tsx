@@ -4699,7 +4699,22 @@ function PlayPageClient() {
                 currentSource={currentSource}
                 currentId={currentId}
                 videoTitle={searchTitle || videoTitle}
-                availableSources={availableSources.filter(source => source.episodes && source.episodes.length >= 1)}
+                availableSources={availableSources.filter(source => {
+                  // 必须有集数数据
+                  if (!source.episodes || source.episodes.length < 1) return false;
+
+                  // 如果当前有 detail，只显示集数相近的源（允许 ±30% 的差异）
+                  if (detail && detail.episodes && detail.episodes.length > 0) {
+                    const currentEpisodes = detail.episodes.length;
+                    const sourceEpisodes = source.episodes.length;
+                    const tolerance = Math.max(5, Math.ceil(currentEpisodes * 0.3)); // 至少5集的容差
+
+                    // 在合理范围内
+                    return Math.abs(sourceEpisodes - currentEpisodes) <= tolerance;
+                  }
+
+                  return true;
+                })}
                 sourceSearchLoading={sourceSearchLoading}
                 sourceSearchError={sourceSearchError}
                 precomputedVideoInfo={precomputedVideoInfo}
@@ -4791,7 +4806,7 @@ function PlayPageClient() {
               </div>
 
               {/* 详细信息（豆瓣或bangumi） */}
-              {currentSource !== 'shortdrama' && videoDoubanId && videoDoubanId !== 0 && detail && detail.source !== 'shortdrama' && (
+              {currentSource !== 'shortdrama' && videoDoubanId !== 0 && detail && detail.source !== 'shortdrama' && (
                 <div className='mb-4 flex-shrink-0'>
                   {/* 加载状态 */}
                   {(loadingMovieDetails || loadingBangumiDetails) && !movieDetails && !bangumiDetails && (
