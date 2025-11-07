@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { processImageUrl } from '@/lib/utils';
+import { getDoubanDetails } from '@/lib/douban.client';
 
 interface CarouselItem {
   id: number;
@@ -17,6 +18,8 @@ interface CarouselItem {
   year: string;
   type: 'movie' | 'tv';
   source?: 'movie' | 'tv' | 'variety'; // 豆瓣来源：电影、剧集、综艺
+  genres?: string[]; // 豆瓣分类
+  first_aired?: string; // 首播日期
 }
 
 interface CarouselResponse {
@@ -46,6 +49,32 @@ export default function HomeCarousel() {
           const shuffledList = [...data.list].sort(() => Math.random() - 0.5);
           setItems(shuffledList);
           setError(null);
+          
+          // 异步获取豆瓣详情（genres和first_aired）
+          Promise.all(
+            shuffledList.slice(0, 5).map(async (item) => {
+              try {
+                const details = await getDoubanDetails(item.id.toString());
+                if (details.code === 200 && details.data) {
+                  return {
+                    id: item.id,
+                    genres: details.data.genres || [],
+                    first_aired: details.data.first_aired || '',
+                  };
+                }
+              } catch (error) {
+                console.warn(`获取豆瓣详情失败: ${item.title}`, error);
+              }
+              return null;
+            })
+          ).then((detailsResults) => {
+            setItems(prev =>
+              prev.map(item => {
+                const detail = detailsResults.find(d => d?.id === item.id);
+                return detail ? { ...item, ...detail } : item;
+              })
+            );
+          });
         } else if (data.code === 503) {
           setError('TMDB功能未启用');
         } else {
@@ -159,18 +188,32 @@ export default function HomeCarousel() {
             {currentItem.title}
           </h2>
 
-          {/* 元信息 */}
-          <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4 text-sm sm:text-base">
-            {currentItem.rate > 0 && (
-              <div className="flex items-center gap-1 text-yellow-400">
-                <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                <span className="font-semibold">{currentItem.rate.toFixed(1)}</span>
+          {/* 元信息 - 两行布局 */}
+          <div className="space-y-2 mb-3 sm:mb-4">
+            {/* 第一行：评分 + 首播时间 + 类型 */}
+            <div className="flex items-center gap-3 text-sm sm:text-base">
+              {currentItem.rate > 0 && (
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+                  <span className="font-semibold">{currentItem.rate.toFixed(1)}</span>
+                </div>
+              )}
+              {currentItem.first_aired && (
+                <span className="text-gray-300">
+                  {currentItem.first_aired.replace(/-/g, '/')}
+                </span>
+              )}
+              <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs sm:text-sm rounded">
+                {currentItem.source === 'movie' ? '电影' : currentItem.source === 'variety' ? '综艺' : '电视剧'}
+              </span>
+            </div>
+            
+            {/* 第二行：分类标签 */}
+            {currentItem.genres && currentItem.genres.length > 0 && (
+              <div className="text-sm sm:text-base text-gray-300">
+                {currentItem.genres.slice(0, 3).join(' · ')}
               </div>
             )}
-            <span className="text-gray-300">{currentItem.year}</span>
-            <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs sm:text-sm rounded">
-              {currentItem.source === 'movie' ? '电影' : currentItem.source === 'variety' ? '综艺' : '电视剧'}
-            </span>
           </div>
 
           {/* 简介 */}
