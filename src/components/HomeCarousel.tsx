@@ -97,42 +97,32 @@ export default function HomeCarousel() {
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext]);
 
-  // 移动端：同步滚动位置到当前索引（保持在第一组范围内）
+  // 移动端：同步滚动位置（让目标项滚动到容器中心）
   useEffect(() => {
     if (!scrollContainerRef.current || items.length === 0) return;
     
     const container = scrollContainerRef.current;
-    const itemWidth = 60; // 56px宽度 + 8px间距
+    const itemWidth = 60;
     const totalItems = items.length;
     const oneSetWidth = totalItems * itemWidth;
     
-    // 目标位置：第一组的当前索引位置
-    const targetScroll = currentIndex * itemWidth;
-    
-    // 如果是初始化，直接跳转到第一组开始位置（无动画）
+    // 初始化：滚动到第一组中间位置
     if (container.scrollLeft === 0) {
-      container.scrollLeft = oneSetWidth + targetScroll; // 从第二组开始（中间位置）
+      container.scrollLeft = oneSetWidth; // 从第二组开始
       return;
     }
     
-    // 获取当前滚动位置所在的组
+    // 计算目标滚动位置：让当前项居中
+    const containerCenter = container.clientWidth / 2;
     const currentScrollSet = Math.floor(container.scrollLeft / oneSetWidth);
-    const currentPosInSet = container.scrollLeft % oneSetWidth;
+    const targetScrollLeft = currentScrollSet * oneSetWidth + currentIndex * itemWidth + itemWidth / 2 - containerCenter;
     
-    // 计算最短路径滚动
-    const currentItemScroll = currentPosInSet / itemWidth;
-    const diff = currentIndex - Math.round(currentItemScroll);
-    
-    // 设置标志防止触发onScroll
     isScrollingRef.current = true;
-    
-    // 在当前组内滚动到目标项
     container.scrollTo({
-      left: currentScrollSet * oneSetWidth + currentIndex * itemWidth,
+      left: targetScrollLeft,
       behavior: 'smooth'
     });
     
-    // 滚动结束后重置标志
     setTimeout(() => {
       isScrollingRef.current = false;
     }, 500);
@@ -258,8 +248,8 @@ export default function HomeCarousel() {
         <div className="md:hidden flex items-end justify-between px-4 pb-4 gap-3">
           {items.length > 1 && (
             <>
-              {/* 左侧：缩略图区域 */}
-              <div className="relative flex-1 overflow-hidden py-3">
+              {/* 左侧：缩略图区域 - 固定显示5个 */}
+              <div className="relative flex-1 overflow-hidden py-4">
                 {/* 左侧渐隐遮罩 */}
                 <div className="absolute top-0 left-0 bottom-0 w-12 bg-gradient-to-r from-black/80 to-transparent pointer-events-none z-10"></div>
 
@@ -269,40 +259,36 @@ export default function HomeCarousel() {
                 {/* 缩略图滚动容器 - 两倍复制CSS无缝循环 */}
                 <div
                   ref={scrollContainerRef}
-                  className="flex gap-2 overflow-x-auto scrollbar-hide px-[calc(50%-28px)]"
+                  className="flex gap-2 overflow-x-scroll scrollbar-hide"
                   onScroll={(e) => {
-                    // 防止程序触发的滚动更新currentIndex
                     if (isScrollingRef.current) return;
 
                     const container = e.currentTarget;
                     const scrollLeft = container.scrollLeft;
-                    const itemWidth = 60; // 56px宽度 + 8px间距
+                    const itemWidth = 60;
                     const totalItems = items.length;
-                    const oneSetWidth = totalItems * itemWidth; // 一组的总宽度
-                    
-                    // 计算当前中心项的索引
-                    const centerOffset = container.clientWidth / 2;
-                    const absoluteIndex = Math.round((scrollLeft + centerOffset) / itemWidth);
-                    const currentIndexInLoop = absoluteIndex % totalItems;
-                    
-                    // 无缝循环：当滑到接近边界时，悄悄重置到对应位置（用户无感）
-                    requestAnimationFrame(() => {
-                      if (scrollLeft >= oneSetWidth * 1.8) {
-                        // 滑过第一组80%，重置到第一组对应位置
-                        isScrollingRef.current = true;
-                        container.scrollLeft = scrollLeft - oneSetWidth;
-                        setTimeout(() => { isScrollingRef.current = false; }, 10);
-                      } else if (scrollLeft < oneSetWidth * 0.2) {
-                        // 还没到第一组20%，重置到第二组对应位置
-                        isScrollingRef.current = true;
-                        container.scrollLeft = scrollLeft + oneSetWidth;
-                        setTimeout(() => { isScrollingRef.current = false; }, 10);
-                      }
-                    });
-                    
-                    // 更新currentIndex
-                    if (currentIndexInLoop !== currentIndex) {
-                      setCurrentIndex(currentIndexInLoop);
+                    const oneSetWidth = totalItems * itemWidth;
+
+                    // 计算容器中心位置对应的项目索引
+                    const containerCenter = scrollLeft + container.clientWidth / 2;
+                    const absoluteIndex = Math.floor(containerCenter / itemWidth);
+                    const newIndex = absoluteIndex % totalItems;
+
+                    // 无缝循环重置
+                    if (scrollLeft >= oneSetWidth * 1.5) {
+                      isScrollingRef.current = true;
+                      container.scrollLeft = scrollLeft - oneSetWidth;
+                      setTimeout(() => { isScrollingRef.current = false; }, 10);
+                      return;
+                    } else if (scrollLeft < oneSetWidth * 0.5) {
+                      isScrollingRef.current = true;
+                      container.scrollLeft = scrollLeft + oneSetWidth;
+                      setTimeout(() => { isScrollingRef.current = false; }, 10);
+                      return;
+                    }
+
+                    if (newIndex !== currentIndex) {
+                      setCurrentIndex(newIndex);
                       setIsAutoPlaying(false);
                     }
                   }}
@@ -319,11 +305,10 @@ export default function HomeCarousel() {
                           setCurrentIndex(indexInSet);
                           setIsAutoPlaying(false);
                         }}
-                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${
-                          isCurrent
-                            ? 'ring-2 ring-white shadow-2xl scale-125'
-                            : 'ring-1 ring-white/50 opacity-60 scale-100'
-                        }`}
+                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${isCurrent
+                          ? 'ring-2 ring-white shadow-2xl scale-125'
+                          : 'ring-1 ring-white/50 opacity-60 scale-100'
+                          }`}
                         aria-label={`切换到 ${item.title}`}
                       >
                         <img
