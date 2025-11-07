@@ -2017,8 +2017,9 @@ function PlayPageClient() {
       if (currentSource === 'shortdrama' && currentId) {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
       } else {
-        // 其他情况先搜索
+        // 其他情况先搜索所有视频源
         sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+
         if (
           currentSource &&
           currentId &&
@@ -2030,12 +2031,17 @@ function PlayPageClient() {
         }
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
-        if (shortdramaId && !sourcesInfo.some((source) => source.source === 'shortdrama' && source.id === shortdramaId)) {
+        if (shortdramaId) {
           try {
             const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
             if (shortdramaSource.length > 0) {
-              sourcesInfo.push(...shortdramaSource);
-              console.log('已添加短剧源到可用源列表');
+              // 检查是否已存在相同的短剧源，避免重复
+              const existingShortdrama = sourcesInfo.find(
+                (s) => s.source === 'shortdrama' && s.id === shortdramaId
+              );
+              if (!existingShortdrama) {
+                sourcesInfo.push(...shortdramaSource);
+              }
             }
           } catch (error) {
             console.error('添加短剧源失败:', error);
