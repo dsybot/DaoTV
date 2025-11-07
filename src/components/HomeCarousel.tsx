@@ -34,6 +34,8 @@ export default function HomeCarousel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // 获取轮播数据
   useEffect(() => {
@@ -94,6 +96,35 @@ export default function HomeCarousel() {
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext]);
+
+  // 移动端：自动滚动当前缩略图到中央
+  useEffect(() => {
+    if (!thumbnailContainerRef.current || !thumbnailRefs.current[currentIndex] || items.length === 0) return;
+    
+    const container = thumbnailContainerRef.current;
+    const thumbnail = thumbnailRefs.current[currentIndex];
+    
+    // 如果是第一个或最后一个，不强制居中
+    const isFirst = currentIndex === 0;
+    const isLast = currentIndex === items.length - 1;
+    
+    if (isFirst || isLast) {
+      // 边界项：滚动到边界即可
+      if (isFirst) {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+      }
+    } else {
+      // 中间项：居中显示
+      const thumbnailLeft = thumbnail.offsetLeft;
+      const thumbnailWidth = thumbnail.offsetWidth;
+      const containerWidth = container.clientWidth;
+      
+      const targetScroll = thumbnailLeft + thumbnailWidth / 2 - containerWidth / 2;
+      container.scrollTo({ left: targetScroll, behavior: 'smooth' });
+    }
+  }, [currentIndex, items.length]);
 
   // 处理播放点击
   const handlePlay = useCallback((item: CarouselItem) => {
@@ -216,7 +247,10 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
-              <div className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide">
+              <div 
+                ref={thumbnailContainerRef}
+                className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide"
+              >
                 <div className="flex gap-2 px-1 pr-16 py-2">
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
@@ -224,6 +258,7 @@ export default function HomeCarousel() {
                     return (
                       <button
                         key={item.id}
+                        ref={(el) => (thumbnailRefs.current[index] = el)}
                         onClick={() => {
                           setCurrentIndex(index);
                           setIsAutoPlaying(false);

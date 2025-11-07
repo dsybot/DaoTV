@@ -4347,10 +4347,10 @@ function PlayPageClient() {
                           <div
                             key={index}
                             className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 ${result.status === 'success'
-                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                                : result.status === 'failed'
-                                  ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                                  : 'bg-gray-50 dark:bg-gray-700/50'
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                              : result.status === 'failed'
+                                ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                                : 'bg-gray-50 dark:bg-gray-700/50'
                               }`}
                           >
                             <div className='flex items-center space-x-2 flex-1 min-w-0'>
