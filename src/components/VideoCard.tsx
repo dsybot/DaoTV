@@ -645,9 +645,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             alt={actualTitle}
             fill
             sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
-            className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-all duration-700 ease-out ${
-              imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
-            }`}
+            className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
+              }`}
             referrerPolicy='no-referrer'
             loading='lazy'
             quality={85}
@@ -819,9 +818,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
-              className={`absolute left-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${
-                isUpcoming && type ? 'top-[48px]' : 'top-2'
-              }`}
+              className={`absolute left-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${isUpcoming && type ? 'top-[48px]' : 'top-2'
+                }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -856,7 +854,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 }
                 return `top-[${offset}px]`;
               })()
-              }`}
+                }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',

@@ -80,12 +80,12 @@ export default function HomeCarousel() {
   // 暂停自动播放并在5秒后恢复
   const pauseAutoPlayTemporarily = useCallback(() => {
     setIsAutoPlaying(false);
-    
+
     // 清除之前的定时器
     if (resumeAutoPlayTimerRef.current) {
       clearTimeout(resumeAutoPlayTimerRef.current);
     }
-    
+
     // 5秒后恢复自动播放
     resumeAutoPlayTimerRef.current = setTimeout(() => {
       setIsAutoPlaying(true);
@@ -265,7 +265,7 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
-              <div 
+              <div
                 ref={thumbnailContainerRef}
                 className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide"
                 onTouchStart={pauseAutoPlayTemporarily}
