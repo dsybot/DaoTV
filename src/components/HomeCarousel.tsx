@@ -204,14 +204,17 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
               {items.map((item, index) => {
                 // 根据豆瓣ID精准匹配封面（item.id就是豆瓣ID）
                 let doubanPoster = item.poster; // 默认使用TMDB的poster
-                
+
                 if (doubanMovies && doubanMovies.length > 0) {
                   // 通过豆瓣ID精准匹配
                   const matchedDouban = doubanMovies.find(d => d.id === item.id.toString());
-                  if (matchedDouban) {
+                  if (matchedDouban && matchedDouban.poster) {
                     doubanPoster = matchedDouban.poster;
                   }
                 }
+
+                // 如果poster为空，使用占位符
+                const finalPoster = doubanPoster || '/placeholder-poster.jpg';
 
                 return (
                   <button
@@ -220,16 +223,23 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
                       setCurrentIndex(index);
                       setIsAutoPlaying(false);
                     }}
-                    className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden ${index === currentIndex
+                    className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
                       ? 'ring-2 ring-white shadow-2xl scale-105'
                       : 'ring-1 ring-white/50'
                       }`}
                     aria-label={`切换到 ${item.title}`}
                   >
                     <img
-                      src={doubanPoster}
+                      src={finalPoster}
                       alt={item.title}
                       className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
+                      onError={(e) => {
+                        // 图片加载失败时使用占位符
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== '/placeholder-poster.jpg') {
+                          target.src = '/placeholder-poster.jpg';
+                        }
+                      }}
                     />
                   </button>
                 );

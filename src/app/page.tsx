@@ -490,7 +490,7 @@ function HomeClient() {
         {/* 轮播图 - 在所有tab显示（根据配置） */}
         {enableTMDBCarousel && (
           <div className={`mt-8 sm:mt-12 mb-8 ${layoutMode === 'top' ? 'md:-mt-4' : ''}`}>
-            <HomeCarousel doubanMovies={hotMovies} />
+            <HomeCarousel doubanMovies={!loading && hotMovies.length > 0 ? hotMovies : undefined} />
           </div>
         )}
 
