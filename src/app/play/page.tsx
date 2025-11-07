@@ -2041,6 +2041,8 @@ function PlayPageClient() {
               );
               if (!existingShortdrama) {
                 sourcesInfo.push(...shortdramaSource);
+                // 重新设置 availableSources 以包含短剧源
+                setAvailableSources(sourcesInfo);
               }
             }
           } catch (error) {
@@ -4772,7 +4774,7 @@ function PlayPageClient() {
 
               {/* 关键信息行 */}
               <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
-                {detail?.class && (
+                {detail?.class && detail.class !== 0 && detail.class !== '0' && (
                   <span className='text-green-600 font-semibold'>
                     {detail.class}
                   </span>
