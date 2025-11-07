@@ -36,6 +36,7 @@ export default function HomeCarousel() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // 获取轮播数据
   useEffect(() => {
@@ -251,27 +252,31 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图区域 - 固定显示5个（环形，自身渐隐） */}
-              <div 
+              <div
                 className="relative flex-1 overflow-visible py-4"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {/* 缩略图固定显示5个（当前项前后各2个） - 自身渐隐 */}
-                <div className="flex gap-2 justify-center items-center transition-all duration-500 ease-out">
-                  {[-2, -1, 0, 1, 2].map((offset) => {
+                {/* 缩略图显示7个带滑动动画（当前项前后各3个） */}
+                <div className="flex gap-2 items-center justify-center">
+                  {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
                     const actualIndex = getCircularIndex(currentIndex + offset);
                     const item = items[actualIndex];
                     const isCurrent = offset === 0; // 中间那个是当前项
-                    
+
                     // 根据距离中心的位置计算透明度和缩放
                     const absOffset = Math.abs(offset);
-                    const opacity = absOffset === 0 ? 1 : absOffset === 1 ? 0.7 : 0.4;
-                    const scale = absOffset === 0 ? 1.25 : absOffset === 1 ? 1 : 0.9;
+                    const opacity = absOffset === 0 ? 1 : 
+                                    absOffset === 1 ? 0.75 : 
+                                    absOffset === 2 ? 0.5 : 0.25;
+                    const scale = absOffset === 0 ? 1.25 : 
+                                  absOffset === 1 ? 1.05 : 
+                                  absOffset === 2 ? 0.95 : 0.85;
 
                     return (
                       <button
-                        key={offset}
+                        key={`carousel-${actualIndex}-${offset}`}
                         onClick={() => {
                           setCurrentIndex(prev => prev + offset);
                           setIsAutoPlaying(false);
@@ -280,16 +285,17 @@ export default function HomeCarousel() {
                         style={{
                           opacity,
                           transform: `scale(${scale})`,
+                          transitionProperty: 'transform, opacity, box-shadow, filter',
                         }}
                         aria-label={`切换到 ${item?.title || ''}`}
                       >
-                        <div className={`rounded-lg overflow-hidden ${
+                        <div className={`rounded-lg overflow-hidden transition-all duration-500 ${
                           isCurrent ? 'ring-2 ring-white shadow-2xl' : 'ring-1 ring-white/50'
                         }`}>
                           <img
                             src={item ? processImageUrl(item.poster) : ''}
                             alt={item?.title || ''}
-                            className="w-14 h-20 object-cover"
+                            className="w-14 h-20 object-cover transition-all duration-500"
                           />
                         </div>
                       </button>
