@@ -115,7 +115,7 @@ export default function HomeCarousel() {
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
@@ -125,7 +125,7 @@ export default function HomeCarousel() {
     } else if (isRightSwipe) {
       setCurrentIndex(prev => prev - 1); // 索引可以是负数
     }
-    
+
     setTouchStart(0);
     setTouchEnd(0);
   };
@@ -251,7 +251,7 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图区域 - 固定显示5个（环形） */}
-              <div 
+              <div
                 className="relative flex-1 overflow-hidden py-4"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -264,7 +264,7 @@ export default function HomeCarousel() {
                 <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
 
                 {/* 缩略图固定显示5个（当前项前后各2个） */}
-                <div className="flex gap-2 justify-center items-center">
+                <div className="flex gap-2 justify-center items-center transition-all duration-500 ease-out">
                   {[-2, -1, 0, 1, 2].map((offset) => {
                     const actualIndex = getCircularIndex(currentIndex + offset);
                     const item = items[actualIndex];
@@ -277,7 +277,7 @@ export default function HomeCarousel() {
                           setCurrentIndex(prev => prev + offset);
                           setIsAutoPlaying(false);
                         }}
-                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${
+                        className={`flex-shrink-0 transition-all duration-500 ease-out rounded-lg overflow-hidden ${
                           isCurrent
                             ? 'ring-2 ring-white shadow-2xl scale-125'
                             : 'ring-1 ring-white/50 opacity-60 scale-100'
@@ -287,7 +287,7 @@ export default function HomeCarousel() {
                         <img
                           src={item ? processImageUrl(item.poster) : ''}
                           alt={item?.title || ''}
-                          className="w-14 h-20 object-cover"
+                          className="w-14 h-20 object-cover rounded-lg"
                         />
                       </button>
                     );
