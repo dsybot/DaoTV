@@ -2166,7 +2166,8 @@ function PlayPageClient() {
         }
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
-        if (shortdramaId) {
+        // 但只有在没有指定其他源时才添加，避免电影等内容错误加载短剧源
+        if (shortdramaId && !currentSource && !currentId) {
           try {
             const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
             if (shortdramaSource.length > 0) {
