@@ -4303,7 +4303,7 @@ function PlayPageClient() {
 
               {/* 实时测速进度 */}
               {loadingStage === 'preferring' && speedTestProgress.total > 0 && (
-                <div className='mt-6 w-full max-w-xl mx-auto space-y-4'>
+                <div className='mt-6 w-full max-w-xl mx-auto space-y-4 pb-20'>
                   {/* 当前测速源和进度 */}
                   <div className='bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 shadow-lg'>
                     <div className='flex items-center justify-between mb-2'>
