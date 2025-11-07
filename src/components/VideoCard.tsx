@@ -130,7 +130,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     : type;
 
   // 判断是否为即将上映（未发布的内容）
-  const isUpcoming = remarks && remarks.includes('天后上映');
+  const isUpcoming = source === 'upcoming_release' || (remarks && (remarks.includes('天后上映') || remarks.includes('日上映')));
 
   // 获取收藏状态（搜索结果页面不检查，但即将上映需要检查）
   useEffect(() => {
@@ -460,7 +460,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         id: 'upcoming-notice',
         label: '该影片尚未上映，敬请期待',
         icon: <span className="text-lg">📅</span>,
-        onClick: () => {}, // 不执行任何操作
+        onClick: () => { }, // 不执行任何操作
         disabled: true,
         color: 'default' as const,
       });
@@ -788,13 +788,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           )}
 
           {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
-          {remarks && remarks.includes('天后上映') && type && (
+          {isUpcoming && type && (
             <div
-              className={`absolute top-2 left-2 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${
-                type === 'movie'
-                  ? 'bg-gradient-to-br from-red-500 via-rose-500 to-pink-600'
-                  : 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600'
-              }`}
+              className={`absolute top-2 left-2 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${type === 'movie'
+                ? 'bg-gradient-to-br from-red-500 via-rose-500 to-pink-600'
+                : 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600'
+                }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -817,7 +816,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && (
             <div
               className={`absolute left-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${
-                remarks && remarks.includes('天后上映') && type ? 'top-[48px]' : 'top-2'
+                isUpcoming && type ? 'top-[48px]' : 'top-2'
               }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -841,19 +840,18 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
-              className={`absolute left-2 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 ${
-                (() => {
-                  let offset = 2; // 默认 top-2
-                  // 如果有即将上映的类型徽章
-                  if (remarks && remarks.includes('天后上映') && type) {
-                    offset += 46; // top-[48px]
-                  }
-                  // 如果有集数徽章
-                  if (actualEpisodes && actualEpisodes > 1) {
-                    offset += 46; // 再加 46px
-                  }
-                  return `top-[${offset}px]`;
-                })()
+              className={`absolute left-2 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
+                let offset = 2; // 默认 top-2
+                // 如果有即将上映的类型徽章
+                if (isUpcoming && type) {
+                  offset += 46; // top-[48px]
+                }
+                // 如果有集数徽章
+                if (actualEpisodes && actualEpisodes > 1 && !isUpcoming) {
+                  offset += 46; // 再加 46px
+                }
+                return `top-[${offset}px]`;
+              })()
               }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -894,7 +892,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           )}
 
           {/* 即将上映徽章 - 美化版，放在底部左侧 */}
-          {remarks && remarks.includes('天后上映') && (
+          {isUpcoming && remarks && (
             <div
               className="absolute bottom-2 left-2 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105"
               style={{

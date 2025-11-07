@@ -664,32 +664,32 @@ function HomeClient() {
                 </div>
                 <ScrollableRow>
                   {upcomingReleases.map((release, index) => {
-                    // 计算距离上映还有几天
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
+                    // 格式化上映日期
                     const releaseDate = new Date(release.releaseDate);
-                    const daysUntilRelease = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    const month = releaseDate.getMonth() + 1;
+                    const day = releaseDate.getDate();
+                    const formattedDate = `${month}月${day}日上映`;
 
-                      return (
-                        <div
-                          key={`${release.id}-${index}`}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
-                          <VideoCard
-                            source='upcoming_release'
-                            id={release.id}
-                            source_name='即将上映'
-                            from='douban'
-                            title={release.title}
-                            poster={release.cover || '/placeholder-poster.jpg'}
-                            year={release.releaseDate.split('-')[0]}
-                            type={release.type}
-                            remarks={`${daysUntilRelease}天后上映`}
-                            query={release.title}
-                            episodes={release.type === 'tv' ? 99 : 1}
-                          />
-                        </div>
-                      );
+                    return (
+                      <div
+                        key={`${release.id}-${index}`}
+                        className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                      >
+                        <VideoCard
+                          source='upcoming_release'
+                          id={release.id}
+                          source_name='即将上映'
+                          from='douban'
+                          title={release.title}
+                          poster={release.cover || '/placeholder-poster.jpg'}
+                          year={release.releaseDate.split('-')[0]}
+                          type={release.type}
+                          remarks={formattedDate}
+                          query={release.title}
+                          episodes={release.type === 'tv' ? 99 : 1}
+                        />
+                      </div>
+                    );
                   })}
                 </ScrollableRow>
               </section>
