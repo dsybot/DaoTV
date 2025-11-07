@@ -24,7 +24,8 @@ export function useImagePreload(imageUrls: string[], enabled: boolean = true) {
       link.rel = 'preload';
       link.as = 'image';
       link.href = url;
-      link.fetchPriority = 'low';
+      // Set fetch priority to low (not blocking visible content)
+      (link as any).fetchPriority = 'low';
 
       document.head.appendChild(link);
       preloadLinks.push(link);
