@@ -36,6 +36,7 @@ export default function HomeCarousel() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const resumeAutoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 获取轮播数据
   useEffect(() => {
@@ -74,6 +75,21 @@ export default function HomeCarousel() {
     };
 
     fetchCarousel();
+  }, []);
+
+  // 暂停自动播放并在5秒后恢复
+  const pauseAutoPlayTemporarily = useCallback(() => {
+    setIsAutoPlaying(false);
+    
+    // 清除之前的定时器
+    if (resumeAutoPlayTimerRef.current) {
+      clearTimeout(resumeAutoPlayTimerRef.current);
+    }
+    
+    // 5秒后恢复自动播放
+    resumeAutoPlayTimerRef.current = setTimeout(() => {
+      setIsAutoPlaying(true);
+    }, 5000);
   }, []);
 
   // 切换到下一个
@@ -252,10 +268,10 @@ export default function HomeCarousel() {
               <div 
                 ref={thumbnailContainerRef}
                 className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide"
-                onTouchStart={() => setIsAutoPlaying(false)}
-                onMouseDown={() => setIsAutoPlaying(false)}
+                onTouchStart={pauseAutoPlayTemporarily}
+                onMouseDown={pauseAutoPlayTemporarily}
               >
-                <div className="flex gap-2 px-1 pr-16 py-2">
+                <div className="flex gap-2 px-1 pr-[68px] py-2">
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
 
@@ -265,7 +281,7 @@ export default function HomeCarousel() {
                         ref={(el) => { thumbnailRefs.current[index] = el; }}
                         onClick={() => {
                           setCurrentIndex(index);
-                          setIsAutoPlaying(false);
+                          pauseAutoPlayTemporarily();
                         }}
                         className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
                           ? 'ring-2 ring-white shadow-2xl scale-105'
