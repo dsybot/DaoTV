@@ -7,6 +7,7 @@
  */
 
 import { getCarouselItemByTitle, CarouselItem } from './tmdb.client';
+import { fetchDoubanDetailsForCarousel } from './douban-details-fetcher';
 
 /**
  * 生成轮播图数据（核心逻辑）
@@ -184,41 +185,22 @@ export async function generateCarouselData(): Promise<any[]> {
 
   console.log(`[轮播生成器] 第6步: 开始获取豆瓣详情（genres和首播）...共${allItems.length}项`);
 
-  // 批量获取豆瓣详情（通过内部API）- 添加超时和详细日志
+  // 批量获取豆瓣详情（直接调用豆瓣网页）
   const detailsPromises = allItems.map(async (item, index) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_BASE || process.env.SITE_BASE || 'http://localhost:3000';
-      const url = `${baseUrl}/api/douban/details?id=${item.doubanData.id}`;
-      
       console.log(`[轮播生成器] [${index + 1}/${allItems.length}] 获取详情: ${item.title} (ID: ${item.doubanData.id})`);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+      const details = await fetchDoubanDetailsForCarousel(item.doubanData.id.toString());
       
-      const response = await fetch(url, {
-        cache: 'no-store',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        }
-      });
-      
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const details = await response.json();
-        if (details.code === 200 && details.data) {
-          console.log(`[轮播生成器] ✅ ${item.title} 详情获取成功: genres=${details.data.genres?.length || 0}, first_aired=${details.data.first_aired || 'N/A'}`);
-          return {
-            id: item.doubanData.id,
-            genres: details.data.genres || [],
-            first_aired: details.data.first_aired || '',
-          };
-        } else {
-          console.warn(`[轮播生成器] ⚠️ ${item.title} API返回失败: code=${details.code}`);
-        }
+      if (details) {
+        console.log(`[轮播生成器] ✅ ${item.title} 详情获取成功: genres=${details.genres?.length || 0}, first_aired=${details.first_aired || 'N/A'}`);
+        return {
+          id: item.doubanData.id,
+          genres: details.genres || [],
+          first_aired: details.first_aired || '',
+        };
       } else {
-        console.warn(`[轮播生成器] ⚠️ ${item.title} HTTP错误: ${response.status}`);
+        console.warn(`[轮播生成器] ⚠️ ${item.title} 详情获取返回null`);
       }
     } catch (error) {
       console.warn(`[轮播生成器] ❌ ${item.title} 异常:`, error instanceof Error ? error.message : error);
