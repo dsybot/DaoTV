@@ -4699,7 +4699,7 @@ function PlayPageClient() {
                 currentSource={currentSource}
                 currentId={currentId}
                 videoTitle={searchTitle || videoTitle}
-                availableSources={availableSources}
+                availableSources={availableSources.filter(source => source.episodes && source.episodes.length >= 1)}
                 sourceSearchLoading={sourceSearchLoading}
                 sourceSearchError={sourceSearchError}
                 precomputedVideoInfo={precomputedVideoInfo}
@@ -4774,7 +4774,7 @@ function PlayPageClient() {
 
               {/* 关键信息行 */}
               <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
-                {detail?.class && detail.class !== 0 && detail.class !== '0' && (
+                {detail?.class && String(detail.class) !== '0' && (
                   <span className='text-green-600 font-semibold'>
                     {detail.class}
                   </span>
