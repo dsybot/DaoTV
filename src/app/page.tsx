@@ -370,47 +370,73 @@ function HomeClient() {
 
           console.log('📅 去重后的即将上映数据:', uniqueUpcoming.length, '条');
 
-          // 智能分配：按时间段分类后按比例选取
+          // 智能分配：按更细的时间段分类，确保时间分散
           const todayStr = today.toISOString().split('T')[0];
+          const sevenDaysLaterStr = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           const thirtyDaysLaterStr = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+          // 更细致的时间段划分
           const recentlyReleased = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate < todayStr); // 已上映
-          const soonReleasing = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate >= todayStr && i.releaseDate <= thirtyDaysLaterStr); // 未来30天
+          const releasingToday = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate === todayStr); // 今日上映
+          const nextSevenDays = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate > todayStr && i.releaseDate <= sevenDaysLaterStr); // 未来7天
+          const nextThirtyDays = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate > sevenDaysLaterStr && i.releaseDate <= thirtyDaysLaterStr); // 8-30天
           const laterReleasing = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate > thirtyDaysLaterStr); // 30天后
 
-          // 智能分配：总共10个，优先填充各时间段
+          // 智能分配：总共10个，按时间段分散选取
           const maxTotal = 10;
           let selectedItems: ReleaseCalendarItem[] = [];
 
-          // 优先分配基础配额
+          // 配额分配策略：2已上映 + 2今日 + 3近期(7天) + 2中期(30天) + 1远期
           const recentQuota = Math.min(2, recentlyReleased.length);
-          const laterQuota = Math.min(2, laterReleasing.length);
-          const soonQuota = Math.min(6, soonReleasing.length);
+          const todayQuota = Math.min(2, releasingToday.length);
+          const sevenDayQuota = Math.min(3, nextSevenDays.length);
+          const thirtyDayQuota = Math.min(2, nextThirtyDays.length);
+          const laterQuota = Math.min(1, laterReleasing.length);
 
           selectedItems = [
             ...recentlyReleased.slice(0, recentQuota),
-            ...soonReleasing.slice(0, soonQuota),
+            ...releasingToday.slice(0, todayQuota),
+            ...nextSevenDays.slice(0, sevenDayQuota),
+            ...nextThirtyDays.slice(0, thirtyDayQuota),
             ...laterReleasing.slice(0, laterQuota),
           ];
 
-          // 如果没填满10个，从剩余数据中补充
+          // 如果没填满10个，按优先级补充
           if (selectedItems.length < maxTotal) {
             const remaining = maxTotal - selectedItems.length;
-            const additionalSoon = soonReleasing.slice(soonQuota, soonQuota + remaining);
-            selectedItems = [...selectedItems, ...additionalSoon];
-          }
 
-          // 如果还是不够，从稍后上映补充
-          if (selectedItems.length < maxTotal) {
-            const remaining = maxTotal - selectedItems.length;
-            const additionalLater = laterReleasing.slice(laterQuota, laterQuota + remaining);
-            selectedItems = [...selectedItems, ...additionalLater];
+            // 优先从近期7天补充
+            const additionalSeven = nextSevenDays.slice(sevenDayQuota, sevenDayQuota + remaining);
+            selectedItems = [...selectedItems, ...additionalSeven];
+
+            // 还不够就从今日上映补充
+            if (selectedItems.length < maxTotal) {
+              const stillRemaining = maxTotal - selectedItems.length;
+              const additionalToday = releasingToday.slice(todayQuota, todayQuota + stillRemaining);
+              selectedItems = [...selectedItems, ...additionalToday];
+            }
+
+            // 还不够就从30天内补充
+            if (selectedItems.length < maxTotal) {
+              const stillRemaining = maxTotal - selectedItems.length;
+              const additionalThirty = nextThirtyDays.slice(thirtyDayQuota, thirtyDayQuota + stillRemaining);
+              selectedItems = [...selectedItems, ...additionalThirty];
+            }
+
+            // 最后从远期补充
+            if (selectedItems.length < maxTotal) {
+              const stillRemaining = maxTotal - selectedItems.length;
+              const additionalLater = laterReleasing.slice(laterQuota, laterQuota + stillRemaining);
+              selectedItems = [...selectedItems, ...additionalLater];
+            }
           }
 
           console.log('📅 分配结果:', {
             已上映: recentlyReleased.length,
-            即将上映: soonReleasing.length,
-            稍后上映: laterReleasing.length,
+            今日上映: releasingToday.length,
+            '7天内': nextSevenDays.length,
+            '8-30天': nextThirtyDays.length,
+            '30天后': laterReleasing.length,
             最终显示: selectedItems.length
           });
 
