@@ -211,51 +211,41 @@ export default function HomeCarousel() {
 
       {/* 底部导航区域 - 移动端和桌面端不同布局 */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
-        {/* 移动端：左右布局 - 缩略图 + 播放按钮 */}
-        <div className="md:hidden flex items-end justify-between px-4 pb-4 gap-3">
+        {/* 移动端：所有缩略图 + 播放按钮 */}
+        <div className="md:hidden flex items-end gap-3 px-4 pb-4">
           {items.length > 1 && (
             <>
-              {/* 左侧：精选5个缩略图（2电视剧+2电影+1综艺） */}
-              <div className="flex-1">
-                <div className="flex gap-2">
-                  {(() => {
-                    // 筛选：2个电视剧 + 2个电影 + 1个综艺
-                    const tvShows = items.filter(item => item.source === 'tv').slice(0, 2);
-                    const movies = items.filter(item => item.source === 'movie').slice(0, 2);
-                    const variety = items.filter(item => item.source === 'variety').slice(0, 1);
-                    const selected = [...tvShows, ...movies, ...variety].slice(0, 5);
-
-                    return selected.map((item) => {
-                      const isActive = item.id === currentItem?.id;
-
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            const fullIndex = items.findIndex(i => i.id === item.id);
-                            if (fullIndex >= 0) {
-                              setCurrentIndex(fullIndex);
-                              setIsAutoPlaying(false);
-                            }
-                          }}
-                          className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
+              {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
+              <div className="flex-1 overflow-x-auto scrollbar-hide -mr-1">
+                <div className="flex gap-2 pr-16">
+                  {items.map((item, index) => {
+                    const isActive = index === currentIndex;
+                    
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setCurrentIndex(index);
+                          setIsAutoPlaying(false);
+                        }}
+                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${
+                          isActive
                             ? 'ring-2 ring-white shadow-2xl scale-105'
                             : 'ring-1 ring-white/50'
-                            }`}
-                        >
-                          <img
-                            src={processImageUrl(item.poster)}
-                            alt={item.title}
-                            className="w-14 h-20 object-cover"
-                          />
-                        </button>
-                      );
-                    });
-                  })()}
+                        }`}
+                      >
+                        <img
+                          src={processImageUrl(item.poster)}
+                          alt={item.title}
+                          className="w-14 h-20 object-cover"
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* 右侧：圆形播放按钮 */}
+              {/* 右侧：圆形播放按钮 - 固定在右下角 */}
               <div className="flex-shrink-0">
                 <button
                   onClick={() => handlePlay(currentItem)}
