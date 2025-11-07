@@ -95,39 +95,6 @@ export default function HomeCarousel() {
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext]);
 
-  // 环形索引辅助函数：获取实际索引
-  const getCircularIndex = useCallback((index: number) => {
-    if (items.length === 0) return 0;
-    return ((index % items.length) + items.length) % items.length;
-  }, [items.length]);
-
-  // 触摸手势处理
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-    setIsAutoPlaying(false);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-
-    if (isLeftSwipe) {
-      setCurrentIndex(prev => prev + 1); // 索引可以无限增长
-    } else if (isRightSwipe) {
-      setCurrentIndex(prev => prev - 1); // 索引可以是负数
-    }
-
-    setTouchStart(0);
-    setTouchEnd(0);
-  };
-
   // 处理播放点击
   const handlePlay = useCallback((item: CarouselItem) => {
     const doubanIdParam = item.id ? `&douban_id=${item.id}` : '';
@@ -257,10 +224,10 @@ export default function HomeCarousel() {
                     const movies = items.filter(item => item.source === 'movie').slice(0, 2);
                     const variety = items.filter(item => item.source === 'variety').slice(0, 1);
                     const selected = [...tvShows, ...movies, ...variety].slice(0, 5);
-                    
+
                     return selected.map((item) => {
                       const isActive = item.id === currentItem?.id;
-                      
+
                       return (
                         <button
                           key={item.id}
@@ -271,11 +238,10 @@ export default function HomeCarousel() {
                               setIsAutoPlaying(false);
                             }
                           }}
-                          className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${
-                            isActive
-                              ? 'ring-2 ring-white shadow-2xl scale-105'
-                              : 'ring-1 ring-white/50'
-                          }`}
+                          className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
+                            ? 'ring-2 ring-white shadow-2xl scale-105'
+                            : 'ring-1 ring-white/50'
+                            }`}
                         >
                           <img
                             src={processImageUrl(item.poster)}
