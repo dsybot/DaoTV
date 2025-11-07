@@ -329,21 +329,24 @@ function HomeClient() {
           const releases = upcomingReleasesData.value.items;
           console.log('📅 获取到的即将上映数据:', releases.length, '条');
 
-          // 过滤出未来上映的作品（未来90天内）
+          // 过滤出即将上映和刚上映的作品（过去7天到未来90天）
           const today = new Date();
           today.setHours(0, 0, 0, 0);
+          const sevenDaysAgo = new Date(today);
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
           const ninetyDaysLater = new Date(today);
           ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
 
+          console.log('📅 7天前日期:', sevenDaysAgo.toISOString().split('T')[0]);
           console.log('📅 今天日期:', today.toISOString().split('T')[0]);
           console.log('📅 90天后日期:', ninetyDaysLater.toISOString().split('T')[0]);
 
           const upcoming = releases.filter((item: ReleaseCalendarItem) => {
             // 修复时区问题：使用字符串比较而不是Date对象比较
             const releaseDateStr = item.releaseDate; // 格式: "2025-11-07"
-            const todayStr = today.toISOString().split('T')[0];
+            const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
             const ninetyDaysStr = ninetyDaysLater.toISOString().split('T')[0];
-            const isUpcoming = releaseDateStr >= todayStr && releaseDateStr <= ninetyDaysStr;
+            const isUpcoming = releaseDateStr >= sevenDaysAgoStr && releaseDateStr <= ninetyDaysStr;
             return isUpcoming;
           });
 
@@ -366,7 +369,30 @@ function HomeClient() {
           }, []);
 
           console.log('📅 去重后的即将上映数据:', uniqueUpcoming.length, '条');
-          setUpcomingReleases(uniqueUpcoming.slice(0, 10)); // 最多显示10个
+
+          // 智能分配：按时间段分类后按比例选取
+          const todayStr = today.toISOString().split('T')[0];
+          const thirtyDaysLaterStr = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+          const recentlyReleased = uniqueUpcoming.filter(i => i.releaseDate < todayStr); // 已上映
+          const soonReleasing = uniqueUpcoming.filter(i => i.releaseDate >= todayStr && i.releaseDate <= thirtyDaysLaterStr); // 未来30天
+          const laterReleasing = uniqueUpcoming.filter(i => i.releaseDate > thirtyDaysLaterStr); // 30天后
+
+          // 按比例分配：已上映2个 + 即将上映6个 + 稍后上映2个
+          const selectedItems = [
+            ...recentlyReleased.slice(0, 2),
+            ...soonReleasing.slice(0, 6),
+            ...laterReleasing.slice(0, 2),
+          ];
+
+          console.log('📅 分配结果:', {
+            已上映: recentlyReleased.length,
+            即将上映: soonReleasing.length,
+            稍后上映: laterReleasing.length,
+            最终显示: selectedItems.length
+          });
+
+          setUpcomingReleases(selectedItems);
         } else {
           console.warn('获取即将上映数据失败:', upcomingReleasesData.status === 'rejected' ? upcomingReleasesData.reason : '数据格式错误');
           setUpcomingReleases([]);
