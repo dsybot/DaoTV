@@ -232,25 +232,6 @@ export default function HomeCarousel() {
         </div>
       </div>
 
-      {/* 左右切换按钮 - 桌面端显示 */}
-      {items.length > 1 && (
-        <>
-          <button
-            onClick={goToPrev}
-            className="hidden md:block absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
-            aria-label="上一个"
-          >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-          <button
-            onClick={goToNext}
-            className="hidden md:block absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
-            aria-label="下一个"
-          >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </>
-      )}
     </div>
   );
 }
