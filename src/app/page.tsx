@@ -277,7 +277,7 @@ function HomeClient() {
             getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
             getRecommendedShortDramas(undefined, 8),
             GetBangumiCalendarData(),
-            fetch('/api/release-calendar?limit=20').then(res => {
+            fetch('/api/release-calendar?limit=100').then(res => {
               if (!res.ok) {
                 console.error('获取即将上映数据失败，状态码:', res.status);
                 return { items: [] };
