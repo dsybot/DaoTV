@@ -339,8 +339,11 @@ function HomeClient() {
           console.log('📅 90天后日期:', ninetyDaysLater.toISOString().split('T')[0]);
 
           const upcoming = releases.filter((item: ReleaseCalendarItem) => {
-            const releaseDate = new Date(item.releaseDate);
-            const isUpcoming = releaseDate >= today && releaseDate <= ninetyDaysLater;
+            // 修复时区问题：使用字符串比较而不是Date对象比较
+            const releaseDateStr = item.releaseDate; // 格式: "2025-11-07"
+            const todayStr = today.toISOString().split('T')[0];
+            const ninetyDaysStr = ninetyDaysLater.toISOString().split('T')[0];
+            const isUpcoming = releaseDateStr >= todayStr && releaseDateStr <= ninetyDaysStr;
             return isUpcoming;
           });
 
