@@ -202,17 +202,12 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
             {/* 缩略图滚动容器 */}
             <div className="flex gap-2 sm:gap-3 overflow-x-auto md:overflow-visible scrollbar-hide snap-x snap-mandatory md:pr-0 pr-20">
               {items.map((item, index) => {
-                // 根据TMDB的标题在豆瓣数据中查找匹配的封面
+                // 根据豆瓣ID精准匹配封面（item.id就是豆瓣ID）
                 let doubanPoster = item.poster; // 默认使用TMDB的poster
                 
                 if (doubanMovies && doubanMovies.length > 0) {
-                  // 尝试通过标题精确匹配或模糊匹配
-                  const matchedDouban = doubanMovies.find(d => 
-                    d.title === item.title || 
-                    d.title.replace(/\s+/g, '') === item.title.replace(/\s+/g, '') ||
-                    d.title.includes(item.title) || 
-                    item.title.includes(d.title)
-                  );
+                  // 通过豆瓣ID精准匹配
+                  const matchedDouban = doubanMovies.find(d => d.id === item.id.toString());
                   if (matchedDouban) {
                     doubanPoster = matchedDouban.poster;
                   }
@@ -225,11 +220,10 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
                       setCurrentIndex(index);
                       setIsAutoPlaying(false);
                     }}
-                    className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden ${
-                      index === currentIndex
-                        ? 'ring-2 ring-white shadow-2xl scale-105'
-                        : 'ring-1 ring-white/50'
-                    }`}
+                    className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden ${index === currentIndex
+                      ? 'ring-2 ring-white shadow-2xl scale-105'
+                      : 'ring-1 ring-white/50'
+                      }`}
                     aria-label={`切换到 ${item.title}`}
                   >
                     <img
