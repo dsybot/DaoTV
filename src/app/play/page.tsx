@@ -3932,6 +3932,129 @@ function PlayPageClient() {
             }
           });
 
+        // ============================================================================
+        // 视频播放器悬浮广告屏蔽系统
+        // ============================================================================
+
+        // 添加CSS来隐藏常见的悬浮广告元素
+        const adBlockerStyles = document.createElement('style');
+        adBlockerStyles.id = 'video-ad-blocker-styles';
+        adBlockerStyles.textContent = `
+          /* 屏蔽播放器内的悬浮广告 */
+          .art-video-player .ad-overlay,
+          .art-video-player .video-ad,
+          .art-video-player .player-ad,
+          .art-video-player [class*="ad-banner"],
+          .art-video-player [class*="ad-overlay"],
+          .art-video-player [class*="advertisement"],
+          .art-video-player [id*="ad-banner"],
+          .art-video-player [id*="ad-overlay"],
+          .art-video-player iframe[src*="doubleclick"],
+          .art-video-player iframe[src*="googlesyndication"],
+          .art-video-player iframe[src*="/ad/"],
+          .art-video-player iframe[src*="/ads/"],
+          .art-video-player div[style*="z-index: 999"],
+          .art-video-player div[style*="z-index: 9999"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
+
+          /* 屏蔽暂停时的广告 */
+          .art-video-player .pause-ad,
+          .art-video-player .pause-overlay,
+          .art-video-player [class*="pause-ad"] {
+            display: none !important;
+          }
+        `;
+
+        // 添加样式到页面
+        if (!document.getElementById('video-ad-blocker-styles')) {
+          document.head.appendChild(adBlockerStyles);
+          console.log('✅ 播放器广告屏蔽CSS已加载');
+        }
+
+        // 监控并移除动态插入的广告元素
+        const removeOverlayAds = () => {
+          if (!artRef.current) return;
+
+          const adSelectors = [
+            '[class*="ad-overlay"]',
+            '[class*="ad-banner"]',
+            '[class*="advertisement"]',
+            '[id*="ad-banner"]',
+            '[id*="ad-overlay"]',
+            'iframe[src*="doubleclick"]',
+            'iframe[src*="googlesyndication"]',
+            'iframe[src*="/ad/"]',
+            'iframe[src*="/ads/"]',
+            '.pause-ad',
+            '.video-ad',
+            '.player-ad'
+          ];
+
+          let removedCount = 0;
+          adSelectors.forEach(selector => {
+            const elements = artRef.current?.querySelectorAll(selector);
+            elements?.forEach(el => {
+              if (el && el.parentNode) {
+                el.remove();
+                removedCount++;
+              }
+            });
+          });
+
+          if (removedCount > 0) {
+            console.log(`✅ 移除了 ${removedCount} 个悬浮广告元素`);
+          }
+        };
+
+        // 初始检查
+        setTimeout(removeOverlayAds, 1000);
+
+        // 定期检查（每5秒）
+        const adBlockerInterval = setInterval(removeOverlayAds, 5000);
+
+        // 使用MutationObserver监听DOM变化
+        if (artRef.current) {
+          const observer = new MutationObserver((mutations) => {
+            let hasAdLikeElements = false;
+
+            mutations.forEach((mutation) => {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) { // Element node
+                  const element = node as Element;
+                  const className = element.className?.toString().toLowerCase() || '';
+                  const id = element.id?.toLowerCase() || '';
+
+                  // 检测是否是广告相关元素
+                  if (className.includes('ad') || id.includes('ad') ||
+                      element.tagName === 'IFRAME') {
+                    hasAdLikeElements = true;
+                  }
+                }
+              });
+            });
+
+            if (hasAdLikeElements) {
+              removeOverlayAds();
+            }
+          });
+
+          observer.observe(artRef.current, {
+            childList: true,
+            subtree: true
+          });
+
+          // 清理函数
+          artPlayerRef.current.on('destroy', () => {
+            observer.disconnect();
+            clearInterval(adBlockerInterval);
+            console.log('广告屏蔽监听已停止');
+          });
+        }
+
           // 监听播放进度跳转，优化弹幕重置（减少闪烁）
           artPlayerRef.current.on('seek', () => {
             if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
