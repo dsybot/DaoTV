@@ -7,7 +7,6 @@
  */
 
 import { getCarouselItemByTitle, CarouselItem } from './tmdb.client';
-import { getDoubanDetailsServer } from './douban.server';
 
 /**
  * 生成轮播图数据（核心逻辑）
@@ -185,16 +184,26 @@ export async function generateCarouselData(): Promise<any[]> {
 
   console.log(`[轮播生成器] 第6步: 开始获取豆瓣详情（genres和首播）...`);
 
-  // 批量获取豆瓣详情
+  // 批量获取豆瓣详情（通过内部API）
   const detailsPromises = allItems.map(async (item) => {
     try {
-      const details = await getDoubanDetailsServer(item.doubanData.id.toString());
-      if (details.code === 200 && details.data) {
-        return {
-          id: item.doubanData.id,
-          genres: details.data.genres || [],
-          first_aired: details.data.first_aired || '',
-        };
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_BASE || process.env.SITE_BASE || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/douban/details?id=${item.doubanData.id}`, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        }
+      });
+      
+      if (response.ok) {
+        const details = await response.json();
+        if (details.code === 200 && details.data) {
+          return {
+            id: item.doubanData.id,
+            genres: details.data.genres || [],
+            first_aired: details.data.first_aired || '',
+          };
+        }
       }
     } catch (error) {
       console.warn(`[轮播生成器] 获取豆瓣详情失败: ${item.title}`, error);
