@@ -182,37 +182,53 @@ export async function generateCarouselData(): Promise<any[]> {
     ...finalVarietyItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
   ];
 
-  console.log(`[轮播生成器] 第6步: 开始获取豆瓣详情（genres和首播）...`);
+  console.log(`[轮播生成器] 第6步: 开始获取豆瓣详情（genres和首播）...共${allItems.length}项`);
 
-  // 批量获取豆瓣详情（通过内部API）
-  const detailsPromises = allItems.map(async (item) => {
+  // 批量获取豆瓣详情（通过内部API）- 添加超时和详细日志
+  const detailsPromises = allItems.map(async (item, index) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_SITE_BASE || process.env.SITE_BASE || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/douban/details?id=${item.doubanData.id}`, {
+      const url = `${baseUrl}/api/douban/details?id=${item.doubanData.id}`;
+      
+      console.log(`[轮播生成器] [${index + 1}/${allItems.length}] 获取详情: ${item.title} (ID: ${item.doubanData.id})`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+      
+      const response = await fetch(url, {
         cache: 'no-store',
+        signal: controller.signal,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         }
       });
       
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const details = await response.json();
         if (details.code === 200 && details.data) {
+          console.log(`[轮播生成器] ✅ ${item.title} 详情获取成功: genres=${details.data.genres?.length || 0}, first_aired=${details.data.first_aired || 'N/A'}`);
           return {
             id: item.doubanData.id,
             genres: details.data.genres || [],
             first_aired: details.data.first_aired || '',
           };
+        } else {
+          console.warn(`[轮播生成器] ⚠️ ${item.title} API返回失败: code=${details.code}`);
         }
+      } else {
+        console.warn(`[轮播生成器] ⚠️ ${item.title} HTTP错误: ${response.status}`);
       }
     } catch (error) {
-      console.warn(`[轮播生成器] 获取豆瓣详情失败: ${item.title}`, error);
+      console.warn(`[轮播生成器] ❌ ${item.title} 异常:`, error instanceof Error ? error.message : error);
     }
     return null;
   });
 
   const detailsResults = await Promise.all(detailsPromises);
-  console.log(`[轮播生成器] 豆瓣详情获取完成: ${detailsResults.filter(d => d).length}/${allItems.length}`);
+  const successCount = detailsResults.filter(d => d).length;
+  console.log(`[轮播生成器] 豆瓣详情获取完成: ${successCount}/${allItems.length} 成功`);
 
   // 合并并优先使用豆瓣数据
   let carouselList = allItems.map(x => {

@@ -6,7 +6,6 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { processImageUrl } from '@/lib/utils';
-import { getDoubanDetails } from '@/lib/douban.client';
 
 interface CarouselItem {
   id: number;
@@ -47,34 +46,19 @@ export default function HomeCarousel() {
         if (data.code === 200 && data.list.length > 0) {
           // 在客户端进行随机打乱，确保每次访问都有不同的排列
           const shuffledList = [...data.list].sort(() => Math.random() - 0.5);
+          
+          // 打印数据检查（调试用）
+          console.log('[轮播图] 收到数据:', shuffledList.length, '项');
+          console.log('[轮播图] 前3项示例:', shuffledList.slice(0, 3).map(item => ({
+            title: item.title,
+            hasGenres: !!item.genres && item.genres.length > 0,
+            hasFirstAired: !!item.first_aired,
+            genres: item.genres,
+            first_aired: item.first_aired
+          })));
+          
           setItems(shuffledList);
           setError(null);
-          
-          // 异步获取豆瓣详情（genres和first_aired）
-          Promise.all(
-            shuffledList.slice(0, 5).map(async (item) => {
-              try {
-                const details = await getDoubanDetails(item.id.toString());
-                if (details.code === 200 && details.data) {
-                  return {
-                    id: item.id,
-                    genres: details.data.genres || [],
-                    first_aired: details.data.first_aired || '',
-                  };
-                }
-              } catch (error) {
-                console.warn(`获取豆瓣详情失败: ${item.title}`, error);
-              }
-              return null;
-            })
-          ).then((detailsResults) => {
-            setItems(prev =>
-              prev.map(item => {
-                const detail = detailsResults.find(d => d?.id === item.id);
-                return detail ? { ...item, ...detail } : item;
-              })
-            );
-          });
         } else if (data.code === 503) {
           setError('TMDB功能未启用');
         } else {
@@ -207,7 +191,7 @@ export default function HomeCarousel() {
                 {currentItem.source === 'movie' ? '电影' : currentItem.source === 'variety' ? '综艺' : '电视剧'}
               </span>
             </div>
-            
+
             {/* 第二行：分类标签 */}
             {currentItem.genres && currentItem.genres.length > 0 && (
               <div className="text-sm sm:text-base text-gray-300">
