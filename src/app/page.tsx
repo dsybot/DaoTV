@@ -329,15 +329,18 @@ function HomeClient() {
           const releases = upcomingReleasesData.value.items;
           console.log('📅 获取到的即将上映数据:', releases.length, '条');
 
-          // 过滤出未来上映的作品（未来30天内）
+          // 过滤出未来上映的作品（未来90天内）
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          const thirtyDaysLater = new Date(today);
-          thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+          const ninetyDaysLater = new Date(today);
+          ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
+
+          console.log('📅 今天日期:', today.toISOString().split('T')[0]);
+          console.log('📅 90天后日期:', ninetyDaysLater.toISOString().split('T')[0]);
 
           const upcoming = releases.filter((item: ReleaseCalendarItem) => {
             const releaseDate = new Date(item.releaseDate);
-            const isUpcoming = releaseDate >= today && releaseDate <= thirtyDaysLater;
+            const isUpcoming = releaseDate >= today && releaseDate <= ninetyDaysLater;
             return isUpcoming;
           });
 
