@@ -100,16 +100,16 @@ export default function HomeCarousel() {
   // 移动端：自动滚动当前缩略图到中央
   useEffect(() => {
     if (!thumbnailContainerRef.current || items.length === 0) return;
-    
+
     const container = thumbnailContainerRef.current;
     const thumbnail = thumbnailRefs.current[currentIndex];
-    
+
     if (!thumbnail) return; // null检查
-    
+
     // 如果是第一个或最后一个，不强制居中
     const isFirst = currentIndex === 0;
     const isLast = currentIndex === items.length - 1;
-    
+
     if (isFirst || isLast) {
       // 边界项：滚动到边界即可
       if (isFirst) {
@@ -122,7 +122,7 @@ export default function HomeCarousel() {
       const thumbnailLeft = thumbnail.offsetLeft;
       const thumbnailWidth = thumbnail.offsetWidth;
       const containerWidth = container.clientWidth;
-      
+
       const targetScroll = thumbnailLeft + thumbnailWidth / 2 - containerWidth / 2;
       container.scrollTo({ left: targetScroll, behavior: 'smooth' });
     }
@@ -260,7 +260,7 @@ export default function HomeCarousel() {
                     return (
                       <button
                         key={item.id}
-                        ref={(el) => (thumbnailRefs.current[index] = el)}
+                        ref={(el) => { thumbnailRefs.current[index] = el; }}
                         onClick={() => {
                           setCurrentIndex(index);
                           setIsAutoPlaying(false);
