@@ -374,9 +374,9 @@ function HomeClient() {
           const todayStr = today.toISOString().split('T')[0];
           const thirtyDaysLaterStr = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-          const recentlyReleased = uniqueUpcoming.filter(i => i.releaseDate < todayStr); // 已上映
-          const soonReleasing = uniqueUpcoming.filter(i => i.releaseDate >= todayStr && i.releaseDate <= thirtyDaysLaterStr); // 未来30天
-          const laterReleasing = uniqueUpcoming.filter(i => i.releaseDate > thirtyDaysLaterStr); // 30天后
+          const recentlyReleased = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate < todayStr); // 已上映
+          const soonReleasing = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate >= todayStr && i.releaseDate <= thirtyDaysLaterStr); // 未来30天
+          const laterReleasing = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate > thirtyDaysLaterStr); // 30天后
 
           // 按比例分配：已上映2个 + 即将上映6个 + 稍后上映2个
           const selectedItems = [
