@@ -160,8 +160,8 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-[2]" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-[2]" />
 
-      {/* 内容区域 */}
-      <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8 md:p-12">
+      {/* 内容区域 - 底部留出空间给缩略图导航 */}
+      <div className="relative z-10 h-full flex flex-col justify-end px-6 sm:px-8 md:px-12 pt-6 sm:pt-8 md:pt-12 pb-32 sm:pb-36">
         <div className="max-w-2xl">
           {/* 标题 */}
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-4 drop-shadow-lg line-clamp-2">
@@ -184,7 +184,7 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
 
           {/* 简介 */}
           {currentItem.overview && (
-            <p className="text-gray-200 text-sm sm:text-base mb-4 sm:mb-6 line-clamp-2 sm:line-clamp-3 max-w-xl">
+            <p className="text-gray-200 text-sm sm:text-base line-clamp-2 sm:line-clamp-3 max-w-xl">
               {currentItem.overview}
             </p>
           )}
@@ -193,40 +193,47 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
 
       {/* 底部导航区域 - 左侧封面缩略图 + 右侧圆形播放按钮 */}
       <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 md:px-8 pb-4 sm:pb-6">
-        {/* 左侧：豆瓣封面缩略图导航 - 带右侧渐隐效果 */}
-        {items.length > 1 && doubanMovies && doubanMovies.length > 0 && (
-          <div className="relative flex-1 max-w-[60%] sm:max-w-[65%]">
-            {/* 渐隐遮罩 */}
-            <div className="absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
+        {/* 左侧：豆瓣封面缩略图导航（按索引对应TMDB轮播） */}
+        {items.length > 1 && (
+          <div className="relative flex-1 max-w-[60%] sm:max-w-[65%] md:max-w-none md:flex-initial">
+            {/* 移动端渐隐遮罩（桌面端不需要） */}
+            <div className="md:hidden absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
 
             {/* 缩略图滚动容器 */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-20">
-              {doubanMovies.slice(0, items.length).map((movie, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setCurrentIndex(index);
-                    setIsAutoPlaying(false);
-                  }}
-                  className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden ${index === currentIndex
-                      ? 'ring-2 ring-white shadow-2xl scale-105'
-                      : 'ring-1 ring-white/30 opacity-60 hover:opacity-90'
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto md:overflow-visible scrollbar-hide snap-x snap-mandatory md:pr-0 pr-20">
+              {items.map((item, index) => {
+                // 使用豆瓣数据的封面，如果有的话（按索引对应）
+                const doubanPoster = doubanMovies && doubanMovies[index] ? doubanMovies[index].poster : item.poster;
+                const posterTitle = doubanMovies && doubanMovies[index] ? doubanMovies[index].title : item.title;
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setCurrentIndex(index);
+                      setIsAutoPlaying(false);
+                    }}
+                    className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden ${
+                      index === currentIndex
+                        ? 'ring-2 ring-white shadow-2xl scale-105'
+                        : 'ring-1 ring-white/50'
                     }`}
-                  aria-label={`切换到 ${movie.title}`}
-                >
-                  <img
-                    src={movie.poster}
-                    alt={movie.title}
-                    className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
-                  />
-                </button>
-              ))}
+                    aria-label={`切换到 ${posterTitle}`}
+                  >
+                    <img
+                      src={doubanPoster}
+                      alt={posterTitle}
+                      className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* 右侧：圆形播放按钮 */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 ml-4">
           <button
             onClick={() => handlePlay(currentItem)}
             className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
