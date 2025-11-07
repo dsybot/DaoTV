@@ -35,6 +35,7 @@ export default function HomeCarousel() {
   const [error, setError] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false); // 防止循环触发
 
   // 获取轮播数据
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function HomeCarousel() {
         if (data.code === 200 && data.list.length > 0) {
           // 在客户端进行随机打乱，确保每次访问都有不同的排列
           const shuffledList = [...data.list].sort(() => Math.random() - 0.5);
-          
+
           // 打印数据检查（调试用）
           console.log('[轮播图] 收到数据:', shuffledList.length, '项');
           console.log('[轮播图] 前3项示例:', shuffledList.slice(0, 3).map(item => ({
@@ -57,7 +58,7 @@ export default function HomeCarousel() {
             genres: item.genres,
             first_aired: item.first_aired
           })));
-          
+
           setItems(shuffledList);
           setError(null);
         } else if (data.code === 503) {
@@ -104,10 +105,18 @@ export default function HomeCarousel() {
     const itemWidth = 60; // 56px宽度 + 8px间距
     const targetScroll = (currentIndex + 2) * itemWidth; // +2因为前置了2个项目
     
+    // 设置标志防止触发onScroll
+    isScrollingRef.current = true;
+    
     container.scrollTo({
       left: targetScroll,
       behavior: 'smooth'
     });
+    
+    // 滚动结束后重置标志
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 500);
   }, [currentIndex, items.length]);
 
   // 处理播放点击
@@ -232,7 +241,7 @@ export default function HomeCarousel() {
             <div className="relative pb-4">
               {/* 左侧渐隐遮罩 */}
               <div className="absolute top-0 left-0 bottom-0 w-16 bg-gradient-to-r from-black/80 to-transparent pointer-events-none z-10"></div>
-              
+
               {/* 右侧渐隐遮罩 */}
               <div className="absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
 
@@ -241,13 +250,17 @@ export default function HomeCarousel() {
                 ref={scrollContainerRef}
                 className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-[calc(50vw-28px)]"
                 onScroll={(e) => {
+                  // 防止程序触发的滚动更新currentIndex
+                  if (isScrollingRef.current) return;
+                  
                   const container = e.currentTarget;
                   const scrollLeft = container.scrollLeft;
                   const itemWidth = 60; // 56px宽度 + 8px间距
                   const centerOffset = container.clientWidth / 2;
-                  const centerIndex = Math.round((scrollLeft + centerOffset - itemWidth) / itemWidth) % items.length;
+                  const rawIndex = Math.round((scrollLeft + centerOffset - itemWidth) / itemWidth);
+                  const centerIndex = rawIndex - 2; // 减去前置的2个
                   
-                  if (centerIndex !== currentIndex && centerIndex >= 0 && centerIndex < items.length) {
+                  if (centerIndex >= 0 && centerIndex < items.length && centerIndex !== currentIndex) {
                     setCurrentIndex(centerIndex);
                     setIsAutoPlaying(false);
                   }
@@ -266,7 +279,7 @@ export default function HomeCarousel() {
                     />
                   </div>
                 ))}
-                
+
                 {/* 主要内容 */}
                 {items.map((item, index) => {
                   const isCurrent = index === currentIndex;
@@ -277,11 +290,10 @@ export default function HomeCarousel() {
                         setCurrentIndex(index);
                         setIsAutoPlaying(false);
                       }}
-                      className={`flex-shrink-0 snap-center transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${
-                        isCurrent
-                          ? 'ring-2 ring-white shadow-2xl scale-125'
-                          : 'ring-1 ring-white/50 opacity-60'
-                      }`}
+                      className={`flex-shrink-0 snap-center transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${isCurrent
+                        ? 'ring-2 ring-white shadow-2xl scale-125'
+                        : 'ring-1 ring-white/50 opacity-60'
+                        }`}
                       aria-label={`切换到 ${item.title}`}
                     >
                       <img
