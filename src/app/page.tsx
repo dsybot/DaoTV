@@ -386,10 +386,12 @@ function HomeClient() {
           const maxTotal = 10;
           let selectedItems: ReleaseCalendarItem[] = [];
 
-          // 配额分配策略：2已上映 + 2今日 + 3近期(7天) + 2中期(30天) + 1远期
+          // 配额分配策略：2已上映 + 1今日(限制) + 4近期(7天) + 2中期(30天) + 1远期
+          // 今日上映限制最多3个，避免全是今天的
+          const maxTodayLimit = 3;
           const recentQuota = Math.min(2, recentlyReleased.length);
-          const todayQuota = Math.min(2, releasingToday.length);
-          const sevenDayQuota = Math.min(3, nextSevenDays.length);
+          const todayQuota = Math.min(1, releasingToday.length);
+          const sevenDayQuota = Math.min(4, nextSevenDays.length);
           const thirtyDayQuota = Math.min(2, nextThirtyDays.length);
           const laterQuota = Math.min(1, laterReleasing.length);
 
@@ -401,20 +403,14 @@ function HomeClient() {
             ...laterReleasing.slice(0, laterQuota),
           ];
 
-          // 如果没填满10个，按优先级补充
+          // 如果没填满10个，按优先级补充（但限制今日上映总数）
           if (selectedItems.length < maxTotal) {
             const remaining = maxTotal - selectedItems.length;
+            const currentTodayCount = selectedItems.filter((i: ReleaseCalendarItem) => i.releaseDate === todayStr).length;
 
             // 优先从近期7天补充
             const additionalSeven = nextSevenDays.slice(sevenDayQuota, sevenDayQuota + remaining);
             selectedItems = [...selectedItems, ...additionalSeven];
-
-            // 还不够就从今日上映补充
-            if (selectedItems.length < maxTotal) {
-              const stillRemaining = maxTotal - selectedItems.length;
-              const additionalToday = releasingToday.slice(todayQuota, todayQuota + stillRemaining);
-              selectedItems = [...selectedItems, ...additionalToday];
-            }
 
             // 还不够就从30天内补充
             if (selectedItems.length < maxTotal) {
@@ -423,11 +419,29 @@ function HomeClient() {
               selectedItems = [...selectedItems, ...additionalThirty];
             }
 
-            // 最后从远期补充
+            // 还不够就从远期补充
             if (selectedItems.length < maxTotal) {
               const stillRemaining = maxTotal - selectedItems.length;
               const additionalLater = laterReleasing.slice(laterQuota, laterQuota + stillRemaining);
               selectedItems = [...selectedItems, ...additionalLater];
+            }
+
+            // 还不够就从已上映补充
+            if (selectedItems.length < maxTotal) {
+              const stillRemaining = maxTotal - selectedItems.length;
+              const additionalRecent = recentlyReleased.slice(recentQuota, recentQuota + stillRemaining);
+              selectedItems = [...selectedItems, ...additionalRecent];
+            }
+
+            // 最后实在不够才从今日上映补充（但限制总数不超过maxTodayLimit）
+            if (selectedItems.length < maxTotal) {
+              const currentTodayCount = selectedItems.filter((i: ReleaseCalendarItem) => i.releaseDate === todayStr).length;
+              const todayRemaining = maxTodayLimit - currentTodayCount;
+              if (todayRemaining > 0) {
+                const stillRemaining = Math.min(maxTotal - selectedItems.length, todayRemaining);
+                const additionalToday = releasingToday.slice(todayQuota, todayQuota + stillRemaining);
+                selectedItems = [...selectedItems, ...additionalToday];
+              }
             }
           }
 
