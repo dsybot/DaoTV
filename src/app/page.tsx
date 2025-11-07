@@ -378,12 +378,34 @@ function HomeClient() {
           const soonReleasing = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate >= todayStr && i.releaseDate <= thirtyDaysLaterStr); // 未来30天
           const laterReleasing = uniqueUpcoming.filter((i: ReleaseCalendarItem) => i.releaseDate > thirtyDaysLaterStr); // 30天后
 
-          // 按比例分配：已上映2个 + 即将上映6个 + 稍后上映2个
-          const selectedItems = [
-            ...recentlyReleased.slice(0, 2),
-            ...soonReleasing.slice(0, 6),
-            ...laterReleasing.slice(0, 2),
+          // 智能分配：总共10个，优先填充各时间段
+          const maxTotal = 10;
+          let selectedItems: ReleaseCalendarItem[] = [];
+
+          // 优先分配基础配额
+          const recentQuota = Math.min(2, recentlyReleased.length);
+          const laterQuota = Math.min(2, laterReleasing.length);
+          const soonQuota = Math.min(6, soonReleasing.length);
+
+          selectedItems = [
+            ...recentlyReleased.slice(0, recentQuota),
+            ...soonReleasing.slice(0, soonQuota),
+            ...laterReleasing.slice(0, laterQuota),
           ];
+
+          // 如果没填满10个，从剩余数据中补充
+          if (selectedItems.length < maxTotal) {
+            const remaining = maxTotal - selectedItems.length;
+            const additionalSoon = soonReleasing.slice(soonQuota, soonQuota + remaining);
+            selectedItems = [...selectedItems, ...additionalSoon];
+          }
+
+          // 如果还是不够，从稍后上映补充
+          if (selectedItems.length < maxTotal) {
+            const remaining = maxTotal - selectedItems.length;
+            const additionalLater = laterReleasing.slice(laterQuota, laterQuota + remaining);
+            selectedItems = [...selectedItems, ...additionalLater];
+          }
 
           console.log('📅 分配结果:', {
             已上映: recentlyReleased.length,

@@ -129,8 +129,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
     : type;
 
-  // 判断是否为即将上映（未发布的内容）
-  const isUpcoming = source === 'upcoming_release' || (remarks && (remarks.includes('天后上映') || remarks.includes('日上映')));
+    // 判断是否为即将上映（未发布的内容）
+    const isUpcoming = source === 'upcoming_release' || (remarks && (remarks.includes('天后上映') || remarks.includes('已上映') || remarks.includes('今日上映')));
 
   // 获取收藏状态（搜索结果页面不检查，但即将上映需要检查）
   useEffect(() => {
@@ -789,8 +789,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
-          {isUpcoming && type && (
+            {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
+            {isUpcoming && type && (
             <div
               className={`absolute top-2 left-2 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${type === 'movie'
                 ? 'bg-gradient-to-br from-red-500 via-rose-500 to-pink-600'
@@ -893,8 +893,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 即将上映徽章 - 美化版，放在底部左侧 */}
-          {isUpcoming && remarks && (
+            {/* 上映状态徽章 - 美化版，放在底部左侧 */}
+            {isUpcoming && remarks && (
             <div
               className="absolute bottom-2 left-2 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105"
               style={{
