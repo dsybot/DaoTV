@@ -34,9 +34,6 @@ export default function HomeCarousel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // 获取轮播数据
   useEffect(() => {
@@ -167,7 +164,7 @@ export default function HomeCarousel() {
     );
   }
 
-  const currentItem = items[getCircularIndex(currentIndex)];
+  const currentItem = items[currentIndex];
 
   // 处理鼠标悬停事件
   const handleMouseEnter = () => {
@@ -251,56 +248,44 @@ export default function HomeCarousel() {
         <div className="md:hidden flex items-end justify-between px-4 pb-4 gap-3">
           {items.length > 1 && (
             <>
-              {/* 左侧：缩略图区域 - 固定显示5个（环形，自身渐隐） */}
-              <div
-                className="relative flex-1 overflow-visible py-4"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                {/* 缩略图显示7个带滑动动画（当前项前后各3个） */}
-                <div className="flex gap-2 items-center justify-center">
-                  {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
-                    const actualIndex = getCircularIndex(currentIndex + offset);
-                    const item = items[actualIndex];
-                    const isCurrent = offset === 0; // 中间那个是当前项
-
-                    // 根据距离中心的位置计算透明度和缩放
-                    const absOffset = Math.abs(offset);
-                    const opacity = absOffset === 0 ? 1 : 
-                                    absOffset === 1 ? 0.75 : 
-                                    absOffset === 2 ? 0.5 : 0.25;
-                    const scale = absOffset === 0 ? 1.25 : 
-                                  absOffset === 1 ? 1.05 : 
-                                  absOffset === 2 ? 0.95 : 0.85;
-
-                    return (
-                      <button
-                        key={`carousel-${actualIndex}-${offset}`}
-                        onClick={() => {
-                          setCurrentIndex(prev => prev + offset);
-                          setIsAutoPlaying(false);
-                        }}
-                        className="flex-shrink-0 transition-all duration-500 ease-out rounded-lg overflow-hidden"
-                        style={{
-                          opacity,
-                          transform: `scale(${scale})`,
-                          transitionProperty: 'transform, opacity, box-shadow, filter',
-                        }}
-                        aria-label={`切换到 ${item?.title || ''}`}
-                      >
-                        <div className={`rounded-lg overflow-hidden transition-all duration-500 ${
-                          isCurrent ? 'ring-2 ring-white shadow-2xl' : 'ring-1 ring-white/50'
-                        }`}>
+              {/* 左侧：精选5个缩略图（2电视剧+2电影+1综艺） */}
+              <div className="flex-1">
+                <div className="flex gap-2">
+                  {(() => {
+                    // 筛选：2个电视剧 + 2个电影 + 1个综艺
+                    const tvShows = items.filter(item => item.source === 'tv').slice(0, 2);
+                    const movies = items.filter(item => item.source === 'movie').slice(0, 2);
+                    const variety = items.filter(item => item.source === 'variety').slice(0, 1);
+                    const selected = [...tvShows, ...movies, ...variety].slice(0, 5);
+                    
+                    return selected.map((item) => {
+                      const isActive = item.id === currentItem?.id;
+                      
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            const fullIndex = items.findIndex(i => i.id === item.id);
+                            if (fullIndex >= 0) {
+                              setCurrentIndex(fullIndex);
+                              setIsAutoPlaying(false);
+                            }
+                          }}
+                          className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${
+                            isActive
+                              ? 'ring-2 ring-white shadow-2xl scale-105'
+                              : 'ring-1 ring-white/50'
+                          }`}
+                        >
                           <img
-                            src={item ? processImageUrl(item.poster) : ''}
-                            alt={item?.title || ''}
-                            className="w-14 h-20 object-cover transition-all duration-500"
+                            src={processImageUrl(item.poster)}
+                            alt={item.title}
+                            className="w-14 h-20 object-cover"
                           />
-                        </div>
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
