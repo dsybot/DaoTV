@@ -34,8 +34,8 @@ export default function HomeCarousel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const isScrollingRef = useRef(false); // 防止循环触发
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   // 获取轮播数据
   useEffect(() => {
@@ -97,36 +97,38 @@ export default function HomeCarousel() {
     return () => clearInterval(interval);
   }, [isAutoPlaying, items.length, goToNext]);
 
-  // 移动端：同步滚动位置（让目标项滚动到容器中心）
-  useEffect(() => {
-    if (!scrollContainerRef.current || items.length === 0) return;
+  // 环形索引辅助函数：获取实际索引
+  const getCircularIndex = useCallback((index: number) => {
+    if (items.length === 0) return 0;
+    return ((index % items.length) + items.length) % items.length;
+  }, [items.length]);
+
+  // 触摸手势处理
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsAutoPlaying(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
     
-    const container = scrollContainerRef.current;
-    const itemWidth = 60;
-    const totalItems = items.length;
-    const oneSetWidth = totalItems * itemWidth;
-    
-    // 初始化：滚动到第一组中间位置
-    if (container.scrollLeft === 0) {
-      container.scrollLeft = oneSetWidth; // 从第二组开始
-      return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      setCurrentIndex(prev => prev + 1); // 索引可以无限增长
+    } else if (isRightSwipe) {
+      setCurrentIndex(prev => prev - 1); // 索引可以是负数
     }
     
-    // 计算目标滚动位置：让当前项居中
-    const containerCenter = container.clientWidth / 2;
-    const currentScrollSet = Math.floor(container.scrollLeft / oneSetWidth);
-    const targetScrollLeft = currentScrollSet * oneSetWidth + currentIndex * itemWidth + itemWidth / 2 - containerCenter;
-    
-    isScrollingRef.current = true;
-    container.scrollTo({
-      left: targetScrollLeft,
-      behavior: 'smooth'
-    });
-    
-    setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 500);
-  }, [currentIndex, items.length]);
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
 
   // 处理播放点击
   const handlePlay = useCallback((item: CarouselItem) => {
@@ -164,7 +166,7 @@ export default function HomeCarousel() {
     );
   }
 
-  const currentItem = items[currentIndex];
+  const currentItem = items[getCircularIndex(currentIndex)];
 
   // 处理鼠标悬停事件
   const handleMouseEnter = () => {
@@ -248,72 +250,43 @@ export default function HomeCarousel() {
         <div className="md:hidden flex items-end justify-between px-4 pb-4 gap-3">
           {items.length > 1 && (
             <>
-              {/* 左侧：缩略图区域 - 固定显示5个 */}
-              <div className="relative flex-1 overflow-hidden py-4">
+              {/* 左侧：缩略图区域 - 固定显示5个（环形） */}
+              <div 
+                className="relative flex-1 overflow-hidden py-4"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
                 {/* 左侧渐隐遮罩 */}
                 <div className="absolute top-0 left-0 bottom-0 w-12 bg-gradient-to-r from-black/80 to-transparent pointer-events-none z-10"></div>
 
                 {/* 右侧渐隐遮罩 */}
                 <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
 
-                {/* 缩略图滚动容器 - 两倍复制CSS无缝循环 */}
-                <div
-                  ref={scrollContainerRef}
-                  className="flex gap-2 overflow-x-scroll scrollbar-hide"
-                  onScroll={(e) => {
-                    if (isScrollingRef.current) return;
-
-                    const container = e.currentTarget;
-                    const scrollLeft = container.scrollLeft;
-                    const itemWidth = 60;
-                    const totalItems = items.length;
-                    const oneSetWidth = totalItems * itemWidth;
-
-                    // 计算容器中心位置对应的项目索引
-                    const containerCenter = scrollLeft + container.clientWidth / 2;
-                    const absoluteIndex = Math.floor(containerCenter / itemWidth);
-                    const newIndex = absoluteIndex % totalItems;
-
-                    // 无缝循环重置
-                    if (scrollLeft >= oneSetWidth * 1.5) {
-                      isScrollingRef.current = true;
-                      container.scrollLeft = scrollLeft - oneSetWidth;
-                      setTimeout(() => { isScrollingRef.current = false; }, 10);
-                      return;
-                    } else if (scrollLeft < oneSetWidth * 0.5) {
-                      isScrollingRef.current = true;
-                      container.scrollLeft = scrollLeft + oneSetWidth;
-                      setTimeout(() => { isScrollingRef.current = false; }, 10);
-                      return;
-                    }
-
-                    if (newIndex !== currentIndex) {
-                      setCurrentIndex(newIndex);
-                      setIsAutoPlaying(false);
-                    }
-                  }}
-                >
-                  {/* 两倍复制：第一组 + 第二组（完全相同） */}
-                  {[...items, ...items].map((item, globalIndex) => {
-                    const indexInSet = globalIndex % items.length;
-                    const isCurrent = indexInSet === currentIndex;
+                {/* 缩略图固定显示5个（当前项前后各2个） */}
+                <div className="flex gap-2 justify-center items-center">
+                  {[-2, -1, 0, 1, 2].map((offset) => {
+                    const actualIndex = getCircularIndex(currentIndex + offset);
+                    const item = items[actualIndex];
+                    const isCurrent = offset === 0; // 中间那个是当前项
 
                     return (
                       <button
-                        key={globalIndex}
+                        key={offset}
                         onClick={() => {
-                          setCurrentIndex(indexInSet);
+                          setCurrentIndex(prev => prev + offset);
                           setIsAutoPlaying(false);
                         }}
-                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${isCurrent
-                          ? 'ring-2 ring-white shadow-2xl scale-125'
-                          : 'ring-1 ring-white/50 opacity-60 scale-100'
-                          }`}
-                        aria-label={`切换到 ${item.title}`}
+                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${
+                          isCurrent
+                            ? 'ring-2 ring-white shadow-2xl scale-125'
+                            : 'ring-1 ring-white/50 opacity-60 scale-100'
+                        }`}
+                        aria-label={`切换到 ${item?.title || ''}`}
                       >
                         <img
-                          src={processImageUrl(item.poster)}
-                          alt={item.title}
+                          src={item ? processImageUrl(item.poster) : ''}
+                          alt={item?.title || ''}
                           className="w-14 h-20 object-cover"
                         />
                       </button>
