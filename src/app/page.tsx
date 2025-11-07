@@ -345,7 +345,7 @@ function HomeClient() {
           });
 
           console.log('📅 日期过滤后的数据:', upcoming.length, '条');
-          console.log('📅 过滤后的标题:', upcoming.map(i => `${i.title} (${i.releaseDate})`));
+          console.log('📅 过滤后的标题:', upcoming.map((i: ReleaseCalendarItem) => `${i.title} (${i.releaseDate})`));
 
           // 去重：基于标题去重，保留最早的那条记录
           const uniqueUpcoming = upcoming.reduce((acc: ReleaseCalendarItem[], current: ReleaseCalendarItem) => {
