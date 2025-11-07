@@ -24,7 +24,17 @@ interface CarouselResponse {
   list: CarouselItem[];
 }
 
-export default function HomeCarousel() {
+interface HomeCarouselProps {
+  doubanMovies?: Array<{
+    id: string;
+    title: string;
+    poster: string;
+    rate?: string;
+    year?: string;
+  }>;
+}
+
+export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
   const router = useRouter();
   const [items, setItems] = useState<CarouselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -178,64 +188,73 @@ export default function HomeCarousel() {
               {currentItem.overview}
             </p>
           )}
-
-          {/* 操作按钮 */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => handlePlay(currentItem)}
-              className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-lg"
-            >
-              <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-              <span className="text-sm sm:text-base font-medium">立即播放</span>
-            </button>
-            <Link
-              href={`/douban?type=${currentItem.source === 'variety' ? 'show' : currentItem.source === 'movie' ? 'movie' : 'tv'}`}
-              className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors"
-            >
-              <span className="text-sm sm:text-base font-medium">了解更多</span>
-            </Link>
-          </div>
         </div>
       </div>
 
-      {/* 左右切换按钮 */}
+      {/* 底部导航区域 - 左侧封面缩略图 + 右侧圆形播放按钮 */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 md:px-8 pb-4 sm:pb-6">
+        {/* 左侧：豆瓣封面缩略图导航 - 带右侧渐隐效果 */}
+        {items.length > 1 && doubanMovies && doubanMovies.length > 0 && (
+          <div className="relative flex-1 max-w-[60%] sm:max-w-[65%]">
+            {/* 渐隐遮罩 */}
+            <div className="absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
+
+            {/* 缩略图滚动容器 */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-20">
+              {doubanMovies.slice(0, items.length).map((movie, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setCurrentIndex(index);
+                    setIsAutoPlaying(false);
+                  }}
+                  className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden ${index === currentIndex
+                      ? 'ring-2 ring-white shadow-2xl scale-105'
+                      : 'ring-1 ring-white/30 opacity-60 hover:opacity-90'
+                    }`}
+                  aria-label={`切换到 ${movie.title}`}
+                >
+                  <img
+                    src={movie.poster}
+                    alt={movie.title}
+                    className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 右侧：圆形播放按钮 */}
+        <div className="flex-shrink-0">
+          <button
+            onClick={() => handlePlay(currentItem)}
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
+            aria-label="播放"
+          >
+            <Play className="w-6 h-6 sm:w-7 sm:h-7 text-black fill-current ml-0.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* 左右切换按钮 - 桌面端显示 */}
       {items.length > 1 && (
         <>
           <button
             onClick={goToPrev}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+            className="hidden md:block absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
             aria-label="上一个"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+            className="hidden md:block absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
             aria-label="下一个"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </>
-      )}
-
-      {/* 指示器 */}
-      {items.length > 1 && (
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {items.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentIndex(index);
-                setIsAutoPlaying(false);
-              }}
-              className={`h-1 sm:h-1.5 rounded-full transition-all ${index === currentIndex
-                ? 'w-8 sm:w-12 bg-white'
-                : 'w-4 sm:w-6 bg-white/50 hover:bg-white/70'
-                }`}
-              aria-label={`切换到第 ${index + 1} 个`}
-            />
-          ))}
-        </div>
       )}
     </div>
   );
