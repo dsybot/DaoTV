@@ -4,7 +4,7 @@ import { useEffect } from 'react';
  * Hook to preload images for better UX
  * Adds <link rel="preload"> tags for images that are about to enter the viewport
  */
-export function useImagePreload(imageUrls: string[], enabled: boolean = true) {
+export function useImagePreload(imageUrls: string[], enabled = true) {
   useEffect(() => {
     if (!enabled || !imageUrls.length) return;
 
