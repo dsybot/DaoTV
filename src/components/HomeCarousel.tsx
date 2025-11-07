@@ -195,6 +195,10 @@ export default function HomeCarousel() {
               {items.map((item, index) => (
                 <button
                   key={index}
+                  onMouseEnter={() => {
+                    setCurrentIndex(index);
+                    setIsAutoPlaying(false);
+                  }}
                   onClick={() => {
                     setCurrentIndex(index);
                     setIsAutoPlaying(false);
@@ -216,14 +220,14 @@ export default function HomeCarousel() {
           </div>
         )}
 
-        {/* 右侧：圆形播放按钮 */}
+        {/* 右侧：圆形播放按钮 - 模糊背景 */}
         <div className="flex-shrink-0 ml-4">
           <button
             onClick={() => handlePlay(currentItem)}
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"
             aria-label="播放"
           >
-            <Play className="w-6 h-6 sm:w-7 sm:h-7 text-black fill-current ml-0.5" />
+            <Play className="w-6 h-6 sm:w-7 sm:h-7 text-white fill-current ml-0.5" />
           </button>
         </div>
       </div>
