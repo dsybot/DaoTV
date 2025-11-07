@@ -216,8 +216,8 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
-              <div className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide -mr-1">
-                <div className="flex gap-2 pr-16 py-2">
+              <div className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide">
+                <div className="flex gap-2 px-1 pr-16 py-2">
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
 
