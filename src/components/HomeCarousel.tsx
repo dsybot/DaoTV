@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Play, Star } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { processImageUrl } from '@/lib/utils';
 
 interface CarouselItem {
   id: number;
@@ -24,17 +25,7 @@ interface CarouselResponse {
   list: CarouselItem[];
 }
 
-interface HomeCarouselProps {
-  doubanMovies?: Array<{
-    id: string;
-    title: string;
-    poster: string;
-    rate?: string;
-    year?: string;
-  }>;
-}
-
-export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
+export default function HomeCarousel() {
   const router = useRouter();
   const [items, setItems] = useState<CarouselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -199,51 +190,28 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
             {/* 移动端渐隐遮罩（桌面端不需要） */}
             <div className="md:hidden absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
 
-            {/* 缩略图滚动容器 */}
+            {/* 缩略图滚动容器 - 直接使用TMDB数据的poster（已经是豆瓣URL） */}
             <div className="flex gap-2 sm:gap-3 overflow-x-auto md:overflow-visible scrollbar-hide snap-x snap-mandatory md:pr-0 pr-20">
-              {items.map((item, index) => {
-                // 根据豆瓣ID精准匹配封面（item.id就是豆瓣ID）
-                let doubanPoster = item.poster; // 默认使用TMDB的poster
-
-                if (doubanMovies && doubanMovies.length > 0) {
-                  // 通过豆瓣ID精准匹配
-                  const matchedDouban = doubanMovies.find(d => d.id === item.id.toString());
-                  if (matchedDouban && matchedDouban.poster) {
-                    doubanPoster = matchedDouban.poster;
-                  }
-                }
-
-                // 如果poster为空，使用占位符
-                const finalPoster = doubanPoster || '/placeholder-poster.jpg';
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setCurrentIndex(index);
-                      setIsAutoPlaying(false);
-                    }}
-                    className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
-                      ? 'ring-2 ring-white shadow-2xl scale-105'
-                      : 'ring-1 ring-white/50'
-                      }`}
-                    aria-label={`切换到 ${item.title}`}
-                  >
-                    <img
-                      src={finalPoster}
-                      alt={item.title}
-                      className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
-                      onError={(e) => {
-                        // 图片加载失败时使用占位符
-                        const target = e.target as HTMLImageElement;
-                        if (target.src !== '/placeholder-poster.jpg') {
-                          target.src = '/placeholder-poster.jpg';
-                        }
-                      }}
-                    />
-                  </button>
-                );
-              })}
+              {items.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setCurrentIndex(index);
+                    setIsAutoPlaying(false);
+                  }}
+                  className={`flex-shrink-0 snap-start transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
+                    ? 'ring-2 ring-white shadow-2xl scale-105'
+                    : 'ring-1 ring-white/50'
+                    }`}
+                  aria-label={`切换到 ${item.title}`}
+                >
+                  <img
+                    src={processImageUrl(item.poster)}
+                    alt={item.title}
+                    className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
+                  />
+                </button>
+              ))}
             </div>
           </div>
         )}
