@@ -664,11 +664,11 @@ function HomeClient() {
                 </div>
                 <ScrollableRow>
                   {upcomingReleases.map((release, index) => {
-                    // 格式化上映日期
+                    // 格式化上映日期为简洁格式
                     const releaseDate = new Date(release.releaseDate);
                     const month = releaseDate.getMonth() + 1;
                     const day = releaseDate.getDate();
-                    const formattedDate = `${month}月${day}日上映`;
+                    const formattedDate = `${month}/${day}`;
 
                     return (
                       <div
