@@ -250,25 +250,24 @@ export default function HomeCarousel() {
         <div className="md:hidden flex items-end justify-between px-4 pb-4 gap-3">
           {items.length > 1 && (
             <>
-              {/* 左侧：缩略图区域 - 固定显示5个（环形） */}
-              <div
-                className="relative flex-1 overflow-hidden py-4"
+              {/* 左侧：缩略图区域 - 固定显示5个（环形，自身渐隐） */}
+              <div 
+                className="relative flex-1 overflow-visible py-4"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {/* 左侧渐隐遮罩 */}
-                <div className="absolute top-0 left-0 bottom-0 w-12 bg-gradient-to-r from-black/80 to-transparent pointer-events-none z-10"></div>
-
-                {/* 右侧渐隐遮罩 */}
-                <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-black/80 to-transparent pointer-events-none z-10"></div>
-
-                {/* 缩略图固定显示5个（当前项前后各2个） */}
+                {/* 缩略图固定显示5个（当前项前后各2个） - 自身渐隐 */}
                 <div className="flex gap-2 justify-center items-center transition-all duration-500 ease-out">
                   {[-2, -1, 0, 1, 2].map((offset) => {
                     const actualIndex = getCircularIndex(currentIndex + offset);
                     const item = items[actualIndex];
                     const isCurrent = offset === 0; // 中间那个是当前项
+                    
+                    // 根据距离中心的位置计算透明度和缩放
+                    const absOffset = Math.abs(offset);
+                    const opacity = absOffset === 0 ? 1 : absOffset === 1 ? 0.7 : 0.4;
+                    const scale = absOffset === 0 ? 1.25 : absOffset === 1 ? 1 : 0.9;
 
                     return (
                       <button
@@ -277,18 +276,22 @@ export default function HomeCarousel() {
                           setCurrentIndex(prev => prev + offset);
                           setIsAutoPlaying(false);
                         }}
-                        className={`flex-shrink-0 transition-all duration-500 ease-out rounded-lg overflow-hidden ${
-                          isCurrent
-                            ? 'ring-2 ring-white shadow-2xl scale-125'
-                            : 'ring-1 ring-white/50 opacity-60 scale-100'
-                        }`}
+                        className="flex-shrink-0 transition-all duration-500 ease-out rounded-lg overflow-hidden"
+                        style={{
+                          opacity,
+                          transform: `scale(${scale})`,
+                        }}
                         aria-label={`切换到 ${item?.title || ''}`}
                       >
-                        <img
-                          src={item ? processImageUrl(item.poster) : ''}
-                          alt={item?.title || ''}
-                          className="w-14 h-20 object-cover rounded-lg"
-                        />
+                        <div className={`rounded-lg overflow-hidden ${
+                          isCurrent ? 'ring-2 ring-white shadow-2xl' : 'ring-1 ring-white/50'
+                        }`}>
+                          <img
+                            src={item ? processImageUrl(item.poster) : ''}
+                            alt={item?.title || ''}
+                            className="w-14 h-20 object-cover"
+                          />
+                        </div>
                       </button>
                     );
                   })}
