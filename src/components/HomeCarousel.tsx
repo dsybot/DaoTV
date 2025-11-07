@@ -216,11 +216,11 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
-              <div className="flex-1 overflow-x-auto scrollbar-hide -mr-1">
-                <div className="flex gap-2 pr-16">
+              <div className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide -mr-1">
+                <div className="flex gap-2 pr-16 py-2">
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
-                    
+
                     return (
                       <button
                         key={item.id}
@@ -228,11 +228,10 @@ export default function HomeCarousel() {
                           setCurrentIndex(index);
                           setIsAutoPlaying(false);
                         }}
-                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${
-                          isActive
-                            ? 'ring-2 ring-white shadow-2xl scale-105'
-                            : 'ring-1 ring-white/50'
-                        }`}
+                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
+                          ? 'ring-2 ring-white shadow-2xl scale-105'
+                          : 'ring-1 ring-white/50'
+                          }`}
                       >
                         <img
                           src={processImageUrl(item.poster)}
