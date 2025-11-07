@@ -99,10 +99,12 @@ export default function HomeCarousel() {
 
   // 移动端：自动滚动当前缩略图到中央
   useEffect(() => {
-    if (!thumbnailContainerRef.current || !thumbnailRefs.current[currentIndex] || items.length === 0) return;
+    if (!thumbnailContainerRef.current || items.length === 0) return;
     
     const container = thumbnailContainerRef.current;
     const thumbnail = thumbnailRefs.current[currentIndex];
+    
+    if (!thumbnail) return; // null检查
     
     // 如果是第一个或最后一个，不强制居中
     const isFirst = currentIndex === 0;
@@ -247,7 +249,7 @@ export default function HomeCarousel() {
           {items.length > 1 && (
             <>
               {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
-              <div 
+              <div
                 ref={thumbnailContainerRef}
                 className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide"
               >
