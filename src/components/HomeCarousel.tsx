@@ -202,10 +202,22 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
             {/* 缩略图滚动容器 */}
             <div className="flex gap-2 sm:gap-3 overflow-x-auto md:overflow-visible scrollbar-hide snap-x snap-mandatory md:pr-0 pr-20">
               {items.map((item, index) => {
-                // 使用豆瓣数据的封面，如果有的话（按索引对应）
-                const doubanPoster = doubanMovies && doubanMovies[index] ? doubanMovies[index].poster : item.poster;
-                const posterTitle = doubanMovies && doubanMovies[index] ? doubanMovies[index].title : item.title;
+                // 根据TMDB的标题在豆瓣数据中查找匹配的封面
+                let doubanPoster = item.poster; // 默认使用TMDB的poster
                 
+                if (doubanMovies && doubanMovies.length > 0) {
+                  // 尝试通过标题精确匹配或模糊匹配
+                  const matchedDouban = doubanMovies.find(d => 
+                    d.title === item.title || 
+                    d.title.replace(/\s+/g, '') === item.title.replace(/\s+/g, '') ||
+                    d.title.includes(item.title) || 
+                    item.title.includes(d.title)
+                  );
+                  if (matchedDouban) {
+                    doubanPoster = matchedDouban.poster;
+                  }
+                }
+
                 return (
                   <button
                     key={index}
@@ -218,11 +230,11 @@ export default function HomeCarousel({ doubanMovies }: HomeCarouselProps = {}) {
                         ? 'ring-2 ring-white shadow-2xl scale-105'
                         : 'ring-1 ring-white/50'
                     }`}
-                    aria-label={`切换到 ${posterTitle}`}
+                    aria-label={`切换到 ${item.title}`}
                   >
                     <img
                       src={doubanPoster}
-                      alt={posterTitle}
+                      alt={item.title}
                       className="w-14 h-20 sm:w-16 sm:h-24 object-cover"
                     />
                   </button>
