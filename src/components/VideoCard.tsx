@@ -813,7 +813,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
           {/* 集数徽章 - 左上角第二位（如果有类型徽章，则向下偏移）*/}
           {/* 即将上映的内容不显示集数徽章（因为是占位符数据）*/}
-          {actualEpisodes && actualEpisodes > 1 && !isUpcoming && (
+          {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
+          {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
               className={`absolute left-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${
                 isUpcoming && type ? 'top-[48px]' : 'top-2'
