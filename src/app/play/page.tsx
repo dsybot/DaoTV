@@ -2005,12 +2005,14 @@ function PlayPageClient() {
                 const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
 
                 // 智能标题匹配：支持数字变体和标点符号变化
+                // 优先使用精确包含匹配，避免短标题（如"玫瑰"）匹配到包含该字的其他电影（如"玫瑰的故事"）
                 const titleMatch = resultTitle.includes(queryTitle) ||
                   queryTitle.includes(resultTitle) ||
                   // 移除数字和标点后匹配（针对"死神来了：血脉诅咒" vs "死神来了6：血脉诅咒"）
                   resultTitle.replace(/\d+|[：:]/g, '') === queryTitle.replace(/\d+|[：:]/g, '') ||
-                  // 通用关键词匹配：检查是否包含查询中的所有关键词
-                  checkAllKeywordsMatch(queryTitle, resultTitle);
+                  // 通用关键词匹配：仅当查询标题较长时（4个字符以上）才使用关键词匹配
+                  // 避免短标题（如"玫瑰"2字）被拆分匹配
+                  (queryTitle.length > 4 && checkAllKeywordsMatch(queryTitle, resultTitle));
 
                 const yearMatch = videoYearRef.current
                   ? result.year.toLowerCase() === videoYearRef.current.toLowerCase()
