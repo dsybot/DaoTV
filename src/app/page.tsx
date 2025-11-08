@@ -839,7 +839,7 @@ function HomeClient() {
                           remarks={remarksText}
                           releaseDate={release.releaseDate}
                           query={release.title}
-                          episodes={release.type === 'tv' ? 99 : 1}
+                          episodes={release.episodes || (release.type === 'tv' ? undefined : 1)}
                         />
                       </div>
                     );

@@ -901,25 +901,46 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           )}
 
           {/* 上映状态徽章 - 美化版，放在底部左侧 */}
-          {hasReleaseTag && (
-            <div
-              className="absolute bottom-2 left-2 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105"
-              style={{
-                WebkitUserSelect: 'none',
-                userSelect: 'none',
-                WebkitTouchCallout: 'none',
-              } as React.CSSProperties}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                return false;
-              }}
-            >
-              <span className="flex items-center gap-1">
-                <span className="text-[10px]">🔜</span>
-                {remarks}
-              </span>
-            </div>
-          )}
+          {hasReleaseTag && (() => {
+            // 根据状态选择emoji和颜色
+            let emoji = '🔜';
+            let bgColors = 'from-orange-500/95 via-red-500/95 to-pink-600/95';
+            let shadowColor = 'group-hover:shadow-orange-500/60';
+            let ringColor = 'group-hover:ring-orange-300/50';
+
+            if (remarks?.includes('已上映')) {
+              emoji = '🎬';
+              bgColors = 'from-green-500/95 via-emerald-500/95 to-teal-600/95';
+              shadowColor = 'group-hover:shadow-green-500/60';
+              ringColor = 'group-hover:ring-green-300/50';
+            } else if (remarks?.includes('今日上映')) {
+              emoji = '🎉';
+              bgColors = 'from-yellow-500/95 via-orange-500/95 to-red-600/95';
+              shadowColor = 'group-hover:shadow-yellow-500/60';
+              ringColor = 'group-hover:ring-yellow-300/50';
+            }
+
+            return (
+              <div
+                className={`absolute bottom-2 left-2 bg-gradient-to-br ${bgColors} backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 ${shadowColor} ${ringColor} animate-pulse`}
+                style={{
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                } as React.CSSProperties}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  return false;
+                }}
+              >
+                <span className="flex items-center gap-1">
+                  <span className="text-[10px]">{emoji}</span>
+                  {remarks}
+                </span>
+              </div>
+            );
+          })()}
+>>>>>>> 0c09983 (feat: dynamic release badges and hide placeholder episodes)
 
           {/* 评分徽章 - 动态颜色 */}
           {config.showRating && rate && (() => {
