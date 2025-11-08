@@ -1236,21 +1236,53 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               ></div>
             </div>
           </div>
-          {config.showSourceName && source_name && (
-            <div
-              className='flex items-center justify-center mt-2'
-              style={{
-                WebkitUserSelect: 'none',
-                userSelect: 'none',
-                WebkitTouchCallout: 'none',
-              } as React.CSSProperties}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                return false;
-              }}
-            >
-              <span
-                className='relative inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border border-gray-300/60 dark:border-gray-600/60 text-gray-600 dark:text-gray-400 transition-all duration-300 ease-out overflow-hidden group-hover:border-green-500/80 group-hover:text-green-600 dark:group-hover:text-green-400 group-hover:shadow-md group-hover:shadow-green-500/20 group-hover:scale-105'
+          {config.showSourceName && source_name && (() => {
+            // 智能显示source_name：如果有上映状态标记，优先显示状态；否则显示来源
+            let displayText = source_name;
+            let themeColor = 'green'; // 默认绿色主题
+
+            if (hasReleaseTag && remarks) {
+              // 有上映状态时，根据状态显示不同文本和颜色
+              if (remarks.includes('天后上映')) {
+                displayText = remarks; // 显示"X天后上映"
+                themeColor = 'orange';
+              } else if (remarks.includes('今日上映')) {
+                displayText = '今日上映';
+                themeColor = 'yellow';
+              } else if (remarks.includes('已上映')) {
+                displayText = remarks; // 显示"已上映X天"
+                themeColor = 'green';
+              }
+            }
+
+            // 根据主题颜色设置class
+            const colorClasses = {
+              green: 'group-hover:border-green-500/80 group-hover:text-green-600 dark:group-hover:text-green-400 group-hover:shadow-green-500/20',
+              orange: 'group-hover:border-orange-500/80 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:shadow-orange-500/20',
+              yellow: 'group-hover:border-yellow-500/80 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 group-hover:shadow-yellow-500/20',
+            }[themeColor];
+
+            const bgGradient = {
+              green: 'group-hover:via-green-50/80 dark:group-hover:via-green-500/20',
+              orange: 'group-hover:via-orange-50/80 dark:group-hover:via-orange-500/20',
+              yellow: 'group-hover:via-yellow-50/80 dark:group-hover:via-yellow-500/20',
+            }[themeColor];
+
+            const dotColor = {
+              green: 'group-hover:bg-green-500 dark:group-hover:bg-green-400 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]',
+              orange: 'group-hover:bg-orange-500 dark:group-hover:bg-orange-400 group-hover:shadow-[0_0_8px_rgba(249,115,22,0.6)]',
+              yellow: 'group-hover:bg-yellow-500 dark:group-hover:bg-yellow-400 group-hover:shadow-[0_0_8px_rgba(234,179,8,0.6)]',
+            }[themeColor];
+
+            const iconColor = {
+              green: 'group-hover:text-green-500 dark:group-hover:text-green-400',
+              orange: 'group-hover:text-orange-500 dark:group-hover:text-orange-400',
+              yellow: 'group-hover:text-yellow-500 dark:group-hover:text-yellow-400',
+            }[themeColor];
+
+            return (
+              <div
+                className='flex items-center justify-center mt-2'
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -1261,23 +1293,36 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   return false;
                 }}
               >
-                {/* 背景渐变效果 */}
-                <span className='absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-500/0 group-hover:via-green-50/80 dark:group-hover:via-green-500/20 transition-all duration-300'></span>
+                <span
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border border-gray-300/60 dark:border-gray-600/60 text-gray-600 dark:text-gray-400 transition-all duration-300 ease-out overflow-hidden group-hover:shadow-md group-hover:scale-105 ${colorClasses}`}
+                  style={{
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
+                    WebkitTouchCallout: 'none',
+                  } as React.CSSProperties}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    return false;
+                  }}
+                >
+                  {/* 背景渐变效果 */}
+                  <span className={`absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-500/0 transition-all duration-300 ${bgGradient}`}></span>
 
-                {/* 左侧装饰点 */}
-                <span className='relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-green-500 dark:group-hover:bg-green-400 transition-all duration-300 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]'></span>
+                  {/* 左侧装饰点 */}
+                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 ${dotColor}`}></span>
 
-                {origin === 'live' && (
-                  <Radio size={12} className="relative inline-block transition-all duration-300 group-hover:text-green-500 dark:group-hover:text-green-400" />
-                )}
+                  {origin === 'live' && (
+                    <Radio size={12} className={`relative inline-block transition-all duration-300 ${iconColor}`} />
+                  )}
 
-                <span className='relative font-semibold'>{source_name}</span>
+                  <span className='relative font-semibold'>{displayText}</span>
 
-                {/* 右侧装饰点 */}
-                <span className='relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-green-500 dark:group-hover:bg-green-400 transition-all duration-300 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]'></span>
-              </span>
-            </div>
-          )}
+                  {/* 右侧装饰点 */}
+                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 ${dotColor}`}></span>
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
