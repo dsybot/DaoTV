@@ -2001,6 +2001,11 @@ function PlayPageClient() {
             // 处理搜索结果，使用智能模糊匹配（与downstream评分逻辑保持一致）
             const filteredResults = data.results.filter(
               (result: SearchResult) => {
+                // 如果有 douban_id，优先使用 douban_id 精确匹配
+                if (videoDoubanIdRef.current && videoDoubanIdRef.current > 0 && result.douban_id) {
+                  return result.douban_id === videoDoubanIdRef.current;
+                }
+
                 const queryTitle = videoTitleRef.current.replaceAll(' ', '').toLowerCase();
                 const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
 
