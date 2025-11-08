@@ -256,7 +256,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       // 直播内容跳转到直播页面
       const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
       router.push(url);
-    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId)) {
+    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+      // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
       const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''
         }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
       router.push(url);
@@ -292,7 +293,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       // 直播内容跳转到直播页面
       const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
       window.open(url, '_blank');
-    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId)) {
+    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+      // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
       const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
       window.open(url, '_blank');
     } else if (actualSource && actualId) {
