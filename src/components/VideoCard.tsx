@@ -745,7 +745,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 操作按钮 */}
+          {/* 操作按钮 - hover显示（非收藏页面） */}
           {(config.showHeart || config.showCheckCircle) && from !== 'favorite' && (
             <div
               data-button="true"
@@ -795,6 +795,29 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   }}
                 />
               )}
+            </div>
+          )}
+
+          {/* 收藏页面专用：固定显示的爱心按钮 */}
+          {from === 'favorite' && config.showHeart && (
+            <div
+              className='absolute bottom-2 right-2 z-30'
+              onClick={handleToggleFavorite}
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+                cursor: 'pointer',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              <Heart
+                size={16}
+                className='fill-red-500 stroke-red-500 transition-all duration-300 hover:scale-110 hover:fill-red-600 hover:stroke-red-600'
+              />
             </div>
           )}
 
