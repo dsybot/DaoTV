@@ -1378,23 +1378,150 @@ function PlayPageClient() {
   // ============================================================================
 
   /**
-   * 广告过滤 - 简单策略
-   * 移除所有 DISCONTINUITY 标记（通常用于标识广告插入点）
+   * 检查 URL 是否包含广告关键词
+   */
+  function isAdUrl(url: string): boolean {
+    const adKeywords = [
+      '/ad/', '/ads/', '/advert/', '/commercial/',
+      'doubleclick', 'googlesyndication', 'advertising',
+      'ad-', 'ads-', '-ad-', '-ads-',
+      'adserver', 'adservice'
+    ];
+
+    const lowerUrl = url.toLowerCase();
+    return adKeywords.some(keyword => lowerUrl.includes(keyword));
+  }
+
+  /**
+   * 检测常见广告时长模式（15秒、30秒、60秒等）
+   */
+  function isAdDuration(duration: number): boolean {
+    const commonAdDurations = [15, 30, 60];
+    const tolerance = 1; // 允许1秒误差
+
+    return commonAdDurations.some(
+      adDuration => Math.abs(duration - adDuration) < tolerance
+    );
+  }
+
+  /**
+   * 智能广告过滤 - 综合多种检测方法
+   * 1. 检测行业标准广告标记（EXT-X-CUE-OUT/IN, DATERANGE, SCTE35）
+   * 2. 检测 DISCONTINUITY + 广告时长模式
+   * 3. 检测 URL 中的广告关键词
    */
   function filterAdsFromM3U8(m3u8Content: string): string {
     if (!m3u8Content) return '';
 
-    // 按行分割M3U8内容
     const lines = m3u8Content.split('\n');
-    const filteredLines = [];
+    const filteredLines: string[] = [];
+
+    let inAdBlock = false; // 是否在广告区块内
+    let skipNextUrl = false; // 是否跳过下一个 URL 行
+    let adSegmentCount = 0; // 移除的广告片段数量
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const trimmedLine = line.trim();
 
-      // 只过滤#EXT-X-DISCONTINUITY标识
-      if (!line.includes('#EXT-X-DISCONTINUITY')) {
-        filteredLines.push(line);
+      // 1. 检测明确的广告标记标签（行业标准）
+      if (
+        trimmedLine.includes('#EXT-X-CUE-OUT') ||
+        trimmedLine.includes('#EXT-X-CUE') ||
+        trimmedLine.startsWith('#EXT-X-DATERANGE') ||
+        trimmedLine.includes('SCTE35') ||
+        trimmedLine.includes('#EXT-OATCLS-SCTE35')
+      ) {
+        inAdBlock = true;
+        adSegmentCount++;
+        continue; // 跳过广告标记行
       }
+
+      // 2. 检测广告结束标记
+      if (trimmedLine.includes('#EXT-X-CUE-IN')) {
+        inAdBlock = false;
+        continue;
+      }
+
+      // 3. 如果在广告区块内，跳过所有内容
+      if (inAdBlock) {
+        // 统计跳过的片段
+        if (trimmedLine.startsWith('#EXTINF:')) {
+          adSegmentCount++;
+        }
+        continue;
+      }
+
+      // 4. 检测 DISCONTINUITY 标记（可能是广告插入点）
+      if (trimmedLine.includes('#EXT-X-DISCONTINUITY')) {
+        // 检查接下来的片段是否有广告特征
+        let hasAdCharacteristics = false;
+
+        // 向前看最多3行，检测广告特征
+        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+          const nextLine = lines[j].trim();
+
+          // 检查 EXTINF 行的时长
+          if (nextLine.startsWith('#EXTINF:')) {
+            const durationMatch = nextLine.match(/#EXTINF:([\d.]+)/);
+            if (durationMatch) {
+              const duration = parseFloat(durationMatch[1]);
+              if (isAdDuration(duration)) {
+                hasAdCharacteristics = true;
+                break;
+              }
+            }
+          }
+
+          // 检查 URL 是否包含广告关键词
+          if (!nextLine.startsWith('#') && nextLine.length > 0) {
+            if (isAdUrl(nextLine)) {
+              hasAdCharacteristics = true;
+              break;
+            }
+            break; // 找到 URL 后就停止
+          }
+        }
+
+        if (hasAdCharacteristics) {
+          skipNextUrl = true;
+          adSegmentCount++;
+          continue; // 跳过 DISCONTINUITY
+        }
+      }
+
+      // 5. 检查 URL 行是否包含广告关键词
+      if (!trimmedLine.startsWith('#') && trimmedLine.length > 0) {
+        if (isAdUrl(trimmedLine)) {
+          // 同时移除前一行的 #EXTINF（如果存在）
+          if (filteredLines.length > 0 &&
+            filteredLines[filteredLines.length - 1].trim().startsWith('#EXTINF:')) {
+            filteredLines.pop();
+          }
+          skipNextUrl = false;
+          adSegmentCount++;
+          continue;
+        }
+
+        // 如果标记为跳过，则跳过此 URL
+        if (skipNextUrl) {
+          // 同时移除前一行的 #EXTINF（如果存在）
+          if (filteredLines.length > 0 &&
+            filteredLines[filteredLines.length - 1].trim().startsWith('#EXTINF:')) {
+            filteredLines.pop();
+          }
+          skipNextUrl = false;
+          continue;
+        }
+      }
+
+      // 6. 保留非广告内容
+      filteredLines.push(line);
+    }
+
+    // 输出过滤统计
+    if (adSegmentCount > 0) {
+      console.log(`✅ 广告过滤: 移除 ${adSegmentCount} 个广告片段`);
     }
 
     return filteredLines.join('\n');
