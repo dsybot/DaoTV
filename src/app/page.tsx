@@ -227,6 +227,8 @@ function HomeClient() {
     search_title?: string;
     origin?: 'vod' | 'live';
     save_time: number;
+    releaseDate?: string;
+    remarks?: string;
   };
 
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
@@ -542,6 +544,8 @@ function HomeClient() {
           search_title: fav?.search_title,
           origin: fav?.origin,
           save_time: fav.save_time,
+          releaseDate: fav?.releaseDate,
+          remarks: fav?.remarks,
         } as FavoriteItem;
       });
     setFavoriteItems(sorted);
