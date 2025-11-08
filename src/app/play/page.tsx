@@ -3855,6 +3855,40 @@ function PlayPageClient() {
             console.log('✅ 播放器广告屏蔽CSS已加载');
           }
 
+          // 添加全屏模式选集面板样式
+          const fullscreenEpisodeStyles = document.createElement('style');
+          fullscreenEpisodeStyles.id = 'fullscreen-episode-selector-styles';
+          fullscreenEpisodeStyles.textContent = `
+            /* 确保全屏模式下选集弹出面板显示在最上层 */
+            .art-video-player:fullscreen,
+            .art-video-player:-webkit-full-screen,
+            .art-video-player:-moz-full-screen,
+            .art-video-player:-ms-fullscreen {
+              position: relative;
+            }
+            
+            /* 全屏容器内的Portal元素应该有最高层级 */
+            .art-video-player:fullscreen > div[style*="z-index"],
+            .art-video-player:-webkit-full-screen > div[style*="z-index"],
+            .art-video-player:-moz-full-screen > div[style*="z-index"],
+            .art-video-player:-ms-fullscreen > div[style*="z-index"] {
+              z-index: 2147483647 !important;
+              position: fixed !important;
+            }
+            
+            /* 确保视频元素不会遮挡弹出层 */
+            .art-video-player:fullscreen video,
+            .art-video-player:-webkit-full-screen video {
+              position: relative;
+              z-index: 1;
+            }
+          `;
+          
+          if (!document.getElementById('fullscreen-episode-selector-styles')) {
+            document.head.appendChild(fullscreenEpisodeStyles);
+            console.log('✅ 全屏选集面板CSS已加载');
+          }
+
           // 监控并移除动态插入的广告元素
           const removeOverlayAds = () => {
             if (!artRef.current) return;
@@ -5321,7 +5355,11 @@ function PlayPageClient() {
       {showEpisodePopup && portalContainer && createPortal(
         <div
           className='fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center transition-all duration-300'
-          style={{ zIndex: 99999 }}
+          style={{ 
+            zIndex: 2147483647,
+            position: 'fixed',
+            pointerEvents: 'auto'
+          }}
           onClick={(e) => {
             // 点击背景关闭浮层
             if (e.target === e.currentTarget) {
@@ -5329,12 +5367,13 @@ function PlayPageClient() {
             }
           }}
         >
-          <div className='relative w-full h-full max-w-4xl mx-auto p-8 md:p-12'>
+          <div className='relative w-full h-full max-w-4xl mx-auto p-8 md:p-12' style={{ pointerEvents: 'auto' }}>
             {/* 关闭按钮 - 放在内容区右上角外侧 */}
             <button
               onClick={() => setShowEpisodePopup(false)}
               className='absolute top-6 right-14 z-50 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group'
               title='关闭 (ESC)'
+              style={{ pointerEvents: 'auto' }}
             >
               <svg className='w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2.5} d='M6 18L18 6M6 6l12 12' />
@@ -5342,7 +5381,7 @@ function PlayPageClient() {
             </button>
 
             {/* 选集内容 - 增加更多 padding 避免 hover 放大时被裁切 */}
-            <div className='relative w-full h-full overflow-y-auto px-12'>
+            <div className='relative w-full h-full overflow-y-auto px-12' style={{ pointerEvents: 'auto' }}>
               <EpisodeSelector
                 totalEpisodes={totalEpisodes}
                 episodes_titles={detail?.episodes_titles || []}
