@@ -48,6 +48,7 @@ export interface VideoCardProps {
   isAggregate?: boolean;
   origin?: 'vod' | 'live';
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
+  releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
 }
 
 export type VideoCardHandle = {
@@ -78,6 +79,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     isAggregate = false,
     origin = 'vod',
     remarks,
+    releaseDate,
   }: VideoCardProps,
   ref
 ) {
@@ -194,6 +196,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             total_episodes: actualEpisodes ?? 1,
             save_time: Date.now(),
             search_title: actualQuery || actualTitle, // 保存搜索标题用于后续查找资源
+            releaseDate: releaseDate, // 保存上映日期
+            remarks: remarks, // 保存备注信息
           });
           if (from === 'search') {
             setSearchFavorited(true);

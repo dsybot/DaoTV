@@ -353,18 +353,63 @@ function HomeClient() {
           console.log('📅 日期过滤后的数据:', upcoming.length, '条');
           console.log('📅 过滤后的标题:', upcoming.map((i: ReleaseCalendarItem) => `${i.title} (${i.releaseDate})`));
 
+          // 智能去重：识别同系列内容（如"XX"和"XX第二季"）
+          const normalizeTitle = (title: string): string => {
+            // 移除季数、集数等后缀
+            return title
+              .replace(/第[一二三四五六七八九十\d]+季/g, '')
+              .replace(/[第]?[一二三四五六七八九十\d]+季/g, '')
+              .replace(/Season\s*\d+/gi, '')
+              .replace(/S\d+/gi, '')
+              .replace(/\s+\d+$/g, '') // 移除末尾数字
+              .replace(/：/g, ':')
+              .replace(/\s+/g, '') // 移除所有空格
+              .trim();
+          };
+
           // 去重：基于标题去重，保留最早的那条记录
           const uniqueUpcoming = upcoming.reduce((acc: ReleaseCalendarItem[], current: ReleaseCalendarItem) => {
-            const existingItem = acc.find(item => item.title === current.title);
-            if (!existingItem) {
-              acc.push(current);
-            } else {
-              // 如果已存在，保留上映日期更早的
+            const normalizedCurrent = normalizeTitle(current.title);
+
+            // 先检查精确匹配
+            const exactMatch = acc.find(item => item.title === current.title);
+            if (exactMatch) {
+              // 精确匹配：保留上映日期更早的
               const existingIndex = acc.findIndex(item => item.title === current.title);
-              if (new Date(current.releaseDate) < new Date(existingItem.releaseDate)) {
+              if (new Date(current.releaseDate) < new Date(exactMatch.releaseDate)) {
                 acc[existingIndex] = current;
               }
+              return acc;
             }
+
+            // 再检查归一化后的模糊匹配（识别同系列）
+            const similarMatch = acc.find(item => {
+              const normalizedExisting = normalizeTitle(item.title);
+              return normalizedCurrent === normalizedExisting;
+            });
+
+            if (similarMatch) {
+              // 模糊匹配：优先保留没有"第X季"标记的原版
+              const existingIndex = acc.findIndex(item => normalizeTitle(item.title) === normalizedCurrent);
+              const currentHasSeason = /第[一二三四五六七八九十\d]+季|Season\s*\d+|S\d+/i.test(current.title);
+              const existingHasSeason = /第[一二三四五六七八九十\d]+季|Season\s*\d+|S\d+/i.test(similarMatch.title);
+
+              // 如果当前没有季数标记，而已存在的有，则替换
+              if (!currentHasSeason && existingHasSeason) {
+                acc[existingIndex] = current;
+              }
+              // 如果都有季数标记或都没有，则保留日期更早的
+              else if (currentHasSeason === existingHasSeason) {
+                if (new Date(current.releaseDate) < new Date(similarMatch.releaseDate)) {
+                  acc[existingIndex] = current;
+                }
+              }
+              // 如果当前有季数标记而已存在的没有，则保留已存在的（不替换）
+              return acc;
+            }
+
+            // 没有匹配，添加新项
+            acc.push(current);
             return acc;
           }, []);
 
@@ -743,10 +788,6 @@ function HomeClient() {
             <ContinueWatching />
 
             {/* 即将上映 */}
-            {(() => {
-              console.log('🔍 即将上映 section 渲染检查:', { loading, upcomingReleasesCount: upcomingReleases.length });
-              return null;
-            })()}
             {!loading && upcomingReleases.length > 0 && (
               <section className='mb-4 sm:mb-8'>
                 <div className='mb-3 sm:mb-4 flex items-center justify-between'>
@@ -761,11 +802,21 @@ function HomeClient() {
                 </div>
                 <ScrollableRow>
                   {upcomingReleases.map((release, index) => {
-                    // 格式化上映日期为简洁格式
+                    // 计算距离上映还有几天
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
                     const releaseDate = new Date(release.releaseDate);
-                    const month = releaseDate.getMonth() + 1;
-                    const day = releaseDate.getDate();
-                    const formattedDate = `${month}/${day}`;
+                    const daysDiff = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                    // 根据天数差异显示不同文字
+                    let remarksText;
+                    if (daysDiff < 0) {
+                      remarksText = `已上映${Math.abs(daysDiff)}天`;
+                    } else if (daysDiff === 0) {
+                      remarksText = '今日上映';
+                    } else {
+                      remarksText = `${daysDiff}天后上映`;
+                    }
 
                     return (
                       <div
@@ -781,7 +832,8 @@ function HomeClient() {
                           poster={release.cover || '/placeholder-poster.jpg'}
                           year={release.releaseDate.split('-')[0]}
                           type={release.type}
-                          remarks={formattedDate}
+                          remarks={remarksText}
+                          releaseDate={release.releaseDate}
                           query={release.title}
                           episodes={release.type === 'tv' ? 99 : 1}
                         />
