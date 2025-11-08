@@ -746,7 +746,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           )}
 
           {/* 操作按钮 */}
-          {(config.showHeart || config.showCheckCircle) && (
+          {(config.showHeart || config.showCheckCircle) && from !== 'favorite' && (
             <div
               data-button="true"
               className='absolute bottom-3 right-3 flex gap-3 opacity-0 translate-y-2 transition-all duration-300 ease-in-out sm:group-hover:opacity-100 sm:group-hover:translate-y-0'
@@ -776,7 +776,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   }}
                 />
               )}
-              {config.showHeart && from !== 'search' && from !== 'favorite' && (
+              {config.showHeart && from !== 'search' && (
                 <Heart
                   onClick={handleToggleFavorite}
                   size={20}
