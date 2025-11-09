@@ -965,7 +965,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               </div>
             );
           })()}
->>>>>>> 0c09983 (feat: dynamic release badges and hide placeholder episodes)
 
           {/* 评分徽章 - 动态颜色 */}
           {config.showRating && rate && (() => {
