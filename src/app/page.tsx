@@ -92,7 +92,7 @@ function HomeClient() {
     }
   }, [announcement]);
 
-  // 监听布局模式变化
+  // 监听布局模式变化（仅跨标签页）
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -111,24 +111,8 @@ function HomeClient() {
     // 监听 storage 事件（跨标签页）
     window.addEventListener('storage', handleStorageChange);
 
-    // 监听同一页面内的变化
-    const handleLayoutChange = () => {
-      const savedLayout = localStorage.getItem('layoutMode');
-      // 兼容旧版本的 'bottom' 值
-      if (savedLayout === 'bottom') {
-        setLayoutMode('top');
-        localStorage.setItem('layoutMode', 'top');
-      } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
-        setLayoutMode(savedLayout as 'sidebar' | 'top');
-      }
-    };
-
-    // 使用 setInterval 定期检查（作为后备方案）
-    const intervalId = setInterval(handleLayoutChange, 100);
-
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(intervalId);
     };
   }, []);
 
