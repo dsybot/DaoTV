@@ -339,10 +339,10 @@ function HomeClient() {
           console.log('📅 日期过滤后的数据:', upcoming.length, '条');
           console.log('📅 过滤后的标题:', upcoming.map((i: ReleaseCalendarItem) => `${i.title} (${i.releaseDate})`));
 
-          // 智能去重：识别同系列内容（如"XX"和"XX第二季"）以及副标题（如"过关斩将：猎杀游戏"和"猎杀游戏"）
+          // 智能去重：识别同系列内容（如"XX"和"XX第二季"）
           const normalizeTitle = (title: string): string => {
             // 移除季数、集数等后缀
-            let normalized = title
+            return title
               .replace(/第[一二三四五六七八九十\d]+季/g, '')
               .replace(/[第]?[一二三四五六七八九十\d]+季/g, '')
               .replace(/Season\s*\d+/gi, '')
@@ -351,16 +351,6 @@ function HomeClient() {
               .replace(/：/g, ':')
               .replace(/\s+/g, '') // 移除所有空格
               .trim();
-
-            // 处理副标题：如果有冒号，取冒号后的部分（主标题）
-            // 例如 "过关斩将:猎杀游戏" -> "猎杀游戏"
-            if (normalized.includes(':')) {
-              const parts = normalized.split(':');
-              // 取较长的部分作为主标题（通常副标题在后面且更长）
-              normalized = parts.reduce((a, b) => a.length >= b.length ? a : b).trim();
-            }
-
-            return normalized;
           };
 
           // 去重：基于标题去重，保留最早的那条记录
