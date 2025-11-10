@@ -341,26 +341,24 @@ function HomeClient() {
 
           // 智能去重：识别同系列内容（如"XX"和"XX第二季"）以及副标题（如"过关斩将：猎杀游戏"和"猎杀游戏"）
           const normalizeTitle = (title: string): string => {
-            // 先统一冒号格式
-            let normalized = title.replace(/：/g, ':').trim();
-
-            // 处理副标题：如果有冒号，取冒号后的部分（主标题）
-            // 例如 "过关斩将:猎杀游戏" -> "猎杀游戏"
-            if (normalized.includes(':')) {
-              const parts = normalized.split(':').map(p => p.trim());
-              // 取较长的部分作为主标题（通常副标题在后面且更长）
-              normalized = parts.reduce((a, b) => a.length >= b.length ? a : b);
-            }
-
-            // 再移除季数、集数等后缀和空格
-            normalized = normalized
+            // 移除季数、集数等后缀
+            let normalized = title
               .replace(/第[一二三四五六七八九十\d]+季/g, '')
               .replace(/[第]?[一二三四五六七八九十\d]+季/g, '')
               .replace(/Season\s*\d+/gi, '')
               .replace(/S\d+/gi, '')
               .replace(/\s+\d+$/g, '') // 移除末尾数字
+              .replace(/：/g, ':')
               .replace(/\s+/g, '') // 移除所有空格
               .trim();
+
+            // 处理副标题：如果有冒号，取冒号后的部分（主标题）
+            // 例如 "过关斩将:猎杀游戏" -> "猎杀游戏"
+            if (normalized.includes(':')) {
+              const parts = normalized.split(':');
+              // 取较长的部分作为主标题（通常副标题在后面且更长）
+              normalized = parts.reduce((a, b) => a.length >= b.length ? a : b).trim();
+            }
 
             return normalized;
           };
