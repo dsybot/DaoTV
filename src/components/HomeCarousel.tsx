@@ -251,7 +251,7 @@ export default function HomeCarousel() {
 
           {/* 简介 */}
           {currentItem.overview && (
-            <p className="text-gray-200 text-sm sm:text-base line-clamp-2 sm:line-clamp-3 max-w-xl">
+            <p className="text-gray-200 text-sm sm:text-base line-clamp-3 sm:line-clamp-5 max-w-xl">
               {currentItem.overview}
             </p>
           )}
