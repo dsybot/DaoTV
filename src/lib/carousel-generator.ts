@@ -101,6 +101,21 @@ export async function generateCarouselData(): Promise<any[]> {
 
   console.log(`[轮播生成器] TMDB搜索完成 - 总数:${carouselResults.length}, 成功:${validResults.length}, 失败:${rejectedCount}, 未找到:${nullCount}`);
 
+  // 🔍 专门追踪"唐朝诡事录之长安"
+  const tangChaoIndex = items.findIndex(item => item.title === '唐朝诡事录之长安');
+  if (tangChaoIndex !== -1) {
+    const tangChaoResult = carouselResults[tangChaoIndex];
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 索引:${tangChaoIndex}, 状态:${tangChaoResult.status}`);
+    if (tangChaoResult.status === 'fulfilled') {
+      console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 结果:`, tangChaoResult.value ? '找到' : '未找到');
+      if (tangChaoResult.value) {
+        console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 海报:backdrop=${!!tangChaoResult.value.backdrop}, poster=${!!tangChaoResult.value.poster}`);
+      }
+    } else {
+      console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 错误:`, (tangChaoResult as PromiseRejectedResult).reason);
+    }
+  }
+
   // 🔍 打印未找到的标题（调试用）
   const notFoundTitles = carouselResults
     .map((result, index) => ({ result, title: items[index].title, source: items[index].source }))
@@ -138,6 +153,14 @@ export async function generateCarouselData(): Promise<any[]> {
     });
 
   console.log(`[轮播生成器] 海报过滤后剩余${carouselWithSource.length}项`);
+
+  // 🔍 追踪"唐朝诡事录之长安"是否通过海报过滤
+  const tangChaoInFiltered = carouselWithSource.find(x => x.item.title.includes('唐朝诡事录'));
+  if (tangChaoInFiltered) {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 通过海报过滤 ✓`);
+  } else {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 在海报过滤时被移除 ✗`);
+  }
 
   // 按来源分类
   const movieItems = carouselWithSource.filter(x => x.source === 'movie');
@@ -190,6 +213,20 @@ export async function generateCarouselData(): Promise<any[]> {
   console.log(`[轮播生成器] 第5步: 最终分配 - 电视剧:${finalTvItems.length}/8, 电影:${finalMovieItems.length}/5, 综艺:${finalVarietyItems.length}/2, 总计:${currentTotal}/15`);
   console.log('[轮播生成器] 🔍 最终电视剧:', finalTvItems.map(x => x.item.title));
   console.log('[轮播生成器] 🔍 最终电影:', finalMovieItems.map(x => x.item.title));
+
+  // 🔍 追踪"唐朝诡事录之长安"是否在最终列表
+  const tangChaoInFinal = finalTvItems.find(x => x.item.title.includes('唐朝诡事录'));
+  if (tangChaoInFinal) {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 在最终电视剧列表中 ✓`);
+  } else {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 未进入最终电视剧列表 ✗`);
+    if (tvItems.length > 0) {
+      const tangChaoRank = tvItems.findIndex(x => x.item.title.includes('唐朝诡事录'));
+      if (tangChaoRank !== -1) {
+        console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 在所有电视剧中排第 ${tangChaoRank + 1} 位（只取前8个）`);
+      }
+    }
+  }
 
   // 合并数据（电视剧优先）
   const allItems = [
@@ -244,10 +281,23 @@ export async function generateCarouselData(): Promise<any[]> {
 
   // 随机打乱
   console.log('[轮播生成器] 🔍 打乱前列表:', carouselList.map(x => x.title));
+  const tangChaoBeforeShuffle = carouselList.findIndex(x => x.title.includes('唐朝诡事录'));
+  if (tangChaoBeforeShuffle !== -1) {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 打乱前位置: 第 ${tangChaoBeforeShuffle + 1} 个`);
+  }
+
   carouselList = carouselList.sort(() => Math.random() - 0.5);
 
   console.log(`[轮播生成器] 第7步: 随机排序完成，共${carouselList.length}项`);
   console.log('[轮播生成器] 🔍 打乱后列表:', carouselList.map(x => x.title));
+
+  const tangChaoAfterShuffle = carouselList.findIndex(x => x.title.includes('唐朝诡事录'));
+  if (tangChaoAfterShuffle !== -1) {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 打乱后位置: 第 ${tangChaoAfterShuffle + 1} 个`);
+  } else {
+    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 打乱后不在列表中 ✗`);
+  }
+
   console.log('[轮播生成器] ===== 生成完成 =====');
 
   return carouselList;
