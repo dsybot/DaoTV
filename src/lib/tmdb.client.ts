@@ -608,17 +608,21 @@ export async function getCarouselItemByTitle(
       const movieSearch = await searchTMDBMovie(title);
       console.log(`[TMDB轮播] "${title}" 搜索结果: ${movieSearch.results.length}个匹配`);
       if (movieSearch.results.length > 0) {
-        searchResult = movieSearch.results[0];
+        // 优先选择有海报的结果
+        searchResult = movieSearch.results.find(r => r.backdrop_path || r.poster_path) || movieSearch.results[0];
         mediaId = searchResult.id;
-        console.log(`[TMDB轮播] ✅ 选择第1个: ${searchResult.title} (ID: ${mediaId})`);
+        const selectedIndex = movieSearch.results.indexOf(searchResult);
+        console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.title} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
       }
     } else {
       const tvSearch = await searchTMDBTV(title);
       console.log(`[TMDB轮播] "${title}" 搜索结果: ${tvSearch.results.length}个匹配`);
       if (tvSearch.results.length > 0) {
-        searchResult = tvSearch.results[0];
+        // 优先选择有海报的结果
+        searchResult = tvSearch.results.find(r => r.backdrop_path || r.poster_path) || tvSearch.results[0];
         mediaId = searchResult.id;
-        console.log(`[TMDB轮播] ✅ 选择第1个: ${searchResult.name} (ID: ${mediaId})`);
+        const selectedIndex = tvSearch.results.indexOf(searchResult);
+        console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.name} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
       }
     }
 
@@ -635,14 +639,14 @@ export async function getCarouselItemByTitle(
       backdrop: searchResult.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}` : '',
       poster: searchResult.poster_path ? `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}` : '',
       rate: searchResult.vote_average || 0,
-      year: type === 'movie' 
+      year: type === 'movie'
         ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
         : ((searchResult as TMDBTVShow).first_air_date?.split('-')[0] || ''),
       type,
     };
 
     console.log(`[TMDB轮播] 📸 海报情况: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`);
-    
+
     if (!carouselItem.backdrop && !carouselItem.poster) {
       console.warn(`[TMDB轮播] ⚠️  ${title} 缺少所有海报，将被过滤`);
     } else if (!carouselItem.backdrop) {
