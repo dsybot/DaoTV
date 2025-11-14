@@ -7,7 +7,7 @@ import { clearCarouselCache } from '@/lib/carousel-cache';
 
 export const runtime = 'nodejs';
 
-// 缓存统计接口
+// 缓存统计接口和清除接口（支持GET方式）
 export async function GET(request: NextRequest) {
   const authInfo = getAuthInfoFromCookie(request);
   if (!authInfo || !authInfo.username) {
@@ -17,6 +17,27 @@ export async function GET(request: NextRequest) {
   // 只有站长(owner)可以访问缓存管理
   if (authInfo.username !== process.env.USERNAME) {
     return NextResponse.json({ error: 'Forbidden: Owner access required' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get('action');
+  const cacheType = searchParams.get('type');
+
+  // 如果有action=clear参数，执行清除操作
+  if (action === 'clear' && cacheType === 'carousel') {
+    try {
+      await clearCarouselCache();
+      return NextResponse.json({
+        success: true,
+        message: '轮播图缓存已清除，请刷新页面查看新数据'
+      });
+    } catch (error) {
+      console.error('清除轮播图缓存失败:', error);
+      return NextResponse.json({
+        success: false,
+        error: '清除缓存失败'
+      }, { status: 500 });
+    }
   }
 
   try {
