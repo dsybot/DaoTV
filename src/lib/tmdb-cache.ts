@@ -1,4 +1,4 @@
-import { DatabaseCacheManager } from './database-cache';
+import { db } from './db';
 
 // TMDB数据缓存配置（秒）
 const TMDB_CACHE_EXPIRE = {
@@ -25,7 +25,7 @@ function getCacheKey(prefix: string, params: Record<string, any>): string {
 // 统一缓存获取方法
 async function getCache(key: string): Promise<any | null> {
   try {
-    const cached = await DatabaseCacheManager.get(key);
+    const cached = await db.getCache(key);
     return cached;
   } catch (e) {
     console.warn('获取TMDB缓存失败:', e);
@@ -36,7 +36,7 @@ async function getCache(key: string): Promise<any | null> {
 // 统一缓存设置方法
 async function setCache(key: string, data: any, expireSeconds: number): Promise<void> {
   try {
-    await DatabaseCacheManager.set(key, data, expireSeconds);
+    await db.setCache(key, data, expireSeconds);
   } catch (e) {
     console.warn('设置TMDB缓存失败:', key, e);
   }
@@ -46,7 +46,7 @@ async function setCache(key: string, data: any, expireSeconds: number): Promise<
 async function cleanExpiredCache(): Promise<void> {
   try {
     // 清理数据库中的过期缓存
-    await DatabaseCacheManager.clearExpired('tmdb-');
+    await db.clearExpiredCache('tmdb-');
   } catch (e) {
     console.warn('清理TMDB过期缓存失败:', e);
   }
@@ -64,7 +64,7 @@ export async function getTMDBCacheStats(): Promise<{
 
 // 清理所有TMDB缓存
 export async function clearTMDBCache(): Promise<void> {
-  await DatabaseCacheManager.clearExpired('tmdb-');
+  await db.clearExpiredCache('tmdb-');
   console.log('已清理所有TMDB缓存项');
 }
 
