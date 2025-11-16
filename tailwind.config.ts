@@ -34,6 +34,20 @@ const config: Config = {
         dark: '#222222',
       },
       keyframes: {
+        blob: {
+          '0%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+          '33%': {
+            transform: 'translate(30px, -50px) scale(1.1)',
+          },
+          '66%': {
+            transform: 'translate(-20px, 20px) scale(0.9)',
+          },
+          '100%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+        },
         flicker: {
           '0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100%': {
             opacity: '0.99',
@@ -91,8 +105,13 @@ const config: Config = {
           '0%': { transform: 'translateY(20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        scrollText: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(calc(-100% + 100px))' },
+        },
       },
       animation: {
+        blob: 'blob 7s infinite',
         flicker: 'flicker 3s linear infinite',
         shimmer: 'shimmer 1.3s linear infinite',
         'fade-in': 'fadeIn 0.3s ease-in-out',
@@ -103,6 +122,11 @@ const config: Config = {
         'slide-in-from-bottom': 'slideInFromBottom 0.3s ease-out',
         'ken-burns': 'kenBurns 20s ease-out infinite alternate',
         wave: 'wave 2s ease-in-out infinite',
+        'scroll-text': 'scrollText 3s linear infinite',
+      },
+      animationDelay: {
+        '2000': '2s',
+        '4000': '4s',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
