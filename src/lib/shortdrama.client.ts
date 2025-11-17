@@ -51,7 +51,6 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
@@ -110,7 +109,6 @@ export async function getRecommendedShortDramas(
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
@@ -175,7 +173,6 @@ export async function getShortDramaList(
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
@@ -236,7 +233,6 @@ export async function searchShortDramas(
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
@@ -309,7 +305,6 @@ export async function parseShortDramaEpisode(
       }
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
@@ -385,7 +380,6 @@ export async function parseShortDramaBatch(
       }
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
@@ -433,7 +427,6 @@ export async function parseShortDramaAll(
       }
     } : {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
       mode: 'cors',
