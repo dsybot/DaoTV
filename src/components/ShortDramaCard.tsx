@@ -110,9 +110,8 @@ function ShortDramaCard({
           <img
             src={drama.cover}
             alt={drama.name}
-            className={`h-full w-full object-cover transition-opacity duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`h-full w-full object-cover transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
+              }`}
             loading="lazy"
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
