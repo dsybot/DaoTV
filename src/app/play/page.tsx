@@ -1388,9 +1388,9 @@ function PlayPageClient() {
       // 🎯 增强功能1: 检测行业标准广告标记（SCTE-35系列）
       // 使用 line.includes() 保持与原逻辑一致，兼容各种格式
       if (line.includes('#EXT-X-CUE-OUT') ||
-          (line.includes('#EXT-X-DATERANGE') && line.includes('SCTE35')) ||
-          line.includes('#EXT-X-SCTE35') ||
-          line.includes('#EXT-OATCLS-SCTE35')) {
+        (line.includes('#EXT-X-DATERANGE') && line.includes('SCTE35')) ||
+        line.includes('#EXT-X-SCTE35') ||
+        line.includes('#EXT-OATCLS-SCTE35')) {
         inAdBlock = true;
         adSegmentCount++;
         continue; // 跳过广告开始标记
@@ -3071,6 +3071,7 @@ function PlayPageClient() {
               hls.on(Hls.Events.ERROR, function (event: any, data: any) {
                 console.error('HLS Error:', event, data);
 
+                // v1.6.15 改进：优化了播放列表末尾空片段/间隙处理，改进了音频TS片段duration处理
                 // v1.6.13 增强：处理片段解析错误（针对initPTS修复）
                 if (data.details === Hls.ErrorDetails.FRAG_PARSING_ERROR) {
                   console.log('片段解析错误，尝试重新加载...');
@@ -3863,7 +3864,7 @@ function PlayPageClient() {
               z-index: 1;
             }
           `;
-          
+
           if (!document.getElementById('fullscreen-episode-selector-styles')) {
             document.head.appendChild(fullscreenEpisodeStyles);
             console.log('✅ 全屏选集面板CSS已加载');
@@ -5258,7 +5259,7 @@ function PlayPageClient() {
       {showEpisodePopup && portalContainer && createPortal(
         <div
           className='fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center transition-all duration-300'
-          style={{ 
+          style={{
             zIndex: 2147483647,
             position: 'fixed',
             pointerEvents: 'auto'
