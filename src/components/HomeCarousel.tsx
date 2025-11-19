@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { processImageUrl } from '@/lib/utils';
+import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 
 interface CarouselItem {
   id: number;
@@ -37,6 +38,7 @@ export default function HomeCarousel() {
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const resumeAutoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [thumbnailLoadedMap, setThumbnailLoadedMap] = useState<Record<number, boolean>>({});
 
   // 获取轮播数据
   useEffect(() => {
@@ -264,7 +266,7 @@ export default function HomeCarousel() {
         <div className="md:hidden flex items-end gap-3 px-4 pb-4">
           {items.length > 1 && (
             <>
-              {/* 左侧：缩略图横向滚动区域 - 显示所有15个 */}
+              {/* 左侧：缩略图横向滚动区域 - 显示所有缩略图 */}
               <div
                 ref={thumbnailContainerRef}
                 className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide"
@@ -274,25 +276,46 @@ export default function HomeCarousel() {
                 <div className="flex gap-2 px-1 pr-[68px] py-2">
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
+                    const isLoaded = thumbnailLoadedMap[item.id];
 
                     return (
                       <button
                         key={item.id}
-                        ref={(el) => { thumbnailRefs.current[index] = el; }}
+                        ref={(el) => {
+                          thumbnailRefs.current[index] = el;
+                        }}
                         onClick={() => {
                           setCurrentIndex(index);
                           pauseAutoPlayTemporarily();
                         }}
                         className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
-                          ? 'ring-2 ring-white shadow-2xl scale-105'
-                          : 'ring-1 ring-white/50'
+                            ? 'ring-2 ring-white shadow-2xl scale-105'
+                            : 'ring-1 ring-white/50'
                           }`}
                       >
-                        <img
-                          src={processImageUrl(item.poster)}
-                          alt={item.title}
-                          className="w-14 h-20 object-cover"
-                        />
+                        <div className="relative w-14 h-20">
+                          {!isLoaded && (
+                            <ImagePlaceholder aspectRatio="h-full" />
+                          )}
+                          <img
+                            src={processImageUrl(item.poster)}
+                            alt={item.title}
+                            className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+                              }`}
+                            onLoad={() => {
+                              setThumbnailLoadedMap((prev) => ({
+                                ...prev,
+                                [item.id]: true,
+                              }));
+                            }}
+                            onError={() => {
+                              setThumbnailLoadedMap((prev) => ({
+                                ...prev,
+                                [item.id]: true,
+                              }));
+                            }}
+                          />
+                        </div>
                       </button>
                     );
                   })}
@@ -320,30 +343,52 @@ export default function HomeCarousel() {
             <div className="relative flex-1 flex-initial">
               {/* 缩略图滚动容器 */}
               <div className="flex gap-3 overflow-visible">
-                {items.map((item, index) => (
-                  <button
-                    key={index}
-                    onMouseEnter={() => {
-                      setCurrentIndex(index);
-                      setIsAutoPlaying(false);
-                    }}
-                    onClick={() => {
-                      setCurrentIndex(index);
-                      setIsAutoPlaying(false);
-                    }}
-                    className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
-                      ? 'ring-2 ring-white shadow-2xl scale-105'
-                      : 'ring-1 ring-white/50'
-                      }`}
-                    aria-label={`切换到 ${item.title}`}
-                  >
-                    <img
-                      src={processImageUrl(item.poster)}
-                      alt={item.title}
-                      className="w-16 h-24 object-cover"
-                    />
-                  </button>
-                ))}
+                {items.map((item, index) => {
+                  const isLoaded = thumbnailLoadedMap[item.id];
+
+                  return (
+                    <button
+                      key={index}
+                      onMouseEnter={() => {
+                        setCurrentIndex(index);
+                        setIsAutoPlaying(false);
+                      }}
+                      onClick={() => {
+                        setCurrentIndex(index);
+                        setIsAutoPlaying(false);
+                      }}
+                      className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
+                          ? 'ring-2 ring-white shadow-2xl scale-105'
+                          : 'ring-1 ring-white/50'
+                        }`}
+                      aria-label={`切换到 ${item.title}`}
+                    >
+                      <div className="relative w-16 h-24">
+                        {!isLoaded && (
+                          <ImagePlaceholder aspectRatio="h-full" />
+                        )}
+                        <img
+                          src={processImageUrl(item.poster)}
+                          alt={item.title}
+                          className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          onLoad={() => {
+                            setThumbnailLoadedMap((prev) => ({
+                              ...prev,
+                              [item.id]: true,
+                            }));
+                          }}
+                          onError={() => {
+                            setThumbnailLoadedMap((prev) => ({
+                              ...prev,
+                              [item.id]: true,
+                            }));
+                          }}
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -360,7 +405,6 @@ export default function HomeCarousel() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
