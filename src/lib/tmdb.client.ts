@@ -591,6 +591,27 @@ export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearc
 }
 
 /**
+ * 去掉电视剧标题末尾的“第X季/第X部/第X期/S3/Season 3”等后缀
+ */
+function normalizeTVTitle(title: string): string {
+  const trimmed = title.trim();
+  const patterns = [
+    /\s+第[0-9一二三四五六七八九十]+季$/u,
+    /\s+第[0-9一二三四五六七八九十]+部$/u,
+    /\s+第[0-9一二三四五六七八九十]+期$/u,
+    /\s+S[0-9]+$/i,
+    /\s+Season\s+[0-9]+$/i,
+  ];
+  let result = trimmed;
+  for (const pattern of patterns) {
+    if (pattern.test(result)) {
+      result = result.replace(pattern, '');
+    }
+  }
+  return result;
+}
+
+/**
  * 通过豆瓣电影/电视剧名称获取TMDB轮播图数据
  */
 export async function getCarouselItemByTitle(
@@ -600,6 +621,7 @@ export async function getCarouselItemByTitle(
   try {
     console.log(`[TMDB轮播] 🔍 开始搜索 ${type}: "${title}"`);
 
+    // ... (其他代码保持不变)
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
     let mediaId = 0;
@@ -615,8 +637,16 @@ export async function getCarouselItemByTitle(
         console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.title} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
       }
     } else {
-      const tvSearch = await searchTMDBTV(title);
+      let tvSearch = await searchTMDBTV(title);
       console.log(`[TMDB轮播] "${title}" 搜索结果: ${tvSearch.results.length}个匹配`);
+      if (tvSearch.results.length === 0) {
+        const normalizedTitle = normalizeTVTitle(title);
+        if (normalizedTitle && normalizedTitle !== title.trim()) {
+          console.log(`[TMDB轮播] "${title}" 搜索结果为空，尝试精简标题 "${normalizedTitle}" 重新搜索`);
+          tvSearch = await searchTMDBTV(normalizedTitle);
+          console.log(`[TMDB轮播] 精简标题 "${normalizedTitle}" 搜索结果: ${tvSearch.results.length}个匹配`);
+        }
+      }
       if (tvSearch.results.length > 0) {
         // 优先选择有海报的结果
         searchResult = tvSearch.results.find(r => r.backdrop_path || r.poster_path) || tvSearch.results[0];
