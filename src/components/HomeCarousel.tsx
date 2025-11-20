@@ -28,6 +28,14 @@ interface CarouselResponse {
   list: CarouselItem[];
 }
 
+function getCarouselPosterUrl(url: string): string {
+  if (!url) return url;
+  if (url.includes('doubanio.com')) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return processImageUrl(url);
+}
+
 export default function HomeCarousel() {
   const router = useRouter();
   const [items, setItems] = useState<CarouselItem[]>([]);
@@ -289,8 +297,8 @@ export default function HomeCarousel() {
                           pauseAutoPlayTemporarily();
                         }}
                         className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
-                            ? 'ring-2 ring-white shadow-2xl scale-105'
-                            : 'ring-1 ring-white/50'
+                          ? 'ring-2 ring-white shadow-2xl scale-105'
+                          : 'ring-1 ring-white/50'
                           }`}
                       >
                         <div className="relative w-14 h-20">
@@ -298,7 +306,7 @@ export default function HomeCarousel() {
                             <ImagePlaceholder aspectRatio="h-full" />
                           )}
                           <img
-                            src={processImageUrl(item.poster)}
+                            src={getCarouselPosterUrl(item.poster)}
                             alt={item.title}
                             className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
                               }`}
@@ -358,8 +366,8 @@ export default function HomeCarousel() {
                         setIsAutoPlaying(false);
                       }}
                       className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
-                          ? 'ring-2 ring-white shadow-2xl scale-105'
-                          : 'ring-1 ring-white/50'
+                        ? 'ring-2 ring-white shadow-2xl scale-105'
+                        : 'ring-1 ring-white/50'
                         }`}
                       aria-label={`切换到 ${item.title}`}
                     >
@@ -368,7 +376,7 @@ export default function HomeCarousel() {
                           <ImagePlaceholder aspectRatio="h-full" />
                         )}
                         <img
-                          src={processImageUrl(item.poster)}
+                          src={item.poster.startsWith('https://img3.doubanio.com') ? `/api/image-proxy?url=${item.poster}` : getCarouselPosterUrl(item.poster)}
                           alt={item.title}
                           className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
                             }`}
