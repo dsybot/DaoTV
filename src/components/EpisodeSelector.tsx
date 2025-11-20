@@ -495,7 +495,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               return (
                 <button
                   key={episodeNumber}
-                  onClick={() => handleEpisodeClick(episodeNumber - 1)}
+                  onClick={() => handleEpisodeClick(episodeNumber)}
                   className={`group h-10 min-w-10 px-3 py-2 flex items-center justify-center text-sm font-semibold rounded-lg transition-all duration-300 whitespace-nowrap font-mono relative
                     ${isActive
                       ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20 z-10'
