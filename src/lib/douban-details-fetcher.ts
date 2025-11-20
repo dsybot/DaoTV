@@ -27,6 +27,7 @@ function randomDelay(min = 500, max = 1500): Promise<void> {
 export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
   genres: string[];
   first_aired: string;
+  plot_summary: string;
 } | null> {
   try {
     const target = `https://movie.douban.com/subject/${doubanId}/`;
@@ -79,9 +80,22 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
       }
     }
 
+    const summaryMatch = html.match(/<span[^>]*class="all hidden">([\s\S]*?)<\/span>/) ||
+      html.match(/<span[^>]*property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
+    let plot_summary = '';
+    if (summaryMatch) {
+      plot_summary = summaryMatch[1]
+        .replace(/<br\s*\/?>(?=\s*<)/gi, '\n')
+        .replace(/<br\s*\/?>(?!\s*<)/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+        .replace(/\n{3,}/g, '\n\n');
+    }
+
     return {
       genres,
       first_aired,
+      plot_summary,
     };
   } catch (error) {
     console.warn(`[豆瓣详情] 获取失败 ${doubanId}:`, error instanceof Error ? error.message : error);

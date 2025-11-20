@@ -65,19 +65,37 @@ export async function generateCarouselData(): Promise<any[]> {
       title: m.title,
       type: 'movie' as const,
       source: 'movie' as const,
-      doubanData: { id: m.id, rate: m.rate, year: m.year }
+      doubanData: {
+        id: m.id,
+        rate: m.rate,
+        year: m.year,
+        title: m.title,
+        poster: m.poster,
+      }
     })),
     ...tvShows.map((t: any) => ({
       title: t.title,
       type: 'tv' as const,
       source: 'tv' as const,
-      doubanData: { id: t.id, rate: t.rate, year: t.year }
+      doubanData: {
+        id: t.id,
+        rate: t.rate,
+        year: t.year,
+        title: t.title,
+        poster: t.poster,
+      }
     })),
     ...varietyShows.map((v: any) => ({
       title: v.title,
       type: 'tv' as const,
       source: 'variety' as const,
-      doubanData: { id: v.id, rate: v.rate, year: v.year }
+      doubanData: {
+        id: v.id,
+        rate: v.rate,
+        year: v.year,
+        title: v.title,
+        poster: v.poster,
+      }
     })),
   ];
 
@@ -250,6 +268,7 @@ export async function generateCarouselData(): Promise<any[]> {
           id: item.doubanData.id,
           genres: details.genres || [],
           first_aired: details.first_aired || '',
+          plot_summary: details.plot_summary || '',
         };
       } else {
         console.warn(`[轮播生成器] ⚠️ ${item.title} 详情获取返回null`);
@@ -270,10 +289,13 @@ export async function generateCarouselData(): Promise<any[]> {
     return {
       ...x,
       id: x.doubanData.id || x.id, // 使用豆瓣ID而不是TMDB ID
+      title: x.doubanData.title || x.title,
       rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
         ? parseFloat(x.doubanData.rate)
         : x.rate,
       year: x.doubanData.year || x.year,
+      overview: detail?.plot_summary || x.overview,
+      poster: x.doubanData.poster || x.poster,
       genres: detail?.genres || [],
       first_aired: detail?.first_aired || '',
     };
