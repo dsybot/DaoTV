@@ -2419,12 +2419,13 @@ function PlayPageClient() {
   // ---------------------------------------------------------------------------
   // 处理集数切换
   const handleEpisodeChange = (episodeNumber: number) => {
-    if (episodeNumber >= 0 && episodeNumber < totalEpisodes) {
+    if (episodeNumber >= 1 && episodeNumber <= totalEpisodes) {
+      const targetIndex = episodeNumber - 1;
       // 在更换集数前保存当前播放进度
       if (artPlayerRef.current && artPlayerRef.current.paused) {
         saveCurrentPlayProgress();
       }
-      setCurrentEpisodeIndex(episodeNumber);
+      setCurrentEpisodeIndex(targetIndex);
     }
   };
 
@@ -5291,7 +5292,7 @@ function PlayPageClient() {
                 episodes_titles={detail?.episodes_titles || []}
                 value={currentEpisodeIndex + 1}
                 onChange={(episodeNumber) => {
-                  handleEpisodeChange(episodeNumber - 1);
+                  handleEpisodeChange(episodeNumber);
                   setShowEpisodePopup(false);
                 }}
                 onSourceChange={(source, id, title) => {
