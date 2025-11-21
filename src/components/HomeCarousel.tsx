@@ -29,10 +29,6 @@ interface CarouselResponse {
 }
 
 function getCarouselPosterUrl(url: string): string {
-  if (!url) return url;
-  if (url.includes('doubanio.com')) {
-    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
-  }
   return processImageUrl(url);
 }
 
@@ -376,7 +372,7 @@ export default function HomeCarousel() {
                           <ImagePlaceholder aspectRatio="h-full" />
                         )}
                         <img
-                          src={item.poster.startsWith('https://img3.doubanio.com') ? `/api/image-proxy?url=${item.poster}` : getCarouselPosterUrl(item.poster)}
+                          src={getCarouselPosterUrl(item.poster)}
                           alt={item.title}
                           className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
                             }`}
