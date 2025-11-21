@@ -304,6 +304,7 @@ export default function HomeCarousel() {
                           <img
                             src={getCarouselPosterUrl(item.poster)}
                             alt={item.title}
+                            referrerPolicy="no-referrer"
                             className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
                               }`}
                             onLoad={() => {
@@ -374,6 +375,7 @@ export default function HomeCarousel() {
                         <img
                           src={getCarouselPosterUrl(item.poster)}
                           alt={item.title}
+                          referrerPolicy="no-referrer"
                           className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
                             }`}
                           onLoad={() => {
