@@ -747,16 +747,36 @@ function HomeClient() {
 
                       {/* 该日期的收藏卡片网格 */}
                       <div className='ml-8 sm:ml-11 justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
-                        {items.map((item) => (
-                          <div key={item.id + item.source} className='w-full'>
-                            <VideoCard
-                              query={item.search_title}
-                              {...item}
-                              from='favorite'
-                              type={item.episodes > 1 ? 'tv' : ''}
-                            />
-                          </div>
-                        ))}
+                        {items.map((item) => {
+                          let calculatedRemarks = item.remarks;
+
+                          if (item.releaseDate) {
+                            const now = new Date();
+                            const releaseDate = new Date(item.releaseDate);
+                            const daysDiff = Math.ceil((releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+                            if (daysDiff < 0) {
+                              const daysAgo = Math.abs(daysDiff);
+                              calculatedRemarks = `已上映${daysAgo}天`;
+                            } else if (daysDiff === 0) {
+                              calculatedRemarks = '今日上映';
+                            } else {
+                              calculatedRemarks = `${daysDiff}天后上映`;
+                            }
+                          }
+
+                          return (
+                            <div key={item.id + item.source} className='w-full'>
+                              <VideoCard
+                                query={item.search_title}
+                                {...item}
+                                from='favorite'
+                                type={item.episodes > 1 ? 'tv' : ''}
+                                remarks={calculatedRemarks}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -803,10 +823,9 @@ function HomeClient() {
                 <ScrollableRow>
                   {upcomingReleases.map((release, index) => {
                     // 计算距离上映还有几天
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
+                    const now = new Date();
                     const releaseDate = new Date(release.releaseDate);
-                    const daysDiff = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    const daysDiff = Math.ceil((releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
                     // 根据天数差异显示不同文字
                     let remarksText;
