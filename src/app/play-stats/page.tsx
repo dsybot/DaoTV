@@ -656,8 +656,8 @@ const PlayStatsPage: React.FC = () => {
                 <button
                   onClick={() => setActiveTab('admin')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'admin'
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                     }`}
                 >
                   全站统计
@@ -665,8 +665,8 @@ const PlayStatsPage: React.FC = () => {
                 <button
                   onClick={() => setActiveTab('personal')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'personal'
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                     }`}
                 >
                   我的统计
@@ -1000,8 +1000,8 @@ const PlayStatsPage: React.FC = () => {
                             <div className='flex-shrink-0'>
                               <svg
                                 className={`w-5 h-5 text-gray-400 transition-transform ${expandedUsers.has(userStat.username)
-                                    ? 'rotate-180'
-                                    : ''
+                                  ? 'rotate-180'
+                                  : ''
                                   }`}
                                 fill='none'
                                 stroke='currentColor'
@@ -1227,19 +1227,19 @@ const PlayStatsPage: React.FC = () => {
                 {/* 新集数更新 */}
                 <div
                   className={`p-4 rounded-lg border transition-all ${(watchingUpdates?.updatedCount || 0) > 0
-                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                      : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                    : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
                     }`}
                 >
                   <div className={`text-2xl font-bold ${(watchingUpdates?.updatedCount || 0) > 0
-                      ? 'text-red-800 dark:text-red-300'
-                      : 'text-gray-800 dark:text-gray-300'
+                    ? 'text-red-800 dark:text-red-300'
+                    : 'text-gray-800 dark:text-gray-300'
                     }`}>
                     {watchingUpdates?.updatedCount || 0}
                   </div>
                   <div className={`text-sm ${(watchingUpdates?.updatedCount || 0) > 0
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-gray-600 dark:text-gray-400'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-600 dark:text-gray-400'
                     }`}>
                     新集数更新
                   </div>
@@ -1253,19 +1253,19 @@ const PlayStatsPage: React.FC = () => {
                 {/* 继续观看提醒 */}
                 <div
                   className={`p-4 rounded-lg border transition-all ${(watchingUpdates?.continueWatchingCount || 0) > 0
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                      : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                    : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
                     }`}
                 >
                   <div className={`text-2xl font-bold ${(watchingUpdates?.continueWatchingCount || 0) > 0
-                      ? 'text-blue-800 dark:text-blue-300'
-                      : 'text-gray-800 dark:text-gray-300'
+                    ? 'text-blue-800 dark:text-blue-300'
+                    : 'text-gray-800 dark:text-gray-300'
                     }`}>
                     {watchingUpdates?.continueWatchingCount || 0}
                   </div>
                   <div className={`text-sm ${(watchingUpdates?.continueWatchingCount || 0) > 0
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-gray-400'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400'
                     }`}>
                     继续观看
                   </div>
@@ -1417,6 +1417,7 @@ const PlayStatsPage: React.FC = () => {
                                 id={series.videoId}
                                 onDelete={undefined}
                                 remarks={series.remarks}
+                                episodeBadgeVariant='dark'
                               />
                               {/* 新集数提示光环效果 */}
                               <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-[9] transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
@@ -1450,6 +1451,7 @@ const PlayStatsPage: React.FC = () => {
                                 id={series.videoId}
                                 onDelete={undefined}
                                 remarks={series.remarks}
+                                episodeBadgeVariant='dark'
                               />
                               {/* 新集数提示光环效果 */}
                               <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-[9] transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
@@ -1500,6 +1502,7 @@ const PlayStatsPage: React.FC = () => {
                                 id={series.videoId}
                                 onDelete={undefined}
                                 remarks={series.remarks}
+                                episodeBadgeVariant='dark'
                               />
                               {/* 继续观看提示光环效果 */}
                               <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-[9] transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
@@ -1528,6 +1531,7 @@ const PlayStatsPage: React.FC = () => {
                                 from="playrecord"
                                 progress={0}
                                 currentEpisode={series.currentEpisode}
+                                episodeBadgeVariant='dark'
                                 episodes={series.totalEpisodes}
                                 source={series.sourceKey}
                                 id={series.videoId}
@@ -1821,19 +1825,19 @@ const PlayStatsPage: React.FC = () => {
             {/* 新集数更新 */}
             <div
               className={`p-4 rounded-lg border transition-all ${(watchingUpdates?.updatedCount || 0) > 0
-                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                  : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
                 }`}
             >
               <div className={`text-2xl font-bold ${(watchingUpdates?.updatedCount || 0) > 0
-                  ? 'text-red-800 dark:text-red-300'
-                  : 'text-gray-800 dark:text-gray-300'
+                ? 'text-red-800 dark:text-red-300'
+                : 'text-gray-800 dark:text-gray-300'
                 }`}>
                 {watchingUpdates?.updatedCount || 0}
               </div>
               <div className={`text-sm ${(watchingUpdates?.updatedCount || 0) > 0
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-gray-600 dark:text-gray-400'
+                ? 'text-red-600 dark:text-red-400'
+                : 'text-gray-600 dark:text-gray-400'
                 }`}>
                 新集数更新
               </div>
@@ -1847,19 +1851,19 @@ const PlayStatsPage: React.FC = () => {
             {/* 继续观看提醒 */}
             <div
               className={`p-4 rounded-lg border transition-all ${(watchingUpdates?.continueWatchingCount || 0) > 0
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                  : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
                 }`}
             >
               <div className={`text-2xl font-bold ${(watchingUpdates?.continueWatchingCount || 0) > 0
-                  ? 'text-blue-800 dark:text-blue-300'
-                  : 'text-gray-800 dark:text-gray-300'
+                ? 'text-blue-800 dark:text-blue-300'
+                : 'text-gray-800 dark:text-gray-300'
                 }`}>
                 {watchingUpdates?.continueWatchingCount || 0}
               </div>
               <div className={`text-sm ${(watchingUpdates?.continueWatchingCount || 0) > 0
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400'
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-600 dark:text-gray-400'
                 }`}>
                 继续观看
               </div>
@@ -2011,6 +2015,7 @@ const PlayStatsPage: React.FC = () => {
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
                             remarks={series.remarks}
+                            episodeBadgeVariant='dark'
                           />
                           {/* 新集数提示光环效果 */}
                           <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-[9]"></div>
@@ -2044,6 +2049,7 @@ const PlayStatsPage: React.FC = () => {
                             source={series.source_name}
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
+                            episodeBadgeVariant='dark'
                             remarks={series.remarks}
                           />
                           {/* 新集数提示光环效果 */}
@@ -2096,6 +2102,7 @@ const PlayStatsPage: React.FC = () => {
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
                             remarks={series.remarks}
+                            episodeBadgeVariant='dark'
                           />
                           {/* 继续观看提示光环效果 */}
                           <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-[9]"></div>
@@ -2130,6 +2137,7 @@ const PlayStatsPage: React.FC = () => {
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
                             remarks={series.remarks}
+                            episodeBadgeVariant='dark'
                           />
                           {/* 继续观看提示光环效果 */}
                           <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-[9]"></div>
