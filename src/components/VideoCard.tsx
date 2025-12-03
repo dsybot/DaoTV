@@ -852,7 +852,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
-              className={`absolute left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
+              className={`absolute ${from === 'search' && config.showYear ? 'right-2' : 'left-2'} text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
                 } ${episodeBadgeVariant === 'dark'
                   ? 'text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
                   : 'text-xs px-3 py-1.5 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
@@ -889,6 +889,11 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
               className={`absolute left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
+                // 搜索结果页：年份固定在最上面一行
+                if (from === 'search') {
+                  return 'top-2';
+                }
+
                 let offset = 2; // 默认 top-2
                 // 如果有上映相关的类型徽章
                 if (hasReleaseTag && type) {
