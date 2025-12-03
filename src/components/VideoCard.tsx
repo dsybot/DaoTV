@@ -981,7 +981,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             const badgeStyle = getRatingBadgeStyle(rate);
             return (
               <div
-                className='absolute -top-2 -right-2 z-30 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden pointer-events-none flex items-center justify-center'
+                className={`absolute top-[10px] right-[-35px] z-30 w-[120px] ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] sm:text-xs font-bold py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 rotate-45 pointer-events-none`}
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -992,12 +992,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   return false;
                 }}
               >
-                <div
-                  className={`${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] sm:text-xs font-bold px-7 sm:px-8 py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 origin-center rotate-45`}
-                >
-                  <Star size={10} className="fill-current" />
-                  <span className="font-extrabold leading-none">{rate}</span>
-                </div>
+                <Star size={10} className="fill-current" />
+                <span className="font-extrabold leading-none">{rate}</span>
               </div>
             );
           })()}
