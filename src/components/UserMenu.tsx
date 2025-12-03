@@ -1856,6 +1856,7 @@ export const UserMenu: React.FC = () => {
                             onDelete={undefined}
                             type={series.totalEpisodes > 1 ? 'tv' : ''}
                             from="playrecord"
+                            episodeBadgeVariant='dark'
                           />
                         </div>
                         {/* 新集数徽章 */}
@@ -2028,14 +2029,14 @@ export const UserMenu: React.FC = () => {
                                   from='playrecord'
                                   type={record.total_episodes > 1 ? 'tv' : ''}
                                   remarks={record.remarks}
+                                  episodeBadgeVariant='dark'
                                 />
                                 {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
                                 {getProgress(record) > 0 && getProgress(record) < 95 && (
-                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[9] pointer-events-none ${
-                                    record.remarks && isSeriesCompleted(record.remarks)
+                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[9] pointer-events-none ${record.remarks && isSeriesCompleted(record.remarks)
                                       ? 'bottom-28 sm:bottom-28'
                                       : 'bottom-20 sm:bottom-20'
-                                  }`}>
+                                    }`}>
                                     {Math.round(getProgress(record))}%
                                   </div>
                                 )}
@@ -2244,6 +2245,7 @@ export const UserMenu: React.FC = () => {
                                 type={favorite.total_episodes > 1 ? 'tv' : ''}
                                 remarks={calculatedRemarks}
                                 releaseDate={favorite.releaseDate}
+                                episodeBadgeVariant='dark'
                               />
                               {/* 新上映高亮标记 - 7天内上映的显示 */}
                               {isNewRelease && (
