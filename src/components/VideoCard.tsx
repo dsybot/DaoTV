@@ -49,6 +49,7 @@ export interface VideoCardProps {
   origin?: 'vod' | 'live';
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
+  episodeBadgeVariant?: 'default' | 'dark';
 }
 
 export type VideoCardHandle = {
@@ -80,6 +81,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     origin = 'vod',
     remarks,
     releaseDate,
+    episodeBadgeVariant = 'default',
   }: VideoCardProps,
   ref
 ) {
@@ -850,7 +852,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
-              className={`absolute left-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
+              className={`absolute left-2 text-white text-xs font-bold px-3 py-1.5 shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
+                } ${episodeBadgeVariant === 'dark'
+                  ? 'rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
+                  : 'rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
                 }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -886,7 +891,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 }
                 return `top-[${offset}px]`;
               })()
-              }`}
+                }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',

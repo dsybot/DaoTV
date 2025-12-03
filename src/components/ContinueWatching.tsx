@@ -206,59 +206,60 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
       <ScrollableRow>
         {loading
           ? // 加载状态显示灰色占位数据
-            Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-              >
-                <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
-                  <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
-                </div>
-                <div className='mt-2 h-4 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
-                <div className='mt-1 h-3 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
+          Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+            >
+              <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
+                <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
               </div>
-            ))
+              <div className='mt-2 h-4 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
+              <div className='mt-1 h-3 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
+            </div>
+          ))
           : // 显示真实数据
-            playRecords.map((record) => {
-              const { source, id } = parseKey(record.key);
-              const newEpisodesCount = getNewEpisodesCount(record);
-              const latestTotalEpisodes = getLatestTotalEpisodes(record);
-              return (
-                <div
-                  key={record.key}
-                  className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44 relative group/card pt-2 pr-2'
-                >
-                  <div className='relative group-hover/card:z-[5] transition-all duration-300'>
-                    <VideoCard
-                      id={id}
-                      title={record.title}
-                      poster={record.cover}
-                      year={record.year}
-                      source={source}
-                      source_name={record.source_name}
-                      progress={getProgress(record)}
-                      episodes={latestTotalEpisodes}
-                      currentEpisode={record.index}
-                      query={record.search_title}
-                      from='playrecord'
-                      onDelete={() =>
-                        setPlayRecords((prev) =>
-                          prev.filter((r) => r.key !== record.key)
-                        )
-                      }
-                      type={latestTotalEpisodes > 1 ? 'tv' : ''}
-                      remarks={record.remarks}
-                    />
-                  </div>
-                  {/* 新集数徽章 */}
-                  {newEpisodesCount > 0 && (
-                    <div className='absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
-                      +{newEpisodesCount}集
-                    </div>
-                  )}
+          playRecords.map((record) => {
+            const { source, id } = parseKey(record.key);
+            const newEpisodesCount = getNewEpisodesCount(record);
+            const latestTotalEpisodes = getLatestTotalEpisodes(record);
+            return (
+              <div
+                key={record.key}
+                className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44 relative group/card pt-2 pr-2'
+              >
+                <div className='relative group-hover/card:z-[5] transition-all duration-300'>
+                  <VideoCard
+                    id={id}
+                    title={record.title}
+                    poster={record.cover}
+                    year={record.year}
+                    source={source}
+                    source_name={record.source_name}
+                    progress={getProgress(record)}
+                    episodes={latestTotalEpisodes}
+                    currentEpisode={record.index}
+                    query={record.search_title}
+                    from='playrecord'
+                    episodeBadgeVariant='dark'
+                    onDelete={() =>
+                      setPlayRecords((prev) =>
+                        prev.filter((r) => r.key !== record.key)
+                      )
+                    }
+                    type={latestTotalEpisodes > 1 ? 'tv' : ''}
+                    remarks={record.remarks}
+                  />
                 </div>
-              );
-            })}
+                {/* 新集数徽章 */}
+                {newEpisodesCount > 0 && (
+                  <div className='absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
+                    +{newEpisodesCount}集
+                  </div>
+                )}
+              </div>
+            );
+          })}
       </ScrollableRow>
     </section>
   );
