@@ -827,8 +827,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {hasReleaseTag && type && (
             <div
               className={
-                `absolute top-2 left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ` +
-                `text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm`
+                `absolute top-2 left-2 text-white dark:text-gray-900 font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ` +
+                `text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm`
               }
               style={{
                 WebkitUserSelect: 'none',
@@ -854,7 +854,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             <div
               className={`absolute ${from === 'search' && config.showYear ? 'right-2' : 'left-2'} text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
                 } ${episodeBadgeVariant === 'dark'
-                  ? 'text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
+                  ? 'text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm text-white dark:text-gray-900'
                   : 'text-xs px-3 py-1.5 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
                 }`}
               style={{
@@ -888,7 +888,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
-              className={`absolute left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
+              className={`absolute left-2 text-white dark:text-gray-900 font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
                 // 搜索结果页：年份固定在最上面一行
                 if (from === 'search') {
                   return 'top-2';
@@ -905,7 +905,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 }
                 return `top-[${offset}px]`;
               })()
-                } text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm`}
+                } text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -926,7 +926,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 已完结徽章 - 美化版，放在底部左侧 */}
           {remarks && isSeriesCompleted(remarks) && (
             <div
-              className="absolute bottom-2 left-2 z-30 text-white font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/70 border border-white/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105"
+              className="absolute bottom-2 left-2 z-30 text-white dark:text-gray-900 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/70 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105"
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -957,7 +957,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
             return (
               <div
-                className="absolute bottom-2 left-2 z-30 text-white font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/70 border border-white/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105 animate-pulse"
+                className="absolute bottom-2 left-2 z-30 text-white dark:text-gray-900 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/70 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105 animate-pulse"
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
