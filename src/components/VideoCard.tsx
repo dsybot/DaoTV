@@ -826,10 +826,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
           {hasReleaseTag && type && (
             <div
-              className={`absolute top-2 left-2 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${type === 'movie'
-                ? 'bg-gradient-to-br from-red-500 via-rose-500 to-pink-600'
-                : 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600'
-                }`}
+              className={
+                `absolute top-2 left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ` +
+                `text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm`
+              }
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -840,8 +840,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <span className="flex items-center gap-1">
-                <span className="text-[10px]">{type === 'movie' ? '🎬' : '📺'}</span>
+              <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
+                <span className="hidden sm:inline-block text-[10px]">{type === 'movie' ? '🎬' : '📺'}</span>
                 {type === 'movie' ? '电影' : '电视剧'}
               </span>
             </div>
@@ -854,7 +854,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             <div
               className={`absolute left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
                 } ${episodeBadgeVariant === 'dark'
-                  ? 'text-[10px] px-2.5 py-1 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
+                  ? 'text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
                   : 'text-xs px-3 py-1.5 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
                 }`}
               style={{
@@ -888,7 +888,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
-              className={`absolute left-2 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
+              className={`absolute left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
                 let offset = 2; // 默认 top-2
                 // 如果有上映相关的类型徽章
                 if (hasReleaseTag && type) {
@@ -900,7 +900,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 }
                 return `top-[${offset}px]`;
               })()
-                }`}
+                } text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -911,8 +911,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <span className="flex items-center gap-1">
-                <span className="text-[10px]">📅</span>
+              <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
+                <span className="hidden sm:inline-block text-[10px]">📅</span>
                 {actualYear}
               </span>
             </div>
@@ -921,7 +921,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 已完结徽章 - 美化版，放在底部左侧 */}
           {remarks && isSeriesCompleted(remarks) && (
             <div
-              className="absolute bottom-2 left-2 bg-gradient-to-br from-blue-500/95 via-indigo-500/95 to-purple-600/95 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-blue-500/60 group-hover:ring-blue-300/50"
+              className="absolute bottom-2 left-2 z-30 text-white font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/70 border border-white/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105"
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -932,8 +932,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <span className="flex items-center gap-1">
-                <span className="text-[10px]">✓</span>
+              <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
+                <span className="hidden sm:inline-block text-[10px]">✓</span>
                 已完结
               </span>
             </div>
@@ -941,27 +941,18 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
           {/* 上映状态徽章 - 美化版，放在底部左侧 */}
           {hasReleaseTag && (() => {
-            // 根据状态选择emoji和颜色
+            // 根据状态选择emoji
             let emoji = '🔜';
-            let bgColors = 'from-orange-500/95 via-red-500/95 to-pink-600/95';
-            let shadowColor = 'group-hover:shadow-orange-500/60';
-            let ringColor = 'group-hover:ring-orange-300/50';
 
             if (remarks?.includes('已上映')) {
               emoji = '🎬';
-              bgColors = 'from-green-500/95 via-emerald-500/95 to-teal-600/95';
-              shadowColor = 'group-hover:shadow-green-500/60';
-              ringColor = 'group-hover:ring-green-300/50';
             } else if (remarks?.includes('今日上映')) {
               emoji = '🎉';
-              bgColors = 'from-yellow-500/95 via-orange-500/95 to-red-600/95';
-              shadowColor = 'group-hover:shadow-yellow-500/60';
-              ringColor = 'group-hover:ring-yellow-300/50';
             }
 
             return (
               <div
-                className={`absolute bottom-2 left-2 bg-gradient-to-br ${bgColors} backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 ${shadowColor} ${ringColor} animate-pulse`}
+                className="absolute bottom-2 left-2 z-30 text-white font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/70 border border-white/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105 animate-pulse"
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -972,8 +963,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   return false;
                 }}
               >
-                <span className="flex items-center gap-1">
-                  <span className="text-[10px]">{emoji}</span>
+                <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
+                  <span className="hidden sm:inline-block text-[10px]">{emoji}</span>
                   {remarks}
                 </span>
               </div>

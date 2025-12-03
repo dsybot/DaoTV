@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
   () => import('react-window').then(mod => ({ default: mod.Grid })),
-  { 
+  {
     ssr: false,
     loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
   }
@@ -126,7 +126,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
     const checkContainer = () => {
       const element = containerRef.current;
       const actualWidth = element?.offsetWidth || 0;
-      
+
       console.log('VirtualSearchGrid container debug:', {
         actualWidth,
         containerWidth,
@@ -136,7 +136,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
         element: !!element
       });
     };
-    
+
     checkContainer();
   }, [containerWidth]);
 
@@ -181,10 +181,10 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
   const isSingleRow = rowCount === 1;
 
   // 渲染单个网格项 - 支持react-window v2.1.0的ariaAttributes
-  const CellComponent = useCallback(({ 
+  const CellComponent = useCallback(({
     ariaAttributes,
-    columnIndex, 
-    rowIndex, 
+    columnIndex,
+    rowIndex,
     style,
     displayData: cellDisplayData,
     viewMode: cellViewMode,
@@ -196,7 +196,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
     computeGroupStats: cellComputeGroupStats,
   }: any) => {
     const index = rowIndex * cellColumnCount + columnIndex;
-    
+
     // 如果超出显示范围，返回隐藏的占位符
     if (index >= cellDisplayItemCount) {
       return <div style={{ ...style, visibility: 'hidden' }} />;
@@ -236,6 +236,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
             douban_id={douban_id}
             query={cellSearchQuery.trim() !== title ? cellSearchQuery.trim() : ''}
             type={type}
+            episodeBadgeVariant='dark'
             remarks={group[0]?.remarks}
           />
         </div>
@@ -256,13 +257,13 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
             year={searchItem.year}
             from='search'
             type={searchItem.episodes.length > 1 ? 'tv' : 'movie'}
+            episodeBadgeVariant='dark'
             remarks={searchItem.remarks}
           />
         </div>
       );
     }
   }, []);
-
 
   return (
     <div ref={containerRef} className='w-full'>
@@ -332,7 +333,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
           }}
         />
       )}
-      
+
       {/* 加载更多指示器 */}
       {containerWidth > 100 && isLoadingMore && (
         <div className='flex justify-center items-center py-4'>
@@ -342,7 +343,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
           </span>
         </div>
       )}
-      
+
       {/* 已加载完所有内容的提示 */}
       {containerWidth > 100 && !hasNextPage && displayItemCount > INITIAL_BATCH_SIZE && (
         <div className='text-center py-4 text-sm text-gray-500 dark:text-gray-400'>
