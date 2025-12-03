@@ -981,7 +981,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             const badgeStyle = getRatingBadgeStyle(rate);
             return (
               <div
-                className={`absolute top-2 right-2 ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] sm:text-xs font-bold rounded-md px-2.5 sm:px-3 py-0.5 sm:py-1 flex items-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105`}
+                className={`absolute -top-3 right-[-32px] z-30 ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] sm:text-xs font-bold rounded-md px-4 sm:px-5 py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 origin-top-right rotate-45`}
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
