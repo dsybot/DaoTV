@@ -128,7 +128,7 @@ function ShortDramaCard({
           </div>
 
           {/* 集数标识 */}
-          <div className="absolute top-2 left-2 rounded-md bg-black/50 dark:bg-white/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold text-white dark:text-gray-900 shadow-lg border border-white/10 dark:border-black/10 backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+          <div className="absolute top-2 left-2 rounded-md bg-black/30 dark:bg-white/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold text-white dark:text-gray-900 shadow-lg border border-white/10 dark:border-black/10 backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
             <span className="flex items-center gap-1">
               <Play size={10} className="fill-current" />
               {realEpisodeCount}集
