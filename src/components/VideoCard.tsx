@@ -1328,7 +1328,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 }}
               >
                 <span
-                  className={`relative inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border border-gray-300/60 dark:border-gray-600/60 text-gray-600 dark:text-gray-400 transition-all duration-300 ease-out overflow-hidden group-hover:shadow-md group-hover:scale-105 max-w-full ${colorClasses}`}
+                  className={`relative inline-flex items-center justify-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border border-gray-300/60 dark:border-gray-600/60 text-gray-600 dark:text-gray-400 transition-all duration-300 ease-out group-hover:shadow-md group-hover:scale-105 ${colorClasses}`}
                   style={{
                     WebkitUserSelect: 'none',
                     userSelect: 'none',
@@ -1349,15 +1349,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                     <Radio size={12} className={`relative inline-block transition-all duration-300 flex-shrink-0 ${iconColor}`} />
                   )}
 
-                  <span
-                    className='relative font-semibold line-clamp-2 text-center'
-                    style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >{displayText}</span>
+                  <span className='relative font-semibold whitespace-nowrap'>{displayText}</span>
 
                   {/* 右侧装饰点 - 手机端隐藏 */}
                   <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 hidden sm:inline-block flex-shrink-0 ${dotColor}`}></span>
