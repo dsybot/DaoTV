@@ -1342,8 +1342,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   {/* 背景渐变效果 */}
                   <span className={`absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-500/0 transition-all duration-300 ${bgGradient}`}></span>
 
-                  {/* 左侧装饰点 */}
-                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 ${dotColor}`}></span>
+                  {/* 左侧装饰点 - 手机端隐藏 */}
+                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 hidden sm:inline-block ${dotColor}`}></span>
 
                   {origin === 'live' && (
                     <Radio size={12} className={`relative inline-block transition-all duration-300 ${iconColor}`} />
@@ -1351,8 +1351,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
                   <span className='relative font-semibold'>{displayText}</span>
 
-                  {/* 右侧装饰点 */}
-                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 ${dotColor}`}></span>
+                  {/* 右侧装饰点 - 手机端隐藏 */}
+                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 hidden sm:inline-block ${dotColor}`}></span>
                 </span>
               </div>
             );
