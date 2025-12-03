@@ -852,10 +852,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
-              className={`absolute left-2 text-white text-xs font-bold px-3 py-1.5 shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
+              className={`absolute left-2 text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
                 } ${episodeBadgeVariant === 'dark'
-                  ? 'rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
-                  : 'rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
+                  ? 'text-[10px] px-2.5 py-1 rounded-md bg-black/70 border border-white/10 backdrop-blur-sm'
+                  : 'text-xs px-3 py-1.5 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
                 }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -867,12 +867,21 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <span className="flex items-center gap-1">
-                <span className="text-[10px]">🎬</span>
-                {currentEpisode
-                  ? `${currentEpisode}/${actualEpisodes}`
-                  : `${actualEpisodes}集`}
-              </span>
+              {episodeBadgeVariant === 'dark' ? (
+                <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
+                  <span className="hidden sm:inline-block text-[10px]">🎬</span>
+                  {currentEpisode
+                    ? `${currentEpisode}/${actualEpisodes}`
+                    : `${actualEpisodes}集`}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span className="text-[10px]">🎬</span>
+                  {currentEpisode
+                    ? `${currentEpisode}/${actualEpisodes}`
+                    : `${actualEpisodes}集`}
+                </span>
+              )}
             </div>
           )}
 
