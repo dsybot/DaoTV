@@ -976,12 +976,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             );
           })()}
 
-          {/* 评分徽章 - 动态颜色 */}
+          {/* 评分徽章 - 动态颜色（条状样式） */}
           {config.showRating && rate && (() => {
             const badgeStyle = getRatingBadgeStyle(rate);
             return (
               <div
-                className={`absolute top-2 right-2 ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-xs font-bold rounded-full flex flex-col items-center justify-center transition-all duration-300 ease-out group-hover:scale-110 w-9 h-9 sm:w-10 sm:h-10`}
+                className={`absolute top-2 right-2 ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] sm:text-xs font-bold rounded-md px-2.5 sm:px-3 py-0.5 sm:py-1 flex items-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105`}
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -992,8 +992,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   return false;
                 }}
               >
-                <Star size={10} className="fill-current mb-0.5" />
-                <span className="text-[10px] sm:text-xs font-extrabold leading-none">{rate}</span>
+                <Star size={10} className="fill-current" />
+                <span className="font-extrabold leading-none">{rate}</span>
               </div>
             );
           })()}
