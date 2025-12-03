@@ -144,7 +144,7 @@ function ShortDramaCard({
           )}
 
           {/* 更新时间标签 */}
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/65 dark:bg-white/20 px-2.5 py-1 text-[10px] text-white dark:text-gray-900 backdrop-blur-sm">
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/30 dark:bg-white/20 px-2.5 py-1 text-[10px] text-white dark:text-gray-900 backdrop-blur-sm">
             <svg className="w-3 h-3 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
