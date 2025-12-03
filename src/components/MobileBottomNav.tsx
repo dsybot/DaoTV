@@ -215,7 +215,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
           }`}
         style={{
           /* 移动端：紧贴视口底部，同时在内部留出安全区高度 */
-          paddingBottom: onLayoutModeChange ? 'max(1rem, env(safe-area-inset-bottom))' : 'max(1rem, env(safe-area-inset-bottom))',
+          paddingBottom: onLayoutModeChange ? 'max(0.25rem, env(safe-area-inset-bottom))' : 'max(0.25rem, env(safe-area-inset-bottom))',
         }}
       >
         <div
