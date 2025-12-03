@@ -181,7 +181,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
           {/* 主内容 */}
           <main
-            className={`flex-1 md:min-h-0 mt-12 ${layoutMode === 'top' ? 'md:mt-24 mb-20 md:mb-0' : 'md:mt-0 md:mb-0 mb-20'}`}
+            className={`flex-1 md:min-h-0 mt-12 ${layoutMode === 'top' ? 'md:mt-24 mb-24 md:mb-0' : 'md:mt-0 md:mb-0 mb-24'}`}
           >
             {children}
           </main>
