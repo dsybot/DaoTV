@@ -39,7 +39,12 @@ export async function GET(request: NextRequest) {
     if (!config.SiteConfig.EnableTMDBActorSearch || !config.SiteConfig.TMDBApiKey) {
       return NextResponse.json(
         { enabled: false, message: 'TMDB演员搜索功能未启用' },
-        { status: 200 }
+        {
+          status: 200,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        }
       );
     }
 
@@ -117,11 +122,8 @@ export async function GET(request: NextRequest) {
       console.warn('TMDB演员图片缓存保存失败:', cacheError);
     }
 
-    return NextResponse.json(result, {
-      headers: {
-        'Cache-Control': `public, max-age=${CACHE_TIME}, s-maxage=${CACHE_TIME}`,
-      },
-    });
+    // 不设置浏览器缓存，因为开关状态可能随时变化
+    return NextResponse.json(result);
   } catch (error) {
     console.error('[TMDB Cast Photos] 获取失败:', error);
     return NextResponse.json(
