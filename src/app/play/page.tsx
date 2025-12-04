@@ -2,16 +2,12 @@
 
 'use client';
 
+import Hls from 'hls.js';
+import { ChevronUp, Heart } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import Hls from 'hls.js';
-import { Heart, ChevronUp } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-import EpisodeSelector from '@/components/EpisodeSelector';
-import NetDiskSearchResults from '@/components/NetDiskSearchResults';
-import PageLayout from '@/components/PageLayout';
-import SkipController, { SkipSettingsButton } from '@/components/SkipController';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import { ClientCache } from '@/lib/client-cache';
 import {
@@ -28,6 +24,12 @@ import {
 import { getDoubanDetails } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+
+import CastPhotos from '@/components/CastPhotos';
+import EpisodeSelector from '@/components/EpisodeSelector';
+import NetDiskSearchResults from '@/components/NetDiskSearchResults';
+import PageLayout from '@/components/PageLayout';
+import SkipController from '@/components/SkipController';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
@@ -5119,6 +5121,11 @@ function PlayPageClient() {
                 >
                   {shortdramaDetails?.desc || bangumiDetails?.summary || detail?.desc}
                 </div>
+              )}
+
+              {/* 主演图片（TMDB） */}
+              {movieDetails?.cast && movieDetails.cast.length > 0 && (
+                <CastPhotos cast={movieDetails.cast} />
               )}
 
               {/* 网盘资源区域 */}
