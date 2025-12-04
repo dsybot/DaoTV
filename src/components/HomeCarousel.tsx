@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { ChevronLeft, ChevronRight, Play, Star } from 'lucide-react';
-import { useEffect, useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { Play, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef,useState } from 'react';
+
 import { processImageUrl } from '@/lib/utils';
+
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 
 interface CarouselItem {
@@ -277,7 +278,7 @@ export default function HomeCarousel() {
                 onTouchStart={pauseAutoPlayTemporarily}
                 onMouseDown={pauseAutoPlayTemporarily}
               >
-                <div className="flex gap-2 px-1 pr-[68px] py-2">
+                <div className="flex gap-2 pl-1 pr-3 py-2" style={{ marginRight: '68px' }}>
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
                     const isLoaded = thumbnailLoadedMap[item.id];
