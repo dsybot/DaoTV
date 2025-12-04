@@ -22,9 +22,10 @@ interface ActorWork {
 
 interface CastPhotosProps {
   cast: string[];
+  onEnabledChange?: (enabled: boolean) => void;
 }
 
-export default function CastPhotos({ cast }: CastPhotosProps) {
+export default function CastPhotos({ cast, onEnabledChange }: CastPhotosProps) {
   const [actors, setActors] = useState<ActorPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -60,19 +61,22 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
         if (data.enabled) {
           setEnabled(true);
           setActors(data.actors || []);
+          onEnabledChange?.(true);
         } else {
           setEnabled(false);
+          onEnabledChange?.(false);
         }
       } catch (error) {
         console.error('获取演员图片失败:', error);
         setEnabled(false);
+        onEnabledChange?.(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchActorPhotos();
-  }, [cast]);
+  }, [cast, onEnabledChange]);
 
   // 获取演员作品
   const fetchActorWorks = async (actorName: string, type: 'movie' | 'tv') => {

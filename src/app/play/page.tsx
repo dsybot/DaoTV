@@ -85,6 +85,9 @@ function PlayPageClient() {
   const [netdiskError, setNetdiskError] = useState<string | null>(null);
   const [netdiskTotal, setNetdiskTotal] = useState(0);
 
+  // TMDB演员图片功能是否启用
+  const [tmdbCastEnabled, setTmdbCastEnabled] = useState(false);
+
   // SkipController 相关状态
   const [isSkipSettingOpen, setIsSkipSettingOpen] = useState(false);
   const [currentPlayTime, setCurrentPlayTime] = useState(0);
@@ -5027,8 +5030,8 @@ function PlayPageClient() {
                         </div>
                       )}
 
-                      {/* 主演 */}
-                      {movieDetails.cast && movieDetails.cast.length > 0 && (
+                      {/* 主演 - 如果TMDB演员图片功能启用则隐藏，因为下方有更详细的显示 */}
+                      {movieDetails.cast && movieDetails.cast.length > 0 && !tmdbCastEnabled && (
                         <div>
                           <span className='font-semibold text-gray-700 dark:text-gray-300'>主演: </span>
                           <span className='text-gray-600 dark:text-gray-400'>
@@ -5125,7 +5128,7 @@ function PlayPageClient() {
 
               {/* 主演图片（TMDB） */}
               {movieDetails?.cast && movieDetails.cast.length > 0 && (
-                <CastPhotos cast={movieDetails.cast} />
+                <CastPhotos cast={movieDetails.cast} onEnabledChange={setTmdbCastEnabled} />
               )}
 
               {/* 网盘资源区域 */}
