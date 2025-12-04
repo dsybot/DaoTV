@@ -31,7 +31,9 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
     const fetchActorPhotos = async () => {
       try {
         const names = cast.slice(0, 20).join(',');
-        const response = await fetch(`/api/tmdb/cast-photos?names=${encodeURIComponent(names)}`);
+        const response = await fetch(`/api/tmdb/cast-photos?names=${encodeURIComponent(names)}`, {
+          cache: 'no-store',
+        });
         const data = await response.json();
 
         if (data.enabled) {
@@ -148,8 +150,8 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
               onClick={() => scroll('left')}
               disabled={!showLeftArrow}
               className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200 ${showLeftArrow
-                  ? 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
-                  : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                ? 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
+                : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
                 }`}
             >
               <ChevronLeft className="w-5 h-5" />
@@ -158,8 +160,8 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
               onClick={() => scroll('right')}
               disabled={!showRightArrow}
               className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200 ${showRightArrow
-                  ? 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
-                  : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                ? 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
+                : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
                 }`}
             >
               <ChevronRight className="w-5 h-5" />
