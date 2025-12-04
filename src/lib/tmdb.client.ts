@@ -399,7 +399,8 @@ export async function searchTMDBActorWorks(
       filteredWorks = filteredWorks.slice(0, filterOptions.limit);
     }
 
-    // 7. 转换为统一格式
+    // 7. 转换为统一格式并去重
+    const seenIds = new Set<string>();
     const list = filteredWorks
       .map((work: any) => {
         const releaseDate = work.release_date || work.first_air_date || '';
@@ -419,7 +420,13 @@ export async function searchTMDBActorWorks(
           original_language: work.original_language
         };
       })
-      .filter(work => work.title); // 过滤掉没有标题的
+      .filter(work => {
+        // 过滤掉没有标题的和重复的
+        if (!work.title) return false;
+        if (seenIds.has(work.id)) return false;
+        seenIds.add(work.id);
+        return true;
+      });
 
     console.log(`[TMDB演员搜索] 筛选后找到 ${list.length} 个${type === 'movie' ? '电影' : '电视剧'}作品（原始: ${works.length}）`);
 
