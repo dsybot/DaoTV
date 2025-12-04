@@ -123,16 +123,6 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
           </button>
         )}
 
-        {/* 左侧渐变遮罩 */}
-        {showLeftArrow && (
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-gray-900 to-transparent pointer-events-none z-[5]" />
-        )}
-
-        {/* 右侧渐变遮罩 */}
-        {showRightArrow && (
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-gray-900 to-transparent pointer-events-none z-[5]" />
-        )}
-
         <div
           ref={scrollContainerRef}
           className="overflow-x-auto scrollbar-hide"
