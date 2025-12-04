@@ -229,7 +229,7 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
 
       {/* 演员头像列表 */}
       <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-hide">
-        <div className="flex gap-4 pt-1 pb-2 px-2" style={{ minWidth: 'max-content' }}>
+        <div className="flex gap-4 pt-2 pb-2 px-2" style={{ minWidth: 'max-content' }}>
           {actors.map((actor, index) => (
             <div
               key={`${actor.name}-${index}`}
@@ -278,14 +278,14 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
                 <span className="ml-2 inline-block h-3 w-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></span>
               )}
             </h5>
-            <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+            <div className="inline-flex p-1 rounded-xl bg-gray-200 dark:bg-gray-700">
               {(['tv', 'movie'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => handleTypeChange(type)}
-                  className={`px-3 py-1 text-xs transition-colors ${worksType === type
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${worksType === type
+                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   disabled={worksLoading}
                 >
@@ -331,7 +331,7 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
             className="overflow-x-auto pb-2"
             style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
           >
-            <div className="flex gap-3 pt-1 px-1" style={{ minWidth: 'max-content' }}>
+            <div className="flex gap-3 pt-2 px-1" style={{ minWidth: 'max-content' }}>
               {actorWorks.map((work, index) => (
                 <div key={work.id || index} className="flex-shrink-0 w-28 sm:w-32">
                   <VideoCard
