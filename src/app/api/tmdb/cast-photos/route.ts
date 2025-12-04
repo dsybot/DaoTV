@@ -35,8 +35,12 @@ export async function GET(request: NextRequest) {
   try {
     const config = await getConfig();
 
+    console.log(`[TMDB Cast Photos] EnableTMDBActorSearch: ${config.SiteConfig.EnableTMDBActorSearch}, HasApiKey: ${!!config.SiteConfig.TMDBApiKey}`);
+
     // 检查TMDB是否启用
     if (!config.SiteConfig.EnableTMDBActorSearch || !config.SiteConfig.TMDBApiKey) {
+      console.log(`[TMDB Cast Photos] 功能未启用，返回 enabled: false`);
+
       return NextResponse.json(
         { enabled: false, message: 'TMDB演员搜索功能未启用' },
         {
@@ -47,6 +51,8 @@ export async function GET(request: NextRequest) {
         }
       );
     }
+
+    console.log(`[TMDB Cast Photos] 功能已启用，继续处理请求`);
 
     const names = namesParam.split(',').map(n => n.trim()).filter(n => n);
     if (names.length === 0) {
