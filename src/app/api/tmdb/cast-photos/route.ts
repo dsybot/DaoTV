@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { isTMDBEnabled } from '@/lib/tmdb.client';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w300'; // 演员头像尺寸
@@ -33,14 +34,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const config = await getConfig();
+    // 使用与搜索页面相同的检测逻辑
+    const enabled = await isTMDBEnabled();
+    console.log(`[TMDB Cast Photos] isTMDBEnabled: ${enabled}`);
 
-    console.log(`[TMDB Cast Photos] EnableTMDBActorSearch: ${config.SiteConfig.EnableTMDBActorSearch}, HasApiKey: ${!!config.SiteConfig.TMDBApiKey}`);
-
-    // 检查TMDB是否启用
-    if (!config.SiteConfig.EnableTMDBActorSearch || !config.SiteConfig.TMDBApiKey) {
+    if (!enabled) {
       console.log(`[TMDB Cast Photos] 功能未启用，返回 enabled: false`);
-
       return NextResponse.json(
         { enabled: false, message: 'TMDB演员搜索功能未启用' },
         {
@@ -53,6 +52,8 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[TMDB Cast Photos] 功能已启用，继续处理请求`);
+
+    const config = await getConfig();
 
     const names = namesParam.split(',').map(n => n.trim()).filter(n => n);
     if (names.length === 0) {
