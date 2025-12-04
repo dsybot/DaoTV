@@ -334,16 +334,28 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
             >
               <div className="flex gap-3 pt-2 px-1" style={{ minWidth: 'max-content' }}>
                 {actorWorks.map((work, index) => (
-                  <div key={work.id || index} className="flex-shrink-0 w-28 sm:w-32">
-                    <VideoCard
-                      id={work.id}
-                      title={work.title}
-                      poster={work.poster}
-                      year={work.year}
-                      rate={work.rate}
-                      from="douban"
-                      type={worksType}
-                    />
+                  <div
+                    key={work.id || index}
+                    className="flex-shrink-0 w-28 sm:w-32"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 使用硬刷新跳转，确保播放页面重新加载
+                      const url = `/play?title=${encodeURIComponent(work.title.trim())}${work.year ? `&year=${work.year}` : ''}&stype=${worksType}`;
+                      window.location.href = url;
+                    }}
+                  >
+                    <div className="pointer-events-none">
+                      <VideoCard
+                        id={work.id}
+                        title={work.title}
+                        poster={work.poster}
+                        year={work.year}
+                        rate={work.rate}
+                        from="douban"
+                        type={worksType}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
