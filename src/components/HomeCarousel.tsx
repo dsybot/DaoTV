@@ -3,7 +3,7 @@
 
 import { Play, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef,useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { processImageUrl } from '@/lib/utils';
 
@@ -278,7 +278,7 @@ export default function HomeCarousel() {
                 onTouchStart={pauseAutoPlayTemporarily}
                 onMouseDown={pauseAutoPlayTemporarily}
               >
-                <div className="flex gap-2 pl-1 pr-3 py-2" style={{ marginRight: '68px' }}>
+                <div className="flex gap-2 pl-1 py-2" style={{ marginRight: '68px' }}>
                   {items.map((item, index) => {
                     const isActive = index === currentIndex;
                     const isLoaded = thumbnailLoadedMap[item.id];
@@ -325,6 +325,8 @@ export default function HomeCarousel() {
                       </button>
                     );
                   })}
+                  {/* 占位元素，为最后一个缩略图的边框和放大效果留出空间 */}
+                  <div className="flex-shrink-0 w-2" aria-hidden="true" />
                 </div>
               </div>
 
