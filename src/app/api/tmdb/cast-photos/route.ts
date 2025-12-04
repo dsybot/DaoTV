@@ -54,12 +54,13 @@ export async function GET(request: NextRequest) {
     // 生成缓存key（保持原始顺序）
     const cacheKey = `tmdb-cast-photos-${limitedNames.join(',')}`;
 
-    // 检查缓存
+    // 检查缓存（开关状态已在上面检查过，这里只缓存演员数据）
     try {
       const cachedResult = await db.getCache(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && cachedResult.actors) {
         console.log(`✅ [TMDB Cast Photos] 缓存命中: ${limitedNames.length} 个演员`);
-        return NextResponse.json(cachedResult);
+        // 返回时重新设置 enabled 状态（基于当前配置）
+        return NextResponse.json({ enabled: true, actors: cachedResult.actors });
       }
     } catch (cacheError) {
       console.warn('TMDB演员图片缓存检查失败:', cacheError);
