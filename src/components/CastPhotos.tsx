@@ -113,6 +113,7 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
   const handleActorClick = (index: number) => {
     if (index !== selectedIndex) {
       setSelectedIndex(index);
+      setActorWorks([]); // 先清空旧数据，防止混淆
       fetchActorWorks(actors[index].name, worksType);
     }
   };
@@ -121,6 +122,7 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
   const handleTypeChange = (type: 'movie' | 'tv') => {
     if (type !== worksType && actors[selectedIndex]) {
       setWorksType(type);
+      setActorWorks([]); // 先清空旧数据，防止混淆
       fetchActorWorks(actors[selectedIndex].name, type);
     }
   };
