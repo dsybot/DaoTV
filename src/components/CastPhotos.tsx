@@ -274,9 +274,6 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
           <div className="flex items-center gap-3">
             <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {selectedActor?.name} 的作品
-              {worksLoading && (
-                <span className="ml-2 inline-block h-3 w-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></span>
-              )}
             </h5>
             <div className="inline-flex p-1 rounded-xl bg-gray-200 dark:bg-gray-700">
               {(['tv', 'movie'] as const).map((type) => (
@@ -320,38 +317,41 @@ export default function CastPhotos({ cast }: CastPhotosProps) {
           )}
         </div>
 
-        {/* 作品列表 - 单行横向滚动 */}
-        {worksLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <span className="inline-block h-6 w-6 border-3 border-gray-300 border-t-blue-500 rounded-full animate-spin"></span>
-          </div>
-        ) : actorWorks.length > 0 ? (
-          <div
-            ref={worksScrollRef}
-            className="overflow-x-auto pb-2"
-            style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
-          >
-            <div className="flex gap-3 pt-2 px-1" style={{ minWidth: 'max-content' }}>
-              {actorWorks.map((work, index) => (
-                <div key={work.id || index} className="flex-shrink-0 w-28 sm:w-32">
-                  <VideoCard
-                    id={work.id}
-                    title={work.title}
-                    poster={work.poster}
-                    year={work.year}
-                    rate={work.rate}
-                    from="douban"
-                    type={worksType}
-                  />
-                </div>
-              ))}
+        {/* 作品列表 - 单行横向滚动，保持最小高度 */}
+        <div className="relative min-h-[200px]">
+          {worksLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 dark:bg-gray-800/80 z-10 rounded-lg">
+              <span className="inline-block h-8 w-8 border-3 border-gray-300 border-t-blue-500 rounded-full animate-spin"></span>
             </div>
-          </div>
-        ) : (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">
-            暂无{worksType === 'movie' ? '电影' : '电视剧'}作品
-          </div>
-        )}
+          )}
+          {actorWorks.length > 0 ? (
+            <div
+              ref={worksScrollRef}
+              className="overflow-x-auto pb-2"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
+            >
+              <div className="flex gap-3 pt-2 px-1" style={{ minWidth: 'max-content' }}>
+                {actorWorks.map((work, index) => (
+                  <div key={work.id || index} className="flex-shrink-0 w-28 sm:w-32">
+                    <VideoCard
+                      id={work.id}
+                      title={work.title}
+                      poster={work.poster}
+                      year={work.year}
+                      rate={work.rate}
+                      from="douban"
+                      type={worksType}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : !worksLoading ? (
+            <div className="flex items-center justify-center h-[200px] text-gray-500 dark:text-gray-400 text-sm">
+              暂无{worksType === 'movie' ? '电影' : '电视剧'}作品
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
