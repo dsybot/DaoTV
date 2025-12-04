@@ -6,7 +6,7 @@ import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w185'; // 使用较小的图片尺寸
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w300'; // 演员头像尺寸
 const CACHE_TIME = 24 * 60 * 60; // 24小时缓存
 
 export const runtime = 'nodejs';
@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
     // 限制最多查询20个演员
     const limitedNames = names.slice(0, 20);
 
-    // 生成缓存key
-    const cacheKey = `tmdb-cast-photos-${limitedNames.sort().join(',')}`;
+    // 生成缓存key（保持原始顺序）
+    const cacheKey = `tmdb-cast-photos-${limitedNames.join(',')}`;
 
     // 检查缓存
     try {
