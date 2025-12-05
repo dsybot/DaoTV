@@ -84,11 +84,12 @@ export async function GET(request: NextRequest) {
           const creditsUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/credits?api_key=${apiKey}&language=${language}`;
           const creditsResponse = await fetch(creditsUrl, {
             headers: { 'Accept': 'application/json' },
-            next: { revalidate: 3600 },
+            cache: 'no-store',
           });
 
           if (creditsResponse.ok) {
             const creditsData = await creditsResponse.json();
+            console.log(`[TMDB] credits API返回 ${(creditsData.cast || []).length} 个演员`);
             // 获取前30个有头像的演员
             cast = (creditsData.cast || [])
               .filter((c: any) => c.profile_path)
@@ -99,8 +100,11 @@ export async function GET(request: NextRequest) {
                 character: c.character,
                 photo: `${TMDB_PROFILE_BASE_URL}${c.profile_path}`,
               }));
+            console.log(`[TMDB] 过滤后有头像的演员: ${cast.length} 个`);
           }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          console.error('[TMDB] 获取演员列表失败:', e);
+        }
 
         // 获取分集信息（仅电视剧）
         if (searchType === 'tv') {
