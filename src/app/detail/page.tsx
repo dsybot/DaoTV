@@ -16,6 +16,7 @@ import {
 import { getDoubanDetails } from '@/lib/douban.client';
 import { processImageUrl } from '@/lib/utils';
 
+import CastPhotos from '@/components/CastPhotos';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 import PageLayout from '@/components/PageLayout';
 
@@ -209,6 +210,7 @@ function DetailPageClient() {
   const firstAired = movieDetails?.first_aired || '';
   const genres = movieDetails?.genres || [];
   const description = movieDetails?.plot_summary || '';
+  const cast = movieDetails?.cast || [];
 
   return (
     <PageLayout>
@@ -445,6 +447,11 @@ function DetailPageClient() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* 主演照片和作品 */}
+            {cast.length > 0 && (
+              <CastPhotos cast={cast} />
             )}
           </div>
         </div>
