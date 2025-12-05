@@ -269,6 +269,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     if (actualDoubanId && actualDoubanId > 0) params.set('douban_id', actualDoubanId.toString());
     if (actualSearchType) params.set('stype', actualSearchType);
     if (actualQuery) params.set('stitle', actualQuery.trim());
+    if (source_name) params.set('source_name', source_name);
 
     router.push(`/detail?${params.toString()}`);
   }, [

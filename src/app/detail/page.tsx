@@ -164,6 +164,7 @@ function DetailPageClient() {
   const doubanId = parseInt(searchParams.get('douban_id') || '0') || 0;
   const stype = searchParams.get('stype') || '';
   const stitle = searchParams.get('stitle') || '';
+  const sourceName = searchParams.get('source_name') || '';
 
   // 状态
   const [backdrop, setBackdrop] = useState<string | null>(null);
@@ -262,7 +263,7 @@ function DetailPageClient() {
       } else {
         await saveFavorite(source, id, {
           title: title,
-          source_name: source,
+          source_name: sourceName || source, // 优先使用sourceName，没有则使用source
           year: year,
           cover: poster,
           total_episodes: movieDetails?.episodes || 1,
@@ -274,7 +275,7 @@ function DetailPageClient() {
     } catch (error) {
       console.error('切换收藏状态失败:', error);
     }
-  }, [favorited, source, id, title, year, poster, movieDetails, stitle]);
+  }, [favorited, source, id, title, year, poster, movieDetails, stitle, sourceName]);
 
   // 跳转到播放页
   const handlePlay = useCallback(() => {
