@@ -46,6 +46,7 @@ export interface WatchingUpdate {
     remainingEpisodes?: number; // 新增：剩余集数
     latestEpisodes?: number;
     remarks?: string; // 备注信息（如"已完结"）
+    douban_id?: number; // 豆瓣ID（用于详情页获取信息）
   }[];
 }
 
@@ -159,7 +160,8 @@ export async function checkWatchingUpdates(forceRefresh = false): Promise<void> 
           newEpisodes: updateInfo.newEpisodes,
           remainingEpisodes: updateInfo.remainingEpisodes,
           latestEpisodes: updateInfo.latestEpisodes,
-          remarks: record.remarks
+          remarks: record.remarks,
+          douban_id: record.douban_id
         };
 
         updatedSeries.push(seriesInfo);
@@ -195,7 +197,8 @@ export async function checkWatchingUpdates(forceRefresh = false): Promise<void> 
           newEpisodes: 0,
           remainingEpisodes: 0,
           latestEpisodes: record.total_episodes,
-          remarks: record.remarks
+          remarks: record.remarks,
+          douban_id: record.douban_id
         };
         updatedSeries.push(seriesInfo);
         return seriesInfo;

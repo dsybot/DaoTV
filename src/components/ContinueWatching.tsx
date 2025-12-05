@@ -249,6 +249,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                     }
                     type={latestTotalEpisodes > 1 ? 'tv' : ''}
                     remarks={record.remarks}
+                    douban_id={record.douban_id}
                   />
                 </div>
                 {/* 新集数徽章 */}

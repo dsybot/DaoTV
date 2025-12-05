@@ -292,16 +292,28 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      return NextResponse.json({
+      // 构建基本响应
+      const response: any = {
         backdrop,
         logo,
         title: result.title || result.name,
         id: mediaId,
-        providers: includeDetails ? providers : undefined,
-        episodes: includeDetails ? episodes : undefined,
-        seasons: includeDetails ? seasons : undefined,
-        cast: includeDetails ? cast : undefined,
-      });
+        // 基本信息（从搜索结果中获取）
+        overview: result.overview || '',
+        vote_average: result.vote_average || 0,
+        first_air_date: result.first_air_date || result.release_date || '',
+        genre_ids: result.genre_ids || [],
+      };
+
+      // 详细信息
+      if (includeDetails) {
+        response.providers = providers;
+        response.episodes = episodes;
+        response.seasons = seasons;
+        response.cast = cast;
+      }
+
+      return NextResponse.json(response);
     }
 
     return NextResponse.json({ backdrop: null, logo: null });

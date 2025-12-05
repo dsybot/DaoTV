@@ -55,6 +55,10 @@ interface TMDBData {
   episodes: TMDBEpisode[];
   seasons: TMDBSeason[];
   cast: TMDBCast[];
+  // 基本信息（用于备用显示）
+  overview?: string;
+  vote_average?: number;
+  first_air_date?: string;
 }
 
 // 季数选择器组件
@@ -136,12 +140,15 @@ async function getTMDBData(title: string, year: string, type: string, season: nu
         episodes: data.episodes || [],
         seasons: data.seasons || [],
         cast: data.cast || [],
+        overview: data.overview || '',
+        vote_average: data.vote_average || 0,
+        first_air_date: data.first_air_date || '',
       };
     }
   } catch (error) {
     console.error('获取TMDB数据失败:', error);
   }
-  return { backdrop: null, logo: null, providers: [], episodes: [], seasons: [], cast: [] };
+  return { backdrop: null, logo: null, providers: [], episodes: [], seasons: [], cast: [], overview: '', vote_average: 0, first_air_date: '' };
 }
 
 function DetailPageClient() {
@@ -172,6 +179,10 @@ function DetailPageClient() {
   const [tmdbLoading, setTmdbLoading] = useState(true);
   const [favorited, setFavorited] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  // TMDB基本信息（用于备用显示）
+  const [tmdbOverview, setTmdbOverview] = useState<string>('');
+  const [tmdbRating, setTmdbRating] = useState<number>(0);
+  const [tmdbFirstAirDate, setTmdbFirstAirDate] = useState<string>('');
 
   // 获取豆瓣详情
   useEffect(() => {
@@ -204,6 +215,10 @@ function DetailPageClient() {
         setEpisodes(data.episodes);
         setSeasons(data.seasons);
         setTmdbCast(data.cast);
+        // 设置TMDB基本信息（用于备用显示）
+        setTmdbOverview(data.overview || '');
+        setTmdbRating(data.vote_average || 0);
+        setTmdbFirstAirDate(data.first_air_date || '');
         setTmdbLoading(false);
       }
     };
@@ -284,10 +299,11 @@ function DetailPageClient() {
   }, [doubanId]);
 
   const displayPoster = movieDetails?.cover || poster;
-  const rate = movieDetails?.rate || '';
-  const firstAired = movieDetails?.first_aired || '';
+  // 优先使用豆瓣数据，如果没有则使用TMDB数据作为备用
+  const rate = movieDetails?.rate || (tmdbRating > 0 ? tmdbRating.toFixed(1) : '');
+  const firstAired = movieDetails?.first_aired || tmdbFirstAirDate || '';
   const genres = movieDetails?.genres || [];
-  const description = movieDetails?.plot_summary || '';
+  const description = movieDetails?.plot_summary || tmdbOverview || '';
   const cast = movieDetails?.cast || [];
 
   return (
