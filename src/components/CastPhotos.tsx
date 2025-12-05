@@ -53,7 +53,7 @@ export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhot
   const [showWorksRightArrow, setShowWorksRightArrow] = useState(false);
 
   useEffect(() => {
-    // 如果有TMDB演员数据，直接使用，不需要再搜索
+    // 优先使用TMDB演员数据（更准确，避免同名问题）
     if (tmdbCast && tmdbCast.length > 0) {
       const actorsWithPhoto = tmdbCast.filter(a => a.photo).map(a => ({
         name: a.name,
@@ -69,6 +69,7 @@ export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhot
       }
     }
 
+    // 没有TMDB数据时，通过名字搜索（播放页等场景）
     if (!cast || cast.length === 0) {
       setLoading(false);
       return;
@@ -83,7 +84,6 @@ export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhot
         const data = await response.json();
 
         if (data.enabled) {
-          // 过滤掉没有图片的演员（TMDB搜索不到的）
           const actorsWithPhoto = (data.actors || []).filter((actor: ActorPhoto) => actor.photo);
           setEnabled(true);
           setActors(actorsWithPhoto);
