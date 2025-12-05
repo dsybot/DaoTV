@@ -167,8 +167,8 @@ function DetailPageClient() {
   return (
     <PageLayout>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24">
-        {/* 背景图区域 - 固定高度，裁切多余部分 */}
-        <div className="relative w-full h-[70vh] sm:h-[75vh] md:h-[80vh] overflow-hidden">
+        {/* 背景图区域 - 至少填满视口高度 */}
+        <div className="relative w-full min-h-screen overflow-hidden">
           {/* 背景图 */}
           {backdrop ? (
             <img src={backdrop} alt={title} className="absolute inset-0 w-full h-full object-cover object-top" />
