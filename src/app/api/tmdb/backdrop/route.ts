@@ -89,12 +89,16 @@ export async function GET(request: NextRequest) {
 
           if (creditsResponse.ok) {
             const creditsData = await creditsResponse.json();
-            cast = (creditsData.cast || []).slice(0, 20).map((c: any) => ({
-              id: c.id,
-              name: c.name,
-              character: c.character,
-              photo: c.profile_path ? `${TMDB_PROFILE_BASE_URL}${c.profile_path}` : null,
-            }));
+            // 获取前30个有头像的演员
+            cast = (creditsData.cast || [])
+              .filter((c: any) => c.profile_path)
+              .slice(0, 30)
+              .map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                character: c.character,
+                photo: `${TMDB_PROFILE_BASE_URL}${c.profile_path}`,
+              }));
           }
         } catch (e) { /* ignore */ }
 
