@@ -209,7 +209,7 @@ function DetailPageClient() {
         <div className="relative z-10 min-h-screen flex items-end pb-8 sm:pb-12 md:pb-16">
           <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12">
             <div className="max-w-6xl mx-auto">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end">
                 {/* 左侧：封面卡片 */}
                 <div className="flex-shrink-0 w-40 sm:w-48 md:w-56 mx-auto md:mx-0">
                   <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10">
@@ -267,15 +267,15 @@ function DetailPageClient() {
                   </div>
                 </div>
 
-                {/* 右侧：详情信息 */}
-                <div className="flex-1 text-white">
+                {/* 右侧：详情信息 - 底部对齐 */}
+                <div className="flex-1 text-white pb-2">
                   {/* 标题 */}
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 drop-shadow-lg">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">
                     {title}
                   </h1>
 
                   {/* 元信息行 */}
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 text-sm">
                     {/* 首播日期 */}
                     {firstAired && (
                       <span className="text-gray-300">
@@ -285,7 +285,7 @@ function DetailPageClient() {
 
                     {/* 类型标签 */}
                     {stype && (
-                      <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs sm:text-sm rounded">
+                      <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded">
                         {stype === 'movie' ? '电影' : '电视剧'}
                       </span>
                     )}
@@ -296,31 +296,26 @@ function DetailPageClient() {
                         {genres.slice(0, 3).join(' · ')}
                       </span>
                     )}
-                  </div>
 
-                  {/* 豆瓣评分 */}
-                  {rate && rate !== '0' && parseFloat(rate) > 0 && (
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="flex items-center gap-2 px-4 py-2 bg-green-500/90 rounded-lg">
-                        <span className="text-white font-bold text-xl">{rate}</span>
-                      </div>
-                      <span className="text-gray-300 text-sm">豆瓣评分</span>
-                    </div>
-                  )}
+                    {/* 豆瓣评分 - 放在同一行 */}
+                    {rate && rate !== '0' && parseFloat(rate) > 0 && (
+                      <span className="px-2 py-0.5 bg-green-500/80 text-white text-xs rounded font-semibold">
+                        {rate}
+                      </span>
+                    )}
+                  </div>
 
                   {/* 简介 */}
                   {description && (
-                    <div className="mt-4">
-                      <p className="text-gray-200 leading-relaxed line-clamp-6 sm:line-clamp-none">
-                        {description}
-                      </p>
-                    </div>
+                    <p className="text-gray-200 text-sm leading-relaxed line-clamp-4 md:line-clamp-5">
+                      {description}
+                    </p>
                   )}
 
                   {/* 加载状态 */}
                   {loading && (
-                    <div className="mt-4 flex items-center gap-2 text-gray-300">
-                      <div className="w-4 h-4 border-2 border-gray-500 border-t-blue-400 rounded-full animate-spin" />
+                    <div className="flex items-center gap-2 text-gray-300 text-sm">
+                      <div className="w-3 h-3 border-2 border-gray-500 border-t-blue-400 rounded-full animate-spin" />
                       <span>加载详情中...</span>
                     </div>
                   )}
