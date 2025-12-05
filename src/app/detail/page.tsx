@@ -19,18 +19,18 @@ import { processImageUrl } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 import PageLayout from '@/components/PageLayout';
 
-// TMDB背景图获取
-async function getTMDBBackdrop(title: string, year: string, type: string): Promise<string | null> {
+// TMDB背景图和Logo获取
+async function getTMDBImages(title: string, year: string, type: string): Promise<{ backdrop: string | null; logo: string | null }> {
   try {
     const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}`);
     if (response.ok) {
       const data = await response.json();
-      return data.backdrop || null;
+      return { backdrop: data.backdrop || null, logo: data.logo || null };
     }
   } catch (error) {
-    console.error('获取TMDB背景图失败:', error);
+    console.error('获取TMDB图片失败:', error);
   }
-  return null;
+  return { backdrop: null, logo: null };
 }
 
 function DetailPageClient() {
@@ -49,20 +49,22 @@ function DetailPageClient() {
 
   // 状态
   const [backdrop, setBackdrop] = useState<string | null>(null);
+  const [logo, setLogo] = useState<string | null>(null);
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [favorited, setFavorited] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // 获取TMDB背景图
+  // 获取TMDB背景图和Logo
   useEffect(() => {
-    const fetchBackdrop = async () => {
+    const fetchImages = async () => {
       if (title) {
-        const bg = await getTMDBBackdrop(title, year, stype || 'tv');
-        setBackdrop(bg);
+        const images = await getTMDBImages(title, year, stype || 'tv');
+        setBackdrop(images.backdrop);
+        setLogo(images.logo);
       }
     };
-    fetchBackdrop();
+    fetchImages();
   }, [title, year, stype]);
 
   // 获取豆瓣详情
@@ -242,7 +244,16 @@ function DetailPageClient() {
 
                 {/* 右侧：详情信息 */}
                 <div className="flex-1 text-white pb-2">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">{title}</h1>
+                  {/* 标题 - 优先使用Logo图片 */}
+                  {logo ? (
+                    <img
+                      src={logo}
+                      alt={title}
+                      className="h-12 sm:h-16 md:h-20 max-w-full object-contain object-left mb-3 drop-shadow-lg"
+                    />
+                  ) : (
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">{title}</h1>
+                  )}
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 text-sm">
                     {firstAired && <span className="text-gray-300">{firstAired}</span>}
                     {stype && (
