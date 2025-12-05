@@ -180,7 +180,8 @@ function DetailPageClient() {
   const [tmdbLoading, setTmdbLoading] = useState(true);
   const [favorited, setFavorited] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [logoError, setLogoError] = useState(false);
+  const [logoRetry, setLogoRetry] = useState(0); // logo重试次数
+  const [episodeRetry, setEpisodeRetry] = useState<Record<number, number>>({}); // 剧集图片重试次数
   // TMDB基本信息（用于备用显示）
   const [tmdbOverview, setTmdbOverview] = useState<string>('');
   const [tmdbRating, setTmdbRating] = useState<number>(0);
@@ -213,9 +214,10 @@ function DetailPageClient() {
         const data = await getTMDBData(title, year, stype || 'tv', currentSeason, imdbId);
         setBackdrop(data.backdrop);
         setLogo(data.logo);
-        setLogoError(false); // 重置logo错误状态
+        setLogoRetry(0); // 重置logo重试次数
         setProviders(data.providers);
         setEpisodes(data.episodes);
+        setEpisodeRetry({}); // 重置剧集图片重试次数
         setSeasons(data.seasons);
         setTmdbCast(data.cast);
         // 设置TMDB基本信息（用于备用显示）
@@ -408,12 +410,18 @@ function DetailPageClient() {
                 <div className="flex-1 w-full text-white pb-2">
                   {/* 标题 - 优先使用Logo图片，水平居中 */}
                   <div className="flex justify-center items-center mb-4 min-h-[6rem] sm:min-h-[8rem] md:min-h-[10rem]">
-                    {logo && !logoError ? (
+                    {logo && logoRetry < 3 ? (
                       <img
-                        src={logo}
+                        key={`logo-${logoRetry}`}
+                        src={`${logo}${logoRetry > 0 ? `?retry=${logoRetry}` : ''}`}
                         alt={title}
                         className="h-24 sm:h-32 md:h-40 max-w-full object-contain drop-shadow-2xl"
-                        onError={() => setLogoError(true)}
+                        onError={() => {
+                          // 最多重试3次
+                          if (logoRetry < 3) {
+                            setTimeout(() => setLogoRetry(prev => prev + 1), 1000);
+                          }
+                        }}
                       />
                     ) : (
                       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold drop-shadow-lg text-center">{title}</h1>
@@ -525,25 +533,30 @@ function DetailPageClient() {
                           }}
                         >
                           <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
-                            {ep.stillPath ? (
+                            {ep.stillPath && (episodeRetry[ep.episodeNumber] || 0) < 3 ? (
                               <img
-                                src={ep.stillPath}
+                                key={`ep-${ep.episodeNumber}-${episodeRetry[ep.episodeNumber] || 0}`}
+                                src={`${ep.stillPath}${(episodeRetry[ep.episodeNumber] || 0) > 0 ? `?retry=${episodeRetry[ep.episodeNumber]}` : ''}`}
                                 alt={ep.name}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  // 图片加载失败时隐藏图片，显示占位符
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                  const placeholder = (e.target as HTMLImageElement).nextElementSibling;
-                                  if (placeholder) (placeholder as HTMLElement).style.display = 'flex';
+                                onError={() => {
+                                  // 最多重试3次
+                                  const currentRetry = episodeRetry[ep.episodeNumber] || 0;
+                                  if (currentRetry < 3) {
+                                    setTimeout(() => {
+                                      setEpisodeRetry(prev => ({
+                                        ...prev,
+                                        [ep.episodeNumber]: currentRetry + 1
+                                      }));
+                                    }, 1000);
+                                  }
                                 }}
                               />
-                            ) : null}
-                            <div
-                              className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center"
-                              style={{ display: ep.stillPath ? 'none' : 'flex' }}
-                            >
-                              <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
-                            </div>
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
+                                <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
+                              </div>
+                            )}
                             <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
                               第 {ep.episodeNumber} 集
                             </div>
