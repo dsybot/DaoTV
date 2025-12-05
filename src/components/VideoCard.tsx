@@ -635,6 +635,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       <div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500] hover:drop-shadow-2xl'
         {...longPressProps}
+        onClick={(e) => {
+          // 检查是否点击的是按钮元素，如果是则不触发跳转详情页
+          const target = e.target as HTMLElement;
+          const isButton = target.closest('[data-button]');
+          if (!isButton) {
+            handleGoToDetail();
+          }
+        }}
         style={{
           // 禁用所有默认的长按和选择效果
           WebkitUserSelect: 'none',
