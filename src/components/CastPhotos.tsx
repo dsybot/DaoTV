@@ -271,7 +271,7 @@ export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProp
                 }`} title={actor.name}>
                 {actor.name}
               </p>
-              {actor.character && (
+              {actor.character && /[\u4e00-\u9fa5]/.test(actor.character) && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 truncate px-1" title={`饰 ${actor.character}`}>
                   饰 {actor.character}
                 </p>

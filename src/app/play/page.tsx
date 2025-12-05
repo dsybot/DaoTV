@@ -157,8 +157,15 @@ function PlayPageClient() {
   useEffect(() => {
     needPreferRef.current = needPrefer;
   }, [needPrefer]);
+
+  // 从URL获取初始集数（episode参数是1-based，需要转换为0-based索引）
+  const [initialEpisodeIndex] = useState(() => {
+    const ep = parseInt(searchParams.get('episode') || '1');
+    return Math.max(0, ep - 1);
+  });
+
   // 集数相关
-  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(0);
+  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(initialEpisodeIndex);
 
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
