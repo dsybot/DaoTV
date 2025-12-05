@@ -10,6 +10,7 @@ interface ActorPhoto {
   name: string;
   photo: string | null;
   id: number | null;
+  character?: string;
 }
 
 interface TMDBCastItem {
@@ -58,6 +59,7 @@ export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProp
         name: a.name,
         photo: a.photo,
         id: a.id,
+        character: a.character,
       }));
       if (actorsWithPhoto.length > 0) {
         setEnabled(true);
@@ -269,6 +271,11 @@ export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProp
                 }`} title={actor.name}>
                 {actor.name}
               </p>
+              {actor.character && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 truncate px-1" title={`饰 ${actor.character}`}>
+                  饰 {actor.character}
+                </p>
+              )}
             </div>
           ))}
         </div>
