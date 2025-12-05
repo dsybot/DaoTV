@@ -12,6 +12,13 @@ interface ActorPhoto {
   id: number | null;
 }
 
+interface TMDBCastItem {
+  id: number;
+  name: string;
+  character?: string;
+  photo: string | null;
+}
+
 interface ActorWork {
   id: string;
   title: string;
@@ -22,10 +29,11 @@ interface ActorWork {
 
 interface CastPhotosProps {
   cast: string[];
+  tmdbCast?: TMDBCastItem[];  // 直接传入TMDB演员数据，避免重复搜索
   onEnabledChange?: (enabled: boolean) => void;
 }
 
-export default function CastPhotos({ cast, onEnabledChange }: CastPhotosProps) {
+export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhotosProps) {
   const [actors, setActors] = useState<ActorPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -45,6 +53,22 @@ export default function CastPhotos({ cast, onEnabledChange }: CastPhotosProps) {
   const [showWorksRightArrow, setShowWorksRightArrow] = useState(false);
 
   useEffect(() => {
+    // 如果有TMDB演员数据，直接使用，不需要再搜索
+    if (tmdbCast && tmdbCast.length > 0) {
+      const actorsWithPhoto = tmdbCast.filter(a => a.photo).map(a => ({
+        name: a.name,
+        photo: a.photo,
+        id: a.id,
+      }));
+      if (actorsWithPhoto.length > 0) {
+        setEnabled(true);
+        setActors(actorsWithPhoto);
+        onEnabledChange?.(true);
+        setLoading(false);
+        return;
+      }
+    }
+
     if (!cast || cast.length === 0) {
       setLoading(false);
       return;
@@ -78,7 +102,7 @@ export default function CastPhotos({ cast, onEnabledChange }: CastPhotosProps) {
     };
 
     fetchActorPhotos();
-  }, [cast, onEnabledChange]);
+  }, [cast, tmdbCast, onEnabledChange]);
 
   // 获取演员作品
   const fetchActorWorks = async (actorName: string, type: 'movie' | 'tv') => {

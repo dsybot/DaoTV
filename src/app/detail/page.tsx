@@ -41,12 +41,20 @@ interface TMDBSeason {
   episodeCount: number;
 }
 
+interface TMDBCast {
+  id: number;
+  name: string;
+  character: string;
+  photo: string | null;
+}
+
 interface TMDBData {
   backdrop: string | null;
   logo: string | null;
   providers: TMDBProvider[];
   episodes: TMDBEpisode[];
   seasons: TMDBSeason[];
+  cast: TMDBCast[];
 }
 
 // TMDB背景图、Logo和详情获取
@@ -61,12 +69,13 @@ async function getTMDBData(title: string, year: string, type: string, season: nu
         providers: data.providers || [],
         episodes: data.episodes || [],
         seasons: data.seasons || [],
+        cast: data.cast || [],
       };
     }
   } catch (error) {
     console.error('获取TMDB数据失败:', error);
   }
-  return { backdrop: null, logo: null, providers: [], episodes: [], seasons: [] };
+  return { backdrop: null, logo: null, providers: [], episodes: [], seasons: [], cast: [] };
 }
 
 function DetailPageClient() {
@@ -89,6 +98,7 @@ function DetailPageClient() {
   const [providers, setProviders] = useState<TMDBProvider[]>([]);
   const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
+  const [tmdbCast, setTmdbCast] = useState<TMDBCast[]>([]);
   const [currentSeason, setCurrentSeason] = useState(1);
   const [episodePage, setEpisodePage] = useState(0);
   const [movieDetails, setMovieDetails] = useState<any>(null);
@@ -108,6 +118,7 @@ function DetailPageClient() {
         setProviders(data.providers);
         setEpisodes(data.episodes);
         setSeasons(data.seasons);
+        setTmdbCast(data.cast);
         setTmdbLoading(false);
       }
     };
@@ -450,8 +461,8 @@ function DetailPageClient() {
             )}
 
             {/* 主演照片和作品 */}
-            {cast.length > 0 && (
-              <CastPhotos cast={cast} />
+            {(tmdbCast.length > 0 || cast.length > 0) && (
+              <CastPhotos cast={cast} tmdbCast={tmdbCast} />
             )}
           </div>
         </div>

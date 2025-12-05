@@ -8,6 +8,7 @@ const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
 const TMDB_NETWORK_LOGO_URL = 'https://image.tmdb.org/t/p/h60';
+const TMDB_PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w300';
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
       let providers: any[] = [];
       let episodes: any[] = [];
       let seasons: any[] = [];
+      let cast: any[] = [];
 
       // 获取Logo图片
       try {
@@ -77,6 +79,25 @@ export async function GET(request: NextRequest) {
 
       // 如果需要详细信息
       if (includeDetails) {
+        // 获取演员列表
+        try {
+          const creditsUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/credits?api_key=${apiKey}&language=${language}`;
+          const creditsResponse = await fetch(creditsUrl, {
+            headers: { 'Accept': 'application/json' },
+            next: { revalidate: 3600 },
+          });
+
+          if (creditsResponse.ok) {
+            const creditsData = await creditsResponse.json();
+            cast = (creditsData.cast || []).slice(0, 20).map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              character: c.character,
+              photo: c.profile_path ? `${TMDB_PROFILE_BASE_URL}${c.profile_path}` : null,
+            }));
+          }
+        } catch (e) { /* ignore */ }
+
         // 获取分集信息（仅电视剧）
         if (searchType === 'tv') {
           try {
@@ -135,6 +156,7 @@ export async function GET(request: NextRequest) {
         providers: includeDetails ? providers : undefined,
         episodes: includeDetails ? episodes : undefined,
         seasons: includeDetails ? seasons : undefined,
+        cast: includeDetails ? cast : undefined,
       });
     }
 
