@@ -82,7 +82,9 @@ export async function GET(request: NextRequest) {
       if (includeDetails) {
         // 获取演员列表
         try {
-          const creditsUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/credits?api_key=${apiKey}&language=${language}`;
+          // 电视剧使用aggregate_credits获取所有季的演员，电影使用credits
+          const creditsEndpoint = searchType === 'tv' ? 'aggregate_credits' : 'credits';
+          const creditsUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/${creditsEndpoint}?api_key=${apiKey}&language=${language}`;
           const creditsResponse = await fetch(creditsUrl, {
             headers: { 'Accept': 'application/json' },
             cache: 'no-store',
@@ -90,7 +92,7 @@ export async function GET(request: NextRequest) {
 
           if (creditsResponse.ok) {
             const creditsData = await creditsResponse.json();
-            console.log(`[TMDB] credits API返回 ${(creditsData.cast || []).length} 个演员`);
+            console.log(`[TMDB] ${creditsEndpoint} API返回 ${(creditsData.cast || []).length} 个演员`);
             // 获取前30个有头像的演员
             cast = (creditsData.cast || [])
               .filter((c: any) => c.profile_path)
@@ -98,7 +100,7 @@ export async function GET(request: NextRequest) {
               .map((c: any) => ({
                 id: c.id,
                 name: c.name,
-                character: c.character,
+                character: searchType === 'tv' ? (c.roles?.[0]?.character || '') : c.character,
                 photo: `${TMDB_PROFILE_BASE_URL}${c.profile_path}`,
               }));
             console.log(`[TMDB] 过滤后有头像的演员: ${cast.length} 个`);
