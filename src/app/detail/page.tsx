@@ -217,7 +217,7 @@ function DetailPageClient() {
         <div className="relative w-full min-h-screen overflow-hidden">
           {/* 背景图 */}
           {backdrop ? (
-            <img src={backdrop} alt={title} className="absolute inset-0 w-full h-full object-cover object-top" />
+            <img src={backdrop} alt={title} className="absolute inset-0 w-full h-full object-cover object-top md:object-center" />
           ) : displayPoster ? (
             <img src={processImageUrl(displayPoster)} alt={title} className="absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110" />
           ) : (
@@ -397,7 +397,7 @@ function DetailPageClient() {
                     <span>加载剧集信息...</span>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto pb-2">
+                  <div className="episode-list overflow-x-auto pb-2">
                     <div className="flex gap-3" style={{ width: 'max-content' }}>
                       {episodes.slice(episodePage * 20, (episodePage + 1) * 20).map((ep) => (
                         <div

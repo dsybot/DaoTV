@@ -158,14 +158,38 @@ html:not(.dark) body {
   }
 }
 
-/* 隐藏所有滚动条（兼容 WebKit、Firefox、IE/Edge）- 排除ArtPlayer */
-*:not(.artplayer):not(.artplayer *) {
+/* 隐藏所有滚动条（兼容 WebKit、Firefox、IE/Edge）- 排除ArtPlayer和episode-list */
+*:not(.artplayer):not(.artplayer *):not(.episode-list) {
   -ms-overflow-style: none; /* IE & Edge */
   scrollbar-width: none; /* Firefox */
 }
 
-*:not(.artplayer):not(.artplayer *)::webkit-scrollbar {
+*:not(.artplayer):not(.artplayer *):not(.episode-list)::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
+}
+
+/* 剧集列表滚动条样式 */
+.episode-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 114, 128, 0.5) transparent;
+}
+
+.episode-list::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+
+.episode-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.episode-list::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.5);
+  border-radius: 3px;
+}
+
+.episode-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
 }
 
 /* View Transitions API 动画 - 优雅的缩放淡入淡出效果 */
