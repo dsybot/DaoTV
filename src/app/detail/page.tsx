@@ -166,20 +166,22 @@ function DetailPageClient() {
 
   return (
     <PageLayout>
-      <div className="min-h-screen bg-black -mt-12 md:-mt-24">
-        {/* 背景图区域 - 16:9比例完整显示 */}
-        <div className="relative w-full aspect-video">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24">
+        {/* 背景图区域 - 固定高度，裁切多余部分 */}
+        <div className="relative w-full h-[70vh] sm:h-[75vh] md:h-[80vh] overflow-hidden">
           {/* 背景图 */}
           {backdrop ? (
-            <img src={backdrop} alt={title} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={backdrop} alt={title} className="absolute inset-0 w-full h-full object-cover object-top" />
           ) : displayPoster ? (
-            <img src={processImageUrl(displayPoster)} alt={title} className="absolute inset-0 w-full h-full object-cover blur-xl scale-110" />
+            <img src={processImageUrl(displayPoster)} alt={title} className="absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110" />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
           )}
           {/* 渐变遮罩 */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+          {/* 底部渐变虚化 - 过渡到下方内容区域 */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-100 dark:from-gray-900 to-transparent" />
 
           {/* 返回按钮 */}
           <button
@@ -190,8 +192,8 @@ function DetailPageClient() {
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          {/* 内容区域 - 垂直居中偏下 */}
-          <div className="absolute inset-0 flex items-center pt-16 md:pt-24 px-4 sm:px-6 md:px-8 lg:px-12">
+          {/* 内容区域 - 底部对齐 */}
+          <div className="absolute bottom-8 left-0 right-0 px-4 sm:px-6 md:px-8 lg:px-12">
             <div className="max-w-6xl mx-auto">
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end">
                 {/* 左侧：封面卡片和按钮 */}
