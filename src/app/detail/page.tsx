@@ -244,16 +244,18 @@ function DetailPageClient() {
 
                 {/* 右侧：详情信息 */}
                 <div className="flex-1 text-white pb-2">
-                  {/* 标题 - 优先使用Logo图片 */}
-                  {logo ? (
-                    <img
-                      src={logo}
-                      alt={title}
-                      className="h-24 sm:h-32 md:h-40 max-w-full object-contain mb-4 drop-shadow-2xl"
-                    />
-                  ) : (
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">{title}</h1>
-                  )}
+                  {/* 标题 - 优先使用Logo图片，水平居中 */}
+                  <div className="flex justify-center mb-4">
+                    {logo ? (
+                      <img
+                        src={logo}
+                        alt={title}
+                        className="h-24 sm:h-32 md:h-40 max-w-full object-contain drop-shadow-2xl"
+                      />
+                    ) : (
+                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold drop-shadow-lg text-center">{title}</h1>
+                    )}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 text-sm">
                     {firstAired && <span className="text-gray-300">{firstAired}</span>}
                     {stype && (
