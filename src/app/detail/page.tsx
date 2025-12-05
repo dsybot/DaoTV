@@ -211,7 +211,11 @@ function DetailPageClient() {
       if (title) {
         setTmdbLoading(true);
         const imdbId = movieDetails?.imdb_id;
-        const data = await getTMDBData(title, year, stype || 'tv', currentSeason, imdbId);
+        // 根据豆瓣数据判断类型，如果没有豆瓣数据则使用URL参数
+        const mediaType = movieDetails?.episodes !== undefined
+          ? (movieDetails.episodes <= 1 ? 'movie' : 'tv')
+          : (stype || 'tv');
+        const data = await getTMDBData(title, year, mediaType, currentSeason, imdbId);
         setBackdrop(data.backdrop);
         setLogo(data.logo);
         setLogoRetry(0); // 重置logo重试次数
@@ -228,7 +232,7 @@ function DetailPageClient() {
       }
     };
     fetchData();
-  }, [title, year, stype, currentSeason, movieDetails?.imdb_id]);
+  }, [title, year, stype, currentSeason, movieDetails?.imdb_id, movieDetails?.episodes]);
 
   // 检查收藏状态
   useEffect(() => {
@@ -314,6 +318,11 @@ function DetailPageClient() {
   const genres = movieDetails?.genres || [];
   const description = movieDetails?.plot_summary || tmdbOverview || '';
   const cast = movieDetails?.cast || [];
+  // 判断类型：优先使用豆瓣数据的episodes字段，1集或无集数信息为电影，否则为电视剧
+  // 如果没有豆瓣数据，则使用URL参数stype
+  const displayType = movieDetails?.episodes !== undefined
+    ? (movieDetails.episodes <= 1 ? 'movie' : 'tv')
+    : stype;
 
   return (
     <PageLayout activePath="/detail">
@@ -429,9 +438,9 @@ function DetailPageClient() {
                   </div>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 text-sm">
                     {firstAired && <span className="text-gray-300">{firstAired}</span>}
-                    {stype && (
+                    {displayType && (
                       <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded">
-                        {stype === 'movie' ? '电影' : '电视剧'}
+                        {displayType === 'movie' ? '电影' : '电视剧'}
                       </span>
                     )}
                     {genres.length > 0 && <span className="text-gray-300">{genres.slice(0, 3).join(' · ')}</span>}
