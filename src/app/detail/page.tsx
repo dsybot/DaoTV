@@ -230,13 +230,26 @@ function DetailPageClient() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24">
         {/* 背景图区域 - 至少填满视口高度 */}
         <div className="relative w-full min-h-screen overflow-hidden">
-          {/* 背景图 */}
+          {/* 背景图 - 手机端用豆瓣海报，桌面端用TMDB横版背景 */}
+          {/* 手机端背景（豆瓣海报） */}
+          {displayPoster && (
+            <img
+              src={processImageUrl(displayPoster)}
+              alt={title}
+              className="md:hidden absolute inset-0 w-full h-full object-cover object-top blur-sm scale-105"
+            />
+          )}
+          {/* 桌面端背景（TMDB横版） */}
           {backdrop ? (
-            <img src={backdrop} alt={title} className="absolute inset-0 w-full h-full object-cover object-top md:object-center" />
+            <img src={backdrop} alt={title} className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />
           ) : displayPoster ? (
-            <img src={processImageUrl(displayPoster)} alt={title} className="absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110" />
+            <img src={processImageUrl(displayPoster)} alt={title} className="hidden md:block absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110" />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
+          )}
+          {/* 手机端无海报时的默认背景 */}
+          {!displayPoster && (
+            <div className="md:hidden absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
           )}
           {/* 渐变遮罩 */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
