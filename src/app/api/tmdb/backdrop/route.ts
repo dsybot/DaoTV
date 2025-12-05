@@ -129,6 +129,23 @@ export async function GET(request: NextRequest) {
             break;
           }
         }
+        // 如果指定类型搜索不到，尝试另一种类型
+        if (!result) {
+          const alternateType = type === 'movie' ? 'tv' : 'movie';
+          result = await searchByTitle(t, year, alternateType, apiKey, language);
+          if (result) {
+            console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}) 找到: ${result.name || result.title} (ID: ${result.id})`);
+            break;
+          }
+          // 不带年份再试一次
+          if (year && !result) {
+            result = await searchByTitle(t, '', alternateType, apiKey, language);
+            if (result) {
+              console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}, 无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
+              break;
+            }
+          }
+        }
       }
     }
 
