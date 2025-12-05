@@ -59,8 +59,10 @@ export default function CastPhotos({ cast, onEnabledChange }: CastPhotosProps) {
         const data = await response.json();
 
         if (data.enabled) {
+          // 过滤掉没有图片的演员（TMDB搜索不到的）
+          const actorsWithPhoto = (data.actors || []).filter((actor: ActorPhoto) => actor.photo);
           setEnabled(true);
-          setActors(data.actors || []);
+          setActors(actorsWithPhoto);
           onEnabledChange?.(true);
         } else {
           setEnabled(false);
