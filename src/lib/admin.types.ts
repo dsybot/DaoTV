@@ -22,6 +22,7 @@ export interface AdminConfig {
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
     EnableTMDBCarousel?: boolean;
+    EnableDetailPage?: boolean; // 是否启用详情页
     // 上映日程代理配置
     ReleaseCalendarProxy?: string;
     // 弹幕API配置

@@ -26,6 +26,7 @@ import { useLongPress } from '@/hooks/useLongPress';
 
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 import MobileActionSheet from '@/components/MobileActionSheet';
+import { useSite } from '@/components/SiteProvider';
 
 export interface VideoCardProps {
   id?: string;
@@ -86,6 +87,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   ref
 ) {
   const router = useRouter();
+  const { enableDetailPage } = useSite();
   const [favorited, setFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
@@ -245,7 +247,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     [from, actualSource, actualId, onDelete]
   );
 
-  // 跳转到详情页
+  // 跳转到详情页或直接播放
   const handleGoToDetail = useCallback(() => {
     // 如果是即将上映的内容，不执行跳转
     if (isUpcoming) {
@@ -256,6 +258,20 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     if (origin === 'live' && actualSource && actualId) {
       const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
       router.push(url);
+      return;
+    }
+
+    // 如果未启用详情页，直接跳转到播放页
+    if (!enableDetailPage) {
+      // 内联播放逻辑
+      const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
+      if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+        router.push(url);
+      } else if (actualSource && actualId) {
+        const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(actualTitle)}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+        router.push(url);
+      }
       return;
     }
 
@@ -284,6 +300,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     actualDoubanId,
     actualSearchType,
     actualQuery,
+    enableDetailPage,
+    from,
+    isAggregate,
+    source_name,
   ]);
 
   // 直接播放（点击播放按钮时触发）

@@ -286,6 +286,7 @@ interface SiteConfig {
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
   EnableTMDBCarousel?: boolean;
+  EnableDetailPage?: boolean;
   // 上映日程代理配置
   ReleaseCalendarProxy?: string;
   // 弹幕API配置
@@ -2976,7 +2977,7 @@ const VideoSourceConfig = ({
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${source.is_adult
               ? 'bg-gradient-to-r from-red-600 to-pink-600 focus:ring-red-500'
               : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500'
-            } ${isLoading(`toggleAdult_${source.key}`) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${isLoading(`toggleAdult_${source.key}`) ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={source.is_adult ? '点击取消成人资源标记' : '点击标记为成人资源'}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${source.is_adult ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -4294,6 +4295,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
     EnableTMDBCarousel: false,
+    EnableDetailPage: false,
     // 上映日程代理配置
     ReleaseCalendarProxy: '',
     // 弹幕API配置
@@ -4356,7 +4358,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch,
         EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel,
       });
-      
+
       setSiteSettings({
         SiteName: config.SiteConfig.SiteName,
         Announcement: config.SiteConfig.Announcement,
@@ -4375,6 +4377,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
         EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? false,
+        EnableDetailPage: config.SiteConfig.EnableDetailPage ?? false,
         // 上映日程代理配置
         ReleaseCalendarProxy: config.SiteConfig.ReleaseCalendarProxy || '',
         // 弹幕API配置
@@ -4442,8 +4445,9 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         console.log('[SiteConfig] 保存前 TMDB 设置:', {
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch,
           EnableTMDBCarousel: siteSettings.EnableTMDBCarousel,
+          EnableDetailPage: siteSettings.EnableDetailPage,
         });
-        
+
         // 确保布尔值被明确设置
         const dataToSave = {
           ...siteSettings,
@@ -4451,13 +4455,15 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           FluidSearch: siteSettings.FluidSearch ?? true,
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch ?? false,
           EnableTMDBCarousel: siteSettings.EnableTMDBCarousel ?? false,
+          EnableDetailPage: siteSettings.EnableDetailPage ?? false,
         };
-        
+
         console.log('[SiteConfig] 将要保存 TMDB 设置:', {
           EnableTMDBActorSearch: dataToSave.EnableTMDBActorSearch,
           EnableTMDBCarousel: dataToSave.EnableTMDBCarousel,
+          EnableDetailPage: dataToSave.EnableDetailPage,
         });
-        
+
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -4471,7 +4477,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
 
         await refreshConfig();
         showSuccess('保存成功，即将刷新页面...', showAlert);
-        
+
         // 延迟 1 秒后刷新整个页面，让用户看到成功提示
         setTimeout(() => {
           window.location.reload();
@@ -5020,6 +5026,36 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableTMDBCarousel ? 'translate-x-6' : 'translate-x-1'
+                }`}
+            />
+          </button>
+        </div>
+
+        {/* 启用详情页 */}
+        <div className='flex items-center justify-between'>
+          <div>
+            <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+              启用详情页
+            </label>
+            <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+              启用后点击卡片将进入详情页，详情页依赖TMDB数据展示背景图、Logo、剧集等信息
+            </p>
+          </div>
+          <button
+            type='button'
+            onClick={() =>
+              setSiteSettings((prev) => ({
+                ...prev,
+                EnableDetailPage: !prev.EnableDetailPage,
+              }))
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${siteSettings.EnableDetailPage
+              ? 'bg-green-600'
+              : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableDetailPage ? 'translate-x-6' : 'translate-x-1'
                 }`}
             />
           </button>

@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       TMDBLanguage,
       EnableTMDBActorSearch,
       EnableTMDBCarousel,
+      EnableDetailPage,
       ReleaseCalendarProxy,
       DanmuApiEndpoint,
       DanmuApiToken,
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
       EnableTMDBCarousel?: boolean;
+      EnableDetailPage?: boolean;
       ReleaseCalendarProxy?: string;
       DanmuApiEndpoint?: string;
       DanmuApiToken?: string;
@@ -102,6 +104,7 @@ export async function POST(request: NextRequest) {
     console.log('[API] 接收到的 TMDB 设置:', {
       EnableTMDBActorSearch,
       EnableTMDBCarousel,
+      EnableDetailPage,
     });
 
     // 处理轮播图设置：如果是 undefined（新字段），使用数据库中的值或默认 false
@@ -116,6 +119,16 @@ export async function POST(request: NextRequest) {
     } else {
       // 首次添加此字段，默认关闭
       finalEnableTMDBCarousel = false;
+    }
+
+    // 处理详情页设置
+    let finalEnableDetailPage: boolean;
+    if (EnableDetailPage !== undefined) {
+      finalEnableDetailPage = EnableDetailPage;
+    } else if (adminConfig.SiteConfig.EnableDetailPage !== undefined) {
+      finalEnableDetailPage = adminConfig.SiteConfig.EnableDetailPage;
+    } else {
+      finalEnableDetailPage = false;
     }
 
     // 更新缓存中的站点设置
@@ -135,6 +148,7 @@ export async function POST(request: NextRequest) {
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
       EnableTMDBCarousel: finalEnableTMDBCarousel,
+      EnableDetailPage: finalEnableDetailPage,
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
       DanmuApiEndpoint: DanmuApiEndpoint || '',
       DanmuApiToken: DanmuApiToken || '',
@@ -143,6 +157,7 @@ export async function POST(request: NextRequest) {
     console.log('[API] 将要保存到数据库的 TMDB 设置:', {
       EnableTMDBActorSearch: adminConfig.SiteConfig.EnableTMDBActorSearch,
       EnableTMDBCarousel: adminConfig.SiteConfig.EnableTMDBCarousel,
+      EnableDetailPage: adminConfig.SiteConfig.EnableDetailPage,
     });
 
     // 写入数据库
