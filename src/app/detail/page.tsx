@@ -89,6 +89,7 @@ function DetailPageClient() {
   const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
   const [currentSeason, setCurrentSeason] = useState(1);
+  const [episodePage, setEpisodePage] = useState(0);
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tmdbLoading, setTmdbLoading] = useState(true);
@@ -349,16 +350,36 @@ function DetailPageClient() {
               </div>
             )}
 
-            {/* 分集列表（仅电视剧） */}
+            {/* 剧集列表（仅电视剧） */}
             {stype !== 'movie' && episodes.length > 0 && (
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">分集</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">剧集列表</h2>
+                {/* 分页切换 */}
+                <div className="flex items-center gap-1 mb-4 text-sm">
+                  {Array.from({ length: Math.ceil(episodes.length / 8) }, (_, i) => {
+                    const start = i * 8 + 1;
+                    const end = Math.min((i + 1) * 8, episodes.length);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setEpisodePage(i)}
+                        className={`px-2 py-1 rounded transition-colors ${episodePage === i
+                          ? 'text-white font-semibold'
+                          : 'text-gray-400 hover:text-gray-200'
+                          }`}
+                      >
+                        {start}-{end}
+                      </button>
+                    );
+                  })}
                   {seasons.length > 1 && (
                     <select
                       value={currentSeason}
-                      onChange={(e) => setCurrentSeason(Number(e.target.value))}
-                      className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setCurrentSeason(Number(e.target.value));
+                        setEpisodePage(0);
+                      }}
+                      className="ml-auto px-2 py-1 bg-transparent border border-gray-600 rounded text-sm text-gray-300 focus:outline-none"
                     >
                       {seasons.map((s) => (
                         <option key={s.seasonNumber} value={s.seasonNumber}>
@@ -371,16 +392,15 @@ function DetailPageClient() {
                 {tmdbLoading ? (
                   <div className="flex items-center gap-2 text-gray-500 text-sm">
                     <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-                    <span>加载分集信息...</span>
+                    <span>加载剧集信息...</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {episodes.map((ep) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                    {episodes.slice(episodePage * 8, (episodePage + 1) * 8).map((ep) => (
                       <div
                         key={ep.episodeNumber}
-                        className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                        className="group cursor-pointer"
                         onClick={() => {
-                          // 跳转到播放页并指定集数
                           const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
                           const stypeParam = stype ? `&stype=${stype}` : '';
                           const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
@@ -392,30 +412,30 @@ function DetailPageClient() {
                           }
                         }}
                       >
-                        {ep.stillPath ? (
-                          <div className="relative aspect-video bg-gray-200 dark:bg-gray-700">
+                        <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-700">
+                          {ep.stillPath ? (
                             <img src={ep.stillPath} alt={ep.name} className="w-full h-full object-cover" />
-                            <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 text-white text-xs rounded">
-                              第{ep.episodeNumber}集
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                              <span className="text-lg font-bold text-gray-500">E{ep.episodeNumber}</span>
+                            </div>
+                          )}
+                          <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
+                            第 {ep.episodeNumber} 集
+                          </div>
+                          {/* 播放按钮悬浮 */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                              <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
                             </div>
                           </div>
-                        ) : (
-                          <div className="relative aspect-video bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
-                            <span className="text-2xl font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
-                          </div>
-                        )}
-                        <div className="p-3">
-                          <h3 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-1">
-                            {ep.name || `第${ep.episodeNumber}集`}
-                          </h3>
-                          {ep.overview && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                            {ep.airDate && <span>{ep.airDate}</span>}
-                            {ep.runtime && <span>{ep.runtime}分钟</span>}
-                          </div>
                         </div>
+                        <h3 className="mt-2 text-sm font-medium text-white line-clamp-1">
+                          {ep.name || `第${ep.episodeNumber}集`}
+                        </h3>
+                        {ep.overview && (
+                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
+                        )}
                       </div>
                     ))}
                   </div>
