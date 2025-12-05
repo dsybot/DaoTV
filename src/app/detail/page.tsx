@@ -295,8 +295,12 @@ function DetailPageClient() {
   const handleOpenDouban = useCallback(() => {
     if (doubanId > 0) {
       window.open(`https://movie.douban.com/subject/${doubanId}`, '_blank', 'noopener,noreferrer');
+    } else {
+      // 没有豆瓣ID时，通过标题搜索豆瓣
+      const searchQuery = encodeURIComponent(title);
+      window.open(`https://search.douban.com/movie/subject_search?search_text=${searchQuery}`, '_blank', 'noopener,noreferrer');
     }
-  }, [doubanId]);
+  }, [doubanId, title]);
 
   const displayPoster = movieDetails?.cover || poster;
   // 优先使用豆瓣数据，如果没有则使用TMDB数据作为备用
@@ -376,15 +380,6 @@ function DetailPageClient() {
                       <span>播放</span>
                     </button>
                     <div className="flex gap-2">
-                      {doubanId > 0 && (
-                        <button
-                          onClick={handleOpenDouban}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>豆瓣</span>
-                        </button>
-                      )}
                       {source && id && (
                         <button
                           onClick={handleToggleFavorite}
@@ -395,6 +390,13 @@ function DetailPageClient() {
                           <span>{favorited ? '已收藏' : '收藏'}</span>
                         </button>
                       )}
+                      <button
+                        onClick={handleOpenDouban}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>豆瓣</span>
+                      </button>
                     </div>
                   </div>
                 </div>
