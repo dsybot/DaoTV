@@ -365,8 +365,8 @@ function DetailPageClient() {
                           key={i}
                           onClick={() => setEpisodePage(i)}
                           className={`px-2 py-1 rounded transition-colors ${episodePage === i
-                            ? 'text-white font-semibold'
-                            : 'text-gray-400 hover:text-gray-200'
+                            ? 'text-gray-900 dark:text-white font-semibold'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                             }`}
                         >
                           {start}-{end}
@@ -381,7 +381,7 @@ function DetailPageClient() {
                         setCurrentSeason(Number(e.target.value));
                         setEpisodePage(0);
                       }}
-                      className="ml-auto px-2 py-1 bg-transparent border border-gray-600 rounded text-sm text-gray-300 focus:outline-none"
+                      className="ml-auto px-2 py-1 bg-transparent border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 focus:outline-none"
                     >
                       {seasons.map((s) => (
                         <option key={s.seasonNumber} value={s.seasonNumber}>
@@ -415,12 +415,12 @@ function DetailPageClient() {
                             }
                           }}
                         >
-                          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-700">
+                          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
                             {ep.stillPath ? (
                               <img src={ep.stillPath} alt={ep.name} className="w-full h-full object-cover" />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
-                                <span className="text-lg font-bold text-gray-500">E{ep.episodeNumber}</span>
+                              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
+                                <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
                               </div>
                             )}
                             <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
@@ -433,11 +433,11 @@ function DetailPageClient() {
                               </div>
                             </div>
                           </div>
-                          <h3 className="mt-2 text-sm font-medium text-white line-clamp-1">
+                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                             {ep.name || `第${ep.episodeNumber}集`}
                           </h3>
                           {ep.overview && (
-                            <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
                           )}
                         </div>
                       ))}
