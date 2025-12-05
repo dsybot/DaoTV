@@ -19,18 +19,53 @@ import { processImageUrl } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 import PageLayout from '@/components/PageLayout';
 
-// TMDB背景图和Logo获取
-async function getTMDBImages(title: string, year: string, type: string): Promise<{ backdrop: string | null; logo: string | null }> {
+interface TMDBProvider {
+  id: number;
+  name: string;
+  logo: string | null;
+}
+
+interface TMDBEpisode {
+  episodeNumber: number;
+  name: string;
+  overview: string;
+  stillPath: string | null;
+  airDate: string;
+  runtime: number;
+}
+
+interface TMDBSeason {
+  seasonNumber: number;
+  name: string;
+  episodeCount: number;
+}
+
+interface TMDBData {
+  backdrop: string | null;
+  logo: string | null;
+  providers: TMDBProvider[];
+  episodes: TMDBEpisode[];
+  seasons: TMDBSeason[];
+}
+
+// TMDB背景图、Logo和详情获取
+async function getTMDBData(title: string, year: string, type: string, season: number = 1): Promise<TMDBData> {
   try {
-    const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}`);
+    const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}&season=${season}&details=true`);
     if (response.ok) {
       const data = await response.json();
-      return { backdrop: data.backdrop || null, logo: data.logo || null };
+      return {
+        backdrop: data.backdrop || null,
+        logo: data.logo || null,
+        providers: data.providers || [],
+        episodes: data.episodes || [],
+        seasons: data.seasons || [],
+      };
     }
   } catch (error) {
-    console.error('获取TMDB图片失败:', error);
+    console.error('获取TMDB数据失败:', error);
   }
-  return { backdrop: null, logo: null };
+  return { backdrop: null, logo: null, providers: [], episodes: [], seasons: [] };
 }
 
 function DetailPageClient() {
@@ -50,22 +85,32 @@ function DetailPageClient() {
   // 状态
   const [backdrop, setBackdrop] = useState<string | null>(null);
   const [logo, setLogo] = useState<string | null>(null);
+  const [providers, setProviders] = useState<TMDBProvider[]>([]);
+  const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
+  const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
+  const [currentSeason, setCurrentSeason] = useState(1);
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [tmdbLoading, setTmdbLoading] = useState(true);
   const [favorited, setFavorited] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // 获取TMDB背景图和Logo
+  // 获取TMDB数据
   useEffect(() => {
-    const fetchImages = async () => {
+    const fetchData = async () => {
       if (title) {
-        const images = await getTMDBImages(title, year, stype || 'tv');
-        setBackdrop(images.backdrop);
-        setLogo(images.logo);
+        setTmdbLoading(true);
+        const data = await getTMDBData(title, year, stype || 'tv', currentSeason);
+        setBackdrop(data.backdrop);
+        setLogo(data.logo);
+        setProviders(data.providers);
+        setEpisodes(data.episodes);
+        setSeasons(data.seasons);
+        setTmdbLoading(false);
       }
     };
-    fetchImages();
-  }, [title, year, stype]);
+    fetchData();
+  }, [title, year, stype, currentSeason]);
 
   // 获取豆瓣详情
   useEffect(() => {
@@ -287,8 +332,100 @@ function DetailPageClient() {
 
         {/* 下方扩展区域 */}
         <div className="bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-          <div className="max-w-6xl mx-auto">
-            {/* 预留给后续内容 */}
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* 播放平台 */}
+            {providers.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">在线观看</h2>
+                <div className="flex flex-wrap gap-3">
+                  {providers.map((provider) => (
+                    <div
+                      key={provider.id}
+                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+                    >
+                      {provider.logo && (
+                        <img src={provider.logo} alt={provider.name} className="w-6 h-6 rounded" />
+                      )}
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{provider.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 分集列表（仅电视剧） */}
+            {stype !== 'movie' && episodes.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">分集</h2>
+                  {seasons.length > 1 && (
+                    <select
+                      value={currentSeason}
+                      onChange={(e) => setCurrentSeason(Number(e.target.value))}
+                      className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {seasons.map((s) => (
+                        <option key={s.seasonNumber} value={s.seasonNumber}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                {tmdbLoading ? (
+                  <div className="flex items-center gap-2 text-gray-500 text-sm">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                    <span>加载分集信息...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {episodes.map((ep) => (
+                      <div
+                        key={ep.episodeNumber}
+                        className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          // 跳转到播放页并指定集数
+                          const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
+                          const stypeParam = stype ? `&stype=${stype}` : '';
+                          const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
+                          const episodeParam = `&episode=${ep.episodeNumber}`;
+                          if (source && id) {
+                            router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
+                          } else {
+                            router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
+                          }
+                        }}
+                      >
+                        {ep.stillPath ? (
+                          <div className="relative aspect-video bg-gray-200 dark:bg-gray-700">
+                            <img src={ep.stillPath} alt={ep.name} className="w-full h-full object-cover" />
+                            <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 text-white text-xs rounded">
+                              第{ep.episodeNumber}集
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative aspect-video bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+                            <span className="text-2xl font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <h3 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-1">
+                            {ep.name || `第${ep.episodeNumber}集`}
+                          </h3>
+                          {ep.overview && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                            {ep.airDate && <span>{ep.airDate}</span>}
+                            {ep.runtime && <span>{ep.runtime}分钟</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

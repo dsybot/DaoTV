@@ -6,6 +6,8 @@ import { getConfig } from '@/lib/config';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
+const TMDB_PROVIDER_LOGO_URL = 'https://image.tmdb.org/t/p/w200';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +15,8 @@ export async function GET(request: NextRequest) {
     const title = searchParams.get('title');
     const year = searchParams.get('year') || '';
     const type = searchParams.get('type') || 'tv';
+    const season = searchParams.get('season') || '1';
+    const includeDetails = searchParams.get('details') === 'true';
 
     if (!title) {
       return NextResponse.json({ error: '缺少标题参数' }, { status: 400 });
@@ -26,16 +30,12 @@ export async function GET(request: NextRequest) {
     }
 
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
+    const searchType = type === 'movie' ? 'movie' : 'tv';
 
     // 搜索电影或电视剧
-    const searchType = type === 'movie' ? 'movie' : 'tv';
     const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
-
     const response = await fetch(searchUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
+      headers: { 'Accept': 'application/json' },
       next: { revalidate: 3600 },
     });
 
@@ -49,39 +49,107 @@ export async function GET(request: NextRequest) {
       const result = data.results.find((r: any) => r.backdrop_path) || data.results[0];
       const mediaId = result.id;
 
-      let backdrop = null;
+      let backdrop = result.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${result.backdrop_path}` : null;
       let logo = null;
+      let providers: any[] = [];
+      let episodes: any[] = [];
+      let seasons: any[] = [];
 
-      if (result.backdrop_path) {
-        backdrop = `${TMDB_BACKDROP_BASE_URL}${result.backdrop_path}`;
-      }
-
-      // 获取Logo图片（标题艺术字）
+      // 获取Logo图片
       try {
         const imagesUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/images?api_key=${apiKey}`;
         const imagesResponse = await fetch(imagesUrl, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
+          headers: { 'Accept': 'application/json' },
           next: { revalidate: 3600 },
         });
 
         if (imagesResponse.ok) {
           const imagesData = await imagesResponse.json();
-          // 优先选择中文Logo，其次英文，最后任意语言
           const logos = imagesData.logos || [];
-          const chineseLogo = logos.find((l: any) => l.iso_639_1 === 'zh');
-          const englishLogo = logos.find((l: any) => l.iso_639_1 === 'en');
-          const anyLogo = logos[0];
-
-          const selectedLogo = chineseLogo || englishLogo || anyLogo;
+          const selectedLogo = logos.find((l: any) => l.iso_639_1 === 'zh') ||
+            logos.find((l: any) => l.iso_639_1 === 'en') ||
+            logos[0];
           if (selectedLogo?.file_path) {
             logo = `${TMDB_LOGO_BASE_URL}${selectedLogo.file_path}`;
           }
         }
-      } catch (logoError) {
-        console.error('获取Logo失败:', logoError);
+      } catch (e) { /* ignore */ }
+
+      // 如果需要详细信息
+      if (includeDetails) {
+        // 获取播放平台
+        try {
+          const providersUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/watch/providers?api_key=${apiKey}`;
+          const providersResponse = await fetch(providersUrl, {
+            headers: { 'Accept': 'application/json' },
+            next: { revalidate: 3600 },
+          });
+
+          if (providersResponse.ok) {
+            const providersData = await providersResponse.json();
+            const results = providersData.results || {};
+            // 优先中国大陆，其次香港、台湾、美国
+            for (const region of ['CN', 'HK', 'TW', 'US']) {
+              if (results[region]) {
+                const regionData = results[region];
+                const allProviders = [...(regionData.flatrate || []), ...(regionData.buy || []), ...(regionData.rent || [])];
+                const seen = new Set();
+                providers = allProviders.filter((p: any) => {
+                  if (seen.has(p.provider_id)) return false;
+                  seen.add(p.provider_id);
+                  return true;
+                }).slice(0, 5).map((p: any) => ({
+                  id: p.provider_id,
+                  name: p.provider_name,
+                  logo: p.logo_path ? `${TMDB_PROVIDER_LOGO_URL}${p.logo_path}` : null,
+                }));
+                if (providers.length > 0) break;
+              }
+            }
+          }
+        } catch (e) { /* ignore */ }
+
+        // 获取分集信息（仅电视剧）
+        if (searchType === 'tv') {
+          try {
+            // 先获取剧集详情以获取季数
+            const detailUrl = `${TMDB_BASE_URL}/tv/${mediaId}?api_key=${apiKey}&language=${language}`;
+            const detailResponse = await fetch(detailUrl, {
+              headers: { 'Accept': 'application/json' },
+              next: { revalidate: 3600 },
+            });
+
+            if (detailResponse.ok) {
+              const detailData = await detailResponse.json();
+              seasons = (detailData.seasons || [])
+                .filter((s: any) => s.season_number > 0)
+                .map((s: any) => ({
+                  seasonNumber: s.season_number,
+                  name: s.name,
+                  episodeCount: s.episode_count,
+                }));
+            }
+
+            // 获取指定季的分集
+            const seasonUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${season}?api_key=${apiKey}&language=${language}`;
+            const seasonResponse = await fetch(seasonUrl, {
+              headers: { 'Accept': 'application/json' },
+              next: { revalidate: 3600 },
+            });
+
+            if (seasonResponse.ok) {
+              const seasonData = await seasonResponse.json();
+              episodes = (seasonData.episodes || []).map((ep: any) => ({
+                episodeNumber: ep.episode_number,
+                name: ep.name,
+                overview: ep.overview,
+                stillPath: ep.still_path ? `${TMDB_STILL_BASE_URL}${ep.still_path}` : null,
+                airDate: ep.air_date,
+                runtime: ep.runtime,
+              }));
+            }
+          } catch (e) { /* ignore */ }
+        }
       }
 
       return NextResponse.json({
@@ -89,12 +157,15 @@ export async function GET(request: NextRequest) {
         logo,
         title: result.title || result.name,
         id: mediaId,
+        providers: includeDetails ? providers : undefined,
+        episodes: includeDetails ? episodes : undefined,
+        seasons: includeDetails ? seasons : undefined,
       });
     }
 
     return NextResponse.json({ backdrop: null, logo: null });
   } catch (error) {
-    console.error('获取TMDB背景图失败:', error);
-    return NextResponse.json({ error: '获取背景图失败' }, { status: 500 });
+    console.error('获取TMDB信息失败:', error);
+    return NextResponse.json({ error: '获取信息失败' }, { status: 500 });
   }
 }
