@@ -107,13 +107,12 @@ export const useLongPress = ({
       const target = e.target as HTMLElement;
       const buttonElement = target.closest('[data-button]');
 
-      // 更精确的按钮检测：只有当触摸目标直接是按钮元素或其直接子元素时才认为是按钮
-      const isDirectButton = target.hasAttribute('data-button');
-      const isButton = !!buttonElement && isDirectButton;
+      // 只要触摸目标在带有data-button属性的元素内部，就认为是按钮
+      const isButton = !!buttonElement;
 
       // 阻止默认的长按行为，但不阻止触摸开始事件
       const touch = e.touches[0];
-      handleStart(touch.clientX, touch.clientY, !!isButton);
+      handleStart(touch.clientX, touch.clientY, isButton);
     },
     [handleStart]
   );
@@ -128,7 +127,18 @@ export const useLongPress = ({
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      // 始终阻止默认行为，避免任何系统长按菜单
+      // 检查是否触摸的是按钮
+      const target = e.target as HTMLElement;
+      const buttonElement = target.closest('[data-button]');
+
+      // 如果是按钮且不是长按，不阻止默认行为，让按钮的onClick正常触发
+      if (buttonElement && !isLongPress.current) {
+        // 不阻止默认行为，让click事件正常触发
+        handleEnd();
+        return;
+      }
+
+      // 非按钮情况下阻止默认行为
       e.preventDefault();
       e.stopPropagation();
       handleEnd();
