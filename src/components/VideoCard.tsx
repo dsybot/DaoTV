@@ -245,6 +245,47 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     [from, actualSource, actualId, onDelete]
   );
 
+  // 跳转到详情页
+  const handleGoToDetail = useCallback(() => {
+    // 如果是即将上映的内容，不执行跳转
+    if (isUpcoming) {
+      return;
+    }
+
+    // 直播内容直接跳转到直播页面
+    if (origin === 'live' && actualSource && actualId) {
+      const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
+      router.push(url);
+      return;
+    }
+
+    // 构建详情页URL参数
+    const params = new URLSearchParams();
+    params.set('title', actualTitle.trim());
+    if (actualYear) params.set('year', actualYear);
+    if (actualPoster) params.set('poster', actualPoster);
+    if (actualSource) params.set('source', actualSource);
+    if (actualId) params.set('id', actualId);
+    if (actualDoubanId && actualDoubanId > 0) params.set('douban_id', actualDoubanId.toString());
+    if (actualSearchType) params.set('stype', actualSearchType);
+    if (actualQuery) params.set('stitle', actualQuery.trim());
+
+    router.push(`/detail?${params.toString()}`);
+  }, [
+    isUpcoming,
+    origin,
+    actualSource,
+    actualId,
+    router,
+    actualTitle,
+    actualYear,
+    actualPoster,
+    actualDoubanId,
+    actualSearchType,
+    actualQuery,
+  ]);
+
+  // 直接播放（点击播放按钮时触发）
   const handleClick = useCallback(() => {
     // 如果是即将上映的内容，不执行跳转，显示提示
     if (isUpcoming) {
@@ -348,7 +389,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   // 长按手势hook
   const longPressProps = useLongPress({
     onLongPress: handleLongPress,
-    onClick: handleClick, // 保持点击播放功能
+    onClick: handleGoToDetail, // 点击跳转到详情页
     longPressDelay: 500,
   });
 
@@ -728,11 +769,16 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   <span className='text-white font-bold text-sm whitespace-nowrap'>敬请期待</span>
                 </div>
               ) : (
-                // 正常内容 - 显示播放按钮
+                // 正常内容 - 显示播放按钮（点击直接播放）
                 <PlayCircleIcon
                   size={50}
                   strokeWidth={0.8}
-                  className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1]'
+                  className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1] cursor-pointer'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleClick();
+                  }}
                   style={{
                     WebkitUserSelect: 'none',
                     userSelect: 'none',
