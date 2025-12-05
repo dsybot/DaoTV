@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
     if (data.results && data.results.length > 0) {
       const result = data.results.find((r: any) => r.backdrop_path) || data.results[0];
       const mediaId = result.id;
+      console.log(`[TMDB] 搜索 "${title}" 找到: ${result.name || result.title} (ID: ${mediaId}), 共 ${data.results.length} 个结果`);
 
       let backdrop = result.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${result.backdrop_path}` : null;
       let logo = null;
