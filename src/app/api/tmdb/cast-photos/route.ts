@@ -71,8 +71,9 @@ export async function GET(request: NextRequest) {
       const cachedResult = await db.getCache(cacheKey);
       if (cachedResult && cachedResult.actors) {
         console.log(`✅ [TMDB Cast Photos] 缓存命中: ${limitedNames.length} 个演员`);
-        // 返回时重新设置 enabled 状态（基于当前配置）
-        return NextResponse.json({ enabled: true, actors: cachedResult.actors });
+        // 返回时重新设置 enabled 状态，并过滤掉没有图片的演员（兼容旧缓存）
+        const actorsWithPhoto = cachedResult.actors.filter((actor: any) => actor.photo);
+        return NextResponse.json({ enabled: true, actors: actorsWithPhoto });
       }
     } catch (cacheError) {
       console.warn('TMDB演员图片缓存检查失败:', cacheError);
@@ -116,9 +117,12 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // 过滤掉没有图片的演员
+    const actorsWithPhoto = actorPhotos.filter(actor => actor.photo);
+
     const result = {
       enabled: true,
-      actors: actorPhotos
+      actors: actorsWithPhoto
     };
 
     // 缓存结果

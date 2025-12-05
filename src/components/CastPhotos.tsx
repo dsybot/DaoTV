@@ -254,7 +254,18 @@ export default function CastPhotos({ cast, onEnabledChange }: CastPhotosProps) {
                     src={actor.photo}
                     alt={actor.name}
                     className="w-full h-full object-cover"
-                    loading="lazy"
+                    loading="eager"
+                    onError={(e) => {
+                      // 图片加载失败时重试最多3次
+                      const img = e.target as HTMLImageElement;
+                      const retryCount = parseInt(img.dataset.retryCount || '0');
+                      if (retryCount < 3 && actor.photo) {
+                        img.dataset.retryCount = (retryCount + 1).toString();
+                        setTimeout(() => {
+                          img.src = actor.photo + `?retry=${retryCount + 1}&t=${Date.now()}`;
+                        }, 1000 * (retryCount + 1));
+                      }
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
