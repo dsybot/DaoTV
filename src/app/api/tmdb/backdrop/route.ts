@@ -7,7 +7,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
-const TMDB_PROVIDER_LOGO_URL = 'https://image.tmdb.org/t/p/w200';
+const TMDB_NETWORK_LOGO_URL = 'https://image.tmdb.org/t/p/h60';
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,38 +77,6 @@ export async function GET(request: NextRequest) {
 
       // 如果需要详细信息
       if (includeDetails) {
-        // 获取播放平台
-        try {
-          const providersUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/watch/providers?api_key=${apiKey}`;
-          const providersResponse = await fetch(providersUrl, {
-            headers: { 'Accept': 'application/json' },
-            next: { revalidate: 3600 },
-          });
-
-          if (providersResponse.ok) {
-            const providersData = await providersResponse.json();
-            const results = providersData.results || {};
-            // 优先中国大陆，其次香港、台湾、美国
-            for (const region of ['CN', 'HK', 'TW', 'US']) {
-              if (results[region]) {
-                const regionData = results[region];
-                const allProviders = [...(regionData.flatrate || []), ...(regionData.buy || []), ...(regionData.rent || [])];
-                const seen = new Set();
-                providers = allProviders.filter((p: any) => {
-                  if (seen.has(p.provider_id)) return false;
-                  seen.add(p.provider_id);
-                  return true;
-                }).slice(0, 5).map((p: any) => ({
-                  id: p.provider_id,
-                  name: p.provider_name,
-                  logo: p.logo_path ? `${TMDB_PROVIDER_LOGO_URL}${p.logo_path}` : null,
-                }));
-                if (providers.length > 0) break;
-              }
-            }
-          }
-        } catch (e) { /* ignore */ }
-
         // 获取分集信息（仅电视剧）
         if (searchType === 'tv') {
           try {
@@ -128,6 +96,13 @@ export async function GET(request: NextRequest) {
                   name: s.name,
                   episodeCount: s.episode_count,
                 }));
+              // 获取播出平台（networks）
+              const networks = detailData.networks || [];
+              providers = networks.slice(0, 3).map((n: any) => ({
+                id: n.id,
+                name: n.name,
+                logo: n.logo_path ? `${TMDB_NETWORK_LOGO_URL}${n.logo_path}` : null,
+              }));
             }
 
             // 获取指定季的分集

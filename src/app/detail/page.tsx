@@ -333,23 +333,19 @@ function DetailPageClient() {
         {/* 下方扩展区域 */}
         <div className="bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8 lg:px-12 py-8">
           <div className="max-w-6xl mx-auto space-y-8">
-            {/* 播放平台 */}
+            {/* 播出平台 */}
             {providers.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">在线观看</h2>
-                <div className="flex flex-wrap gap-3">
-                  {providers.map((provider) => (
-                    <div
+              <div className="flex flex-wrap gap-4">
+                {providers.map((provider) =>
+                  provider.logo ? (
+                    <img
                       key={provider.id}
-                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
-                    >
-                      {provider.logo && (
-                        <img src={provider.logo} alt={provider.name} className="w-6 h-6 rounded" />
-                      )}
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{provider.name}</span>
-                    </div>
-                  ))}
-                </div>
+                      src={provider.logo}
+                      alt={provider.name}
+                      className="h-10 object-contain"
+                    />
+                  ) : null
+                )}
               </div>
             )}
 
