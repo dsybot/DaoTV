@@ -638,6 +638,7 @@ export async function getDoubanDetails(id: string): Promise<{
     languages?: string[];
     episodes?: number;
     episode_length?: number;
+    movie_duration?: number; // 电影片长（分钟）
     first_aired?: string;
     plot_summary?: string;
     imdb_id?: string;

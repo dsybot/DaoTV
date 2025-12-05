@@ -212,8 +212,8 @@ function DetailPageClient() {
         setTmdbLoading(true);
         const imdbId = movieDetails?.imdb_id;
         // 根据豆瓣数据判断类型，如果没有豆瓣数据则使用URL参数
-        const mediaType = movieDetails?.episodes !== undefined
-          ? (movieDetails.episodes <= 1 ? 'movie' : 'tv')
+        const mediaType = movieDetails
+          ? (movieDetails.movie_duration && !movieDetails.episodes ? 'movie' : (movieDetails.episodes ? 'tv' : (stype || 'tv')))
           : (stype || 'tv');
         const data = await getTMDBData(title, year, mediaType, currentSeason, imdbId);
         setBackdrop(data.backdrop);
@@ -232,7 +232,7 @@ function DetailPageClient() {
       }
     };
     fetchData();
-  }, [title, year, stype, currentSeason, movieDetails?.imdb_id, movieDetails?.episodes]);
+  }, [title, year, stype, currentSeason, movieDetails?.imdb_id, movieDetails?.episodes, movieDetails?.movie_duration]);
 
   // 检查收藏状态
   useEffect(() => {
@@ -318,10 +318,12 @@ function DetailPageClient() {
   const genres = movieDetails?.genres || [];
   const description = movieDetails?.plot_summary || tmdbOverview || '';
   const cast = movieDetails?.cast || [];
-  // 判断类型：优先使用豆瓣数据的episodes字段，1集或无集数信息为电影，否则为电视剧
-  // 如果没有豆瓣数据，则使用URL参数stype
-  const displayType = movieDetails?.episodes !== undefined
-    ? (movieDetails.episodes <= 1 ? 'movie' : 'tv')
+  // 判断类型：优先使用豆瓣数据判断
+  // - 如果有movie_duration（电影片长）且没有episodes（集数），说明是电影
+  // - 如果有episodes（集数），说明是电视剧
+  // - 如果没有豆瓣数据，则使用URL参数stype
+  const displayType = movieDetails
+    ? (movieDetails.movie_duration && !movieDetails.episodes ? 'movie' : (movieDetails.episodes ? 'tv' : stype))
     : stype;
 
   return (
