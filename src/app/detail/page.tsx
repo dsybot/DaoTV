@@ -171,9 +171,18 @@ function DetailPageClient() {
 
   return (
     <PageLayout>
-      <div className="min-h-screen relative">
-        {/* 全屏背景区域 */}
-        <div className="fixed inset-0 w-full h-full">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        {/* 顶部背景区域 - 可滚动 */}
+        <div className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh]">
+          {/* 返回按钮 */}
+          <button
+            onClick={() => router.back()}
+            className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+            aria-label="返回"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
           {/* 背景图 */}
           {backdrop ? (
             <img
@@ -192,135 +201,129 @@ function DetailPageClient() {
           )}
 
           {/* 渐变遮罩 */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-100 dark:from-gray-900 via-transparent to-transparent" />
         </div>
 
-        {/* 返回按钮 */}
-        <button
-          onClick={() => router.back()}
-          className="fixed top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
-          aria-label="返回"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-
-        {/* 内容区域 */}
-        <div className="relative z-10 min-h-screen flex items-end pb-8 sm:pb-12 md:pb-16">
-          <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end">
-                {/* 左侧：封面卡片 */}
-                <div className="flex-shrink-0 w-40 sm:w-48 md:w-56 mx-auto md:mx-0">
-                  <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10">
-                    {!imageLoaded && <ImagePlaceholder aspectRatio="aspect-[2/3]" />}
-                    {displayPoster && (
-                      <Image
-                        src={processImageUrl(displayPoster)}
-                        alt={title}
-                        fill
-                        className={`object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        onLoad={() => setImageLoaded(true)}
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                  </div>
-
-                  {/* 按钮组 */}
-                  <div className="mt-4 flex flex-col gap-3">
-                    {/* 播放按钮 */}
-                    <button
-                      onClick={handlePlay}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02]"
-                    >
-                      <Play className="w-5 h-5 fill-current" />
-                      <span>播放</span>
-                    </button>
-
-                    {/* 透明按钮组 */}
-                    <div className="flex gap-3">
-                      {/* 豆瓣按钮 */}
-                      {doubanId > 0 && (
-                        <button
-                          onClick={handleOpenDouban}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/20 rounded-lg transition-all duration-300"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          <span className="text-sm">豆瓣</span>
-                        </button>
-                      )}
-
-                      {/* 收藏按钮 */}
-                      {source && id && (
-                        <button
-                          onClick={handleToggleFavorite}
-                          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 backdrop-blur-sm border rounded-lg transition-all duration-300 ${favorited
-                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30'
-                            : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
-                            }`}
-                        >
-                          <Heart className={`w-4 h-4 ${favorited ? 'fill-current' : ''}`} />
-                          <span className="text-sm">{favorited ? '已收藏' : '收藏'}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+        {/* 内容区域 - 向上偏移覆盖背景图底部 */}
+        <div className="relative -mt-32 sm:-mt-40 md:-mt-48 px-4 sm:px-6 md:px-8 lg:px-12 pb-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end">
+              {/* 左侧：封面卡片和按钮 */}
+              <div className="flex-shrink-0 w-40 sm:w-48 md:w-56 mx-auto md:mx-0">
+                <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10">
+                  {!imageLoaded && <ImagePlaceholder aspectRatio="aspect-[2/3]" />}
+                  {displayPoster && (
+                    <Image
+                      src={processImageUrl(displayPoster)}
+                      alt={title}
+                      fill
+                      className={`object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      onLoad={() => setImageLoaded(true)}
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
                 </div>
 
-                {/* 右侧：详情信息 - 底部对齐 */}
-                <div className="flex-1 text-white pb-2">
-                  {/* 标题 */}
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">
-                    {title}
-                  </h1>
+                {/* 按钮组 */}
+                <div className="mt-4 flex flex-col gap-3">
+                  {/* 播放按钮 */}
+                  <button
+                    onClick={handlePlay}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                  >
+                    <Play className="w-5 h-5 fill-current" />
+                    <span>播放</span>
+                  </button>
 
-                  {/* 元信息行 */}
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 text-sm">
-                    {/* 首播日期 */}
-                    {firstAired && (
-                      <span className="text-gray-300">
-                        {firstAired}
-                      </span>
+                  {/* 透明按钮组 */}
+                  <div className="flex gap-3">
+                    {/* 豆瓣按钮 */}
+                    {doubanId > 0 && (
+                      <button
+                        onClick={handleOpenDouban}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg transition-all duration-300"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span className="text-sm">豆瓣</span>
+                      </button>
                     )}
 
-                    {/* 类型标签 */}
-                    {stype && (
-                      <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded">
-                        {stype === 'movie' ? '电影' : '电视剧'}
-                      </span>
-                    )}
-
-                    {/* 分类 */}
-                    {genres.length > 0 && (
-                      <span className="text-gray-300">
-                        {genres.slice(0, 3).join(' · ')}
-                      </span>
-                    )}
-
-                    {/* 豆瓣评分 - 放在同一行 */}
-                    {rate && rate !== '0' && parseFloat(rate) > 0 && (
-                      <span className="px-2 py-0.5 bg-green-500/80 text-white text-xs rounded font-semibold">
-                        {rate}
-                      </span>
+                    {/* 收藏按钮 */}
+                    {source && id && (
+                      <button
+                        onClick={handleToggleFavorite}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 ${favorited
+                          ? 'bg-red-100 hover:bg-red-200 dark:bg-red-500/20 dark:hover:bg-red-500/30 text-red-500'
+                          : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white'
+                          }`}
+                      >
+                        <Heart className={`w-4 h-4 ${favorited ? 'fill-current' : ''}`} />
+                        <span className="text-sm">{favorited ? '已收藏' : '收藏'}</span>
+                      </button>
                     )}
                   </div>
-
-                  {/* 简介 */}
-                  {description && (
-                    <p className="text-gray-200 text-sm leading-relaxed line-clamp-4 md:line-clamp-5">
-                      {description}
-                    </p>
-                  )}
-
-                  {/* 加载状态 */}
-                  {loading && (
-                    <div className="flex items-center gap-2 text-gray-300 text-sm">
-                      <div className="w-3 h-3 border-2 border-gray-500 border-t-blue-400 rounded-full animate-spin" />
-                      <span>加载详情中...</span>
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* 右侧：详情信息 - 底部对齐 */}
+              <div className="flex-1 pb-2">
+                {/* 标题 */}
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 text-gray-900 dark:text-white">
+                  {title}
+                </h1>
+
+                {/* 元信息行 */}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 text-sm">
+                  {/* 首播日期 */}
+                  {firstAired && (
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {firstAired}
+                    </span>
+                  )}
+
+                  {/* 类型标签 */}
+                  {stype && (
+                    <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded">
+                      {stype === 'movie' ? '电影' : '电视剧'}
+                    </span>
+                  )}
+
+                  {/* 分类 */}
+                  {genres.length > 0 && (
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {genres.slice(0, 3).join(' · ')}
+                    </span>
+                  )}
+
+                  {/* 豆瓣评分 */}
+                  {rate && rate !== '0' && parseFloat(rate) > 0 && (
+                    <span className="px-2 py-0.5 bg-green-500/80 text-white text-xs rounded font-semibold">
+                      {rate}
+                    </span>
+                  )}
+                </div>
+
+                {/* 简介 */}
+                {description && (
+                  <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                    {description}
+                  </p>
+                )}
+
+                {/* 加载状态 */}
+                {loading && (
+                  <div className="flex items-center gap-2 text-gray-500 text-sm">
+                    <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-400 rounded-full animate-spin" />
+                    <span>加载详情中...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 下方可扩展区域 - 预留给后续内容 */}
+            <div className="mt-8">
+              {/* 这里可以添加更多内容，如相关推荐、演员列表等 */}
             </div>
           </div>
         </div>
