@@ -291,7 +291,7 @@ function DetailPageClient() {
   const cast = movieDetails?.cast || [];
 
   return (
-    <PageLayout>
+    <PageLayout activePath="/detail">
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24">
         {/* 背景图区域 - 至少填满视口高度 */}
         <div className="relative w-full min-h-screen overflow-hidden">
@@ -548,7 +548,7 @@ function DetailPageClient() {
 export default function DetailPage() {
   return (
     <Suspense fallback={
-      <PageLayout>
+      <PageLayout activePath="/detail">
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
           <div className="text-gray-500">加载中...</div>
         </div>

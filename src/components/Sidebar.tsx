@@ -177,7 +177,7 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
         label: category.name || category.label || '自定义',
         href: `/douban?type=custom&customIndex=${index}`,
       }));
-      
+
       setMenuItems((prevItems) => [...prevItems, ...customItems]);
     }
   }, []);
@@ -274,11 +274,13 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                   const decodedActive = decodeURIComponent(active);
                   const decodedItemHref = decodeURIComponent(item.href);
 
-                  const isActive =
-                    decodedActive === decodedItemHref ||
-                    (decodedActive.startsWith('/douban') &&
-                      typeMatch &&
-                      decodedActive.includes(`type=${typeMatch}`));
+                  // 详情页和播放页不高亮任何导航项
+                  const isDetailOrPlay = decodedActive.startsWith('/detail') || decodedActive.startsWith('/play');
+                  const isActive = !isDetailOrPlay &&
+                    (decodedActive === decodedItemHref ||
+                      (decodedActive.startsWith('/douban') &&
+                        typeMatch &&
+                        decodedActive.includes(`type=${typeMatch}`)));
                   const Icon = item.icon;
 
                   // 为每个菜单项定义独特的渐变色主题
