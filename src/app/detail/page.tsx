@@ -321,7 +321,7 @@ function DetailPageClient() {
                 {/* 右侧：详情信息 */}
                 <div className="flex-1 text-white pb-2">
                   {/* 标题 - 优先使用Logo图片，水平居中 */}
-                  <div className="flex justify-center mb-4">
+                  <div className="flex justify-center items-center mb-4 min-h-[6rem] sm:min-h-[8rem] md:min-h-[10rem]">
                     {logo ? (
                       <img
                         src={logo}
@@ -332,7 +332,7 @@ function DetailPageClient() {
                       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold drop-shadow-lg text-center">{title}</h1>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 text-sm">
                     {firstAired && <span className="text-gray-300">{firstAired}</span>}
                     {stype && (
                       <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded">
@@ -345,10 +345,10 @@ function DetailPageClient() {
                     )}
                   </div>
                   {description && (
-                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-4">{description}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-4 text-center md:text-left">{description}</p>
                   )}
                   {loading && (
-                    <div className="flex items-center gap-2 text-gray-400 text-sm mt-2">
+                    <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm mt-2">
                       <div className="w-3 h-3 border-2 border-gray-500 border-t-blue-400 rounded-full animate-spin" />
                       <span>加载详情中...</span>
                     </div>
