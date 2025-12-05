@@ -249,7 +249,7 @@ function DetailPageClient() {
                     <img
                       src={logo}
                       alt={title}
-                      className="h-12 sm:h-16 md:h-20 max-w-full object-contain object-left mb-3 drop-shadow-lg"
+                      className="h-16 sm:h-20 md:h-28 max-w-full object-contain mb-3 drop-shadow-lg mx-auto md:mx-0"
                     />
                   ) : (
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">{title}</h1>
