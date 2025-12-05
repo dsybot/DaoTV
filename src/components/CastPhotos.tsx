@@ -52,8 +52,8 @@ export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhot
   const [showWorksLeftArrow, setShowWorksLeftArrow] = useState(false);
   const [showWorksRightArrow, setShowWorksRightArrow] = useState(false);
 
+  // 处理TMDB演员数据
   useEffect(() => {
-    // 优先使用TMDB演员数据（更准确，避免同名问题）
     if (tmdbCast && tmdbCast.length > 0) {
       const actorsWithPhoto = tmdbCast.filter(a => a.photo).map(a => ({
         name: a.name,
@@ -65,11 +65,17 @@ export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhot
         setActors(actorsWithPhoto);
         onEnabledChange?.(true);
         setLoading(false);
-        return;
       }
     }
+  }, [tmdbCast, onEnabledChange]);
 
-    // 没有TMDB数据时，通过名字搜索（播放页等场景）
+  // 没有TMDB数据时，通过名字搜索（播放页等场景）
+  useEffect(() => {
+    // 如果已经有TMDB数据，不需要搜索
+    if (tmdbCast && tmdbCast.length > 0) {
+      return;
+    }
+
     if (!cast || cast.length === 0) {
       setLoading(false);
       return;
