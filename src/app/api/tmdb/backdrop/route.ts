@@ -10,20 +10,34 @@ const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
 const TMDB_NETWORK_LOGO_URL = 'https://image.tmdb.org/t/p/h60';
 const TMDB_PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w300';
 
-// 清理标题，去掉季数后缀
-function cleanTitle(title: string): string[] {
+// 清理标题，去掉季数后缀，返回标题列表和可能的季数
+function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
   const titles: string[] = [title];
+  let seasonNumber = 1;
+
   // 去掉"第X季"后缀
-  const seasonMatch = title.match(/^(.+?)第[一二三四五六七八九十\d]+季$/);
+  const seasonMatch = title.match(/^(.+?)第([一二三四五六七八九十]|\d+)季$/);
   if (seasonMatch) {
     titles.push(seasonMatch[1]);
+    const seasonStr = seasonMatch[2];
+    const chineseNumbers: Record<string, number> = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10 };
+    seasonNumber = chineseNumbers[seasonStr] || parseInt(seasonStr) || 1;
   }
+
+  // 去掉数字后缀（如"喜人奇妙夜2" -> "喜人奇妙夜"）
+  const numberMatch = title.match(/^(.+?)(\d+)$/);
+  if (numberMatch && numberMatch[1].length >= 2) {
+    titles.push(numberMatch[1]);
+    seasonNumber = parseInt(numberMatch[2]) || 1;
+  }
+
   // 去掉"之XXX"后缀（如"诡事录之长安" -> "诡事录"）
   const suffixMatch = title.match(/^(.+?)之.+$/);
   if (suffixMatch && suffixMatch[1].length >= 2) {
     titles.push(suffixMatch[1]);
   }
-  return Array.from(new Set(titles));
+
+  return { titles: Array.from(new Set(titles)), seasonNumber };
 }
 
 // 通过IMDb ID查找TMDB
@@ -90,6 +104,7 @@ export async function GET(request: NextRequest) {
     const searchType = type === 'movie' ? 'movie' : 'tv';
 
     let result: any = null;
+    let detectedSeason = parseInt(season) || 1;
 
     // 1. 优先通过IMDb ID精确匹配
     if (imdbId) {
@@ -98,18 +113,19 @@ export async function GET(request: NextRequest) {
 
     // 2. 如果没有IMDb ID或匹配失败，通过标题搜索
     if (!result) {
-      const titlesToTry = cleanTitle(title);
+      const { titles: titlesToTry, seasonNumber } = cleanTitle(title);
+      detectedSeason = seasonNumber; // 使用从标题中检测到的季数
       for (const t of titlesToTry) {
         result = await searchByTitle(t, year, type, apiKey, language);
         if (result) {
-          console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id})`);
+          console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
           break;
         }
         // 如果带年份搜索不到，尝试不带年份
         if (year && !result) {
           result = await searchByTitle(t, '', type, apiKey, language);
           if (result) {
-            console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
+            console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
             break;
           }
         }
@@ -126,22 +142,71 @@ export async function GET(request: NextRequest) {
       let seasons: any[] = [];
       let cast: any[] = [];
 
-      // 获取Logo图片
-      try {
-        const imagesUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/images?api_key=${apiKey}`;
-        const imagesResponse = await fetch(imagesUrl, {
-          headers: { 'Accept': 'application/json' },
-          next: { revalidate: 3600 },
-        });
+      // 对于电视剧，尝试获取对应季的背景图和Logo
+      if (searchType === 'tv' && detectedSeason > 0) {
+        try {
+          const seasonImagesUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${detectedSeason}/images?api_key=${apiKey}`;
+          const seasonImagesResponse = await fetch(seasonImagesUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+          });
+          if (seasonImagesResponse.ok) {
+            const seasonImagesData = await seasonImagesResponse.json();
+            // 获取季的海报作为背景（如果有）
+            const seasonPosters = seasonImagesData.posters || [];
+            if (seasonPosters.length > 0) {
+              // 季的海报通常是竖版的，不太适合做背景，跳过
+            }
+          }
+        } catch (e) { /* ignore */ }
+      }
 
-        if (imagesResponse.ok) {
-          const imagesData = await imagesResponse.json();
-          const logos = imagesData.logos || [];
-          const selectedLogo = logos.find((l: any) => l.iso_639_1 === 'zh') ||
-            logos.find((l: any) => l.iso_639_1 === 'en') ||
-            logos[0];
-          if (selectedLogo?.file_path) {
-            logo = `${TMDB_LOGO_BASE_URL}${selectedLogo.file_path}`;
+      // 获取Logo图片（优先获取对应季的Logo）
+      try {
+        // 先尝试获取对应季的Logo
+        let foundSeasonLogo = false;
+        if (searchType === 'tv' && detectedSeason > 0) {
+          const seasonDetailUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${detectedSeason}?api_key=${apiKey}&language=${language}&append_to_response=images`;
+          const seasonDetailResponse = await fetch(seasonDetailUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+          });
+          if (seasonDetailResponse.ok) {
+            const seasonDetailData = await seasonDetailResponse.json();
+            // 使用季的名称作为标题（如果需要的话）
+            // 获取季的图片
+            const seasonImages = seasonDetailData.images || {};
+            const seasonLogos = seasonImages.logos || [];
+            if (seasonLogos.length > 0) {
+              const selectedLogo = seasonLogos.find((l: any) => l.iso_639_1 === 'zh') ||
+                seasonLogos.find((l: any) => l.iso_639_1 === 'en') ||
+                seasonLogos[0];
+              if (selectedLogo?.file_path) {
+                logo = `${TMDB_LOGO_BASE_URL}${selectedLogo.file_path}`;
+                foundSeasonLogo = true;
+                console.log(`[TMDB] 使用第${detectedSeason}季的Logo`);
+              }
+            }
+          }
+        }
+
+        // 如果没有找到季的Logo，使用剧集的Logo
+        if (!foundSeasonLogo) {
+          const imagesUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/images?api_key=${apiKey}`;
+          const imagesResponse = await fetch(imagesUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+          });
+
+          if (imagesResponse.ok) {
+            const imagesData = await imagesResponse.json();
+            const logos = imagesData.logos || [];
+            const selectedLogo = logos.find((l: any) => l.iso_639_1 === 'zh') ||
+              logos.find((l: any) => l.iso_639_1 === 'en') ||
+              logos[0];
+            if (selectedLogo?.file_path) {
+              logo = `${TMDB_LOGO_BASE_URL}${selectedLogo.file_path}`;
+            }
           }
         }
       } catch (e) { /* ignore */ }
