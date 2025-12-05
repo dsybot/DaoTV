@@ -634,7 +634,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     <>
       <div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500] hover:drop-shadow-2xl'
-        onClick={handleClick}
         {...longPressProps}
         style={{
           // 禁用所有默认的长按和选择效果
