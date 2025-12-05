@@ -799,11 +799,11 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 操作按钮 - hover显示（非收藏页面） */}
+          {/* 操作按钮 - 仅桌面端hover显示（非收藏页面），移动端完全隐藏避免误触 */}
           {(config.showHeart || config.showCheckCircle) && from !== 'favorite' && (
             <div
               data-button="true"
-              className='absolute bottom-3 right-3 flex gap-3 opacity-0 translate-y-2 transition-all duration-300 ease-in-out sm:group-hover:opacity-100 sm:group-hover:translate-y-0'
+              className='absolute bottom-3 right-3 flex gap-3 hidden sm:flex opacity-0 translate-y-2 transition-all duration-300 ease-in-out sm:group-hover:opacity-100 sm:group-hover:translate-y-0 pointer-events-none sm:pointer-events-auto'
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
