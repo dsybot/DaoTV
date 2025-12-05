@@ -22,12 +22,13 @@ function randomDelay(min = 500, max = 1500): Promise<void> {
 }
 
 /**
- * 获取豆瓣详情（genres和首播日期）
+ * 获取豆瓣详情（genres、首播日期、IMDB ID）
  */
 export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
   genres: string[];
   first_aired: string;
   plot_summary: string;
+  imdb_id: string;
 } | null> {
   try {
     const target = `https://movie.douban.com/subject/${doubanId}/`;
@@ -80,6 +81,13 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
       }
     }
 
+    // 提取 IMDB ID：<span class="pl">IMDb:</span> tt36758770
+    let imdb_id = '';
+    const imdbMatch = html.match(/<span class="pl">IMDb:<\/span>\s*(tt\d+)/i);
+    if (imdbMatch) {
+      imdb_id = imdbMatch[1];
+    }
+
     const summaryMatch = html.match(/<span[^>]*class="all hidden">([\s\S]*?)<\/span>/) ||
       html.match(/<span[^>]*property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
     let plot_summary = '';
@@ -96,6 +104,7 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
       genres,
       first_aired,
       plot_summary,
+      imdb_id,
     };
   } catch (error) {
     console.warn(`[豆瓣详情] 获取失败 ${doubanId}:`, error instanceof Error ? error.message : error);

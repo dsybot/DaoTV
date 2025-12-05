@@ -618,17 +618,92 @@ function normalizeTVTitle(title: string): string {
   return result;
 }
 
+// TMDB Find API 响应类型
+interface TMDBFindResponse {
+  movie_results: TMDBMovie[];
+  tv_results: TMDBTVShow[];
+}
+
 /**
- * 通过豆瓣电影/电视剧名称获取TMDB轮播图数据
+ * 通过 IMDB ID 在 TMDB 查找影视作品
+ */
+export async function findByIMDBId(imdbId: string): Promise<TMDBFindResponse> {
+  const cacheKey = getCacheKey('find_imdb', { imdbId });
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`[TMDB] IMDB查找缓存命中: ${imdbId}`);
+    return cached;
+  }
+
+  const result = await fetchTMDB<TMDBFindResponse>(`/find/${imdbId}`, {
+    external_source: 'imdb_id'
+  });
+
+  await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
+  console.log(`[TMDB] IMDB查找已缓存: ${imdbId} (电影:${result.movie_results.length}, 电视剧:${result.tv_results.length})`);
+
+  return result;
+}
+
+/**
+ * 通过 IMDB ID 获取 TMDB 轮播图数据（精确匹配）
+ */
+export async function getCarouselItemByIMDB(
+  imdbId: string,
+  type: 'movie' | 'tv'
+): Promise<CarouselItem | null> {
+  try {
+    console.log(`[TMDB轮播] 🎯 通过IMDB精确查找: ${imdbId} (${type})`);
+
+    const findResult = await findByIMDBId(imdbId);
+
+    let searchResult: TMDBMovie | TMDBTVShow | null = null;
+
+    if (type === 'movie' && findResult.movie_results.length > 0) {
+      searchResult = findResult.movie_results[0];
+      console.log(`[TMDB轮播] ✅ IMDB匹配成功: ${(searchResult as TMDBMovie).title}`);
+    } else if (type === 'tv' && findResult.tv_results.length > 0) {
+      searchResult = findResult.tv_results[0];
+      console.log(`[TMDB轮播] ✅ IMDB匹配成功: ${(searchResult as TMDBTVShow).name}`);
+    }
+
+    if (!searchResult) {
+      console.warn(`[TMDB轮播] ❌ IMDB未找到匹配: ${imdbId} (${type})`);
+      return null;
+    }
+
+    const carouselItem: CarouselItem = {
+      id: searchResult.id,
+      title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
+      overview: searchResult.overview || '',
+      backdrop: searchResult.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}` : '',
+      poster: searchResult.poster_path ? `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}` : '',
+      rate: searchResult.vote_average || 0,
+      year: type === 'movie'
+        ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
+        : ((searchResult as TMDBTVShow).first_air_date?.split('-')[0] || ''),
+      type,
+    };
+
+    console.log(`[TMDB轮播] 📸 IMDB匹配海报: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`);
+
+    return carouselItem;
+  } catch (error) {
+    console.error(`[TMDB轮播] IMDB查找失败: ${imdbId}`, error);
+    return null;
+  }
+}
+
+/**
+ * 通过豆瓣电影/电视剧名称获取TMDB轮播图数据（标题搜索，作为降级方案）
  */
 export async function getCarouselItemByTitle(
   title: string,
   type: 'movie' | 'tv'
 ): Promise<CarouselItem | null> {
   try {
-    console.log(`[TMDB轮播] 🔍 开始搜索 ${type}: "${title}"`);
+    console.log(`[TMDB轮播] 🔍 标题搜索 ${type}: "${title}"`);
 
-    // ... (其他代码保持不变)
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
     let mediaId = 0;

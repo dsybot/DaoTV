@@ -4,21 +4,28 @@
  * 轮播图数据生成器
  * 
  * 负责从豆瓣和TMDB获取并处理轮播图数据
+ * 
+ * 新流程（IMDB精确匹配）：
+ * 1. 从豆瓣获取热门数据
+ * 2. 获取豆瓣详情（包含 IMDB ID）
+ * 3. 优先用 IMDB ID 去 TMDB 精确匹配，无 IMDB 则降级为标题搜索
+ * 4. 合并数据并返回
  */
 
-import { getCarouselItemByTitle, CarouselItem } from './tmdb.client';
+import { getCarouselItemByTitle, getCarouselItemByIMDB, CarouselItem } from './tmdb.client';
 import { fetchDoubanDetailsForCarousel } from './douban-details-fetcher';
 
 /**
  * 生成轮播图数据（核心逻辑）
  * 
- * 流程：
+ * 新流程（IMDB精确匹配）：
  * 1. 从豆瓣获取热门数据
- * 2. 在TMDB搜索并获取海报
- * 3. 合并数据并返回
+ * 2. 批量获取豆瓣详情（包含 IMDB ID、genres、首播日期）
+ * 3. 优先用 IMDB ID 去 TMDB 精确匹配海报，无 IMDB 则降级为标题搜索
+ * 4. 合并数据并返回
  */
 export async function generateCarouselData(): Promise<any[]> {
-  console.log('[轮播生成器] ===== 开始生成轮播图数据 =====');
+  console.log('[轮播生成器] ===== 开始生成轮播图数据（IMDB精确匹配模式） =====');
   console.log('[轮播生成器] 第1步: 从豆瓣获取热门数据...');
 
   // 从豆瓣API直接获取最新数据
@@ -99,64 +106,74 @@ export async function generateCarouselData(): Promise<any[]> {
     })),
   ];
 
-  console.log(`[轮播生成器] 第3步: 准备搜索TMDB，共${items.length}个标题...`);
-  console.log(`[轮播生成器] 候选标题列表: ${items.map(i => `${i.title}(${i.source})`).slice(0, 10).join(', ')}...`);
+  console.log(`[轮播生成器] 第3步: 批量获取豆瓣详情（含IMDB ID）...共${items.length}项`);
 
-  // 并行搜索TMDB
-  const carouselPromises = items.map(item =>
-    getCarouselItemByTitle(item.title, item.type)
-  );
-
-  const carouselResults = await Promise.allSettled(carouselPromises);
-
-  // 统计
-  const fulfilled = carouselResults.filter(
-    (r): r is PromiseFulfilledResult<CarouselItem | null> => r.status === 'fulfilled'
-  );
-  const validResults = fulfilled.filter(r => r.value !== null);
-  const rejectedCount = carouselResults.filter(r => r.status === 'rejected').length;
-  const nullCount = fulfilled.filter(r => r.value === null).length;
-
-  console.log(`[轮播生成器] TMDB搜索完成 - 总数:${carouselResults.length}, 成功:${validResults.length}, 失败:${rejectedCount}, 未找到:${nullCount}`);
-
-  // 🔍 专门追踪"唐朝诡事录之长安"
-  const tangChaoIndex = items.findIndex(item => item.title === '唐朝诡事录之长安');
-  if (tangChaoIndex !== -1) {
-    const tangChaoResult = carouselResults[tangChaoIndex];
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 索引:${tangChaoIndex}, 状态:${tangChaoResult.status}`);
-    if (tangChaoResult.status === 'fulfilled') {
-      console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 结果:`, tangChaoResult.value ? '找到' : '未找到');
-      if (tangChaoResult.value) {
-        console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 海报:backdrop=${!!tangChaoResult.value.backdrop}, poster=${!!tangChaoResult.value.poster}`);
+  // 先批量获取豆瓣详情（包含 IMDB ID）
+  const detailsPromises = items.map(async (item) => {
+    try {
+      const details = await fetchDoubanDetailsForCarousel(item.doubanData.id.toString());
+      if (details) {
+        console.log(`[轮播生成器] ✅ ${item.title} 详情: IMDB=${details.imdb_id || '无'}, genres=${details.genres?.length || 0}`);
+        return {
+          ...item,
+          details: {
+            genres: details.genres || [],
+            first_aired: details.first_aired || '',
+            plot_summary: details.plot_summary || '',
+            imdb_id: details.imdb_id || '',
+          }
+        };
       }
-    } else {
-      console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 错误:`, (tangChaoResult as PromiseRejectedResult).reason);
+    } catch (error) {
+      console.warn(`[轮播生成器] ⚠️ ${item.title} 详情获取失败`);
     }
-  }
+    return { ...item, details: null };
+  });
 
-  // 🔍 打印未找到的标题（调试用）
-  const notFoundTitles = carouselResults
-    .map((result, index) => ({ result, title: items[index].title, source: items[index].source }))
-    .filter(({ result }) => result.status === 'fulfilled' && result.value === null)
-    .slice(0, 10);
-  if (notFoundTitles.length > 0) {
-    console.log('[轮播生成器] ⚠️ 未在TMDB找到的标题:', notFoundTitles.map(x => `${x.title}(${x.source})`));
-  }
+  const itemsWithDetails = await Promise.all(detailsPromises);
+
+  // 统计 IMDB ID 获取情况
+  const withImdb = itemsWithDetails.filter(x => x.details?.imdb_id);
+  const withoutImdb = itemsWithDetails.filter(x => !x.details?.imdb_id);
+  console.log(`[轮播生成器] IMDB统计: 有IMDB=${withImdb.length}, 无IMDB=${withoutImdb.length}`);
+
+  console.log(`[轮播生成器] 第4步: 搜索TMDB海报（优先IMDB精确匹配）...`);
+
+  // 并行搜索TMDB：优先用 IMDB ID，无则降级为标题搜索
+  const carouselPromises = itemsWithDetails.map(async (item) => {
+    const imdbId = item.details?.imdb_id;
+
+    // 优先使用 IMDB ID 精确匹配
+    if (imdbId) {
+      const result = await getCarouselItemByIMDB(imdbId, item.type);
+      if (result) {
+        return { status: 'fulfilled' as const, value: { result, source: item.source, doubanData: item.doubanData, details: item.details, matchType: 'imdb' as const } };
+      }
+      console.log(`[轮播生成器] ⚠️ ${item.title} IMDB匹配失败，降级为标题搜索`);
+    }
+
+    // 降级为标题搜索
+    const result = await getCarouselItemByTitle(item.title, item.type);
+    return { status: 'fulfilled' as const, value: { result, source: item.source, doubanData: item.doubanData, details: item.details, matchType: 'title' as const } };
+  });
+
+  const carouselResults = await Promise.all(carouselPromises);
+
+  // 统计匹配情况
+  const imdbMatched = carouselResults.filter(x => x.value.result && x.value.matchType === 'imdb').length;
+  const titleMatched = carouselResults.filter(x => x.value.result && x.value.matchType === 'title').length;
+  const notFound = carouselResults.filter(x => !x.value.result).length;
+  console.log(`[轮播生成器] TMDB匹配完成: IMDB精确=${imdbMatched}, 标题搜索=${titleMatched}, 未找到=${notFound}`);
 
   // 处理结果
   const carouselWithSource = carouselResults
-    .map((result, index) => ({
-      result,
-      source: items[index].source,
-      doubanData: items[index].doubanData
-    }))
-    .filter(({ result }) =>
-      result.status === 'fulfilled' && result.value !== null
-    )
-    .map(({ result, source, doubanData }) => ({
-      item: (result as PromiseFulfilledResult<CarouselItem>).value,
-      source,
-      doubanData
+    .filter(x => x.value.result !== null)
+    .map(x => ({
+      item: x.value.result as CarouselItem,
+      source: x.value.source,
+      doubanData: x.value.doubanData,
+      details: x.value.details,
+      matchType: x.value.matchType
     }))
     .filter(({ item }) => {
       // 必须有海报
@@ -172,36 +189,25 @@ export async function generateCarouselData(): Promise<any[]> {
 
   console.log(`[轮播生成器] 海报过滤后剩余${carouselWithSource.length}项`);
 
-  // 🔍 追踪"唐朝诡事录之长安"是否通过海报过滤
-  const tangChaoInFiltered = carouselWithSource.find(x => x.item.title.includes('唐朝诡事录'));
-  if (tangChaoInFiltered) {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 通过海报过滤 ✓`);
-  } else {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 在海报过滤时被移除 ✗`);
-  }
-
   // 按来源分类
   const movieItems = carouselWithSource.filter(x => x.source === 'movie');
   const tvItems = carouselWithSource.filter(x => x.source === 'tv');
   const varietyItems = carouselWithSource.filter(x => x.source === 'variety');
 
-  console.log(`[轮播生成器] 第4步: 可用数据 - 电视剧:${tvItems.length}, 电影:${movieItems.length}, 综艺:${varietyItems.length}, 总计:${carouselWithSource.length}`);
-  console.log('[轮播生成器] 🔍 电视剧前5:', tvItems.slice(0, 5).map(x => x.item.title));
-  console.log('[轮播生成器] 🔍 电影前5:', movieItems.slice(0, 5).map(x => x.item.title));
+  console.log(`[轮播生成器] 第5步: 可用数据 - 电视剧:${tvItems.length}, 电影:${movieItems.length}, 综艺:${varietyItems.length}`);
 
   // 目标配额：8个电视剧 + 5个电影 + 2个综艺 = 15个
   let finalTvItems = tvItems.slice(0, 8);
   let finalMovieItems = movieItems.slice(0, 5);
   let finalVarietyItems = varietyItems.slice(0, 2);
 
-  // 智能补充机制：如果某类不足，用其他类型补充
+  // 智能补充机制
   const targetTotal = 15;
   let currentTotal = finalTvItems.length + finalMovieItems.length + finalVarietyItems.length;
 
   if (currentTotal < targetTotal) {
     console.log(`[轮播生成器] 数量不足(${currentTotal}/15)，开始智能补充...`);
 
-    // 尝试从剩余的项目中补充
     const usedIds = new Set([
       ...finalTvItems.map(x => x.doubanData.id),
       ...finalMovieItems.map(x => x.doubanData.id),
@@ -212,9 +218,6 @@ export async function generateCarouselData(): Promise<any[]> {
     const needed = targetTotal - currentTotal;
     const supplementItems = remainingItems.slice(0, needed);
 
-    console.log(`[轮播生成器] 从剩余${remainingItems.length}项中补充${supplementItems.length}项`);
-
-    // 将补充的项目按类型分配
     for (const item of supplementItems) {
       if (item.source === 'tv' && finalTvItems.length < 10) {
         finalTvItems.push(item);
@@ -228,98 +231,33 @@ export async function generateCarouselData(): Promise<any[]> {
     currentTotal = finalTvItems.length + finalMovieItems.length + finalVarietyItems.length;
   }
 
-  console.log(`[轮播生成器] 第5步: 最终分配 - 电视剧:${finalTvItems.length}/8, 电影:${finalMovieItems.length}/5, 综艺:${finalVarietyItems.length}/2, 总计:${currentTotal}/15`);
-  console.log('[轮播生成器] 🔍 最终电视剧:', finalTvItems.map(x => x.item.title));
-  console.log('[轮播生成器] 🔍 最终电影:', finalMovieItems.map(x => x.item.title));
+  console.log(`[轮播生成器] 第6步: 最终分配 - 电视剧:${finalTvItems.length}/8, 电影:${finalMovieItems.length}/5, 综艺:${finalVarietyItems.length}/2`);
 
-  // 🔍 追踪"唐朝诡事录之长安"是否在最终列表
-  const tangChaoInFinal = finalTvItems.find(x => x.item.title.includes('唐朝诡事录'));
-  if (tangChaoInFinal) {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 在最终电视剧列表中 ✓`);
-  } else {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 未进入最终电视剧列表 ✗`);
-    if (tvItems.length > 0) {
-      const tangChaoRank = tvItems.findIndex(x => x.item.title.includes('唐朝诡事录'));
-      if (tangChaoRank !== -1) {
-        console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 在所有电视剧中排第 ${tangChaoRank + 1} 位（只取前8个）`);
-      }
-    }
-  }
-
-  // 合并数据（电视剧优先）
-  const allItems = [
-    ...finalTvItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
-    ...finalMovieItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
-    ...finalVarietyItems.map(x => ({ ...x.item, source: x.source, doubanData: x.doubanData })),
-  ];
-
-  console.log(`[轮播生成器] 第6步: 开始获取豆瓣详情（genres和首播）...共${allItems.length}项`);
-
-  // 批量获取豆瓣详情（直接调用豆瓣网页）
-  const detailsPromises = allItems.map(async (item, index) => {
-    try {
-      console.log(`[轮播生成器] [${index + 1}/${allItems.length}] 获取详情: ${item.title} (ID: ${item.doubanData.id})`);
-
-      const details = await fetchDoubanDetailsForCarousel(item.doubanData.id.toString());
-
-      if (details) {
-        console.log(`[轮播生成器] ✅ ${item.title} 详情获取成功: genres=${details.genres?.length || 0}, first_aired=${details.first_aired || 'N/A'}`);
-        return {
-          id: item.doubanData.id,
-          genres: details.genres || [],
-          first_aired: details.first_aired || '',
-          plot_summary: details.plot_summary || '',
-        };
-      } else {
-        console.warn(`[轮播生成器] ⚠️ ${item.title} 详情获取返回null`);
-      }
-    } catch (error) {
-      console.warn(`[轮播生成器] ❌ ${item.title} 异常:`, error instanceof Error ? error.message : error);
-    }
-    return null;
-  });
-
-  const detailsResults = await Promise.all(detailsPromises);
-  const successCount = detailsResults.filter(d => d).length;
-  console.log(`[轮播生成器] 豆瓣详情获取完成: ${successCount}/${allItems.length} 成功`);
-
-  // 合并并优先使用豆瓣数据
-  let carouselList = allItems.map(x => {
-    const detail = detailsResults.find(d => d?.id === x.doubanData.id);
-    return {
-      ...x,
-      id: x.doubanData.id || x.id, // 使用豆瓣ID而不是TMDB ID
-      title: x.doubanData.title || x.title,
-      rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
-        ? parseFloat(x.doubanData.rate)
-        : x.rate,
-      year: x.doubanData.year || x.year,
-      overview: detail?.plot_summary || x.overview,
-      poster: x.doubanData.poster || x.poster,
-      genres: detail?.genres || [],
-      first_aired: detail?.first_aired || '',
-    };
-  });
+  // 合并数据并使用豆瓣数据（详情已在第3步获取）
+  let carouselList = [
+    ...finalTvItems,
+    ...finalMovieItems,
+    ...finalVarietyItems,
+  ].map(x => ({
+    ...x.item,
+    source: x.source,
+    id: x.doubanData.id || x.item.id, // 使用豆瓣ID
+    title: x.doubanData.title || x.item.title,
+    rate: x.doubanData.rate && parseFloat(x.doubanData.rate) > 0
+      ? parseFloat(x.doubanData.rate)
+      : x.item.rate,
+    year: x.doubanData.year || x.item.year,
+    overview: x.details?.plot_summary || x.item.overview,
+    poster: x.doubanData.poster || x.item.poster,
+    genres: x.details?.genres || [],
+    first_aired: x.details?.first_aired || '',
+  }));
 
   // 随机打乱
-  console.log('[轮播生成器] 🔍 打乱前列表:', carouselList.map(x => x.title));
-  const tangChaoBeforeShuffle = carouselList.findIndex(x => x.title.includes('唐朝诡事录'));
-  if (tangChaoBeforeShuffle !== -1) {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 打乱前位置: 第 ${tangChaoBeforeShuffle + 1} 个`);
-  }
-
   carouselList = carouselList.sort(() => Math.random() - 0.5);
 
   console.log(`[轮播生成器] 第7步: 随机排序完成，共${carouselList.length}项`);
-  console.log('[轮播生成器] 🔍 打乱后列表:', carouselList.map(x => x.title));
-
-  const tangChaoAfterShuffle = carouselList.findIndex(x => x.title.includes('唐朝诡事录'));
-  if (tangChaoAfterShuffle !== -1) {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 打乱后位置: 第 ${tangChaoAfterShuffle + 1} 个`);
-  } else {
-    console.log(`[轮播生成器] 🎯 唐朝诡事录之长安 - 打乱后不在列表中 ✗`);
-  }
-
+  console.log('[轮播生成器] 🔍 最终列表:', carouselList.map(x => x.title));
   console.log('[轮播生成器] ===== 生成完成 =====');
 
   return carouselList;
