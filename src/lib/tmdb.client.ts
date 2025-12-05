@@ -284,8 +284,12 @@ export async function searchTMDBActorWorks(
       return result;
     }
 
-    // 2. 取最知名的演员（按人气排序）
-    const person = personSearch.results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
+    // 2. 优先选择名字完全匹配且有头像的演员，其次名字匹配，最后按人气排序
+    const results = personSearch.results;
+    const exactMatchWithPhoto = results.find(p => p.name === actorName && p.profile_path);
+    const exactMatch = results.find(p => p.name === actorName);
+    const withPhotoSorted = results.filter(p => p.profile_path).sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    const person = exactMatchWithPhoto || exactMatch || withPhotoSorted[0] || results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
     console.log(`[TMDB演员搜索] 找到演员: ${person.name} (ID: ${person.id})`);
 
     // 3. 获取该演员的作品

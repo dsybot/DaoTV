@@ -101,8 +101,12 @@ export async function GET(request: NextRequest) {
 
           const data = await response.json();
           if (data.results && data.results.length > 0) {
-            // 取人气最高的结果
-            const person = data.results.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))[0];
+            // 优先选择：1.名字完全匹配且有头像 2.名字完全匹配 3.有头像且人气最高 4.人气最高
+            const results = data.results;
+            const exactMatchWithPhoto = results.find((p: any) => p.name === name && p.profile_path);
+            const exactMatch = results.find((p: any) => p.name === name);
+            const withPhotoSorted = results.filter((p: any) => p.profile_path).sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0));
+            const person = exactMatchWithPhoto || exactMatch || withPhotoSorted[0] || results.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))[0];
             return {
               name,
               photo: person.profile_path ? `${TMDB_IMAGE_BASE_URL}${person.profile_path}` : null,
