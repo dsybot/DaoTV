@@ -105,8 +105,8 @@ function SeasonSelector({
                   setIsOpen(false);
                 }}
                 className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${s.seasonNumber === currentSeason
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
-                    : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
                   }`}
               >
                 <div className="flex items-center gap-2">
@@ -334,7 +334,7 @@ function DetailPageClient() {
           {/* 内容区域 - 底部对齐 */}
           <div className="absolute bottom-8 left-0 right-0 px-4 sm:px-6 md:px-8 lg:px-12">
             <div className="max-w-6xl mx-auto">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end">
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end">
                 {/* 左侧：封面卡片和按钮 */}
                 <div className="flex-shrink-0 w-36 sm:w-44 md:w-52 mx-auto md:mx-0">
                   <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10">
@@ -384,7 +384,7 @@ function DetailPageClient() {
                 </div>
 
                 {/* 右侧：详情信息 */}
-                <div className="flex-1 text-white pb-2">
+                <div className="flex-1 w-full text-white pb-2">
                   {/* 标题 - 优先使用Logo图片，水平居中 */}
                   <div className="flex justify-center items-center mb-4 min-h-[6rem] sm:min-h-[8rem] md:min-h-[10rem]">
                     {logo ? (
