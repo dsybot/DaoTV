@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { ArrowLeft, Heart, Play, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Heart, Play, ExternalLink, ChevronDown, Check } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState, useRef } from 'react';
 
 import {
   deleteFavorite,
@@ -55,6 +55,71 @@ interface TMDBData {
   episodes: TMDBEpisode[];
   seasons: TMDBSeason[];
   cast: TMDBCast[];
+}
+
+// 季数选择器组件
+function SeasonSelector({
+  seasons,
+  currentSeason,
+  onChange,
+}: {
+  seasons: TMDBSeason[];
+  currentSeason: number;
+  onChange: (season: number) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedSeason = seasons.find((s) => s.seasonNumber === currentSeason);
+
+  return (
+    <div className="relative ml-auto" ref={selectRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span>{selectedSeason?.name || `第${currentSeason}季`}</span>
+        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 z-50 mt-2 min-w-[140px] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl overflow-hidden animate-scaleIn">
+          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+            {seasons.map((s) => (
+              <button
+                key={s.seasonNumber}
+                type="button"
+                onClick={() => {
+                  onChange(s.seasonNumber);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${s.seasonNumber === currentSeason
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                  }`}
+              >
+                <div className="flex items-center gap-2">
+                  {s.seasonNumber === currentSeason && <Check className="w-4 h-4 flex-shrink-0" />}
+                  <span className={s.seasonNumber === currentSeason ? '' : 'ml-6'}>{s.name}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // TMDB背景图、Logo和详情获取
@@ -403,20 +468,14 @@ function DetailPageClient() {
                     })}
                   </div>
                   {seasons.length > 1 && (
-                    <select
-                      value={currentSeason}
-                      onChange={(e) => {
-                        setCurrentSeason(Number(e.target.value));
+                    <SeasonSelector
+                      seasons={seasons}
+                      currentSeason={currentSeason}
+                      onChange={(season) => {
+                        setCurrentSeason(season);
                         setEpisodePage(0);
                       }}
-                      className="ml-auto px-2 py-1 bg-transparent border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 focus:outline-none"
-                    >
-                      {seasons.map((s) => (
-                        <option key={s.seasonNumber} value={s.seasonNumber}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   )}
                 </div>
                 {tmdbLoading ? (
