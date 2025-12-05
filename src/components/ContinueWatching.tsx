@@ -247,7 +247,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                         prev.filter((r) => r.key !== record.key)
                       )
                     }
-                    type={latestTotalEpisodes > 1 ? 'tv' : ''}
+                    type={record.media_type || (latestTotalEpisodes > 1 ? 'tv' : '')}
                     remarks={record.remarks}
                     douban_id={record.douban_id}
                   />

@@ -205,15 +205,20 @@ function DetailPageClient() {
     fetchDetails();
   }, [doubanId]);
 
-  // 获取TMDB数据（等待豆瓣详情获取IMDb ID后再请求）
+  // 获取TMDB数据（等待豆瓣详情加载完成后再请求，以获取准确的 IMDb ID 和类型）
   useEffect(() => {
     const fetchData = async () => {
+      // 如果有豆瓣ID但豆瓣详情还没加载完，等待
+      if (doubanId > 0 && !movieDetails) {
+        return;
+      }
+
       if (title) {
         setTmdbLoading(true);
         const imdbId = movieDetails?.imdb_id;
-        // 根据豆瓣数据判断类型，如果没有豆瓣数据则使用URL参数
+        // 判断类型：优先豆瓣数据 > URL参数stype > 默认tv
         const mediaType = movieDetails
-          ? (movieDetails.movie_duration && !movieDetails.episodes ? 'movie' : (movieDetails.episodes ? 'tv' : (stype || 'tv')))
+          ? (movieDetails.movie_duration ? 'movie' : (movieDetails.episodes ? 'tv' : (stype || 'tv')))
           : (stype || 'tv');
         const data = await getTMDBData(title, year, mediaType, currentSeason, imdbId);
         setBackdrop(data.backdrop);
@@ -232,7 +237,7 @@ function DetailPageClient() {
       }
     };
     fetchData();
-  }, [title, year, stype, currentSeason, movieDetails?.imdb_id, movieDetails?.episodes, movieDetails?.movie_duration]);
+  }, [title, year, stype, currentSeason, doubanId, movieDetails]);
 
   // 检查收藏状态
   useEffect(() => {
@@ -318,12 +323,9 @@ function DetailPageClient() {
   const genres = movieDetails?.genres || [];
   const description = movieDetails?.plot_summary || tmdbOverview || '';
   const cast = movieDetails?.cast || [];
-  // 判断类型：优先使用豆瓣数据判断
-  // - 如果有movie_duration（电影片长）且没有episodes（集数），说明是电影
-  // - 如果有episodes（集数），说明是电视剧
-  // - 如果没有豆瓣数据，则使用URL参数stype
+  // 判断类型：优先豆瓣数据 > URL参数stype
   const displayType = movieDetails
-    ? (movieDetails.movie_duration && !movieDetails.episodes ? 'movie' : (movieDetails.episodes ? 'tv' : stype))
+    ? (movieDetails.movie_duration ? 'movie' : (movieDetails.episodes ? 'tv' : stype))
     : stype;
 
   return (

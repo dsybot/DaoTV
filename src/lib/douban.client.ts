@@ -644,15 +644,18 @@ export async function getDoubanDetails(id: string): Promise<{
     imdb_id?: string;
   };
 }> {
-  // 检查缓存 - 如果缓存中没有plot_summary则重新获取
+  // 检查缓存 - 如果缓存中没有plot_summary或缺少movie_duration/episodes字段则重新获取
   const cacheKey = getCacheKey('details', { id });
   const cached = await getCache(cacheKey);
-  if (cached && cached.data?.plot_summary) {
-    console.log(`豆瓣详情缓存命中(有简介): ${id}`);
+  // 检查缓存是否完整（需要有简介，且有movie_duration或episodes字段之一来判断类型）
+  const isCacheComplete = cached?.data?.plot_summary &&
+    (cached.data.movie_duration !== undefined || cached.data.episodes !== undefined);
+  if (cached && isCacheComplete) {
+    console.log(`豆瓣详情缓存命中(完整): ${id}`);
     return cached;
   }
-  if (cached && !cached.data?.plot_summary) {
-    console.log(`豆瓣详情缓存无效(缺少简介): ${id}，重新获取`);
+  if (cached && !isCacheComplete) {
+    console.log(`豆瓣详情缓存无效(缺少必要字段): ${id}，重新获取`);
     // 缓存无效，继续执行下面的逻辑重新获取
   }
 
@@ -835,7 +838,7 @@ export async function getDoubanActorMovies(
     const html = await response.text();
 
     // 解析HTML中的JSON数据
-    const dataMatch = html.match(/window\.__DATA__\s*=\s*({.*?});/s);
+    const dataMatch = html.match(/window\.__DATA__\s*=\s*({[\s\S]*?});/);
     if (!dataMatch) {
       throw new Error('无法解析搜索结果数据');
     }
