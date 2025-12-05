@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
     if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise(resolve => 
+      await new Promise(resolve =>
         setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
       );
     }
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
     }
 
     const html = await response.text();
-    
+
     // 解析详细信息
     const details = parseDoubanDetails(html, id);
 
@@ -179,7 +179,7 @@ function parseDoubanDetails(html: string, id: string) {
 
     // 提取首播/上映日期 - 根据真实HTML结构
     let first_aired = '';
-    
+
     // 首播信息：<span class="pl">首播:</span> <span property="v:initialReleaseDate" content="2025-08-13(中国大陆)">2025-08-13(中国大陆)</span>
     const firstAiredMatch = html.match(/<span class="pl">首播:<\/span>\s*<span[^>]*property="v:initialReleaseDate"[^>]*content="([^"]*)"[^>]*>([^<]*)<\/span>/);
     if (firstAiredMatch) {
@@ -199,7 +199,7 @@ function parseDoubanDetails(html: string, id: string) {
     // 提取时长 - 支持电影和剧集
     let episode_length: number | undefined;
     let movie_duration: number | undefined;
-    
+
     // 先尝试提取剧集的单集片长
     const singleEpisodeDurationMatch = html.match(/<span[^>]*class="pl">单集片长:<\/span>([^<]+)/);
     if (singleEpisodeDurationMatch) {
@@ -214,7 +214,7 @@ function parseDoubanDetails(html: string, id: string) {
 
     // 提取剧情简介 - 使用更宽松的匹配，支持HTML标签
     const summaryMatch = html.match(/<span[^>]*class="all hidden">([\s\S]*?)<\/span>/) ||
-                         html.match(/<span[^>]*property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
+      html.match(/<span[^>]*property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
     let plot_summary = '';
     if (summaryMatch) {
       // 移除HTML标签，保留文本内容
@@ -224,6 +224,10 @@ function parseDoubanDetails(html: string, id: string) {
         .trim()
         .replace(/\n{3,}/g, '\n\n');     // 将多个换行合并为最多两个
     }
+
+    // 提取IMDb ID：<span class="pl">IMDb:</span> tt36758770
+    const imdbMatch = html.match(/<span class="pl">IMDb:<\/span>\s*(tt\d+)/i);
+    const imdb_id = imdbMatch ? imdbMatch[1] : '';
 
     return {
       code: 200,
@@ -244,7 +248,8 @@ function parseDoubanDetails(html: string, id: string) {
         episode_length,
         movie_duration,
         first_aired,
-        plot_summary
+        plot_summary,
+        imdb_id
       }
     };
   } catch (error) {

@@ -58,9 +58,10 @@ interface TMDBData {
 }
 
 // TMDB背景图、Logo和详情获取
-async function getTMDBData(title: string, year: string, type: string, season: number = 1): Promise<TMDBData> {
+async function getTMDBData(title: string, year: string, type: string, season: number = 1, imdbId?: string): Promise<TMDBData> {
   try {
-    const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}&season=${season}&details=true`);
+    const imdbParam = imdbId ? `&imdb_id=${imdbId}` : '';
+    const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}&season=${season}&details=true${imdbParam}`);
     if (response.ok) {
       const data = await response.json();
       return {
@@ -107,24 +108,6 @@ function DetailPageClient() {
   const [favorited, setFavorited] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // 获取TMDB数据
-  useEffect(() => {
-    const fetchData = async () => {
-      if (title) {
-        setTmdbLoading(true);
-        const data = await getTMDBData(title, year, stype || 'tv', currentSeason);
-        setBackdrop(data.backdrop);
-        setLogo(data.logo);
-        setProviders(data.providers);
-        setEpisodes(data.episodes);
-        setSeasons(data.seasons);
-        setTmdbCast(data.cast);
-        setTmdbLoading(false);
-      }
-    };
-    fetchData();
-  }, [title, year, stype, currentSeason]);
-
   // 获取豆瓣详情
   useEffect(() => {
     const fetchDetails = async () => {
@@ -142,6 +125,25 @@ function DetailPageClient() {
     };
     fetchDetails();
   }, [doubanId]);
+
+  // 获取TMDB数据（等待豆瓣详情获取IMDb ID后再请求）
+  useEffect(() => {
+    const fetchData = async () => {
+      if (title) {
+        setTmdbLoading(true);
+        const imdbId = movieDetails?.imdb_id;
+        const data = await getTMDBData(title, year, stype || 'tv', currentSeason, imdbId);
+        setBackdrop(data.backdrop);
+        setLogo(data.logo);
+        setProviders(data.providers);
+        setEpisodes(data.episodes);
+        setSeasons(data.seasons);
+        setTmdbCast(data.cast);
+        setTmdbLoading(false);
+      }
+    };
+    fetchData();
+  }, [title, year, stype, currentSeason, movieDetails?.imdb_id]);
 
   // 检查收藏状态
   useEffect(() => {

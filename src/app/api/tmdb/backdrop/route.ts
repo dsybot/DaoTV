@@ -10,6 +10,61 @@ const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
 const TMDB_NETWORK_LOGO_URL = 'https://image.tmdb.org/t/p/h60';
 const TMDB_PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w300';
 
+// 清理标题，去掉季数后缀
+function cleanTitle(title: string): string[] {
+  const titles: string[] = [title];
+  // 去掉"第X季"后缀
+  const seasonMatch = title.match(/^(.+?)第[一二三四五六七八九十\d]+季$/);
+  if (seasonMatch) {
+    titles.push(seasonMatch[1]);
+  }
+  // 去掉"之XXX"后缀（如"诡事录之长安" -> "诡事录"）
+  const suffixMatch = title.match(/^(.+?)之.+$/);
+  if (suffixMatch && suffixMatch[1].length >= 2) {
+    titles.push(suffixMatch[1]);
+  }
+  return Array.from(new Set(titles));
+}
+
+// 通过IMDb ID查找TMDB
+async function findByImdbId(imdbId: string, apiKey: string, type: string): Promise<any> {
+  try {
+    const findUrl = `${TMDB_BASE_URL}/find/${imdbId}?api_key=${apiKey}&external_source=imdb_id`;
+    const response = await fetch(findUrl, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+    });
+    if (response.ok) {
+      const data = await response.json();
+      const results = type === 'movie' ? data.movie_results : data.tv_results;
+      if (results && results.length > 0) {
+        console.log(`[TMDB] 通过IMDb ID "${imdbId}" 找到: ${results[0].name || results[0].title}`);
+        return results[0];
+      }
+    }
+  } catch (e) {
+    console.error('[TMDB] IMDb查找失败:', e);
+  }
+  return null;
+}
+
+// 通过标题搜索TMDB
+async function searchByTitle(title: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
+  const searchType = type === 'movie' ? 'movie' : 'tv';
+  const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
+  const response = await fetch(searchUrl, {
+    headers: { 'Accept': 'application/json' },
+    cache: 'no-store',
+  });
+  if (response.ok) {
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      return data.results.find((r: any) => r.backdrop_path) || data.results[0];
+    }
+  }
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -18,6 +73,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'tv';
     const season = searchParams.get('season') || '1';
     const includeDetails = searchParams.get('details') === 'true';
+    const imdbId = searchParams.get('imdb_id') || '';
 
     if (!title) {
       return NextResponse.json({ error: '缺少标题参数' }, { status: 400 });
@@ -33,23 +89,35 @@ export async function GET(request: NextRequest) {
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
     const searchType = type === 'movie' ? 'movie' : 'tv';
 
-    // 搜索电影或电视剧
-    const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
-    const response = await fetch(searchUrl, {
-      headers: { 'Accept': 'application/json' },
-      next: { revalidate: 3600 },
-    });
+    let result: any = null;
 
-    if (!response.ok) {
-      return NextResponse.json({ error: 'TMDB API 请求失败' }, { status: response.status });
+    // 1. 优先通过IMDb ID精确匹配
+    if (imdbId) {
+      result = await findByImdbId(imdbId, apiKey, type);
     }
 
-    const data = await response.json();
+    // 2. 如果没有IMDb ID或匹配失败，通过标题搜索
+    if (!result) {
+      const titlesToTry = cleanTitle(title);
+      for (const t of titlesToTry) {
+        result = await searchByTitle(t, year, type, apiKey, language);
+        if (result) {
+          console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id})`);
+          break;
+        }
+        // 如果带年份搜索不到，尝试不带年份
+        if (year && !result) {
+          result = await searchByTitle(t, '', type, apiKey, language);
+          if (result) {
+            console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
+            break;
+          }
+        }
+      }
+    }
 
-    if (data.results && data.results.length > 0) {
-      const result = data.results.find((r: any) => r.backdrop_path) || data.results[0];
+    if (result) {
       const mediaId = result.id;
-      console.log(`[TMDB] 搜索 "${title}" 找到: ${result.name || result.title} (ID: ${mediaId}), 共 ${data.results.length} 个结果`);
 
       let backdrop = result.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${result.backdrop_path}` : null;
       let logo = null;
