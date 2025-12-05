@@ -93,6 +93,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     const decodedActive = decodeURIComponent(currentActive);
     const decodedItemHref = decodeURIComponent(href);
 
+    // 详情页和播放页不高亮任何导航项
+    if (decodedActive.startsWith('/detail') || decodedActive.startsWith('/play')) {
+      return false;
+    }
+
     return (
       decodedActive === decodedItemHref ||
       (decodedActive.startsWith('/douban') &&
