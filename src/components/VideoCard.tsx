@@ -759,17 +759,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 播放按钮 / 即将上映提示 */}
           {config.showPlayButton && (
             <div
-              data-button="true"
-              className='absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-in-out delay-75 group-hover:opacity-100 group-hover:scale-100'
+              className='absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-in-out delay-75 group-hover:opacity-100 group-hover:scale-100 pointer-events-none'
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
                 WebkitTouchCallout: 'none',
               } as React.CSSProperties}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                return false;
-              }}
             >
               {isUpcoming ? (
                 // 即将上映 - 显示敬请期待
@@ -780,9 +775,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               ) : (
                 // 正常内容 - 显示播放按钮（点击直接播放）
                 <PlayCircleIcon
+                  data-button="true"
                   size={50}
                   strokeWidth={0.8}
-                  className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1] cursor-pointer'
+                  className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1] cursor-pointer pointer-events-auto'
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
