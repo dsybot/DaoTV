@@ -28,12 +28,11 @@ interface ActorWork {
 }
 
 interface CastPhotosProps {
-  cast: string[];
-  tmdbCast?: TMDBCastItem[];  // 直接传入TMDB演员数据，避免重复搜索
+  tmdbCast?: TMDBCastItem[];  // TMDB演员数据
   onEnabledChange?: (enabled: boolean) => void;
 }
 
-export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhotosProps) {
+export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProps) {
   const [actors, setActors] = useState<ActorPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -64,51 +63,10 @@ export default function CastPhotos({ cast, tmdbCast, onEnabledChange }: CastPhot
         setEnabled(true);
         setActors(actorsWithPhoto);
         onEnabledChange?.(true);
-        setLoading(false);
       }
     }
+    setLoading(false);
   }, [tmdbCast, onEnabledChange]);
-
-  // 没有TMDB数据时，通过名字搜索（播放页等场景）
-  useEffect(() => {
-    // 如果已经有TMDB数据，不需要搜索
-    if (tmdbCast && tmdbCast.length > 0) {
-      return;
-    }
-
-    if (!cast || cast.length === 0) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchActorPhotos = async () => {
-      try {
-        const names = cast.slice(0, 20).join(',');
-        const response = await fetch(`/api/tmdb/cast-photos?names=${encodeURIComponent(names)}`, {
-          cache: 'no-store',
-        });
-        const data = await response.json();
-
-        if (data.enabled) {
-          const actorsWithPhoto = (data.actors || []).filter((actor: ActorPhoto) => actor.photo);
-          setEnabled(true);
-          setActors(actorsWithPhoto);
-          onEnabledChange?.(true);
-        } else {
-          setEnabled(false);
-          onEnabledChange?.(false);
-        }
-      } catch (error) {
-        console.error('获取演员图片失败:', error);
-        setEnabled(false);
-        onEnabledChange?.(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActorPhotos();
-  }, [cast, tmdbCast, onEnabledChange]);
 
   // 获取演员作品
   const fetchActorWorks = async (actorName: string, type: 'movie' | 'tv') => {

@@ -87,6 +87,8 @@ function PlayPageClient() {
 
   // TMDB演员图片功能是否启用
   const [tmdbCastEnabled, setTmdbCastEnabled] = useState(false);
+  // TMDB演员数据
+  const [tmdbCast, setTmdbCast] = useState<Array<{ id: number; name: string; photo: string | null }>>([]);
 
   // SkipController 相关状态
   const [isSkipSettingOpen, setIsSkipSettingOpen] = useState(false);
@@ -238,6 +240,26 @@ function PlayPageClient() {
 
     loadMovieDetails();
   }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails]);
+
+  // 获取TMDB演员数据
+  useEffect(() => {
+    const fetchTmdbCast = async () => {
+      if (!videoTitle || tmdbCast.length > 0) return;
+      try {
+        const type = searchType === 'movie' ? 'movie' : 'tv';
+        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&details=true`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.cast && data.cast.length > 0) {
+            setTmdbCast(data.cast);
+          }
+        }
+      } catch (error) {
+        console.error('获取TMDB演员数据失败:', error);
+      }
+    };
+    fetchTmdbCast();
+  }, [videoTitle, videoYear, searchType, tmdbCast.length]);
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {
@@ -5127,8 +5149,8 @@ function PlayPageClient() {
               )}
 
               {/* 主演图片（TMDB） */}
-              {movieDetails?.cast && movieDetails.cast.length > 0 && (
-                <CastPhotos cast={movieDetails.cast} onEnabledChange={setTmdbCastEnabled} />
+              {tmdbCast.length > 0 && (
+                <CastPhotos tmdbCast={tmdbCast} onEnabledChange={setTmdbCastEnabled} />
               )}
 
               {/* 网盘资源区域 */}

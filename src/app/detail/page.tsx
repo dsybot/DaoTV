@@ -461,8 +461,8 @@ function DetailPageClient() {
             )}
 
             {/* 主演照片和作品 */}
-            {(tmdbCast.length > 0 || cast.length > 0) && (
-              <CastPhotos cast={cast} tmdbCast={tmdbCast} />
+            {tmdbCast.length > 0 && (
+              <CastPhotos tmdbCast={tmdbCast} />
             )}
           </div>
         </div>
