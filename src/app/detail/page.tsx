@@ -171,13 +171,14 @@ function DetailPageClient() {
 
   return (
     <PageLayout>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        {/* 顶部背景区域 - 可滚动 */}
-        <div className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh]">
-          {/* 返回按钮 */}
+      {/* 使用负margin抵消PageLayout的顶部margin，让背景图从最顶部开始 */}
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24">
+        {/* 顶部背景区域 - 可滚动，高度包含被抵消的margin */}
+        <div className="relative w-full h-[calc(50vh+3rem)] sm:h-[calc(55vh+3rem)] md:h-[calc(60vh+6rem)]">
+          {/* 返回按钮 - 位置需要考虑被抵消的margin */}
           <button
             onClick={() => router.back()}
-            className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
+            className="absolute top-16 md:top-28 left-4 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
             aria-label="返回"
           >
             <ArrowLeft className="w-5 h-5" />
