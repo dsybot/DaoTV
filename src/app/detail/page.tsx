@@ -190,8 +190,8 @@ function DetailPageClient() {
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          {/* 内容区域 - 底部对齐 */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 md:px-8 lg:px-12 pb-6">
+          {/* 内容区域 - 垂直居中偏下 */}
+          <div className="absolute inset-0 flex items-center pt-16 md:pt-24 px-4 sm:px-6 md:px-8 lg:px-12">
             <div className="max-w-6xl mx-auto">
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end">
                 {/* 左侧：封面卡片和按钮 */}
@@ -249,7 +249,7 @@ function DetailPageClient() {
                     <img
                       src={logo}
                       alt={title}
-                      className="h-16 sm:h-20 md:h-28 max-w-full object-contain mb-3 drop-shadow-lg mx-auto md:mx-0"
+                      className="h-24 sm:h-32 md:h-40 max-w-full object-contain mb-4 drop-shadow-2xl"
                     />
                   ) : (
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">{title}</h1>
