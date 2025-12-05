@@ -353,25 +353,27 @@ function DetailPageClient() {
             {/* 剧集列表（仅电视剧） */}
             {stype !== 'movie' && episodes.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">剧集列表</h2>
-                {/* 分页切换 */}
-                <div className="flex items-center gap-1 mb-4 text-sm">
-                  {Array.from({ length: Math.ceil(episodes.length / 8) }, (_, i) => {
-                    const start = i * 8 + 1;
-                    const end = Math.min((i + 1) * 8, episodes.length);
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => setEpisodePage(i)}
-                        className={`px-2 py-1 rounded transition-colors ${episodePage === i
-                          ? 'text-white font-semibold'
-                          : 'text-gray-400 hover:text-gray-200'
-                          }`}
-                      >
-                        {start}-{end}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center gap-4 mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">剧集列表</h2>
+                  {/* 分页切换 */}
+                  <div className="flex items-center gap-1 text-sm">
+                    {Array.from({ length: Math.ceil(episodes.length / 20) }, (_, i) => {
+                      const start = i * 20 + 1;
+                      const end = Math.min((i + 1) * 20, episodes.length);
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setEpisodePage(i)}
+                          className={`px-2 py-1 rounded transition-colors ${episodePage === i
+                            ? 'text-white font-semibold'
+                            : 'text-gray-400 hover:text-gray-200'
+                            }`}
+                        >
+                          {start}-{end}
+                        </button>
+                      );
+                    })}
+                  </div>
                   {seasons.length > 1 && (
                     <select
                       value={currentSeason}
@@ -395,49 +397,51 @@ function DetailPageClient() {
                     <span>加载剧集信息...</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                    {episodes.slice(episodePage * 8, (episodePage + 1) * 8).map((ep) => (
-                      <div
-                        key={ep.episodeNumber}
-                        className="group cursor-pointer"
-                        onClick={() => {
-                          const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
-                          const stypeParam = stype ? `&stype=${stype}` : '';
-                          const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
-                          const episodeParam = `&episode=${ep.episodeNumber}`;
-                          if (source && id) {
-                            router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
-                          } else {
-                            router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
-                          }
-                        }}
-                      >
-                        <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-700">
-                          {ep.stillPath ? (
-                            <img src={ep.stillPath} alt={ep.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
-                              <span className="text-lg font-bold text-gray-500">E{ep.episodeNumber}</span>
+                  <div className="overflow-x-auto pb-2">
+                    <div className="flex gap-3" style={{ width: 'max-content' }}>
+                      {episodes.slice(episodePage * 20, (episodePage + 1) * 20).map((ep) => (
+                        <div
+                          key={ep.episodeNumber}
+                          className="group cursor-pointer flex-shrink-0 w-40 sm:w-44"
+                          onClick={() => {
+                            const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
+                            const stypeParam = stype ? `&stype=${stype}` : '';
+                            const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
+                            const episodeParam = `&episode=${ep.episodeNumber}`;
+                            if (source && id) {
+                              router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
+                            } else {
+                              router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
+                            }
+                          }}
+                        >
+                          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-700">
+                            {ep.stillPath ? (
+                              <img src={ep.stillPath} alt={ep.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                                <span className="text-lg font-bold text-gray-500">E{ep.episodeNumber}</span>
+                              </div>
+                            )}
+                            <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
+                              第 {ep.episodeNumber} 集
                             </div>
+                            {/* 播放按钮悬浮 */}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                                <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
+                              </div>
+                            </div>
+                          </div>
+                          <h3 className="mt-2 text-sm font-medium text-white line-clamp-1">
+                            {ep.name || `第${ep.episodeNumber}集`}
+                          </h3>
+                          {ep.overview && (
+                            <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
                           )}
-                          <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
-                            第 {ep.episodeNumber} 集
-                          </div>
-                          {/* 播放按钮悬浮 */}
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                              <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
-                            </div>
-                          </div>
                         </div>
-                        <h3 className="mt-2 text-sm font-medium text-white line-clamp-1">
-                          {ep.name || `第${ep.episodeNumber}集`}
-                        </h3>
-                        {ep.overview && (
-                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
