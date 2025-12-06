@@ -75,9 +75,9 @@ async function findByImdbId(imdbId: string, apiKey: string, type: string): Promi
 }
 
 // 通过标题搜索TMDB
-async function searchByTitle(title: string, year: string, type: string, apiKey: string, language: string, originalTitle?: string): Promise<any> {
+async function searchByTitle(searchQuery: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
   const searchType = type === 'movie' ? 'movie' : 'tv';
-  const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
+  const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(searchQuery)}${year ? `&year=${year}` : ''}`;
   const response = await fetch(searchUrl, {
     headers: { 'Accept': 'application/json' },
     cache: 'no-store',
@@ -85,15 +85,12 @@ async function searchByTitle(title: string, year: string, type: string, apiKey: 
   if (response.ok) {
     const data = await response.json();
     if (data.results && data.results.length > 0) {
-      // 用于匹配的标题（优先使用原始标题）
-      const matchTitle = originalTitle || title;
-
-      // 优先选择名字完全匹配的结果
+      // 优先选择名字与搜索关键词完全匹配的结果
       const exactMatch = data.results.find((r: any) =>
-        (r.name === matchTitle || r.title === matchTitle || r.original_name === matchTitle || r.original_title === matchTitle)
+        (r.name === searchQuery || r.title === searchQuery || r.original_name === searchQuery || r.original_title === searchQuery)
       );
       if (exactMatch) {
-        console.log(`[TMDB] 找到完全匹配: "${exactMatch.name || exactMatch.title}"`);
+        console.log(`[TMDB] 找到完全匹配: "${exactMatch.name || exactMatch.title}" (搜索: "${searchQuery}")`);
         return exactMatch;
       }
 
@@ -147,15 +144,15 @@ export async function GET(request: NextRequest) {
       const { titles: titlesToTry, seasonNumber } = cleanTitle(title);
       detectedSeason = seasonNumber; // 使用从标题中检测到的季数
       for (const t of titlesToTry) {
-        // 传入原始标题用于完全匹配判断
-        result = await searchByTitle(t, year, type, apiKey, language, title);
+        // 用当前搜索关键词匹配，优先选择名字完全一致的结果
+        result = await searchByTitle(t, year, type, apiKey, language);
         if (result) {
           console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
           break;
         }
         // 如果带年份搜索不到，尝试不带年份
         if (year && !result) {
-          result = await searchByTitle(t, '', type, apiKey, language, title);
+          result = await searchByTitle(t, '', type, apiKey, language);
           if (result) {
             console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
             break;
@@ -164,14 +161,14 @@ export async function GET(request: NextRequest) {
         // 如果指定类型搜索不到，尝试另一种类型
         if (!result) {
           const alternateType = type === 'movie' ? 'tv' : 'movie';
-          result = await searchByTitle(t, year, alternateType, apiKey, language, title);
+          result = await searchByTitle(t, year, alternateType, apiKey, language);
           if (result) {
             console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}) 找到: ${result.name || result.title} (ID: ${result.id})`);
             break;
           }
           // 不带年份再试一次
           if (year && !result) {
-            result = await searchByTitle(t, '', alternateType, apiKey, language, title);
+            result = await searchByTitle(t, '', alternateType, apiKey, language);
             if (result) {
               console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}, 无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
               break;
