@@ -10,31 +10,53 @@ const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
 const TMDB_NETWORK_LOGO_URL = 'https://image.tmdb.org/t/p/h60';
 const TMDB_PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w300';
 
+// 解析中文数字（支持一到九百九十九）
+function parseChineseNumber(str: string): number {
+  const digits: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+  const units: Record<string, number> = { '十': 10, '百': 100 };
+
+  let result = 0;
+  let temp = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (digits[char] !== undefined) {
+      temp = digits[char];
+    } else if (units[char] !== undefined) {
+      if (temp === 0 && char === '十') temp = 1; // 处理"十"开头的情况
+      result += temp * units[char];
+      temp = 0;
+    }
+  }
+  result += temp; // 加上最后的个位数
+
+  return result || 1;
+}
+
 // 清理标题，去掉季数后缀，返回标题列表和可能的季数
 function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
   const titles: string[] = [title];
   let seasonNumber = 1;
 
-  // 去掉"第X季"后缀
-  const seasonMatch = title.match(/^(.+?)第([一二三四五六七八九十]|\d+)季$/);
+  // 去掉"第X季"后缀（支持空格分隔，如"老大哥(美版) 第二十七季" -> "老大哥(美版)"）
+  const seasonMatch = title.match(/^(.+?)\s*第([零一二三四五六七八九十百]+|\d+)季$/);
   if (seasonMatch) {
-    titles.push(seasonMatch[1]);
+    titles.push(seasonMatch[1].trim());
     const seasonStr = seasonMatch[2];
-    const chineseNumbers: Record<string, number> = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10 };
-    seasonNumber = chineseNumbers[seasonStr] || parseInt(seasonStr) || 1;
+    seasonNumber = /^\d+$/.test(seasonStr) ? parseInt(seasonStr) : parseChineseNumber(seasonStr);
   }
 
   // 去掉数字后缀（如"喜人奇妙夜2" -> "喜人奇妙夜"）
   const numberMatch = title.match(/^(.+?)(\d+)$/);
   if (numberMatch && numberMatch[1].length >= 2) {
-    titles.push(numberMatch[1]);
+    titles.push(numberMatch[1].trim());
     seasonNumber = parseInt(numberMatch[2]) || 1;
   }
 
   // 去掉"之XXX"后缀（如"诡事录之长安" -> "诡事录"）
   const suffixMatch = title.match(/^(.+?)之.+$/);
   if (suffixMatch && suffixMatch[1].length >= 2) {
-    titles.push(suffixMatch[1]);
+    titles.push(suffixMatch[1].trim());
   }
 
   // 去掉冒号后的内容（如"出差十五夜: STARSHIP秋季郊游会2" -> "出差十五夜"，"大逃脱：故事模式" -> "大逃脱"）
