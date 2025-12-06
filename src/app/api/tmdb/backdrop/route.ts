@@ -37,6 +37,18 @@ function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
     titles.push(suffixMatch[1]);
   }
 
+  // 去掉冒号后的内容（如"出差十五夜: STARSHIP秋季郊游会2" -> "出差十五夜"，"大逃脱：故事模式" -> "大逃脱"）
+  const colonMatch = title.match(/^(.+?)[：:].+$/);
+  if (colonMatch && colonMatch[1].length >= 2) {
+    titles.push(colonMatch[1].trim());
+  }
+
+  // 去掉中间点后的内容（如"初入职场·中医季" -> "初入职场"）
+  const dotMatch = title.match(/^(.+?)[·•].+$/);
+  if (dotMatch && dotMatch[1].length >= 2) {
+    titles.push(dotMatch[1].trim());
+  }
+
   return { titles: Array.from(new Set(titles)), seasonNumber };
 }
 
@@ -63,7 +75,7 @@ async function findByImdbId(imdbId: string, apiKey: string, type: string): Promi
 }
 
 // 通过标题搜索TMDB
-async function searchByTitle(title: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
+async function searchByTitle(title: string, year: string, type: string, apiKey: string, language: string, originalTitle?: string): Promise<any> {
   const searchType = type === 'movie' ? 'movie' : 'tv';
   const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
   const response = await fetch(searchUrl, {
@@ -73,7 +85,26 @@ async function searchByTitle(title: string, year: string, type: string, apiKey: 
   if (response.ok) {
     const data = await response.json();
     if (data.results && data.results.length > 0) {
-      return data.results.find((r: any) => r.backdrop_path) || data.results[0];
+      // 用于匹配的标题（优先使用原始标题）
+      const matchTitle = originalTitle || title;
+
+      // 优先选择名字完全匹配的结果
+      const exactMatch = data.results.find((r: any) =>
+        (r.name === matchTitle || r.title === matchTitle || r.original_name === matchTitle || r.original_title === matchTitle)
+      );
+      if (exactMatch) {
+        console.log(`[TMDB] 找到完全匹配: "${exactMatch.name || exactMatch.title}"`);
+        return exactMatch;
+      }
+
+      // 其次选择有背景图的结果
+      const withBackdrop = data.results.find((r: any) => r.backdrop_path);
+      if (withBackdrop) {
+        return withBackdrop;
+      }
+
+      // 最后返回第一个结果
+      return data.results[0];
     }
   }
   return null;
@@ -116,14 +147,15 @@ export async function GET(request: NextRequest) {
       const { titles: titlesToTry, seasonNumber } = cleanTitle(title);
       detectedSeason = seasonNumber; // 使用从标题中检测到的季数
       for (const t of titlesToTry) {
-        result = await searchByTitle(t, year, type, apiKey, language);
+        // 传入原始标题用于完全匹配判断
+        result = await searchByTitle(t, year, type, apiKey, language, title);
         if (result) {
           console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
           break;
         }
         // 如果带年份搜索不到，尝试不带年份
         if (year && !result) {
-          result = await searchByTitle(t, '', type, apiKey, language);
+          result = await searchByTitle(t, '', type, apiKey, language, title);
           if (result) {
             console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
             break;
@@ -132,14 +164,14 @@ export async function GET(request: NextRequest) {
         // 如果指定类型搜索不到，尝试另一种类型
         if (!result) {
           const alternateType = type === 'movie' ? 'tv' : 'movie';
-          result = await searchByTitle(t, year, alternateType, apiKey, language);
+          result = await searchByTitle(t, year, alternateType, apiKey, language, title);
           if (result) {
             console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}) 找到: ${result.name || result.title} (ID: ${result.id})`);
             break;
           }
           // 不带年份再试一次
           if (year && !result) {
-            result = await searchByTitle(t, '', alternateType, apiKey, language);
+            result = await searchByTitle(t, '', alternateType, apiKey, language, title);
             if (result) {
               console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}, 无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
               break;
