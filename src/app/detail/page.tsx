@@ -487,112 +487,118 @@ function DetailPageClient() {
             )}
 
             {/* 剧集列表（仅电视剧） */}
-            {stype !== 'movie' && episodes.length > 0 && (
-              <div>
-                <div className="flex items-center gap-4 mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">剧集列表</h2>
-                  {/* 分页切换 */}
-                  <div className="flex items-center gap-1 text-sm">
-                    {Array.from({ length: Math.ceil(episodes.length / 20) }, (_, i) => {
-                      const start = i * 20 + 1;
-                      const end = Math.min((i + 1) * 20, episodes.length);
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => setEpisodePage(i)}
-                          className={`px-2 py-1 rounded transition-colors ${episodePage === i
-                            ? 'text-gray-900 dark:text-white font-semibold'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                            }`}
-                        >
-                          {start}-{end}
-                        </button>
-                      );
-                    })}
+            {stype !== 'movie' && episodes.length > 0 && (() => {
+              // 集数超过200时每页50集，否则每页20集
+              const pageSize = episodes.length > 200 ? 50 : 20;
+              return (
+                <div>
+                  <div className="flex items-center gap-4 mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">剧集列表</h2>
+                    {/* 分页切换 - 加滚动条 */}
+                    <div className="flex-1 overflow-x-auto">
+                      <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+                        {Array.from({ length: Math.ceil(episodes.length / pageSize) }, (_, i) => {
+                          const start = i * pageSize + 1;
+                          const end = Math.min((i + 1) * pageSize, episodes.length);
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => setEpisodePage(i)}
+                              className={`px-2 py-1 rounded transition-colors ${episodePage === i
+                                ? 'text-gray-900 dark:text-white font-semibold'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                }`}
+                            >
+                              {start}-{end}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {seasons.length > 1 && (
+                      <SeasonSelector
+                        seasons={seasons}
+                        currentSeason={currentSeason}
+                        onChange={(season) => {
+                          setCurrentSeason(season);
+                          setEpisodePage(0);
+                        }}
+                      />
+                    )}
                   </div>
-                  {seasons.length > 1 && (
-                    <SeasonSelector
-                      seasons={seasons}
-                      currentSeason={currentSeason}
-                      onChange={(season) => {
-                        setCurrentSeason(season);
-                        setEpisodePage(0);
-                      }}
-                    />
+                  {tmdbLoading ? (
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                      <span>加载剧集信息...</span>
+                    </div>
+                  ) : (
+                    <div className="episode-list overflow-x-auto pb-2">
+                      <div className="flex gap-3" style={{ width: 'max-content' }}>
+                        {episodes.slice(episodePage * pageSize, (episodePage + 1) * pageSize).map((ep) => (
+                          <div
+                            key={ep.episodeNumber}
+                            className="group cursor-pointer flex-shrink-0 w-40 sm:w-44"
+                            onClick={() => {
+                              const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
+                              const stypeParam = stype ? `&stype=${stype}` : '';
+                              const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
+                              const episodeParam = `&episode=${ep.episodeNumber}`;
+                              if (source && id) {
+                                router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
+                              } else {
+                                router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
+                              }
+                            }}
+                          >
+                            <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
+                              {ep.stillPath && (episodeRetry[ep.episodeNumber] || 0) < 3 ? (
+                                <img
+                                  key={`ep-${ep.episodeNumber}-${episodeRetry[ep.episodeNumber] || 0}`}
+                                  src={`${ep.stillPath}${(episodeRetry[ep.episodeNumber] || 0) > 0 ? `?retry=${episodeRetry[ep.episodeNumber]}` : ''}`}
+                                  alt={ep.name}
+                                  className="w-full h-full object-cover"
+                                  onError={() => {
+                                    // 最多重试3次
+                                    const currentRetry = episodeRetry[ep.episodeNumber] || 0;
+                                    if (currentRetry < 3) {
+                                      setTimeout(() => {
+                                        setEpisodeRetry(prev => ({
+                                          ...prev,
+                                          [ep.episodeNumber]: currentRetry + 1
+                                        }));
+                                      }, 1000);
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
+                                  <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
+                                </div>
+                              )}
+                              <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
+                                第 {ep.episodeNumber} 集
+                              </div>
+                              {/* 播放按钮悬浮 */}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                                  <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
+                                </div>
+                              </div>
+                            </div>
+                            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                              {ep.name || `第${ep.episodeNumber}集`}
+                            </h3>
+                            {ep.overview && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
-                {tmdbLoading ? (
-                  <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-                    <span>加载剧集信息...</span>
-                  </div>
-                ) : (
-                  <div className="episode-list overflow-x-auto pb-2">
-                    <div className="flex gap-3" style={{ width: 'max-content' }}>
-                      {episodes.slice(episodePage * 20, (episodePage + 1) * 20).map((ep) => (
-                        <div
-                          key={ep.episodeNumber}
-                          className="group cursor-pointer flex-shrink-0 w-40 sm:w-44"
-                          onClick={() => {
-                            const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
-                            const stypeParam = stype ? `&stype=${stype}` : '';
-                            const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
-                            const episodeParam = `&episode=${ep.episodeNumber}`;
-                            if (source && id) {
-                              router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
-                            } else {
-                              router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
-                            }
-                          }}
-                        >
-                          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
-                            {ep.stillPath && (episodeRetry[ep.episodeNumber] || 0) < 3 ? (
-                              <img
-                                key={`ep-${ep.episodeNumber}-${episodeRetry[ep.episodeNumber] || 0}`}
-                                src={`${ep.stillPath}${(episodeRetry[ep.episodeNumber] || 0) > 0 ? `?retry=${episodeRetry[ep.episodeNumber]}` : ''}`}
-                                alt={ep.name}
-                                className="w-full h-full object-cover"
-                                onError={() => {
-                                  // 最多重试3次
-                                  const currentRetry = episodeRetry[ep.episodeNumber] || 0;
-                                  if (currentRetry < 3) {
-                                    setTimeout(() => {
-                                      setEpisodeRetry(prev => ({
-                                        ...prev,
-                                        [ep.episodeNumber]: currentRetry + 1
-                                      }));
-                                    }, 1000);
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
-                                <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
-                              </div>
-                            )}
-                            <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
-                              第 {ep.episodeNumber} 集
-                            </div>
-                            {/* 播放按钮悬浮 */}
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                                <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
-                              </div>
-                            </div>
-                          </div>
-                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                            {ep.name || `第${ep.episodeNumber}集`}
-                          </h3>
-                          {ep.overview && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* 主演照片和作品 */}
             {tmdbCast.length > 0 && (
