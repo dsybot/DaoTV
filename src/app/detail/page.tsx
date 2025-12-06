@@ -423,16 +423,16 @@ function DetailPageClient() {
                 <div className="flex-1 w-full text-white pb-2">
                   {/* 标题 - 优先使用Logo图片，水平居中 */}
                   <div className="flex justify-center items-center mb-4 min-h-[6rem] sm:min-h-[8rem] md:min-h-[10rem]">
-                    {logo && logoRetry < 3 ? (
+                    {logo && logoRetry < 5 ? (
                       <img
                         key={`logo-${logoRetry}`}
                         src={`${logo}${logoRetry > 0 ? `?retry=${logoRetry}` : ''}`}
                         alt={title}
                         className="h-24 sm:h-32 md:h-40 max-w-full object-contain drop-shadow-2xl"
                         onError={() => {
-                          // 最多重试3次
-                          if (logoRetry < 3) {
-                            setTimeout(() => setLogoRetry(prev => prev + 1), 1000);
+                          // 最多重试5次，间隔递增
+                          if (logoRetry < 5) {
+                            setTimeout(() => setLogoRetry(prev => prev + 1), 1000 * (logoRetry + 1));
                           }
                         }}
                       />
@@ -551,22 +551,22 @@ function DetailPageClient() {
                             }}
                           >
                             <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
-                              {ep.stillPath && (episodeRetry[ep.episodeNumber] || 0) < 3 ? (
+                              {ep.stillPath && (episodeRetry[ep.episodeNumber] || 0) < 5 ? (
                                 <img
                                   key={`ep-${ep.episodeNumber}-${episodeRetry[ep.episodeNumber] || 0}`}
                                   src={`${ep.stillPath}${(episodeRetry[ep.episodeNumber] || 0) > 0 ? `?retry=${episodeRetry[ep.episodeNumber]}` : ''}`}
                                   alt={ep.name}
                                   className="w-full h-full object-cover"
                                   onError={() => {
-                                    // 最多重试3次
+                                    // 最多重试5次，间隔递增
                                     const currentRetry = episodeRetry[ep.episodeNumber] || 0;
-                                    if (currentRetry < 3) {
+                                    if (currentRetry < 5) {
                                       setTimeout(() => {
                                         setEpisodeRetry(prev => ({
                                           ...prev,
                                           [ep.episodeNumber]: currentRetry + 1
                                         }));
-                                      }, 1000);
+                                      }, 1000 * (currentRetry + 1));
                                     }
                                   }}
                                 />
