@@ -71,6 +71,12 @@ function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
     titles.push(dotMatch[1].trim());
   }
 
+  // 去掉语言版本后缀（如"名侦探柯南 国语版" -> "名侦探柯南"）
+  const langMatch = title.match(/^(.+?)\s*(国语版|粤语版|日语版|英语版|中文版|原声版|配音版)$/);
+  if (langMatch && langMatch[1].length >= 2) {
+    titles.push(langMatch[1].trim());
+  }
+
   return { titles: Array.from(new Set(titles)), seasonNumber };
 }
 
