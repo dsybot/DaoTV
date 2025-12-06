@@ -208,8 +208,8 @@ function DetailPageClient() {
   // 获取TMDB数据（等待豆瓣详情加载完成后再请求，以获取准确的 IMDb ID 和类型）
   useEffect(() => {
     const fetchData = async () => {
-      // 如果有豆瓣ID但豆瓣详情还没加载完，等待
-      if (doubanId > 0 && !movieDetails) {
+      // 如果有豆瓣ID且正在加载豆瓣详情，等待加载完成
+      if (doubanId > 0 && loading) {
         return;
       }
 
@@ -237,7 +237,7 @@ function DetailPageClient() {
       }
     };
     fetchData();
-  }, [title, year, stype, currentSeason, doubanId, movieDetails]);
+  }, [title, year, stype, currentSeason, doubanId, loading, movieDetails]);
 
   // 检查收藏状态
   useEffect(() => {
