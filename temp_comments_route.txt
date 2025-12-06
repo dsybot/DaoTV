@@ -1,0 +1,205 @@
+﻿import { NextResponse } from 'next/server';
+
+import { getCacheTime } from '@/lib/config';
+
+// 鐢ㄦ埛浠ｇ悊姹?const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+];
+
+// 璇锋眰闄愬埗鍣?let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 2000; // 2绉掓渶灏忛棿闅?
+function getRandomUserAgent(): string {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+function randomDelay(min = 1000, max = 3000): Promise<void> {
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+export const runtime = 'nodejs';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const start = parseInt(searchParams.get('start') || '0');
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const sort = searchParams.get('sort') || 'new_score'; // new_score 鎴?time
+
+  if (!id) {
+    return NextResponse.json(
+      { error: '缂哄皯蹇呰鍙傛暟: id' },
+      { status: 400 }
+    );
+  }
+
+  // 楠岃瘉鍙傛暟
+  if (limit < 1 || limit > 50) {
+    return NextResponse.json(
+      { error: 'limit 蹇呴』鍦?1-50 涔嬮棿' },
+      { status: 400 }
+    );
+  }
+
+  if (start < 0) {
+    return NextResponse.json(
+      { error: 'start 涓嶈兘灏忎簬 0' },
+      { status: 400 }
+    );
+  }
+
+  const target = `https://movie.douban.com/subject/${id}/comments?start=${start}&limit=${limit}&status=P&sort=${sort}`;
+
+  try {
+    // 璇锋眰闄愭祦锛氱‘淇濊姹傞棿闅?    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+      await new Promise(resolve =>
+        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+      );
+    }
+    lastRequestTime = Date.now();
+
+    // 娣诲姞闅忔満寤舵椂
+    await randomDelay(500, 1500);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const fetchOptions = {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Cache-Control': 'max-age=0',
+        // 闅忔満娣诲姞Referer
+        ...(Math.random() > 0.5 ? { 'Referer': 'https://movie.douban.com/' } : {}),
+      },
+    };
+
+    const response = await fetch(target, fetchOptions);
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const html = await response.text();
+
+    // 瑙ｆ瀽鐭瘎鍒楄〃
+    const comments = parseDoubanComments(html);
+
+    const cacheTime = await getCacheTime();
+    return NextResponse.json({
+      code: 200,
+      message: '鑾峰彇鎴愬姛',
+      data: {
+        comments,
+        start,
+        limit,
+        count: comments.length
+      }
+    }, {
+      headers: {
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+        'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Netlify-Vary': 'query',
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: '鑾峰彇璞嗙摚鐭瘎澶辫触', details: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
+
+interface DoubanComment {
+  username: string;
+  user_id: string;
+  avatar: string;
+  rating: number; // 0-5, 0琛ㄧず鏈瘎鍒?  time: string;
+  location: string;
+  content: string;
+  useful_count: number;
+}
+
+function parseDoubanComments(html: string): DoubanComment[] {
+  const comments: DoubanComment[] = [];
+
+  try {
+    // 鍖归厤鎵€鏈?comment-item (鍖呭惈 data-cid 灞炴€?
+    const commentItemRegex = /<div class="comment-item"[^>]*>([\s\S]*?)(?=<div class="comment-item"|<div id="paginator"|$)/g;
+    let match;
+
+    while ((match = commentItemRegex.exec(html)) !== null) {
+      try {
+        const item = match[0];
+
+        // 鎻愬彇鐢ㄦ埛淇℃伅 - 鍦?comment-info 涓?        const userLinkMatch = item.match(/<span class="comment-info">[\s\S]*?<a href="https:\/\/www\.douban\.com\/people\/([^/]+)\/">([^<]+)<\/a>/);
+        const username = userLinkMatch ? userLinkMatch[2].trim() : '';
+        const user_id = userLinkMatch ? userLinkMatch[1] : '';
+
+        // 鎻愬彇澶村儚 - 鍦?avatar div 涓?        const avatarMatch = item.match(/<div class="avatar">[\s\S]*?<img src="([^"]+)"/);
+        const avatar = avatarMatch ? avatarMatch[1].replace(/^http:/, 'https:') : '';
+
+        // 鎻愬彇璇勫垎 (allstar50 琛ㄧず5鏄? allstar40 琛ㄧず4鏄? allstar30 琛ㄧず3鏄?
+        const ratingMatch = item.match(/<span class="allstar(\d)0 rating"/);
+        const rating = ratingMatch ? parseInt(ratingMatch[1]) : 0;
+
+        // 鎻愬彇鏃堕棿
+        const timeMatch = item.match(/<span class="comment-time"[^>]*title="([^"]+)"/);
+        const time = timeMatch ? timeMatch[1] : '';
+
+        // 鎻愬彇鍦扮偣
+        const locationMatch = item.match(/<span class="comment-location">([^<]+)<\/span>/);
+        const location = locationMatch ? locationMatch[1].trim() : '';
+
+        // 鎻愬彇鐭瘎鍐呭
+        const contentMatch = item.match(/<span class="short">([\s\S]*?)<\/span>/);
+        let content = '';
+        if (contentMatch) {
+          content = contentMatch[1]
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .trim();
+        }
+
+        // 鎻愬彇鏈夌敤鏁?        const usefulMatch = item.match(/<span class="votes vote-count">(\d+)<\/span>/);
+        const useful_count = usefulMatch ? parseInt(usefulMatch[1]) : 0;
+
+        // 鍙坊鍔犳湁鏁堢殑鐭瘎
+        if (username && content) {
+          comments.push({
+            username,
+            user_id,
+            avatar,
+            rating,
+            time,
+            location,
+            content,
+            useful_count
+          });
+        }
+      } catch (e) {
+        // 璺宠繃瑙ｆ瀽澶辫触鐨勫崟鏉¤瘎璁?        console.warn('瑙ｆ瀽鍗曟潯璇勮澶辫触:', e);
+      }
+    }
+
+    return comments;
+  } catch (error) {
+    console.error('瑙ｆ瀽璞嗙摚鐭瘎澶辫触:', error);
+    return [];
+  }
+}
