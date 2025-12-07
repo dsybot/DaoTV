@@ -5222,6 +5222,24 @@ function PlayPageClient() {
                     <div className='flex gap-4' style={{ width: 'max-content' }}>
                       {movieDetails.recommendations.map((item: any) => {
                         const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
+                        const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
+
+                        // 检查是否点击了播放按钮
+                        const isPlayButton = (target: EventTarget | null): boolean => {
+                          if (!target || !(target instanceof Element)) return false;
+                          // 检查是否是播放按钮或其子元素
+                          const playButton = (target as Element).closest('[data-play-button]') ||
+                            (target as Element).closest('.play-button') ||
+                            (target as Element).closest('button');
+                          if (playButton) {
+                            // 检查按钮是否包含播放图标或播放文字
+                            const hasPlayIcon = playButton.querySelector('svg') !== null;
+                            const hasPlayText = playButton.textContent?.includes('播放') || false;
+                            return hasPlayIcon || hasPlayText;
+                          }
+                          return false;
+                        };
+
                         return (
                           <div
                             key={item.id}
@@ -5266,18 +5284,24 @@ function PlayPageClient() {
                                     return;
                                   }
 
+                                  // 检查是否点击了播放按钮
+                                  const targetUrl = isPlayButton(e.target) ? playUrl : detailUrl;
+
                                   // 否则是短按，执行跳转
                                   e.preventDefault();
                                   e.stopPropagation();
                                   e.stopImmediatePropagation();
-                                  window.location.href = detailUrl;
+                                  window.location.href = targetUrl;
                                 };
 
                                 const clickHandler = (e: Event) => {
+                                  // 检查是否点击了播放按钮
+                                  const targetUrl = isPlayButton(e.target) ? playUrl : detailUrl;
+
                                   e.preventDefault();
                                   e.stopPropagation();
                                   e.stopImmediatePropagation();
-                                  window.location.href = detailUrl;
+                                  window.location.href = targetUrl;
                                 };
 
                                 node.addEventListener('touchstart', touchStartHandler, true);
