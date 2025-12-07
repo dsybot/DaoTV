@@ -2247,6 +2247,37 @@ function PlayPageClient() {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
         // 设置可用源列表（即使只有短剧源本身）
         setAvailableSources(sourcesInfo);
+      } else if (shortdramaId && !currentSource && !currentId) {
+        // 🚀 如果有 shortdrama_id 但没有指定源，优先使用短剧源立即进入播放
+        // 同时后台搜索其他源
+        console.log('优先使用短剧源，同时后台搜索其他源');
+
+        // 先获取短剧详情
+        const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
+        if (shortdramaSource.length > 0) {
+          sourcesInfo = shortdramaSource;
+          setAvailableSources(sourcesInfo);
+
+          // 后台异步搜索其他源（不阻塞播放）
+          fetchSourcesData(searchTitle || videoTitle).then((otherSources) => {
+            if (otherSources.length > 0) {
+              // 合并短剧源和其他源，短剧源放在前面
+              const merged = [...shortdramaSource];
+              otherSources.forEach((s) => {
+                if (!merged.some((m) => m.source === s.source && m.id === s.id)) {
+                  merged.push(s);
+                }
+              });
+              setAvailableSources(merged);
+              console.log(`后台搜索完成，共找到 ${merged.length} 个可用源`);
+            }
+          }).catch((err) => {
+            console.error('后台搜索其他源失败:', err);
+          });
+        } else {
+          // 短剧源获取失败，回退到普通搜索
+          sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+        }
       } else {
         // 其他情况先搜索所有视频源
         sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
@@ -2262,7 +2293,6 @@ function PlayPageClient() {
         }
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
-        // 即使已经有其他源，也尝试添加短剧源到换源列表中
         if (shortdramaId) {
           try {
             const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
