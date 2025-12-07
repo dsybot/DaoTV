@@ -5218,93 +5218,96 @@ function PlayPageClient() {
                     <span>💡</span>
                     <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
                   </h3>
-                  <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-                    {movieDetails.recommendations.map((item: any) => {
-                      const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
-                      return (
-                        <div
-                          key={item.id}
-                          ref={(node) => {
-                            if (node) {
-                              // 移除旧的监听器
-                              const oldClick = (node as any)._clickHandler;
-                              const oldTouchStart = (node as any)._touchStartHandler;
-                              const oldTouchEnd = (node as any)._touchEndHandler;
-                              if (oldClick) node.removeEventListener('click', oldClick, true);
-                              if (oldTouchStart) node.removeEventListener('touchstart', oldTouchStart, true);
-                              if (oldTouchEnd) node.removeEventListener('touchend', oldTouchEnd, true);
+                  <div className='overflow-x-auto pb-2 scrollbar-hide'>
+                    <div className='flex gap-4' style={{ width: 'max-content' }}>
+                      {movieDetails.recommendations.map((item: any) => {
+                        const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
+                        return (
+                          <div
+                            key={item.id}
+                            className='flex-shrink-0 w-32 sm:w-36 md:w-40'
+                            ref={(node) => {
+                              if (node) {
+                                // 移除旧的监听器
+                                const oldClick = (node as any)._clickHandler;
+                                const oldTouchStart = (node as any)._touchStartHandler;
+                                const oldTouchEnd = (node as any)._touchEndHandler;
+                                if (oldClick) node.removeEventListener('click', oldClick, true);
+                                if (oldTouchStart) node.removeEventListener('touchstart', oldTouchStart, true);
+                                if (oldTouchEnd) node.removeEventListener('touchend', oldTouchEnd, true);
 
-                              // 长按检测
-                              let touchStartTime = 0;
-                              let isLongPress = false;
-                              let longPressTimer: NodeJS.Timeout | null = null;
+                                // 长按检测
+                                let touchStartTime = 0;
+                                let isLongPress = false;
+                                let longPressTimer: NodeJS.Timeout | null = null;
 
-                              const touchStartHandler = (e: Event) => {
-                                touchStartTime = Date.now();
-                                isLongPress = false;
+                                const touchStartHandler = (e: Event) => {
+                                  touchStartTime = Date.now();
+                                  isLongPress = false;
 
-                                // 设置长按定时器（500ms）
-                                longPressTimer = setTimeout(() => {
-                                  isLongPress = true;
-                                }, 500);
-                              };
+                                  // 设置长按定时器（500ms）
+                                  longPressTimer = setTimeout(() => {
+                                    isLongPress = true;
+                                  }, 500);
+                                };
 
-                              const touchEndHandler = (e: Event) => {
-                                // 清除长按定时器
-                                if (longPressTimer) {
-                                  clearTimeout(longPressTimer);
-                                  longPressTimer = null;
-                                }
+                                const touchEndHandler = (e: Event) => {
+                                  // 清除长按定时器
+                                  if (longPressTimer) {
+                                    clearTimeout(longPressTimer);
+                                    longPressTimer = null;
+                                  }
 
-                                const touchDuration = Date.now() - touchStartTime;
+                                  const touchDuration = Date.now() - touchStartTime;
 
-                                // 如果是长按（超过500ms）或已标记为长按，不跳转
-                                if (isLongPress || touchDuration >= 500) {
-                                  // 让 VideoCard 的长按菜单正常工作
-                                  return;
-                                }
+                                  // 如果是长按（超过500ms）或已标记为长按，不跳转
+                                  if (isLongPress || touchDuration >= 500) {
+                                    // 让 VideoCard 的长按菜单正常工作
+                                    return;
+                                  }
 
-                                // 否则是短按，执行跳转
-                                e.preventDefault();
-                                e.stopPropagation();
-                                e.stopImmediatePropagation();
-                                window.location.href = detailUrl;
-                              };
+                                  // 否则是短按，执行跳转
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.stopImmediatePropagation();
+                                  window.location.href = detailUrl;
+                                };
 
-                              const clickHandler = (e: Event) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                e.stopImmediatePropagation();
-                                window.location.href = detailUrl;
-                              };
+                                const clickHandler = (e: Event) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.stopImmediatePropagation();
+                                  window.location.href = detailUrl;
+                                };
 
-                              node.addEventListener('touchstart', touchStartHandler, true);
-                              node.addEventListener('touchend', touchEndHandler, true);
-                              node.addEventListener('click', clickHandler, true);
+                                node.addEventListener('touchstart', touchStartHandler, true);
+                                node.addEventListener('touchend', touchEndHandler, true);
+                                node.addEventListener('click', clickHandler, true);
 
-                              // 保存引用以便清理
-                              (node as any)._touchStartHandler = touchStartHandler;
-                              (node as any)._touchEndHandler = touchEndHandler;
-                              (node as any)._clickHandler = clickHandler;
-                            }
-                          }}
-                          style={{
-                            WebkitTapHighlightColor: 'transparent',
-                            touchAction: 'manipulation'
-                          }}
-                        >
-                          <VideoCard
-                            id={item.id}
-                            title={item.title}
-                            poster={item.poster}
-                            rate={item.rate}
-                            douban_id={parseInt(item.id)}
-                            from='douban'
-                            isAggregate={true}
-                          />
-                        </div>
-                      );
-                    })}
+                                // 保存引用以便清理
+                                (node as any)._touchStartHandler = touchStartHandler;
+                                (node as any)._touchEndHandler = touchEndHandler;
+                                (node as any)._clickHandler = clickHandler;
+                              }
+                            }}
+                            style={{
+                              WebkitTapHighlightColor: 'transparent',
+                              touchAction: 'manipulation'
+                            }}
+                          >
+                            <VideoCard
+                              id={item.id}
+                              title={item.title}
+                              poster={item.poster}
+                              rate={item.rate}
+                              douban_id={parseInt(item.id)}
+                              from='douban'
+                              isAggregate={true}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
