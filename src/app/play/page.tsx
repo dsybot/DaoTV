@@ -5224,18 +5224,18 @@ function PlayPageClient() {
                         const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
                         const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
 
-                        // 检查是否点击了播放按钮
+                        // 检查是否点击了播放按钮（PlayCircleIcon 有 data-button="true" 属性）
                         const isPlayButton = (target: EventTarget | null): boolean => {
                           if (!target || !(target instanceof Element)) return false;
-                          // 检查是否是播放按钮或其子元素
-                          const playButton = (target as Element).closest('[data-play-button]') ||
-                            (target as Element).closest('.play-button') ||
-                            (target as Element).closest('button');
-                          if (playButton) {
-                            // 检查按钮是否包含播放图标或播放文字
-                            const hasPlayIcon = playButton.querySelector('svg') !== null;
-                            const hasPlayText = playButton.textContent?.includes('播放') || false;
-                            return hasPlayIcon || hasPlayText;
+                          const el = target as Element;
+                          // 检查元素本身或其父元素是否有 data-button 属性（播放按钮标记）
+                          // PlayCircleIcon 是 SVG 元素，有 data-button="true"
+                          if (el.hasAttribute('data-button') || el.closest('[data-button="true"]')) {
+                            // 确保是播放图标（SVG）而不是其他按钮
+                            const svg = el.tagName === 'svg' ? el : el.closest('svg');
+                            if (svg && svg.hasAttribute('data-button')) {
+                              return true;
+                            }
                           }
                           return false;
                         };
