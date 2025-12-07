@@ -5218,7 +5218,7 @@ function PlayPageClient() {
                     <span>💡</span>
                     <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
                   </h3>
-                  <div className='overflow-x-auto pb-2 scrollbar-hide'>
+                  <div className='overflow-x-auto pb-2'>
                     <div className='flex gap-4' style={{ width: 'max-content' }}>
                       {movieDetails.recommendations.map((item: any) => {
                         const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
