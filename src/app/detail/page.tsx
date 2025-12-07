@@ -166,6 +166,44 @@ function DetailPageClient() {
   const stitle = searchParams.get('stitle') || '';
   const sourceName = searchParams.get('source_name') || '';
 
+  // 从标题中解析季数
+  const parseSeasonFromTitle = (t: string): number => {
+    // 解析中文数字
+    const parseChineseNumber = (str: string): number => {
+      const digits: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+      const units: Record<string, number> = { '十': 10, '百': 100 };
+      let result = 0;
+      let temp = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (digits[char] !== undefined) {
+          temp = digits[char];
+        } else if (units[char] !== undefined) {
+          if (temp === 0 && char === '十') temp = 1;
+          result += temp * units[char];
+          temp = 0;
+        }
+      }
+      result += temp;
+      return result || 1;
+    };
+
+    // 匹配"第X季"
+    const seasonMatch = t.match(/第([零一二三四五六七八九十百]+|\d+)季/);
+    if (seasonMatch) {
+      const seasonStr = seasonMatch[1];
+      return /^\d+$/.test(seasonStr) ? parseInt(seasonStr) : parseChineseNumber(seasonStr);
+    }
+    // 匹配数字后缀（如"喜人奇妙夜2"）
+    const numberMatch = t.match(/(\d+)$/);
+    if (numberMatch) {
+      return parseInt(numberMatch[1]) || 1;
+    }
+    return 1;
+  };
+
+  const initialSeason = parseSeasonFromTitle(title);
+
   // 状态
   const [backdrop, setBackdrop] = useState<string | null>(null);
   const [logo, setLogo] = useState<string | null>(null);
@@ -173,7 +211,7 @@ function DetailPageClient() {
   const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
   const [tmdbCast, setTmdbCast] = useState<TMDBCast[]>([]);
-  const [currentSeason, setCurrentSeason] = useState(1);
+  const [currentSeason, setCurrentSeason] = useState(initialSeason);
   const [episodePage, setEpisodePage] = useState(0);
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
