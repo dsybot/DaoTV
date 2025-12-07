@@ -30,6 +30,7 @@ import EpisodeSelector from '@/components/EpisodeSelector';
 import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import PageLayout from '@/components/PageLayout';
 import SkipController from '@/components/SkipController';
+import VideoCard from '@/components/VideoCard';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
@@ -5208,6 +5209,104 @@ function PlayPageClient() {
               {/* 主演图片（TMDB） */}
               {tmdbCast.length > 0 && (
                 <CastPhotos tmdbCast={tmdbCast} onEnabledChange={setTmdbCastEnabled} />
+              )}
+
+              {/* 推荐影片 */}
+              {movieDetails?.recommendations && movieDetails.recommendations.length > 0 && (
+                <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
+                  <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
+                    <span>💡</span>
+                    <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
+                  </h3>
+                  <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
+                    {movieDetails.recommendations.map((item: any) => {
+                      const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
+                      return (
+                        <div
+                          key={item.id}
+                          ref={(node) => {
+                            if (node) {
+                              // 移除旧的监听器
+                              const oldClick = (node as any)._clickHandler;
+                              const oldTouchStart = (node as any)._touchStartHandler;
+                              const oldTouchEnd = (node as any)._touchEndHandler;
+                              if (oldClick) node.removeEventListener('click', oldClick, true);
+                              if (oldTouchStart) node.removeEventListener('touchstart', oldTouchStart, true);
+                              if (oldTouchEnd) node.removeEventListener('touchend', oldTouchEnd, true);
+
+                              // 长按检测
+                              let touchStartTime = 0;
+                              let isLongPress = false;
+                              let longPressTimer: NodeJS.Timeout | null = null;
+
+                              const touchStartHandler = (e: Event) => {
+                                touchStartTime = Date.now();
+                                isLongPress = false;
+
+                                // 设置长按定时器（500ms）
+                                longPressTimer = setTimeout(() => {
+                                  isLongPress = true;
+                                }, 500);
+                              };
+
+                              const touchEndHandler = (e: Event) => {
+                                // 清除长按定时器
+                                if (longPressTimer) {
+                                  clearTimeout(longPressTimer);
+                                  longPressTimer = null;
+                                }
+
+                                const touchDuration = Date.now() - touchStartTime;
+
+                                // 如果是长按（超过500ms）或已标记为长按，不跳转
+                                if (isLongPress || touchDuration >= 500) {
+                                  // 让 VideoCard 的长按菜单正常工作
+                                  return;
+                                }
+
+                                // 否则是短按，执行跳转
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                window.location.href = playUrl;
+                              };
+
+                              const clickHandler = (e: Event) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                window.location.href = playUrl;
+                              };
+
+                              node.addEventListener('touchstart', touchStartHandler, true);
+                              node.addEventListener('touchend', touchEndHandler, true);
+                              node.addEventListener('click', clickHandler, true);
+
+                              // 保存引用以便清理
+                              (node as any)._touchStartHandler = touchStartHandler;
+                              (node as any)._touchEndHandler = touchEndHandler;
+                              (node as any)._clickHandler = clickHandler;
+                            }
+                          }}
+                          style={{
+                            WebkitTapHighlightColor: 'transparent',
+                            touchAction: 'manipulation'
+                          }}
+                        >
+                          <VideoCard
+                            id={item.id}
+                            title={item.title}
+                            poster={item.poster}
+                            rate={item.rate}
+                            douban_id={parseInt(item.id)}
+                            from='douban'
+                            isAggregate={true}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* 豆瓣短评 */}

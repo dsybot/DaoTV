@@ -229,6 +229,40 @@ function parseDoubanDetails(html: string, id: string) {
     const imdbMatch = html.match(/<span class="pl">IMDb:<\/span>\s*(tt\d+)/i);
     const imdb_id = imdbMatch ? imdbMatch[1] : '';
 
+    // 提取推荐影片
+    const recommendations: Array<{
+      id: string;
+      title: string;
+      poster: string;
+      rate: string;
+    }> = [];
+
+    const recommendationsSection = html.match(/<div id="recommendations">[\s\S]*?<div class="recommendations-bd">([\s\S]*?)<\/div>/);
+    if (recommendationsSection) {
+      const recommendItems = recommendationsSection[1].match(/<dl>[\s\S]*?<\/dl>/g);
+      if (recommendItems) {
+        recommendItems.forEach(item => {
+          // 提取影片ID
+          const idMatch = item.match(/\/subject\/(\d+)\//);
+          // 提取标题
+          const titleMatch = item.match(/alt="([^"]+)"/);
+          // 提取海报
+          const posterMatch = item.match(/<img src="([^"]+)"/);
+          // 提取评分
+          const rateMatch = item.match(/<span class="subject-rate">([^<]+)<\/span>/);
+
+          if (idMatch && titleMatch && posterMatch) {
+            recommendations.push({
+              id: idMatch[1],
+              title: titleMatch[1],
+              poster: posterMatch[1],
+              rate: rateMatch ? rateMatch[1] : ''
+            });
+          }
+        });
+      }
+    }
+
     return {
       code: 200,
       message: '获取成功',
@@ -249,7 +283,8 @@ function parseDoubanDetails(html: string, id: string) {
         movie_duration,
         first_aired,
         plot_summary,
-        imdb_id
+        imdb_id,
+        recommendations
       }
     };
   } catch (error) {
