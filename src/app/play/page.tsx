@@ -5266,13 +5266,18 @@ function PlayPageClient() {
                                 if (oldTouchStart) node.removeEventListener('touchstart', oldTouchStart, true);
                                 if (oldTouchEnd) node.removeEventListener('touchend', oldTouchEnd, true);
 
-                                // 长按检测
+                                // 长按和滑动检测
                                 let touchStartTime = 0;
+                                let touchStartX = 0;
+                                let touchStartY = 0;
                                 let isLongPress = false;
                                 let longPressTimer: NodeJS.Timeout | null = null;
 
                                 const touchStartHandler = (e: Event) => {
+                                  const touch = (e as TouchEvent).touches?.[0];
                                   touchStartTime = Date.now();
+                                  touchStartX = touch?.clientX || 0;
+                                  touchStartY = touch?.clientY || 0;
                                   isLongPress = false;
 
                                   // 设置长按定时器（500ms）
@@ -5288,7 +5293,20 @@ function PlayPageClient() {
                                     longPressTimer = null;
                                   }
 
+                                  const touch = (e as TouchEvent).changedTouches?.[0];
+                                  const touchEndX = touch?.clientX || 0;
+                                  const touchEndY = touch?.clientY || 0;
                                   const touchDuration = Date.now() - touchStartTime;
+
+                                  // 计算滑动距离
+                                  const deltaX = Math.abs(touchEndX - touchStartX);
+                                  const deltaY = Math.abs(touchEndY - touchStartY);
+                                  const isSwipe = deltaX > 10 || deltaY > 10; // 滑动超过10px视为滑动
+
+                                  // 如果是滑动，不跳转
+                                  if (isSwipe) {
+                                    return;
+                                  }
 
                                   // 如果是长按（超过500ms）或已标记为长按，不跳转
                                   if (isLongPress || touchDuration >= 500) {
