@@ -61,6 +61,29 @@ interface TMDBData {
   first_air_date?: string;
 }
 
+// 解析中文数字（支持一到九百九十九）
+function parseChineseNumber(str: string): number {
+  const digits: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+  const units: Record<string, number> = { '十': 10, '百': 100 };
+
+  let result = 0;
+  let temp = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (digits[char] !== undefined) {
+      temp = digits[char];
+    } else if (units[char] !== undefined) {
+      if (temp === 0 && char === '十') temp = 1;
+      result += temp * units[char];
+      temp = 0;
+    }
+  }
+  result += temp;
+
+  return result || 1;
+}
+
 // 季数选择器组件
 function SeasonSelector({
   seasons,
@@ -271,15 +294,25 @@ function DetailPageClient() {
         // 如果标题中包含特殊季名，尝试匹配对应的季数
         if (data.seasons && data.seasons.length > 0 && initialSeason === 1) {
           let seasonKeyword = '';
+          let detectedSeasonNumber = 0;
+
+          // 提取"第X部分"格式（如"赛马娘 芦毛灰姑娘 第2部分" -> 第2季）
+          const partMatch = title.match(/第([零一二三四五六七八九十百]+|\d+)部分?$/);
+          if (partMatch) {
+            const partStr = partMatch[1];
+            detectedSeasonNumber = /^\d+$/.test(partStr) ? parseInt(partStr) : parseChineseNumber(partStr);
+          }
 
           // 提取标题中可能的季名后缀（如"花儿与少年 同心季" -> "同心季"）
-          const seasonNameMatch = title.match(/\s+([^\s]+季)$/);
-          if (seasonNameMatch) {
-            seasonKeyword = seasonNameMatch[1];
+          if (!detectedSeasonNumber) {
+            const seasonNameMatch = title.match(/\s+([^\s]+季)$/);
+            if (seasonNameMatch) {
+              seasonKeyword = seasonNameMatch[1];
+            }
           }
 
           // 提取"之XXX"格式的后缀（如"唐朝诡事录之长安" -> "长安"）
-          if (!seasonKeyword) {
+          if (!seasonKeyword && !detectedSeasonNumber) {
             const zhiMatch = title.match(/之([^之]+)$/);
             if (zhiMatch) {
               seasonKeyword = zhiMatch[1];
@@ -287,14 +320,21 @@ function DetailPageClient() {
           }
 
           // 提取冒号后的内容（如"XXX：长安篇" -> "长安篇"）
-          if (!seasonKeyword) {
+          if (!seasonKeyword && !detectedSeasonNumber) {
             const colonMatch = title.match(/[：:]([^：:]+)$/);
             if (colonMatch) {
               seasonKeyword = colonMatch[1];
             }
           }
 
-          if (seasonKeyword) {
+          // 如果检测到了季数，直接使用
+          if (detectedSeasonNumber > 0 && detectedSeasonNumber <= data.seasons.length) {
+            console.log(`[Detail] 根据"第X部分"格式匹配到第 ${detectedSeasonNumber} 季`);
+            setCurrentSeason(detectedSeasonNumber);
+            // 重新获取对应季的分集
+            const seasonData = await getTMDBData(title, year, mediaType, detectedSeasonNumber, imdbId);
+            setEpisodes(seasonData.episodes);
+          } else if (seasonKeyword) {
             // 在季数列表中查找匹配的季名
             const matchedSeason = data.seasons.find((s: TMDBSeason) =>
               s.name && s.name.includes(seasonKeyword)

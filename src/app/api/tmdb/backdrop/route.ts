@@ -46,6 +46,14 @@ function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
     seasonNumber = /^\d+$/.test(seasonStr) ? parseInt(seasonStr) : parseChineseNumber(seasonStr);
   }
 
+  // 去掉"第X部分"后缀（如"赛马娘 芦毛灰姑娘 第2部分" -> "赛马娘 芦毛灰姑娘"）
+  const partMatch = title.match(/^(.+?)\s*第([零一二三四五六七八九十百]+|\d+)部分?$/);
+  if (partMatch) {
+    titles.push(partMatch[1].trim());
+    const partStr = partMatch[2];
+    seasonNumber = /^\d+$/.test(partStr) ? parseInt(partStr) : parseChineseNumber(partStr);
+  }
+
   // 去掉数字后缀（如"喜人奇妙夜2" -> "喜人奇妙夜"）
   const numberMatch = title.match(/^(.+?)(\d+)$/);
   if (numberMatch && numberMatch[1].length >= 2) {
