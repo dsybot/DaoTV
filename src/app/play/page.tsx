@@ -5220,157 +5220,22 @@ function PlayPageClient() {
                   </h3>
                   <div className='overflow-x-auto pb-4 pt-2 pl-2 -ml-2 episode-list'>
                     <div className='flex gap-4 pr-2' style={{ width: 'max-content' }}>
-                      {movieDetails.recommendations.map((item: any) => {
-                        const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
-                        const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
-
-                        // 检查是否点击了播放按钮（PlayCircleIcon 有 data-button="true" 属性）
-                        const isPlayButton = (target: EventTarget | null): boolean => {
-                          if (!target || !(target instanceof Element)) return false;
-                          const el = target as Element;
-                          // 检查元素本身或其父元素是否有 data-button 属性（播放按钮标记）
-                          // PlayCircleIcon 是 SVG 元素，有 data-button="true"
-                          if (el.hasAttribute('data-button') || el.closest('[data-button="true"]')) {
-                            // 确保是播放图标（SVG）而不是其他按钮
-                            const svg = el.tagName === 'svg' ? el : el.closest('svg');
-                            if (svg && svg.hasAttribute('data-button')) {
-                              return true;
-                            }
-                          }
-                          return false;
-                        };
-
-                        // 检查是否点击了豆瓣链接（<a> 标签指向豆瓣或bgm.tv）
-                        const isDoubanLink = (target: EventTarget | null): boolean => {
-                          if (!target || !(target instanceof Element)) return false;
-                          const el = target as Element;
-                          const link = el.closest('a');
-                          if (link) {
-                            const href = link.getAttribute('href') || '';
-                            return href.includes('movie.douban.com') || href.includes('bgm.tv');
-                          }
-                          return false;
-                        };
-
-                        return (
-                          <div
-                            key={item.id}
-                            className='flex-shrink-0 w-32 sm:w-36 md:w-40'
-                            ref={(node) => {
-                              if (node) {
-                                // 移除旧的监听器
-                                const oldClick = (node as any)._clickHandler;
-                                const oldTouchStart = (node as any)._touchStartHandler;
-                                const oldTouchEnd = (node as any)._touchEndHandler;
-                                if (oldClick) node.removeEventListener('click', oldClick, true);
-                                if (oldTouchStart) node.removeEventListener('touchstart', oldTouchStart, true);
-                                if (oldTouchEnd) node.removeEventListener('touchend', oldTouchEnd, true);
-
-                                // 长按和滑动检测
-                                let touchStartTime = 0;
-                                let touchStartX = 0;
-                                let touchStartY = 0;
-                                let isLongPress = false;
-                                let longPressTimer: NodeJS.Timeout | null = null;
-
-                                const touchStartHandler = (e: Event) => {
-                                  const touch = (e as TouchEvent).touches?.[0];
-                                  touchStartTime = Date.now();
-                                  touchStartX = touch?.clientX || 0;
-                                  touchStartY = touch?.clientY || 0;
-                                  isLongPress = false;
-
-                                  // 设置长按定时器（500ms）
-                                  longPressTimer = setTimeout(() => {
-                                    isLongPress = true;
-                                  }, 500);
-                                };
-
-                                const touchEndHandler = (e: Event) => {
-                                  // 清除长按定时器
-                                  if (longPressTimer) {
-                                    clearTimeout(longPressTimer);
-                                    longPressTimer = null;
-                                  }
-
-                                  const touch = (e as TouchEvent).changedTouches?.[0];
-                                  const touchEndX = touch?.clientX || 0;
-                                  const touchEndY = touch?.clientY || 0;
-                                  const touchDuration = Date.now() - touchStartTime;
-
-                                  // 计算滑动距离
-                                  const deltaX = Math.abs(touchEndX - touchStartX);
-                                  const deltaY = Math.abs(touchEndY - touchStartY);
-                                  const isSwipe = deltaX > 10 || deltaY > 10; // 滑动超过10px视为滑动
-
-                                  // 如果是滑动，不跳转
-                                  if (isSwipe) {
-                                    return;
-                                  }
-
-                                  // 如果是长按（超过500ms）或已标记为长按，不跳转
-                                  if (isLongPress || touchDuration >= 500) {
-                                    // 让 VideoCard 的长按菜单正常工作
-                                    return;
-                                  }
-
-                                  // 如果点击的是豆瓣链接，让它正常跳转
-                                  if (isDoubanLink(e.target)) {
-                                    return;
-                                  }
-
-                                  // 检查是否点击了播放按钮
-                                  const targetUrl = isPlayButton(e.target) ? playUrl : detailUrl;
-
-                                  // 否则是短按，执行跳转
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.stopImmediatePropagation();
-                                  window.location.href = targetUrl;
-                                };
-
-                                const clickHandler = (e: Event) => {
-                                  // 如果点击的是豆瓣链接，让它正常跳转
-                                  if (isDoubanLink(e.target)) {
-                                    return;
-                                  }
-
-                                  // 检查是否点击了播放按钮
-                                  const targetUrl = isPlayButton(e.target) ? playUrl : detailUrl;
-
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.stopImmediatePropagation();
-                                  window.location.href = targetUrl;
-                                };
-
-                                node.addEventListener('touchstart', touchStartHandler, true);
-                                node.addEventListener('touchend', touchEndHandler, true);
-                                node.addEventListener('click', clickHandler, true);
-
-                                // 保存引用以便清理
-                                (node as any)._touchStartHandler = touchStartHandler;
-                                (node as any)._touchEndHandler = touchEndHandler;
-                                (node as any)._clickHandler = clickHandler;
-                              }
-                            }}
-                            style={{
-                              WebkitTapHighlightColor: 'transparent',
-                              touchAction: 'manipulation'
-                            }}
-                          >
-                            <VideoCard
-                              id={item.id}
-                              title={item.title}
-                              poster={item.poster}
-                              rate={item.rate}
-                              douban_id={parseInt(item.id)}
-                              from='douban'
-                              isAggregate={true}
-                            />
-                          </div>
-                        );
-                      })}
+                      {movieDetails.recommendations.map((item: any) => (
+                        <div
+                          key={item.id}
+                          className='flex-shrink-0 w-32 sm:w-36 md:w-40'
+                        >
+                          <VideoCard
+                            id={item.id}
+                            title={item.title}
+                            poster={item.poster}
+                            rate={item.rate}
+                            douban_id={parseInt(item.id)}
+                            from='douban'
+                            isAggregate={true}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
