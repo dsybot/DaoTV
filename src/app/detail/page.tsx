@@ -267,6 +267,47 @@ function DetailPageClient() {
         setEpisodeRetry({}); // 重置剧集图片重试次数
         setSeasons(data.seasons);
         setTmdbCast(data.cast);
+
+        // 如果标题中包含特殊季名，尝试匹配对应的季数
+        if (data.seasons && data.seasons.length > 0 && initialSeason === 1) {
+          let seasonKeyword = '';
+
+          // 提取标题中可能的季名后缀（如"花儿与少年 同心季" -> "同心季"）
+          const seasonNameMatch = title.match(/\s+([^\s]+季)$/);
+          if (seasonNameMatch) {
+            seasonKeyword = seasonNameMatch[1];
+          }
+
+          // 提取"之XXX"格式的后缀（如"唐朝诡事录之长安" -> "长安"）
+          if (!seasonKeyword) {
+            const zhiMatch = title.match(/之([^之]+)$/);
+            if (zhiMatch) {
+              seasonKeyword = zhiMatch[1];
+            }
+          }
+
+          // 提取冒号后的内容（如"XXX：长安篇" -> "长安篇"）
+          if (!seasonKeyword) {
+            const colonMatch = title.match(/[：:]([^：:]+)$/);
+            if (colonMatch) {
+              seasonKeyword = colonMatch[1];
+            }
+          }
+
+          if (seasonKeyword) {
+            // 在季数列表中查找匹配的季名
+            const matchedSeason = data.seasons.find((s: TMDBSeason) =>
+              s.name && s.name.includes(seasonKeyword)
+            );
+            if (matchedSeason) {
+              console.log(`[Detail] 根据关键词 "${seasonKeyword}" 匹配到第 ${matchedSeason.seasonNumber} 季: ${matchedSeason.name}`);
+              setCurrentSeason(matchedSeason.seasonNumber);
+              // 重新获取对应季的分集
+              const seasonData = await getTMDBData(title, year, mediaType, matchedSeason.seasonNumber, imdbId);
+              setEpisodes(seasonData.episodes);
+            }
+          }
+        }
         // 设置TMDB基本信息（用于备用显示）
         setTmdbOverview(data.overview || '');
         setTmdbRating(data.vote_average || 0);
