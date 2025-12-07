@@ -1858,61 +1858,133 @@ function PlayPageClient() {
   const refreshSources = useCallback(async () => {
     setSourceSearchLoading(true);
     setSourceSearchError(null);
-    try {
-      console.log('手动刷新搜索源...');
-      const query = searchTitle || videoTitle;
-      if (!query) {
-        throw new Error('缺少搜索标题');
-      }
 
-      // 使用智能搜索变体获取全部源信息
-      const searchVariants = generateSearchVariants(query.trim());
-      const allResults: SearchResult[] = [];
-      let bestResults: SearchResult[] = [];
+    const query = searchTitle || videoTitle;
+    if (!query) {
+      setSourceSearchError('缺少搜索标题');
+      setSourceSearchLoading(false);
+      return;
+    }
 
-      // 依次尝试每个搜索变体
-      for (const variant of searchVariants) {
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(variant)}`
-        );
-        if (!response.ok) continue;
+    // 结果过滤函数
+    const filterResults = (results: SearchResult[]): SearchResult[] => {
+      return results.filter((result: SearchResult) => {
+        const queryTitle = videoTitle.replaceAll(' ', '').toLowerCase();
+        const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
+        const titleMatch = resultTitle.includes(queryTitle) || queryTitle.includes(resultTitle);
+        const yearMatch = videoYear ? result.year.toLowerCase() === videoYear.toLowerCase() : true;
+        return titleMatch && yearMatch;
+      });
+    };
 
-        const data = await response.json();
-        if (data.results && data.results.length > 0) {
-          allResults.push(...data.results);
+    // 如果开启了优选，使用普通搜索
+    if (optimizationEnabled) {
+      try {
+        console.log('手动刷新搜索源（普通模式）...');
+        const searchVariants = generateSearchVariants(query.trim());
+        const allResults: SearchResult[] = [];
+        let bestResults: SearchResult[] = [];
 
-          const filteredResults = data.results.filter(
-            (result: SearchResult) => {
-              const queryTitle = videoTitle.replaceAll(' ', '').toLowerCase();
-              const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
-              const titleMatch = resultTitle.includes(queryTitle) || queryTitle.includes(resultTitle);
-              const yearMatch = videoYear ? result.year.toLowerCase() === videoYear.toLowerCase() : true;
-              return titleMatch && yearMatch;
+        for (const variant of searchVariants) {
+          const response = await fetch(`/api/search?q=${encodeURIComponent(variant)}`);
+          if (!response.ok) continue;
+
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            allResults.push(...data.results);
+            const filteredResults = filterResults(data.results);
+            if (filteredResults.length > 0) {
+              bestResults = filteredResults;
+              break;
             }
-          );
-
-          if (filteredResults.length > 0) {
-            bestResults = filteredResults;
-            break;
           }
         }
-      }
 
-      const finalResults = bestResults.length > 0 ? bestResults : allResults;
-      setAvailableSources(finalResults);
+        const finalResults = bestResults.length > 0 ? bestResults : allResults;
+        setAvailableSources(finalResults);
 
-      if (finalResults.length === 0) {
-        setSourceSearchError('未找到匹配结果');
-      } else {
-        console.log(`刷新成功，找到 ${finalResults.length} 个播放源`);
+        if (finalResults.length === 0) {
+          setSourceSearchError('未找到匹配结果');
+        } else {
+          console.log(`刷新成功，找到 ${finalResults.length} 个播放源`);
+        }
+      } catch (err) {
+        console.error('刷新搜索源失败:', err);
+        setSourceSearchError(err instanceof Error ? err.message : '刷新失败');
+      } finally {
+        setSourceSearchLoading(false);
       }
-    } catch (err) {
-      console.error('刷新搜索源失败:', err);
-      setSourceSearchError(err instanceof Error ? err.message : '刷新失败');
-    } finally {
-      setSourceSearchLoading(false);
+    } else {
+      // 流式搜索模式
+      return new Promise<void>((resolve) => {
+        console.log('手动刷新搜索源（流式模式）...');
+        const searchVariants = generateSearchVariants(query.trim());
+        const variant = searchVariants[0];
+        const allResults: SearchResult[] = [];
+        let bestResults: SearchResult[] = [];
+        let hasResolved = false;
+
+        const es = new EventSource(`/api/search/ws?q=${encodeURIComponent(variant)}`);
+
+        const timeoutId = setTimeout(() => {
+          if (!hasResolved) {
+            es.close();
+            const finalResults = bestResults.length > 0 ? bestResults : allResults;
+            setAvailableSources(finalResults);
+            setSourceSearchLoading(false);
+            hasResolved = true;
+            resolve();
+          }
+        }, 20000);
+
+        es.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'source_result' && data.results?.length > 0) {
+              allResults.push(...data.results);
+              const filtered = filterResults(data.results);
+              if (filtered.length > 0) {
+                bestResults = [...bestResults, ...filtered];
+                bestResults = Array.from(
+                  new Map(bestResults.map(item => [`${item.source}-${item.id}`, item])).values()
+                );
+                setAvailableSources([...bestResults]);
+              }
+            } else if (data.type === 'complete') {
+              clearTimeout(timeoutId);
+              es.close();
+              if (!hasResolved) {
+                const finalResults = bestResults.length > 0 ? bestResults : allResults;
+                setAvailableSources(finalResults);
+                if (finalResults.length === 0) {
+                  setSourceSearchError('未找到匹配结果');
+                } else {
+                  console.log(`刷新成功，找到 ${finalResults.length} 个播放源`);
+                }
+                setSourceSearchLoading(false);
+                hasResolved = true;
+                resolve();
+              }
+            }
+          } catch (err) {
+            console.error('解析刷新结果失败:', err);
+          }
+        };
+
+        es.onerror = () => {
+          clearTimeout(timeoutId);
+          es.close();
+          if (!hasResolved) {
+            setSourceSearchError('刷新失败');
+            setSourceSearchLoading(false);
+            hasResolved = true;
+            resolve();
+          }
+        };
+      });
     }
-  }, [searchTitle, videoTitle, videoYear]);
+  }, [searchTitle, videoTitle, videoYear, optimizationEnabled]);
 
   // 进入页面时直接获取全部源信息
   useEffect(() => {
@@ -1948,171 +2020,278 @@ function PlayPageClient() {
       }
     };
     const fetchSourcesData = async (query: string): Promise<SearchResult[]> => {
-      // 使用智能搜索变体获取全部源信息
-      try {
-        console.log('开始智能搜索，原始查询:', query);
-        const searchVariants = generateSearchVariants(query.trim());
-        console.log('生成的搜索变体:', searchVariants);
-
-        const allResults: SearchResult[] = [];
-        let bestResults: SearchResult[] = [];
-
-        // 依次尝试每个搜索变体，采用早期退出策略
-        for (const variant of searchVariants) {
-          console.log('尝试搜索变体:', variant);
-
-          const response = await fetch(
-            `/api/search?q=${encodeURIComponent(variant)}`
-          );
-          if (!response.ok) {
-            console.warn(`搜索变体 "${variant}" 失败:`, response.statusText);
-            continue;
+      // 结果过滤函数（精确匹配）
+      const filterResults = (results: SearchResult[]): SearchResult[] => {
+        return results.filter((result: SearchResult) => {
+          // 如果有 douban_id，优先使用 douban_id 精确匹配
+          if (videoDoubanIdRef.current && videoDoubanIdRef.current > 0 && result.douban_id) {
+            return result.douban_id === videoDoubanIdRef.current;
           }
-          const data = await response.json();
 
-          if (data.results && data.results.length > 0) {
-            allResults.push(...data.results);
+          const queryTitle = videoTitleRef.current.replaceAll(' ', '').toLowerCase();
+          const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
 
-            // 移除早期退出策略，让downstream的相关性评分发挥作用
+          // 智能标题匹配：支持数字变体和标点符号变化
+          const titleMatch = resultTitle.includes(queryTitle) ||
+            queryTitle.includes(resultTitle) ||
+            resultTitle.replace(/\d+|[：:]/g, '') === queryTitle.replace(/\d+|[：:]/g, '') ||
+            (queryTitle.length > 4 && checkAllKeywordsMatch(queryTitle, resultTitle));
 
-            // 处理搜索结果，使用智能模糊匹配（与downstream评分逻辑保持一致）
-            const filteredResults = data.results.filter(
-              (result: SearchResult) => {
-                // 如果有 douban_id，优先使用 douban_id 精确匹配
-                if (videoDoubanIdRef.current && videoDoubanIdRef.current > 0 && result.douban_id) {
-                  return result.douban_id === videoDoubanIdRef.current;
-                }
+          const yearMatch = videoYearRef.current
+            ? result.year.toLowerCase() === videoYearRef.current.toLowerCase()
+            : true;
+          const typeMatch = searchType
+            ? (searchType === 'tv' && result.episodes.length > 1) ||
+            (searchType === 'movie' && result.episodes.length === 1)
+            : true;
 
-                const queryTitle = videoTitleRef.current.replaceAll(' ', '').toLowerCase();
-                const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
+          return titleMatch && yearMatch && typeMatch;
+        });
+      };
 
-                // 智能标题匹配：支持数字变体和标点符号变化
-                // 优先使用精确包含匹配，避免短标题（如"玫瑰"）匹配到包含该字的其他电影（如"玫瑰的故事"）
-                const titleMatch = resultTitle.includes(queryTitle) ||
-                  queryTitle.includes(resultTitle) ||
-                  // 移除数字和标点后匹配（针对"死神来了：血脉诅咒" vs "死神来了6：血脉诅咒"）
-                  resultTitle.replace(/\d+|[：:]/g, '') === queryTitle.replace(/\d+|[：:]/g, '') ||
-                  // 通用关键词匹配：仅当查询标题较长时（4个字符以上）才使用关键词匹配
-                  // 避免短标题（如"玫瑰"2字）被拆分匹配
-                  (queryTitle.length > 4 && checkAllKeywordsMatch(queryTitle, resultTitle));
+      // 智能匹配函数（用于最终结果处理，英文严格/中文宽松）
+      const smartMatch = (candidates: SearchResult[]): SearchResult[] => {
+        const queryTitle = videoTitleRef.current.toLowerCase().trim();
+        const englishChars = (queryTitle.match(/[a-z\s]/g) || []).length;
+        const chineseChars = (queryTitle.match(/[\u4e00-\u9fff]/g) || []).length;
+        const isEnglishQuery = englishChars > chineseChars;
 
-                const yearMatch = videoYearRef.current
-                  ? result.year.toLowerCase() === videoYearRef.current.toLowerCase()
-                  : true;
-                const typeMatch = searchType
-                  ? (searchType === 'tv' && result.episodes.length > 1) ||
-                  (searchType === 'movie' && result.episodes.length === 1)
-                  : true;
+        console.log(`搜索语言检测: ${isEnglishQuery ? '英文' : '中文'} - "${queryTitle}"`);
 
-                return titleMatch && yearMatch && typeMatch;
-              }
+        let relevantMatches;
+
+        if (isEnglishQuery) {
+          // 英文查询：使用词汇匹配策略
+          const queryWords = queryTitle.toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(word => word.length > 2 && !['the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'].includes(word));
+
+          console.log('英文关键词:', queryWords);
+
+          relevantMatches = candidates.filter(result => {
+            const title = result.title.toLowerCase();
+            const titleWords = title.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(word => word.length > 1);
+            const matchedWords = queryWords.filter(queryWord =>
+              titleWords.some(titleWord =>
+                titleWord.includes(queryWord) || queryWord.includes(titleWord) ||
+                (queryWord.length > 4 && titleWord.length > 4 &&
+                  queryWord.substring(0, 4) === titleWord.substring(0, 4))
+              )
             );
+            const wordMatchRatio = matchedWords.length / queryWords.length;
+            if (wordMatchRatio >= 0.5) {
+              console.log(`英文词汇匹配 (${matchedWords.length}/${queryWords.length}): "${result.title}"`);
+              return true;
+            }
+            return false;
+          });
+        } else {
+          // 中文查询：宽松匹配
+          console.log('使用中文宽松匹配策略');
+          relevantMatches = candidates.filter(result => {
+            const title = result.title.toLowerCase();
+            const normalizedQuery = queryTitle.replace(/[^\w\u4e00-\u9fff]/g, '');
+            const normalizedTitle = title.replace(/[^\w\u4e00-\u9fff]/g, '');
 
-            if (filteredResults.length > 0) {
-              console.log(`变体 "${variant}" 找到 ${filteredResults.length} 个精确匹配结果`);
-              bestResults = filteredResults;
-              break; // 找到精确匹配就停止
+            if (normalizedTitle.includes(normalizedQuery) || normalizedQuery.includes(normalizedTitle)) {
+              console.log(`中文包含匹配: "${result.title}"`);
+              return true;
+            }
+
+            const commonChars = Array.from(normalizedQuery).filter(char => normalizedTitle.includes(char)).length;
+            const similarity = commonChars / normalizedQuery.length;
+            if (similarity >= 0.5) {
+              console.log(`中文相似匹配 (${(similarity * 100).toFixed(1)}%): "${result.title}"`);
+              return true;
+            }
+            return false;
+          });
+        }
+
+        console.log(`匹配结果: ${relevantMatches.length}/${candidates.length}`);
+
+        const maxResults = isEnglishQuery ? 5 : 20;
+        if (relevantMatches.length > 0 && relevantMatches.length <= maxResults) {
+          return Array.from(
+            new Map(relevantMatches.map(item => [`${item.source}-${item.id}`, item])).values()
+          );
+        }
+        console.log('没有找到合理的匹配，返回空结果');
+        return [];
+      };
+
+      // 如果开启了优选，使用普通搜索（需要等待所有源完成才能优选）
+      // 如果关闭了优选，使用流式搜索（渐进式加载）
+      if (optimizationEnabled) {
+        // ========== 普通搜索模式（支持优选）==========
+        try {
+          console.log('开始智能搜索（优选模式），原始查询:', query);
+          const searchVariants = generateSearchVariants(query.trim());
+          console.log('生成的搜索变体:', searchVariants);
+
+          const allResults: SearchResult[] = [];
+          let bestResults: SearchResult[] = [];
+
+          // 依次尝试每个搜索变体，采用早期退出策略
+          for (const variant of searchVariants) {
+            console.log('尝试搜索变体:', variant);
+
+            const response = await fetch(`/api/search?q=${encodeURIComponent(variant)}`);
+            if (!response.ok) {
+              console.warn(`搜索变体 "${variant}" 失败:`, response.statusText);
+              continue;
+            }
+            const data = await response.json();
+
+            if (data.results && data.results.length > 0) {
+              allResults.push(...data.results);
+
+              const filteredResults = filterResults(data.results);
+              if (filteredResults.length > 0) {
+                console.log(`变体 "${variant}" 找到 ${filteredResults.length} 个精确匹配结果`);
+                bestResults = filteredResults;
+                break; // 找到精确匹配就停止
+              }
             }
           }
-        }
 
-        // 智能匹配：英文标题严格匹配，中文标题宽松匹配
-        let finalResults = bestResults;
-
-        // 如果没有精确匹配，根据语言类型进行不同策略的匹配
-        if (bestResults.length === 0) {
-          const queryTitle = videoTitleRef.current.toLowerCase().trim();
-          const allCandidates = allResults;
-
-          // 检测查询主要语言（英文 vs 中文）
-          const englishChars = (queryTitle.match(/[a-z\s]/g) || []).length;
-          const chineseChars = (queryTitle.match(/[\u4e00-\u9fff]/g) || []).length;
-          const isEnglishQuery = englishChars > chineseChars;
-
-          console.log(`搜索语言检测: ${isEnglishQuery ? '英文' : '中文'} - "${queryTitle}"`);
-
-          let relevantMatches;
-
-          if (isEnglishQuery) {
-            // 英文查询：使用词汇匹配策略，避免不相关结果
-            console.log('使用英文词汇匹配策略');
-
-            // 提取有效英文词汇（过滤停用词）
-            const queryWords = queryTitle.toLowerCase()
-              .replace(/[^\w\s]/g, ' ')
-              .split(/\s+/)
-              .filter(word => word.length > 2 && !['the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'].includes(word));
-
-            console.log('英文关键词:', queryWords);
-
-            relevantMatches = allCandidates.filter(result => {
-              const title = result.title.toLowerCase();
-              const titleWords = title.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(word => word.length > 1);
-
-              // 计算词汇匹配度：标题必须包含至少50%的查询关键词
-              const matchedWords = queryWords.filter(queryWord =>
-                titleWords.some(titleWord =>
-                  titleWord.includes(queryWord) || queryWord.includes(titleWord) ||
-                  // 允许部分相似（如gumball vs gum）
-                  (queryWord.length > 4 && titleWord.length > 4 &&
-                    queryWord.substring(0, 4) === titleWord.substring(0, 4))
-                )
-              );
-
-              const wordMatchRatio = matchedWords.length / queryWords.length;
-              if (wordMatchRatio >= 0.5) {
-                console.log(`英文词汇匹配 (${matchedWords.length}/${queryWords.length}): "${result.title}" - 匹配词: [${matchedWords.join(', ')}]`);
-                return true;
-              }
-              return false;
-            });
-          } else {
-            // 中文查询：宽松匹配，保持现有行为
-            console.log('使用中文宽松匹配策略');
-            relevantMatches = allCandidates.filter(result => {
-              const title = result.title.toLowerCase();
-              const normalizedQuery = queryTitle.replace(/[^\w\u4e00-\u9fff]/g, '');
-              const normalizedTitle = title.replace(/[^\w\u4e00-\u9fff]/g, '');
-
-              // 包含匹配或50%相似度
-              if (normalizedTitle.includes(normalizedQuery) || normalizedQuery.includes(normalizedTitle)) {
-                console.log(`中文包含匹配: "${result.title}"`);
-                return true;
-              }
-
-              const commonChars = Array.from(normalizedQuery).filter(char => normalizedTitle.includes(char)).length;
-              const similarity = commonChars / normalizedQuery.length;
-              if (similarity >= 0.5) {
-                console.log(`中文相似匹配 (${(similarity * 100).toFixed(1)}%): "${result.title}"`);
-                return true;
-              }
-              return false;
-            });
+          // 智能匹配
+          let finalResults = bestResults;
+          if (bestResults.length === 0) {
+            finalResults = smartMatch(allResults);
           }
 
-          console.log(`匹配结果: ${relevantMatches.length}/${allCandidates.length}`);
-
-          const maxResults = isEnglishQuery ? 5 : 20; // 英文更严格控制结果数
-          if (relevantMatches.length > 0 && relevantMatches.length <= maxResults) {
-            finalResults = Array.from(
-              new Map(relevantMatches.map(item => [`${item.source}-${item.id}`, item])).values()
-            );
-          } else {
-            console.log('没有找到合理的匹配，返回空结果');
-            finalResults = [];
-          }
+          console.log(`智能搜索完成，最终返回 ${finalResults.length} 个结果`);
+          setAvailableSources(finalResults);
+          return finalResults;
+        } catch (err) {
+          console.error('智能搜索失败:', err);
+          setSourceSearchError(err instanceof Error ? err.message : '搜索失败');
+          setAvailableSources([]);
+          return [];
+        } finally {
+          setSourceSearchLoading(false);
         }
+      } else {
+        // ========== 流式搜索模式（渐进式加载）==========
+        return new Promise((resolve) => {
+          console.log('开始流式搜索（渐进式加载），原始查询:', query);
+          const searchVariants = generateSearchVariants(query.trim());
+          console.log('生成的搜索变体:', searchVariants);
 
-        console.log(`智能搜索完成，最终返回 ${finalResults.length} 个结果`);
-        setAvailableSources(finalResults);
-        return finalResults;
-      } catch (err) {
-        console.error('智能搜索失败:', err);
-        setSourceSearchError(err instanceof Error ? err.message : '搜索失败');
-        setAvailableSources([]);
-        return [];
-      } finally {
-        setSourceSearchLoading(false);
+          const variant = searchVariants[0];
+          const allResults: SearchResult[] = [];
+          let bestResults: SearchResult[] = [];
+          let hasResolved = false;
+          let completedSources = 0;
+          let totalSources = 0;
+
+          // 创建 SSE 连接
+          const es = new EventSource(`/api/search/ws?q=${encodeURIComponent(variant)}`);
+
+          // 超时处理：8秒后使用已有结果
+          const timeoutId = setTimeout(() => {
+            if (!hasResolved) {
+              console.log('流式搜索超时，使用已有结果');
+              es.close();
+              const finalResults = bestResults.length > 0 ? bestResults : smartMatch(allResults);
+              setAvailableSources(finalResults);
+              setSourceSearchLoading(false);
+              hasResolved = true;
+              resolve(finalResults);
+            }
+          }, 20000);
+
+          es.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+
+              switch (data.type) {
+                case 'start':
+                  totalSources = data.totalSources;
+                  setLoadingMessage(`🔍 正在搜索播放源 (0/${totalSources})...`);
+                  break;
+
+                case 'source_result':
+                  completedSources++;
+                  setLoadingMessage(`🔍 正在搜索播放源 (${completedSources}/${totalSources})...`);
+
+                  if (data.results && data.results.length > 0) {
+                    allResults.push(...data.results);
+
+                    // 实时过滤并更新可用源
+                    const filtered = filterResults(data.results);
+                    if (filtered.length > 0) {
+                      bestResults = [...bestResults, ...filtered];
+                      // 去重
+                      bestResults = Array.from(
+                        new Map(bestResults.map(item => [`${item.source}-${item.id}`, item])).values()
+                      );
+                      // 实时更新可用源列表
+                      setAvailableSources([...bestResults]);
+                      console.log(`源 ${data.sourceName} 找到 ${filtered.length} 个匹配结果，当前共 ${bestResults.length} 个`);
+                    }
+                  }
+                  break;
+
+                case 'source_error':
+                  completedSources++;
+                  setLoadingMessage(`🔍 正在搜索播放源 (${completedSources}/${totalSources})...`);
+                  console.warn(`源 ${data.sourceName} 搜索失败:`, data.error);
+                  break;
+
+                case 'complete':
+                  clearTimeout(timeoutId);
+                  es.close();
+
+                  if (!hasResolved) {
+                    const finalResults = bestResults.length > 0 ? bestResults : smartMatch(allResults);
+                    console.log(`流式搜索完成，最终返回 ${finalResults.length} 个结果`);
+                    setAvailableSources(finalResults);
+                    setSourceSearchLoading(false);
+                    hasResolved = true;
+                    resolve(finalResults);
+                  }
+                  break;
+              }
+            } catch (err) {
+              console.error('解析搜索结果失败:', err);
+            }
+          };
+
+          es.onerror = () => {
+            clearTimeout(timeoutId);
+            es.close();
+
+            if (!hasResolved) {
+              console.error('流式搜索连接失败，回退到普通搜索');
+              // 回退到普通搜索
+              fetch(`/api/search?q=${encodeURIComponent(variant)}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.results) {
+                    const filtered = filterResults(data.results);
+                    const finalResults = filtered.length > 0 ? filtered : smartMatch(data.results);
+                    setAvailableSources(finalResults);
+                    resolve(finalResults);
+                  } else {
+                    setAvailableSources([]);
+                    resolve([]);
+                  }
+                })
+                .catch(() => {
+                  setSourceSearchError('搜索失败');
+                  setAvailableSources([]);
+                  resolve([]);
+                })
+                .finally(() => {
+                  setSourceSearchLoading(false);
+                  hasResolved = true;
+                });
+            }
+          };
+        });
       }
     };
 
