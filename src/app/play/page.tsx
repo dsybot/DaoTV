@@ -5240,6 +5240,18 @@ function PlayPageClient() {
                           return false;
                         };
 
+                        // 检查是否点击了豆瓣链接（<a> 标签指向豆瓣或bgm.tv）
+                        const isDoubanLink = (target: EventTarget | null): boolean => {
+                          if (!target || !(target instanceof Element)) return false;
+                          const el = target as Element;
+                          const link = el.closest('a');
+                          if (link) {
+                            const href = link.getAttribute('href') || '';
+                            return href.includes('movie.douban.com') || href.includes('bgm.tv');
+                          }
+                          return false;
+                        };
+
                         return (
                           <div
                             key={item.id}
@@ -5284,6 +5296,11 @@ function PlayPageClient() {
                                     return;
                                   }
 
+                                  // 如果点击的是豆瓣链接，让它正常跳转
+                                  if (isDoubanLink(e.target)) {
+                                    return;
+                                  }
+
                                   // 检查是否点击了播放按钮
                                   const targetUrl = isPlayButton(e.target) ? playUrl : detailUrl;
 
@@ -5295,6 +5312,11 @@ function PlayPageClient() {
                                 };
 
                                 const clickHandler = (e: Event) => {
+                                  // 如果点击的是豆瓣链接，让它正常跳转
+                                  if (isDoubanLink(e.target)) {
+                                    return;
+                                  }
+
                                   // 检查是否点击了播放按钮
                                   const targetUrl = isPlayButton(e.target) ? playUrl : detailUrl;
 
