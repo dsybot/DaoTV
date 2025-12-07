@@ -100,7 +100,7 @@ function DoubanPageClient() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('useDoubanVirtualization', JSON.stringify(newValue));
     }
-    
+
     // 切换虚拟化模式时，立即同步参数引用，避免一致性检查失败
     currentParamsRef.current = {
       type,
@@ -933,6 +933,9 @@ function DoubanPageClient() {
                     <div key={`${item.title}-${index}`} className='w-full'>
                       <VideoCard
                         from='douban'
+                        source='douban'
+                        id={item.id}
+                        source_name='豆瓣'
                         title={item.title}
                         poster={item.poster}
                         douban_id={Number(item.id)}

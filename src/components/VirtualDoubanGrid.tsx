@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
   () => import('react-window').then(mod => ({ default: mod.Grid })),
-  { 
+  {
     ssr: false,
     loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
   }
@@ -26,17 +26,17 @@ export interface VirtualDoubanGridRef {
 interface VirtualDoubanGridProps {
   // 豆瓣数据
   doubanData: DoubanItem[];
-  
+
   // 分页相关
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
-  
+
   // 类型和状态
   type: string;
   loading: boolean;
   primarySelection?: string;
-  
+
   // 是否来自番组计划
   isBangumi?: boolean;
 }
@@ -113,7 +113,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     const checkContainer = () => {
       const element = containerRef.current;
       const actualWidth = element?.offsetWidth || 0;
-      
+
       console.log('VirtualDoubanGrid container debug:', {
         actualWidth,
         containerWidth,
@@ -123,13 +123,13 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
         element: !!element
       });
     };
-    
+
     checkContainer();
   }, [containerWidth]);
 
   // 检查是否还有更多项目可以加载（虚拟层面）
   const hasNextVirtualPage = displayItemCount < totalItemCount;
-  
+
   // 检查是否需要从服务器加载更多数据
   const needsServerData = displayItemCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore;
 
@@ -183,10 +183,10 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
   const isSingleRow = rowCount === 1;
 
   // 渲染单个网格项 - 支持react-window v2.1.0的ariaAttributes
-  const CellComponent = useCallback(({ 
+  const CellComponent = useCallback(({
     ariaAttributes,
-    columnIndex, 
-    rowIndex, 
+    columnIndex,
+    rowIndex,
     style,
     displayData: cellDisplayData,
     type: cellType,
@@ -196,7 +196,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     displayItemCount: cellDisplayItemCount,
   }: any) => {
     const index = rowIndex * cellColumnCount + columnIndex;
-    
+
     // 如果超出显示范围，返回隐藏的占位符
     if (index >= cellDisplayItemCount) {
       return <div style={{ ...style, visibility: 'hidden' }} />;
@@ -212,6 +212,9 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
       <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
         <VideoCard
           from='douban'
+          source='douban'
+          id={item.id}
+          source_name='豆瓣'
           title={item.title}
           poster={item.poster}
           douban_id={Number(item.id)}
@@ -334,7 +337,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
           }}
         />
       )}
-      
+
       {/* 加载更多指示器 */}
       {containerWidth > 100 && (isVirtualLoadingMore || isLoadingMore) && (
         <div className='flex justify-center mt-8 py-8'>
@@ -363,7 +366,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
           </div>
         </div>
       )}
-      
+
       {/* 已加载完所有内容的提示 */}
       {containerWidth > 100 && !hasMore && !hasNextVirtualPage && displayItemCount > 0 && (
         <div className='flex justify-center mt-8 py-8'>
