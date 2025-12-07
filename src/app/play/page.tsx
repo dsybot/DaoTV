@@ -5218,8 +5218,8 @@ function PlayPageClient() {
                     <span>💡</span>
                     <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
                   </h3>
-                  <div className='overflow-x-auto pb-2 episode-list'>
-                    <div className='flex gap-4' style={{ width: 'max-content' }}>
+                  <div className='overflow-x-auto pb-4 pt-2 pl-2 -ml-2 episode-list'>
+                    <div className='flex gap-4 pr-2' style={{ width: 'max-content' }}>
                       {movieDetails.recommendations.map((item: any) => {
                         const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
                         const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
