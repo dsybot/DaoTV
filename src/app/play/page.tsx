@@ -5220,7 +5220,7 @@ function PlayPageClient() {
                   </h3>
                   <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
                     {movieDetails.recommendations.map((item: any) => {
-                      const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
+                      const detailUrl = `/detail?id=${item.id}&from=douban`;
                       return (
                         <div
                           key={item.id}
@@ -5268,14 +5268,14 @@ function PlayPageClient() {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 e.stopImmediatePropagation();
-                                window.location.href = playUrl;
+                                window.location.href = detailUrl;
                               };
 
                               const clickHandler = (e: Event) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 e.stopImmediatePropagation();
-                                window.location.href = playUrl;
+                                window.location.href = detailUrl;
                               };
 
                               node.addEventListener('touchstart', touchStartHandler, true);
