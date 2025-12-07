@@ -5506,8 +5506,8 @@ function PlayPageClient() {
               </svg>
             </button>
 
-            {/* 选集内容 - 增加更多 padding 避免 hover 放大时被裁切 */}
-            <div className='relative w-full h-full overflow-y-auto px-12' style={{ pointerEvents: 'auto' }}>
+            {/* 选集内容 - 移除外层滚动，让 EpisodeSelector 内部管理滚动 */}
+            <div className='relative w-full h-full overflow-hidden px-12' style={{ pointerEvents: 'auto' }}>
               <EpisodeSelector
                 totalEpisodes={totalEpisodes}
                 episodes_titles={detail?.episodes_titles || []}
