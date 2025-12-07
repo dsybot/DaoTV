@@ -161,13 +161,39 @@ export async function GET(request: NextRequest) {
 
     let result: any = null;
     let detectedSeason = parseInt(season) || 1;
+    let usedImdbMatch = false;
 
     // 1. 优先通过IMDb ID精确匹配
     if (imdbId) {
       result = await findByImdbId(imdbId, apiKey, type);
+      if (result) {
+        usedImdbMatch = true;
+        // 对于电视剧，验证IMDb匹配的结果是否有效（检查是否有季数信息）
+        if (searchType === 'tv') {
+          try {
+            const detailUrl = `${TMDB_BASE_URL}/tv/${result.id}?api_key=${apiKey}&language=${language}`;
+            const detailResponse = await fetch(detailUrl, {
+              headers: { 'Accept': 'application/json' },
+              cache: 'no-store',
+            });
+            if (detailResponse.ok) {
+              const detailData = await detailResponse.json();
+              const validSeasons = (detailData.seasons || []).filter((s: any) => s.season_number > 0);
+              // 如果没有有效的季数信息，可能是错误的条目，回退到标题搜索
+              if (validSeasons.length === 0) {
+                console.log(`[TMDB] IMDb匹配的结果 "${result.name}" 没有季数信息，回退到标题搜索`);
+                result = null;
+                usedImdbMatch = false;
+              }
+            }
+          } catch (e) {
+            console.error('[TMDB] 验证IMDb匹配结果失败:', e);
+          }
+        }
+      }
     }
 
-    // 2. 如果没有IMDb ID或匹配失败，通过标题搜索
+    // 2. 如果没有IMDb ID或匹配失败或验证失败，通过标题搜索
     if (!result) {
       const { titles: titlesToTry, seasonNumber } = cleanTitle(title);
       detectedSeason = seasonNumber; // 使用从标题中检测到的季数
