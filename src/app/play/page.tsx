@@ -5220,7 +5220,7 @@ function PlayPageClient() {
                   </h3>
                   <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
                     {movieDetails.recommendations.map((item: any) => {
-                      const detailUrl = `/detail?id=${item.id}&from=douban`;
+                      const detailUrl = `/detail?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&poster=${encodeURIComponent(item.poster || '')}`;
                       return (
                         <div
                           key={item.id}
