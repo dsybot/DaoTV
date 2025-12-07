@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
   const apiSites = await getAvailableApiSites(authInfo.username);
 
   // 添加超时控制和错误处理，避免慢接口拖累整体响应
+  // 移除数字变体后，统一使用智能搜索变体
   const searchPromises = apiSites.map((site) =>
     Promise.race([
       searchFromApi(site, query),
