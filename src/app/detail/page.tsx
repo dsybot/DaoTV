@@ -702,6 +702,13 @@ function DetailPageClient() {
                                     }
                                   }}
                                 />
+                              ) : backdrop ? (
+                                // 没有剧照时使用TMDB背景图作为备用
+                                <img
+                                  src={backdrop}
+                                  alt={ep.name}
+                                  className="w-full h-full object-cover"
+                                />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
                                   <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
