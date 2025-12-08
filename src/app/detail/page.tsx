@@ -184,7 +184,9 @@ function DetailPageClient() {
   const poster = searchParams.get('poster') || '';
   const source = searchParams.get('source') || '';
   const id = searchParams.get('id') || '';
-  const doubanId = parseInt(searchParams.get('douban_id') || '0') || 0;
+  // 优先使用 douban_id 参数，其次如果 source 是虚拟源（douban/bangumi），则 id 就是豆瓣/bangumi ID
+  const doubanIdParam = parseInt(searchParams.get('douban_id') || '0') || 0;
+  const doubanId = doubanIdParam > 0 ? doubanIdParam : ((source === 'douban' || source === 'bangumi') && id ? parseInt(id) || 0 : 0);
   const stype = searchParams.get('stype') || '';
   const stitle = searchParams.get('stitle') || '';
   const sourceName = searchParams.get('source_name') || '';
@@ -442,7 +444,7 @@ function DetailPageClient() {
     }
   }, [doubanId, title]);
 
-  const displayPoster = movieDetails?.cover || poster;
+  const displayPoster = movieDetails?.poster || movieDetails?.cover || poster;
   // 优先使用豆瓣数据，如果没有则使用TMDB数据作为备用
   const rate = movieDetails?.rate || (tmdbRating > 0 ? tmdbRating.toFixed(1) : '');
   const firstAired = movieDetails?.first_aired || tmdbFirstAirDate || '';
