@@ -444,7 +444,8 @@ function DetailPageClient() {
     }
   }, [doubanId, title]);
 
-  const displayPoster = movieDetails?.poster || movieDetails?.cover || poster;
+  // 优先使用URL参数中的poster（来自搜索结果），其次使用豆瓣详情中的poster
+  const displayPoster = poster || movieDetails?.poster || movieDetails?.cover;
   // 优先使用豆瓣数据，如果没有则使用TMDB数据作为备用
   const rate = movieDetails?.rate || (tmdbRating > 0 ? tmdbRating.toFixed(1) : '');
   const firstAired = movieDetails?.first_aired || tmdbFirstAirDate || '';
