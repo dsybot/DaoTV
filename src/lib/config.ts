@@ -215,6 +215,7 @@ async function getInitConfig(configFile: string, subConfig: {
       DoubanImageProxyType:
         process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE || 'direct',
       DoubanImageProxy: process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '',
+      DoubanDetailProxy: process.env.DOUBAN_DETAIL_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
       ShowAdultContent: false, // 默认不显示成人内容，可在管理面板修改
@@ -298,7 +299,7 @@ async function getInitConfig(configFile: string, subConfig: {
 
 export async function getConfig(): Promise<AdminConfig> {
   const now = Date.now();
-  
+
   // 🔥 修复：添加时间戳检查，避免 Vercel 多实例缓存不一致
   // 缓存仅保留5秒，过期后强制重新从数据库读取
   if (cachedConfig && (now - cacheTimestamp) < CACHE_DURATION) {
@@ -381,7 +382,7 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
   if (!adminConfig.LiveConfig || !Array.isArray(adminConfig.LiveConfig)) {
     adminConfig.LiveConfig = [];
   }
-  
+
   // 确保网盘搜索配置有默认值
   if (!adminConfig.NetDiskConfig) {
     adminConfig.NetDiskConfig = {

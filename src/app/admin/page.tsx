@@ -278,6 +278,7 @@ interface SiteConfig {
   DoubanProxy: string;
   DoubanImageProxyType: string;
   DoubanImageProxy: string;
+  DoubanDetailProxy?: string;
   DisableYellowFilter: boolean;
   ShowAdultContent: boolean;
   FluidSearch: boolean;
@@ -4287,6 +4288,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     DoubanProxy: '',
     DoubanImageProxyType: 'direct',
     DoubanImageProxy: '',
+    DoubanDetailProxy: '',
     DisableYellowFilter: false,
     ShowAdultContent: false,
     FluidSearch: true,
@@ -4369,6 +4371,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         DoubanImageProxyType:
           config.SiteConfig.DoubanImageProxyType || 'direct',
         DoubanImageProxy: config.SiteConfig.DoubanImageProxy || '',
+        DoubanDetailProxy: config.SiteConfig.DoubanDetailProxy || '',
         DisableYellowFilter: config.SiteConfig.DisableYellowFilter || false,
         ShowAdultContent: config.SiteConfig.ShowAdultContent || false,
         FluidSearch: config.SiteConfig.FluidSearch || true,
@@ -4757,6 +4760,33 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
             </p>
           </div>
         )}
+      </div>
+
+      {/* 豆瓣详情/短评代理配置 */}
+      <div>
+        <label
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
+          豆瓣详情/短评代理地址（可选）
+        </label>
+        <input
+          type='text'
+          placeholder='例如: https://your-cors-proxy.workers.dev/?url='
+          value={siteSettings.DoubanDetailProxy || ''}
+          onChange={(e) =>
+            setSiteSettings((prev) => ({
+              ...prev,
+              DoubanDetailProxy: e.target.value,
+            }))
+          }
+          className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:border-gray-400 dark:hover:border-gray-500"
+        />
+        <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+          如服务器IP被豆瓣封禁，可配置CORS代理获取豆瓣详情和短评。留空则直连。
+        </p>
+        <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+          代理格式：https://proxy.com/?url=（会自动拼接目标URL）
+        </p>
       </div>
 
       {/* 上映日程代理配置 */}

@@ -14,6 +14,7 @@ export interface AdminConfig {
     DoubanProxy: string;
     DoubanImageProxyType: string;
     DoubanImageProxy: string;
+    DoubanDetailProxy?: string; // 豆瓣详情/短评代理地址
     DisableYellowFilter: boolean;
     ShowAdultContent: boolean; // 是否显示成人内容，默认 false
     FluidSearch: boolean;

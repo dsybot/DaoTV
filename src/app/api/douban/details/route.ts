@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getCacheTime } from '@/lib/config';
+import { getCacheTime, getConfig } from '@/lib/config';
 
 // 用户代理池
 const USER_AGENTS = [
@@ -35,7 +35,17 @@ export async function GET(request: Request) {
     );
   }
 
-  const target = `https://movie.douban.com/subject/${id}/`;
+  // 获取代理配置
+  const config = await getConfig();
+  const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
+
+  const originalUrl = `https://movie.douban.com/subject/${id}/`;
+  // 如果配置了代理，使用代理地址
+  const target = proxyUrl
+    ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+    : originalUrl;
+
+  console.log(`[豆瓣详情] 请求URL: ${target}`);
 
   try {
 
