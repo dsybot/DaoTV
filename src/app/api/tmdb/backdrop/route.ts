@@ -85,6 +85,22 @@ function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
     titles.push(langMatch[1].trim());
   }
 
+  // 去掉括号内的语言/版本标记（如"九品芝麻官（粤）" -> "九品芝麻官"，"功夫(国语)" -> "功夫"）
+  const bracketLangMatch = title.match(/^(.+?)[（(](粤|国|国语|粤语|日语|英语|中文|原声|配音|港版|台版|美版)[）)]$/);
+  if (bracketLangMatch && bracketLangMatch[1].length >= 2) {
+    titles.push(bracketLangMatch[1].trim());
+  }
+
+  // 去掉末尾的括号内容（更通用，如"XXX（YYY）" -> "XXX"）
+  const bracketMatch = title.match(/^(.+?)[（(][^）)]+[）)]$/);
+  if (bracketMatch && bracketMatch[1].length >= 2) {
+    // 只有当括号内容较短时才添加（避免误删重要信息）
+    const bracketContent = title.slice(bracketMatch[1].length);
+    if (bracketContent.length <= 6) {
+      titles.push(bracketMatch[1].trim());
+    }
+  }
+
   return { titles: Array.from(new Set(titles)), seasonNumber };
 }
 
