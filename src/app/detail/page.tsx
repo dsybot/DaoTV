@@ -411,14 +411,21 @@ function DetailPageClient() {
 
   // 跳转到播放页
   const handlePlay = useCallback(() => {
-    const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
     const stypeParam = stype ? `&stype=${stype}` : '';
     const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
 
-    if (source && id) {
+    // 虚拟源（douban/bangumi）：id 就是豆瓣/bangumi ID，用 douban_id 参数传递
+    const isVirtualSource = source === 'douban' || source === 'bangumi';
+    // 优先使用 URL 中的 doubanId，其次使用虚拟源的 id
+    const effectiveDoubanId = doubanId > 0 ? doubanId : (isVirtualSource && id ? parseInt(id) : 0);
+    const doubanIdParam = effectiveDoubanId > 0 ? `&douban_id=${effectiveDoubanId}` : '';
+
+    if (source && id && !isVirtualSource) {
+      // 真实源：用 source/id 跳转
       const url = `/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}`;
       router.push(url);
     } else {
+      // 虚拟源或无源：用标题搜索，但带上 douban_id 用于精确匹配
       const url = `/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true`;
       router.push(url);
     }
@@ -658,11 +665,14 @@ function DetailPageClient() {
                             key={ep.episodeNumber}
                             className="group cursor-pointer flex-shrink-0 w-40 sm:w-44"
                             onClick={() => {
-                              const doubanIdParam = doubanId > 0 ? `&douban_id=${doubanId}` : '';
                               const stypeParam = stype ? `&stype=${stype}` : '';
                               const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
                               const episodeParam = `&episode=${ep.episodeNumber}`;
-                              if (source && id) {
+                              // 虚拟源（douban/bangumi）：id 就是豆瓣/bangumi ID
+                              const isVirtualSource = source === 'douban' || source === 'bangumi';
+                              const effectiveDoubanId = doubanId > 0 ? doubanId : (isVirtualSource && id ? parseInt(id) : 0);
+                              const doubanIdParam = effectiveDoubanId > 0 ? `&douban_id=${effectiveDoubanId}` : '';
+                              if (source && id && !isVirtualSource) {
                                 router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
                               } else {
                                 router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
