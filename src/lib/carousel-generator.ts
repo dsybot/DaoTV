@@ -14,6 +14,7 @@
 
 import { getCarouselItemByTitle, getCarouselItemByIMDB, CarouselItem } from './tmdb.client';
 import { fetchDoubanDetailsForCarousel } from './douban-details-fetcher';
+import { getConfig } from './config';
 
 /**
  * 生成轮播图数据（核心逻辑）
@@ -272,8 +273,15 @@ async function fetchDoubanHot(
   type: string
 ): Promise<{ code: number; list: any[] }> {
   try {
+    // 获取代理配置
+    const config = await getConfig();
+    const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
+
     // 获取更多候选数据以确保成功率
-    const url = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=0&limit=30&category=${category}&type=${type}&_t=${Date.now()}`;
+    const originalUrl = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=0&limit=30&category=${category}&type=${type}&_t=${Date.now()}`;
+    const url = proxyUrl
+      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+      : originalUrl;
 
     const response = await fetch(url, {
       cache: 'no-store',

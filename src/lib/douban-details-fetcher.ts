@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
+import { getConfig } from '@/lib/config';
+
 /**
  * 服务器端豆瓣详情获取器
  * 直接调用豆瓣网页，解析genres和first_aired
@@ -31,7 +33,14 @@ export async function fetchDoubanDetailsForCarousel(doubanId: string): Promise<{
   imdb_id: string;
 } | null> {
   try {
-    const target = `https://movie.douban.com/subject/${doubanId}/`;
+    // 获取代理配置
+    const config = await getConfig();
+    const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
+
+    const originalUrl = `https://movie.douban.com/subject/${doubanId}/`;
+    const target = proxyUrl
+      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+      : originalUrl;
 
     // 添加随机延时防止反爬
     await randomDelay();

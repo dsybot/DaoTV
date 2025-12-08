@@ -421,7 +421,15 @@ async function extractPlatformUrls(doubanId: string, episode?: string | null): P
     // 设置超时控制
     timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    const response = await fetch(`https://movie.douban.com/subject/${doubanId}/`, {
+    // 获取代理配置
+    const config = await getConfig();
+    const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
+    const originalUrl = `https://movie.douban.com/subject/${doubanId}/`;
+    const targetUrl = proxyUrl
+      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+      : originalUrl;
+
+    const response = await fetch(targetUrl, {
       signal: controller.signal,
       headers: {
         'User-Agent': getRandomUserAgent(),
