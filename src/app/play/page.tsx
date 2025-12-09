@@ -2347,10 +2347,11 @@ function PlayPageClient() {
             });
           }
         } else {
-          // 指定源获取失败，报错让用户重试
-          setError('获取视频详情失败，请重试');
-          setLoading(false);
-          return;
+          // 指定源获取失败，回退到搜索逻辑
+          console.log('指定源获取失败，回退到搜索');
+          setLoadingStage('searching');
+          setLoadingMessage('🔍 正在搜索播放源...');
+          sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
         }
       } else {
         // 没有明确的 source 和 id，进行搜索
