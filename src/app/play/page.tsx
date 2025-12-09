@@ -2294,14 +2294,18 @@ function PlayPageClient() {
         }
       } else if (currentSource && currentId) {
         // 🚀 有明确的 source 和 id（如从继续观看进入）
-        // 直接获取指定源详情，不使用重试机制，快速响应
+        // 直接获取指定源详情，设置 3 秒超时快速响应
         console.log('有明确的 source 和 id，直接获取指定源详情');
 
-        // 直接获取指定源的详情（不使用 fetchSourceDetail 的重试机制）
+        // 直接获取指定源的详情（3秒超时，超时后回退到搜索）
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
           const detailResponse = await fetch(
-            `/api/detail?source=${currentSource}&id=${currentId}`
+            `/api/detail?source=${currentSource}&id=${currentId}`,
+            { signal: controller.signal }
           );
+          clearTimeout(timeoutId);
           if (detailResponse.ok) {
             const detailData = (await detailResponse.json()) as SearchResult;
             sourcesInfo = [detailData];
