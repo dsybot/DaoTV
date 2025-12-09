@@ -2294,11 +2294,21 @@ function PlayPageClient() {
         }
       } else if (currentSource && currentId) {
         // 🚀 有明确的 source 和 id（如从继续观看进入）
-        // 只获取指定源详情，立即进入播放，后台异步搜索其他源
-        console.log('有明确的 source 和 id，只获取指定源详情');
+        // 直接获取指定源详情，不使用重试机制，快速响应
+        console.log('有明确的 source 和 id，直接获取指定源详情');
 
-        // 只获取指定源的详情
-        sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+        // 直接获取指定源的详情（不使用 fetchSourceDetail 的重试机制）
+        try {
+          const detailResponse = await fetch(
+            `/api/detail?source=${currentSource}&id=${currentId}`
+          );
+          if (detailResponse.ok) {
+            const detailData = (await detailResponse.json()) as SearchResult;
+            sourcesInfo = [detailData];
+          }
+        } catch (err) {
+          console.error('获取指定源详情失败:', err);
+        }
 
         if (sourcesInfo.length > 0) {
           setAvailableSources(sourcesInfo);
