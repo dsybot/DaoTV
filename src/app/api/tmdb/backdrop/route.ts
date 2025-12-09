@@ -61,6 +61,13 @@ function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
     seasonNumber = parseInt(numberMatch[2]) || 1;
   }
 
+  // 去掉"数字+冒号+副标题"后缀（如"晩酌的流派4：秋冬篇" -> "晩酌的流派"）
+  const numberColonMatch = title.match(/^(.+?)(\d+)[：:].+$/);
+  if (numberColonMatch && numberColonMatch[1].length >= 2) {
+    titles.push(numberColonMatch[1].trim());
+    seasonNumber = parseInt(numberColonMatch[2]) || 1;
+  }
+
   // 去掉"之XXX"后缀（如"诡事录之长安" -> "诡事录"）
   const suffixMatch = title.match(/^(.+?)之.+$/);
   if (suffixMatch && suffixMatch[1].length >= 2) {

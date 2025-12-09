@@ -702,9 +702,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           // 检查是否点击的是按钮元素，如果是则不触发跳转详情页
           const target = e.target as HTMLElement;
           const isButton = target.closest('[data-button]');
-          console.log('VideoCard clicked, target:', target.tagName, 'isButton:', !!isButton);
           if (!isButton) {
-            console.log('Navigating to detail page...');
             handleGoToDetail();
           }
         }}
