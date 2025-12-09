@@ -1960,6 +1960,11 @@ function PlayPageClient() {
       // 结果过滤函数（精确匹配）
       const filterResults = (results: SearchResult[]): SearchResult[] => {
         return results.filter((result: SearchResult) => {
+          // 🚀 优先检查：如果有指定的 source 和 id，且结果匹配，直接返回 true
+          if (currentSource && currentId && result.source === currentSource && result.id === currentId) {
+            return true;
+          }
+
           // 如果有 douban_id，优先使用 douban_id 精确匹配
           if (videoDoubanIdRef.current && videoDoubanIdRef.current > 0 && result.douban_id) {
             return result.douban_id === videoDoubanIdRef.current;
