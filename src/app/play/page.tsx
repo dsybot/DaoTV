@@ -2422,21 +2422,17 @@ function PlayPageClient() {
       }
 
       let detailData: SearchResult = sourcesInfo[0];
-      // 🚀 当有 shortdramaId 或 (currentSource + currentId) 时，已经直接获取了详情
-      // sourcesInfo[0] 就是目标源，不需要再查找
-      // 只有通过搜索获取结果时才需要在列表中查找匹配的源
-      const isDirectFetch = shortdramaId || (currentSource && currentId);
-      if (!isDirectFetch && currentSource && currentId && !needPreferRef.current) {
-        // 通过搜索获取的结果，需要在列表中查找
+      // 🚀 如果有指定的 source 和 id，优先在结果中查找匹配的源
+      if (currentSource && currentId && !needPreferRef.current) {
         const target = sourcesInfo.find(
           (source) => source.source === currentSource && source.id === currentId
         );
         if (target) {
           detailData = target;
+          console.log('找到匹配的指定源:', currentSource, currentId);
         } else {
-          setError('未找到匹配结果');
-          setLoading(false);
-          return;
+          // 没找到匹配的源，使用第一个结果
+          console.log('未找到匹配的指定源，使用第一个结果');
         }
       }
 
