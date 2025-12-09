@@ -2287,19 +2287,66 @@ function PlayPageClient() {
           // 短剧源获取失败，回退到普通搜索
           sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
         }
-      } else {
-        // 其他情况先搜索所有视频源
-        sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+      } else if (currentSource && currentId) {
+        // 🚀 有明确的 source 和 id（如从继续观看进入）
+        // 先获取指定源详情，同时后台搜索其他源
+        console.log('有明确的 source 和 id，先获取指定源详情');
 
-        if (
-          currentSource &&
-          currentId &&
-          !sourcesInfo.some(
-            (source) => source.source === currentSource && source.id === currentId
-          )
-        ) {
-          sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+        // 并行执行：获取指定源详情 + 搜索其他源
+        const [detailResult, searchResult] = await Promise.all([
+          fetchSourceDetail(currentSource, currentId),
+          fetchSourcesData(searchTitle || videoTitle).catch(() => [] as SearchResult[])
+        ]);
+
+        if (detailResult.length > 0) {
+          // 指定源获取成功，合并搜索结果
+          sourcesInfo = detailResult;
+          // 将搜索到的其他源添加到列表（去重）
+          searchResult.forEach((s) => {
+            if (!sourcesInfo.some((m) => m.source === s.source && m.id === s.id)) {
+              sourcesInfo.push(s);
+            }
+          });
+          setAvailableSources(sourcesInfo);
+        } else if (searchResult.length > 0) {
+          // 指定源获取失败，但搜索有结果
+          // 检查搜索结果中是否包含指定源
+          const targetInSearch = searchResult.find(
+            (s) => s.source === currentSource && s.id === currentId
+          );
+          if (targetInSearch) {
+            sourcesInfo = searchResult;
+          } else {
+            // 搜索结果中也没有指定源，报错
+            setError('未找到匹配结果');
+            setLoading(false);
+            return;
+          }
+        } else {
+          // 都失败了
+          setError('未找到匹配结果');
+          setLoading(false);
+          return;
         }
+
+        // 如果有 shortdrama_id，额外添加短剧源
+        if (shortdramaId) {
+          fetchSourceDetail('shortdrama', shortdramaId).then((shortdramaSource) => {
+            if (shortdramaSource.length > 0) {
+              setAvailableSources((prev) => {
+                if (prev.some((s) => s.source === 'shortdrama' && s.id === shortdramaId)) {
+                  return prev;
+                }
+                return [...prev, ...shortdramaSource];
+              });
+            }
+          }).catch((err) => {
+            console.error('添加短剧源失败:', err);
+          });
+        }
+      } else {
+        // 没有明确的 source 和 id，进行搜索
+        sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
         if (shortdramaId) {
