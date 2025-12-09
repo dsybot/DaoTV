@@ -1918,8 +1918,10 @@ function PlayPageClient() {
   useEffect(() => {
     const fetchSourceDetail = async (
       source: string,
-      id: string
+      id: string,
+      retryCount = 0
     ): Promise<SearchResult[]> => {
+      const maxRetries = 2; // 最多重试2次
       try {
         let detailResponse;
 
@@ -1941,10 +1943,17 @@ function PlayPageClient() {
         setAvailableSources([detailData]);
         return [detailData];
       } catch (err) {
-        console.error('获取视频详情失败:', err);
+        console.error(`获取视频详情失败 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, err);
+        // 如果还有重试次数，等待后重试
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+          return fetchSourceDetail(source, id, retryCount + 1);
+        }
         return [];
       } finally {
-        setSourceSearchLoading(false);
+        if (retryCount >= maxRetries || retryCount === 0) {
+          setSourceSearchLoading(false);
+        }
       }
     };
     const fetchSourcesData = async (query: string): Promise<SearchResult[]> => {
