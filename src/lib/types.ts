@@ -28,6 +28,7 @@ export interface Favorite {
   save_time: number; // 记录保存时间（时间戳）
   search_title: string; // 搜索时使用的标题
   origin?: 'vod' | 'live' | 'shortdrama';
+  type?: string; // 类型：movie/tv/variety/anime 等
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
   remarks?: string; // 备注信息（如"X天后上映"、"已上映"等）
 }
@@ -47,6 +48,10 @@ export interface ShortDramaItem {
   score: number;
   episode_count: number;
   description?: string;
+  author?: string;        // 演员/导演信息
+  backdrop?: string;      // 高清背景图
+  vote_average?: number;  // 用户评分 (0-10)
+  tmdb_id?: number;       // TMDB ID
 }
 
 // 短剧解析结果数据结构

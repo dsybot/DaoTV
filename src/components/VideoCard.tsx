@@ -47,7 +47,7 @@ export interface VideoCardProps {
   type?: string;
   isBangumi?: boolean;
   isAggregate?: boolean;
-  origin?: 'vod' | 'live';
+  origin?: 'vod' | 'live' | 'shortdrama';
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
   episodeBadgeVariant?: 'default' | 'dark';

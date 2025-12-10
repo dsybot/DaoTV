@@ -33,6 +33,7 @@ function ShortDramaCard({
   className = '',
 }: ShortDramaCardProps) {
   const [realEpisodeCount, setRealEpisodeCount] = useState<number>(drama.episode_count);
+  const [showEpisodeCount, setShowEpisodeCount] = useState(drama.episode_count > 1); // 是否显示集数标签
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
   const [favorited, setFavorited] = useState(false); // 收藏状态
 
@@ -73,8 +74,13 @@ function ShortDramaCard({
 
       // 检查统一缓存
       const cached = await getCache(cacheKey);
-      if (cached && typeof cached === 'number' && cached > 0) {
-        setRealEpisodeCount(cached);
+      if (cached && typeof cached === 'number') {
+        if (cached > 1) {
+          setRealEpisodeCount(cached);
+          setShowEpisodeCount(true);
+        } else {
+          setShowEpisodeCount(false);
+        }
         return;
       }
 
@@ -95,18 +101,21 @@ function ShortDramaCard({
           }
         }
 
-        if (result && result.totalEpisodes > 0) {
+        if (result && result.totalEpisodes > 1) {
           setRealEpisodeCount(result.totalEpisodes);
+          setShowEpisodeCount(true);
           // 使用统一缓存系统缓存结果
           await setCache(cacheKey, result.totalEpisodes, SHORTDRAMA_CACHE_EXPIRE.episodes);
         } else {
-          // 如果解析失败，缓存失败结果避免重复请求
-          await setCache(cacheKey, 1, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
+          // 如果解析失败或集数<=1，不显示集数标签，缓存0避免重复请求
+          setShowEpisodeCount(false);
+          await setCache(cacheKey, 0, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
         }
       } catch (error) {
         console.error('获取集数失败:', error);
-        // 网络错误时也缓存失败结果
-        await setCache(cacheKey, 1, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
+        // 网络错误时不显示集数标签
+        setShowEpisodeCount(false);
+        await setCache(cacheKey, 0, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
       }
     };
 
@@ -196,13 +205,15 @@ function ShortDramaCard({
             </div>
           </div>
 
-          {/* 集数标识 */}
-          <div className="absolute top-2 left-2 rounded-md bg-black/30 dark:bg-white/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold text-white dark:text-gray-900 shadow-lg border border-white/10 dark:border-black/10 backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-            <span className="flex items-center gap-1">
-              <Play size={10} className="fill-current" />
-              {realEpisodeCount}集
-            </span>
-          </div>
+          {/* 集数标识 - 只在集数>1时显示 */}
+          {showEpisodeCount && (
+            <div className="absolute top-2 left-2 rounded-md bg-black/30 dark:bg-white/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold text-white dark:text-gray-900 shadow-lg border border-white/10 dark:border-black/10 backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+              <span className="flex items-center gap-1">
+                <Play size={10} className="fill-current" />
+                {realEpisodeCount}集
+              </span>
+            </div>
+          )}
 
           {/* 评分 */}
           {drama.score > 0 && (
@@ -228,8 +239,8 @@ function ShortDramaCard({
           >
             <Heart
               className={`h-4 w-4 transition-all duration-300 ${favorited
-                  ? 'fill-red-500 text-red-500 scale-110'
-                  : 'text-white hover:text-red-400'
+                ? 'fill-red-500 text-red-500 scale-110'
+                : 'text-white hover:text-red-400'
                 }`}
             />
           </button>

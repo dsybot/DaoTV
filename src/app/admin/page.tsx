@@ -58,6 +58,7 @@ import { TelegramAuthConfig } from '@/components/TelegramAuthConfig';
 import TVBoxSecurityConfig from '@/components/TVBoxSecurityConfig';
 import { TVBoxTokenCell, TVBoxTokenModal } from '@/components/TVBoxTokenManager';
 import YouTubeConfig from '@/components/YouTubeConfig';
+import ShortDramaConfig from '@/components/ShortDramaConfig';
 import PageLayout from '@/components/PageLayout';
 
 // 统一按钮样式系统
@@ -6001,6 +6002,7 @@ function AdminPageClient() {
     netdiskConfig: false,
     aiRecommendConfig: false,
     youtubeConfig: false,
+    shortDramaConfig: false,
     tvboxSecurityConfig: false,
     telegramAuthConfig: false,
     configFile: false,
@@ -6264,6 +6266,21 @@ function AdminPageClient() {
               onToggle={() => toggleTab('youtubeConfig')}
             >
               <YouTubeConfig config={config} refreshConfig={fetchConfig} />
+            </CollapsibleTab>
+
+            {/* 短剧API配置标签 */}
+            <CollapsibleTab
+              title='短剧API配置'
+              icon={
+                <Video
+                  size={20}
+                  className='text-purple-600 dark:text-purple-400'
+                />
+              }
+              isExpanded={expandedTabs.shortDramaConfig}
+              onToggle={() => toggleTab('shortDramaConfig')}
+            >
+              <ShortDramaConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
             {/* TVBox安全配置标签 */}

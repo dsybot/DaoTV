@@ -23,7 +23,7 @@ interface MobileActionSheetProps {
   sourceName?: string; // 播放源名称
   currentEpisode?: number; // 当前集数
   totalEpisodes?: number; // 总集数
-  origin?: 'vod' | 'live';
+  origin?: 'vod' | 'live' | 'shortdrama';
 }
 
 const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
@@ -347,8 +347,8 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
   };
 
   // 使用Portal将菜单渲染到body外层，避免被虚拟滚动容器的overflow限制
-  return typeof window !== 'undefined' 
-    ? createPortal(renderContent(), document.body) 
+  return typeof window !== 'undefined'
+    ? createPortal(renderContent(), document.body)
     : null;
 };
 
