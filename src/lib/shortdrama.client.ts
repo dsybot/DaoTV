@@ -52,9 +52,9 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -110,9 +110,9 @@ export async function getRecommendedShortDramas(
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -174,9 +174,9 @@ export async function getShortDramaList(
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -234,9 +234,9 @@ export async function searchShortDramas(
       // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -297,15 +297,20 @@ async function parseWithAlternativeApi(
 
     // Step 1: Search for the drama by name to get drama ID
     const searchUrl = `${alternativeApiBase}/api/v1/drama/dl?dramaName=${encodeURIComponent(dramaName)}`;
+    console.log('[Alternative API] Step 1 - Search URL:', searchUrl);
+
     const searchResponse = await fetch(searchUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     });
 
+    console.log('[Alternative API] Step 1 - Response status:', searchResponse.status);
+
     if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      console.error('[Alternative API] Step 1 - Error response:', errorText);
       throw new Error(`Search failed: ${searchResponse.status}`);
     }
 
@@ -337,7 +342,6 @@ async function parseWithAlternativeApi(
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     });
 
     if (!episodesResponse.ok) {
@@ -390,7 +394,6 @@ async function parseWithAlternativeApi(
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     });
 
     if (!directResponse.ok) {
@@ -404,6 +407,12 @@ async function parseWithAlternativeApi(
       throw new Error('备用API未返回播放链接');
     }
 
+    // 将 http:// 转换为 https:// 避免 Mixed Content 错误
+    const videoUrl = (directData.url || '').replace(/^http:\/\//i, 'https://');
+
+    // 备用API的视频链接通过代理访问（避免防盗链限制）
+    const proxyUrl = `/api/proxy/shortdrama?url=${encodeURIComponent(videoUrl)}`;
+
     return {
       code: 0,
       data: {
@@ -411,14 +420,16 @@ async function parseWithAlternativeApi(
         videoName: firstDrama.name,
         currentEpisode: episode,
         totalEpisodes: episodesData.data.length,
-        parsedUrl: directData.url || '',
-        proxyUrl: directData.url || '',
+        parsedUrl: proxyUrl,
+        proxyUrl: proxyUrl,
         cover: directData.pic || firstDrama.pic || '',
         description: firstDrama.overview || '',
         episode: {
           index: episode,
           label: `第${episode}集`,
-          parsedUrl: directData.url || '',
+          parsedUrl: proxyUrl,
+          proxyUrl: proxyUrl,
+          title: directData.title || `第${episode}集`,
         },
       },
       // 额外的元数据供其他地方使用
@@ -448,6 +459,21 @@ export async function parseShortDramaEpisode(
   dramaName?: string,
   alternativeApiUrl?: string
 ): Promise<ShortDramaParseResult> {
+  // 如果提供了剧名和备用API，优先尝试备用API（因为主API链接经常失效）
+  if (dramaName && alternativeApiUrl) {
+    console.log('优先尝试备用API...');
+    try {
+      const alternativeResult = await parseWithAlternativeApi(dramaName, episode, alternativeApiUrl);
+      if (alternativeResult.code === 0) {
+        console.log('备用API成功！');
+        return alternativeResult;
+      }
+      console.log('备用API失败，fallback到主API:', alternativeResult.msg);
+    } catch (altError) {
+      console.log('备用API错误，fallback到主API:', altError);
+    }
+  }
+
   try {
     const params = new URLSearchParams({
       id: id.toString(), // API需要string类型的id
@@ -472,9 +498,9 @@ export async function parseShortDramaEpisode(
       }
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -498,6 +524,15 @@ export async function parseShortDramaEpisode(
       };
     }
 
+    // API成功时，检查是否有有效的视频链接
+    const parsedUrl = data.episode?.parsedUrl || data.parsedUrl || '';
+
+    // 如果主API返回成功但没有有效链接，尝试备用API
+    if (!parsedUrl && dramaName && alternativeApiUrl) {
+      console.log('主API未返回有效链接，尝试使用备用API...');
+      return await parseWithAlternativeApi(dramaName, episode, alternativeApiUrl);
+    }
+
     // API成功时直接返回数据对象，根据实际结构解析
     return {
       code: 0,
@@ -506,7 +541,7 @@ export async function parseShortDramaEpisode(
         videoName: data.videoName || '',
         currentEpisode: data.episode?.index || episode,
         totalEpisodes: data.totalEpisodes || 1,
-        parsedUrl: data.episode?.parsedUrl || data.parsedUrl || '',
+        parsedUrl: parsedUrl,
         proxyUrl: data.episode?.proxyUrl || '', // proxyUrl在episode对象内
         cover: data.cover || '',
         description: data.description || '',
@@ -557,9 +592,9 @@ export async function parseShortDramaBatch(
       }
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -604,9 +639,9 @@ export async function parseShortDramaAll(
       }
     } : {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json',
       },
-      mode: 'cors',
     };
 
     const response = await fetch(apiUrl, fetchOptions);

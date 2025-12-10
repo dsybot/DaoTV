@@ -38,6 +38,14 @@ export async function GET(request: NextRequest) {
       const config = await getConfig();
       const shortDramaConfig = config.ShortDramaConfig;
       alternativeApiUrl = shortDramaConfig?.enableAlternative ? shortDramaConfig.alternativeApiUrl : undefined;
+
+      // 调试日志
+      console.log('[ShortDrama Detail] 配置读取:', {
+        hasConfig: !!shortDramaConfig,
+        enableAlternative: shortDramaConfig?.enableAlternative,
+        hasAlternativeUrl: !!alternativeApiUrl,
+        name: name,
+      });
     } catch (configError) {
       console.error('读取短剧配置失败:', configError);
       // 配置读取失败时，不使用备用API
