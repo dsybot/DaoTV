@@ -137,6 +137,10 @@ export async function getRecommendedShortDramas(
         score: item.vod_score || item.score || 0,
         episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
         description: item.vod_content || item.description || '',
+        author: item.vod_actor || item.author || '',
+        backdrop: item.vod_pic_slide || item.backdrop || item.vod_pic || item.cover,
+        vote_average: item.vod_score || item.vote_average || 0,
+        tmdb_id: item.tmdb_id || undefined,
       }));
     }
 
@@ -201,6 +205,10 @@ export async function getShortDramaList(
         score: item.score || 0,
         episode_count: 1, // 分页API没有集数信息，ShortDramaCard会自动获取
         description: item.description || '',
+        author: item.author || '',
+        backdrop: item.backdrop || item.cover,
+        vote_average: item.vote_average || item.score || 0,
+        tmdb_id: item.tmdb_id || undefined,
       }));
 
       result = {
@@ -227,7 +235,7 @@ export async function searchShortDramas(
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
   try {
     const apiUrl = isMobile()
-      ? `/api/shortdrama/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`
+      ? `/api/shortdrama/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`
       : `${SHORTDRAMA_API_BASE}/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`;
 
     const fetchOptions: RequestInit = isMobile() ? {
@@ -261,6 +269,10 @@ export async function searchShortDramas(
         score: item.score || 0,
         episode_count: 1, // 搜索API没有集数信息，ShortDramaCard会自动获取
         description: item.description || '',
+        author: item.author || '',
+        backdrop: item.backdrop || item.cover,
+        vote_average: item.vote_average || item.score || 0,
+        tmdb_id: item.tmdb_id || undefined,
       }));
 
       result = {
