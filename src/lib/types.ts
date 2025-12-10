@@ -71,6 +71,8 @@ export interface ShortDramaParseResult {
       index: number;
       label: string;
       parsedUrl: string;
+      proxyUrl?: string;
+      title?: string;
     };
   };
   // 备用API提供的额外元数据
