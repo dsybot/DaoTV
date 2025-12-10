@@ -650,10 +650,17 @@ function HomeClient() {
 
             {/* 统计信息 */}
             {favoriteItems.length > 0 && (() => {
+              // 统计（兼容旧数据：没有origin字段的默认为vod）
               const stats = {
                 total: favoriteItems.length,
-                movie: favoriteItems.filter(item => item.origin === 'vod' && item.episodes === 1 && item.type !== 'variety').length,
-                tv: favoriteItems.filter(item => item.origin === 'vod' && item.episodes > 1 && item.type !== 'variety' && item.type !== 'anime').length,
+                movie: favoriteItems.filter(item => {
+                  const origin = item.origin || 'vod';
+                  return origin === 'vod' && item.episodes === 1 && item.type !== 'variety';
+                }).length,
+                tv: favoriteItems.filter(item => {
+                  const origin = item.origin || 'vod';
+                  return origin === 'vod' && item.episodes > 1 && item.type !== 'variety' && item.type !== 'anime';
+                }).length,
                 anime: favoriteItems.filter(item => item.type === 'anime').length,
                 shortdrama: favoriteItems.filter(item => item.origin === 'shortdrama' || item.source === 'shortdrama').length,
                 live: favoriteItems.filter(item => item.origin === 'live').length,
@@ -777,12 +784,18 @@ function HomeClient() {
             ) : (
               <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
                 {(() => {
-                  // 筛选
+                  // 筛选（兼容旧数据：没有origin字段的默认为vod）
                   let filtered = favoriteItems;
                   if (favoriteFilter === 'movie') {
-                    filtered = favoriteItems.filter(item => item.origin === 'vod' && item.episodes === 1 && item.type !== 'variety');
+                    filtered = favoriteItems.filter(item => {
+                      const origin = item.origin || 'vod'; // 旧数据默认为vod
+                      return origin === 'vod' && item.episodes === 1 && item.type !== 'variety';
+                    });
                   } else if (favoriteFilter === 'tv') {
-                    filtered = favoriteItems.filter(item => item.origin === 'vod' && item.episodes > 1 && item.type !== 'variety' && item.type !== 'anime');
+                    filtered = favoriteItems.filter(item => {
+                      const origin = item.origin || 'vod';
+                      return origin === 'vod' && item.episodes > 1 && item.type !== 'variety' && item.type !== 'anime';
+                    });
                   } else if (favoriteFilter === 'anime') {
                     filtered = favoriteItems.filter(item => item.type === 'anime');
                   } else if (favoriteFilter === 'shortdrama') {
