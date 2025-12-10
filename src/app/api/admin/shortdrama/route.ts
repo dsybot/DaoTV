@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     };
 
     // 保存配置
-    await db.setAdminConfig(config);
+    await db.saveAdminConfig(config);
     clearConfigCache();
 
     return NextResponse.json({ success: true, config: config.ShortDramaConfig });
