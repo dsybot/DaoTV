@@ -3104,6 +3104,8 @@ function PlayPageClient() {
             total_episodes: realEpisodes,
             save_time: favoriteToUpdate.save_time || Date.now(),
             search_title: favoriteToUpdate.search_title || searchTitle,
+            origin: favoriteToUpdate.origin, // 保留原有的来源类型
+            type: favoriteToUpdate.type, // 保留原有的内容类型
             releaseDate: favoriteToUpdate.releaseDate,
             remarks: favoriteToUpdate.remarks,
           });
@@ -3135,14 +3137,19 @@ function PlayPageClient() {
         setFavorited(false);
       } else {
         // 如果未收藏，添加收藏
+        // 根据集数判断类型
+        const episodeCount = detailRef.current?.episodes.length || 1;
+        const contentType = episodeCount === 1 ? 'movie' : 'tv';
         await saveFavorite(currentSourceRef.current, currentIdRef.current, {
           title: videoTitleRef.current,
           source_name: detailRef.current?.source_name || '',
           year: detailRef.current?.year,
           cover: detailRef.current?.poster || '',
-          total_episodes: detailRef.current?.episodes.length || 1,
+          total_episodes: episodeCount,
           save_time: Date.now(),
           search_title: searchTitle,
+          origin: 'vod', // 播放页都是视频点播
+          type: contentType, // 根据集数判断类型
         });
         setFavorited(true);
       }

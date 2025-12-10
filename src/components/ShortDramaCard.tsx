@@ -146,6 +146,7 @@ function ShortDramaCard({
             total_episodes: realEpisodeCount,
             save_time: Date.now(),
             search_title: drama.name,
+            origin: 'shortdrama', // 短剧来源
           });
           setFavorited(true);
         }

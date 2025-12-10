@@ -395,6 +395,8 @@ function DetailPageClient() {
         await deleteFavorite(source, id);
         setFavorited(false);
       } else {
+        // 根据集数判断类型
+        const contentType = (movieDetails?.episodes || 1) === 1 ? 'movie' : 'tv';
         await saveFavorite(source, id, {
           title: title,
           source_name: sourceName || source, // 优先使用sourceName，没有则使用source
@@ -403,6 +405,8 @@ function DetailPageClient() {
           total_episodes: movieDetails?.episodes || 1,
           save_time: Date.now(),
           search_title: stitle || title,
+          origin: 'vod', // 详情页都是视频点播
+          type: stype || contentType, // 优先使用URL参数中的类型
         });
         setFavorited(true);
       }

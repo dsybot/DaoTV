@@ -204,6 +204,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             total_episodes: actualEpisodes ?? 1,
             save_time: Date.now(),
             search_title: actualQuery || actualTitle, // 保存搜索标题用于后续查找资源
+            origin: origin, // 保存来源类型（vod/live/shortdrama）
+            type: type, // 保存内容类型（movie/tv/variety/anime等）
             releaseDate: releaseDate, // 保存上映日期
             remarks: remarks, // 保存备注信息
           });

@@ -45,7 +45,8 @@ export interface Favorite {
   total_episodes: number;
   save_time: number;
   search_title?: string;
-  origin?: 'vod' | 'live';
+  origin?: 'vod' | 'live' | 'shortdrama';
+  type?: string; // 类型：movie/tv/variety/anime 等
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
   remarks?: string; // 备注信息（如"X天后上映"、"已上映"等）
 }
@@ -2253,7 +2254,7 @@ async function calculateStatsFromLocalData(): Promise<UserStats> {
       return acc;
     }, {} as Record<string, number>);
     const mostWatchedSource = Object.entries(sourceCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+      .sort(([, a], [, b]) => b - a)[0]?.[0] || '';
 
     // 获取最近的播放记录（最多10条），确保search_title字段存在
     const recentRecords = records
