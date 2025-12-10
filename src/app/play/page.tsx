@@ -2360,17 +2360,34 @@ function PlayPageClient() {
           console.log('搜索请求先返回');
           sourcesInfo = raceResult.data;
           setAvailableSources(sourcesInfo);
-          // 后台等待详情结果（可能有更准确的数据）
-          detailPromise.then((detail) => {
+
+          // 检查搜索结果中是否有匹配的源
+          const hasMatchingSource = sourcesInfo.some(
+            (s) => s.source === currentSource && s.id === currentId
+          );
+
+          if (!hasMatchingSource) {
+            // 搜索结果中没有匹配的源，等待详情请求完成
+            console.log('搜索结果中未找到匹配源，等待详情请求...');
+            const detail = await detailPromise;
             if (detail) {
-              setAvailableSources((prev) => {
-                if (prev.some((s) => s.source === detail.source && s.id === detail.id)) {
-                  return prev;
-                }
-                return [detail, ...prev];
-              });
+              console.log('详情请求返回，使用详情数据');
+              sourcesInfo = [detail, ...sourcesInfo];
+              setAvailableSources(sourcesInfo);
             }
-          });
+          } else {
+            // 后台等待详情结果（可能有更准确的数据）
+            detailPromise.then((detail) => {
+              if (detail) {
+                setAvailableSources((prev) => {
+                  if (prev.some((s) => s.source === detail.source && s.id === detail.id)) {
+                    return prev;
+                  }
+                  return [detail, ...prev];
+                });
+              }
+            });
+          }
         } else {
           // 两个都返回 null，等待完整结果
           const [detailResult, searchResult] = await Promise.all([
