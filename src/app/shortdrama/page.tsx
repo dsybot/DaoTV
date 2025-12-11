@@ -150,12 +150,11 @@ export default function ShortDramaPage() {
         const result = await searchShortDramas(query, 1, 20);
         setDramas(result.list);
         setHasMore(result.hasMore);
-      } else {
-        // 退出搜索模式，重新加载分类数据
-        loadDramas(1, true);
       }
+      // 如果清空搜索，不需要手动调用 loadDramas
+      // useEffect 会自动监听 isSearchMode 的变化并重新加载
     },
-    [loadDramas]
+    []
   );
 
   // 返回顶部功能
@@ -221,8 +220,8 @@ export default function ShortDramaPage() {
                     key={category.type_id}
                     onClick={() => setSelectedCategory(category.type_id)}
                     className={`group relative overflow-hidden rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategory === category.type_id
-                        ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/40'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md'
+                      ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/40'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md'
                       }`}
                     style={{
                       animation: `fadeInUp 0.3s ease-out ${index * 0.03}s both`,
