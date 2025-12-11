@@ -2457,8 +2457,30 @@ function PlayPageClient() {
           detailData = target;
           console.log('找到匹配的指定源:', currentSource, currentId);
         } else {
-          // 没找到匹配的源，使用第一个结果
-          console.log('未找到匹配的指定源，使用第一个结果');
+          // 没找到匹配的源，尝试直接请求详情API获取
+          console.log('未找到匹配的指定源，尝试直接请求详情...');
+          try {
+            const directDetailResp = await fetch(
+              `/api/detail?source=${currentSource}&id=${currentId}`
+            );
+            if (directDetailResp.ok) {
+              const directDetail = await directDetailResp.json();
+              if (directDetail && directDetail.episodes && directDetail.episodes.length > 0) {
+                detailData = directDetail;
+                // 将详情数据添加到可用源列表的开头
+                sourcesInfo = [directDetail, ...sourcesInfo];
+                setAvailableSources(sourcesInfo);
+                console.log('直接请求详情成功，使用指定源:', currentSource, currentId);
+              } else {
+                console.log('详情请求返回无效数据，使用第一个搜索结果');
+              }
+            } else {
+              console.log('详情请求失败，使用第一个搜索结果');
+            }
+          } catch (err) {
+            console.error('直接请求详情失败:', err);
+            console.log('使用第一个搜索结果');
+          }
         }
       }
 
