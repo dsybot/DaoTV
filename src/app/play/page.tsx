@@ -2303,14 +2303,14 @@ function PlayPageClient() {
         }
       } else if (currentSource && currentId) {
         // 🚀 有明确的 source 和 id（如从继续观看进入）
-        // 竞速策略：同时发起详情请求和搜索请求，谁先返回有效结果就用谁
-        console.log('有明确的 source 和 id，竞速获取');
+        // 优先使用详情请求获取指定源的数据，同时后台搜索其他可用源
+        console.log('有明确的 source 和 id，优先获取详情');
 
-        // 详情请求 Promise
+        // 同时发起详情请求和搜索请求
         const detailPromise = (async (): Promise<SearchResult | null> => {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 增加超时时间
             const resp = await fetch(
               `/api/detail?source=${currentSource}&id=${currentId}`,
               { signal: controller.signal }
@@ -2325,23 +2325,19 @@ function PlayPageClient() {
           return null;
         })();
 
-        // 搜索请求 Promise
+        // 搜索请求 Promise（后台执行，用于获取其他可用源）
         const searchPromise = fetchSourcesData(searchTitle || videoTitle);
 
-        // 竞速：等待第一个有效结果
-        const raceResult = await Promise.race([
-          detailPromise.then((r) => (r ? { type: 'detail' as const, data: r } : null)),
-          searchPromise.then((r) =>
-            r.length > 0 ? { type: 'search' as const, data: r } : null
-          ),
-        ]);
+        // 🔥 关键修改：始终等待详情请求完成，确保使用正确的源
+        const detailResult = await detailPromise;
 
-        if (raceResult?.type === 'detail') {
-          // 详情请求先返回
-          console.log('详情请求先返回');
-          sourcesInfo = [raceResult.data];
+        if (detailResult) {
+          // 详情请求成功，使用详情数据作为主源
+          console.log('详情请求成功，使用指定源:', currentSource, currentId);
+          sourcesInfo = [detailResult];
           setAvailableSources(sourcesInfo);
-          // 后台等待搜索结果合并
+
+          // 后台等待搜索结果合并（添加其他可用源）
           searchPromise.then((otherSources) => {
             if (otherSources.length > 0) {
               setAvailableSources((prev) => {
@@ -2355,51 +2351,29 @@ function PlayPageClient() {
               });
             }
           });
-        } else if (raceResult?.type === 'search') {
-          // 搜索请求先返回
-          console.log('搜索请求先返回');
-          sourcesInfo = raceResult.data;
-          setAvailableSources(sourcesInfo);
-
-          // 检查搜索结果中是否有匹配的源
-          const hasMatchingSource = sourcesInfo.some(
-            (s) => s.source === currentSource && s.id === currentId
-          );
-
-          if (!hasMatchingSource) {
-            // 搜索结果中没有匹配的源，等待详情请求完成
-            console.log('搜索结果中未找到匹配源，等待详情请求...');
-            const detail = await detailPromise;
-            if (detail) {
-              console.log('详情请求返回，使用详情数据');
-              sourcesInfo = [detail, ...sourcesInfo];
-              setAvailableSources(sourcesInfo);
-            }
-          } else {
-            // 后台等待详情结果（可能有更准确的数据）
-            detailPromise.then((detail) => {
-              if (detail) {
-                setAvailableSources((prev) => {
-                  if (prev.some((s) => s.source === detail.source && s.id === detail.id)) {
-                    return prev;
-                  }
-                  return [detail, ...prev];
-                });
-              }
-            });
-          }
         } else {
-          // 两个都返回 null，等待完整结果
-          const [detailResult, searchResult] = await Promise.all([
-            detailPromise,
-            searchPromise,
-          ]);
-          if (detailResult) {
-            sourcesInfo = [detailResult];
-          } else if (searchResult.length > 0) {
+          // 详情请求失败，等待搜索结果
+          console.log('详情请求失败，等待搜索结果...');
+          const searchResult = await searchPromise;
+
+          if (searchResult.length > 0) {
             sourcesInfo = searchResult;
+            setAvailableSources(sourcesInfo);
+
+            // 检查搜索结果中是否有匹配的源
+            const matchingSource = sourcesInfo.find(
+              (s) => s.source === currentSource && s.id === currentId
+            );
+
+            if (matchingSource) {
+              console.log('在搜索结果中找到匹配源');
+              // 将匹配的源移到第一位
+              sourcesInfo = [matchingSource, ...sourcesInfo.filter(s => s !== matchingSource)];
+              setAvailableSources(sourcesInfo);
+            } else {
+              console.log('搜索结果中未找到匹配源，使用第一个结果');
+            }
           }
-          setAvailableSources(sourcesInfo);
         }
 
         // 如果有 shortdrama_id，后台添加短剧源
@@ -2447,40 +2421,21 @@ function PlayPageClient() {
         return;
       }
 
+      // 🚀 选择要播放的源
+      // 如果有指定的 source 和 id（从继续观看进入），sourcesInfo[0] 已经是正确的源
+      // 否则使用第一个搜索结果
       let detailData: SearchResult = sourcesInfo[0];
-      // 🚀 如果有指定的 source 和 id，优先在结果中查找匹配的源
+
+      // 如果需要优选且没有指定源，在搜索结果中查找匹配的源
       if (currentSource && currentId && !needPreferRef.current) {
         const target = sourcesInfo.find(
           (source) => source.source === currentSource && source.id === currentId
         );
         if (target) {
           detailData = target;
-          console.log('找到匹配的指定源:', currentSource, currentId);
+          console.log('使用指定源:', currentSource, currentId);
         } else {
-          // 没找到匹配的源，尝试直接请求详情API获取
-          console.log('未找到匹配的指定源，尝试直接请求详情...');
-          try {
-            const directDetailResp = await fetch(
-              `/api/detail?source=${currentSource}&id=${currentId}`
-            );
-            if (directDetailResp.ok) {
-              const directDetail = await directDetailResp.json();
-              if (directDetail && directDetail.episodes && directDetail.episodes.length > 0) {
-                detailData = directDetail;
-                // 将详情数据添加到可用源列表的开头
-                sourcesInfo = [directDetail, ...sourcesInfo];
-                setAvailableSources(sourcesInfo);
-                console.log('直接请求详情成功，使用指定源:', currentSource, currentId);
-              } else {
-                console.log('详情请求返回无效数据，使用第一个搜索结果');
-              }
-            } else {
-              console.log('详情请求失败，使用第一个搜索结果');
-            }
-          } catch (err) {
-            console.error('直接请求详情失败:', err);
-            console.log('使用第一个搜索结果');
-          }
+          console.log('未找到指定源，使用第一个结果:', sourcesInfo[0]?.source, sourcesInfo[0]?.id);
         }
       }
 
