@@ -2310,14 +2310,23 @@ function PlayPageClient() {
         const detailPromise = (async (): Promise<SearchResult | null> => {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 增加超时时间
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
             const resp = await fetch(
               `/api/detail?source=${currentSource}&id=${currentId}`,
               { signal: controller.signal }
             );
             clearTimeout(timeoutId);
             if (resp.ok) {
-              return (await resp.json()) as SearchResult;
+              const data = await resp.json();
+              // 验证返回的数据是否有效
+              if (data && data.episodes && Array.isArray(data.episodes) && data.episodes.length > 0) {
+                console.log('详情API返回有效数据:', data.source, data.id, '集数:', data.episodes.length);
+                return data as SearchResult;
+              } else {
+                console.warn('详情API返回无效数据:', data);
+              }
+            } else {
+              console.warn('详情API返回非200状态:', resp.status);
             }
           } catch (err) {
             console.error('详情请求失败:', err);
@@ -2371,7 +2380,28 @@ function PlayPageClient() {
               sourcesInfo = [matchingSource, ...sourcesInfo.filter(s => s !== matchingSource)];
               setAvailableSources(sourcesInfo);
             } else {
-              console.log('搜索结果中未找到匹配源，使用第一个结果');
+              // 🔥 搜索结果中没有匹配源，再次尝试请求详情API（不使用超时）
+              console.log('搜索结果中未找到匹配源，再次尝试请求详情...');
+              try {
+                const retryResp = await fetch(
+                  `/api/detail?source=${currentSource}&id=${currentId}`
+                );
+                if (retryResp.ok) {
+                  const retryData = await retryResp.json();
+                  if (retryData && retryData.episodes && Array.isArray(retryData.episodes) && retryData.episodes.length > 0) {
+                    console.log('重试详情请求成功，使用指定源');
+                    sourcesInfo = [retryData, ...sourcesInfo];
+                    setAvailableSources(sourcesInfo);
+                  } else {
+                    console.log('重试详情请求返回无效数据，使用第一个搜索结果');
+                  }
+                } else {
+                  console.log('重试详情请求失败，使用第一个搜索结果');
+                }
+              } catch (retryErr) {
+                console.error('重试详情请求异常:', retryErr);
+                console.log('使用第一个搜索结果');
+              }
             }
           }
         }
