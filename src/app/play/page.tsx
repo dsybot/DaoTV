@@ -2301,129 +2301,22 @@ function PlayPageClient() {
           // 短剧源获取失败，回退到普通搜索
           sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
         }
-      } else if (currentSource && currentId) {
-        // 🚀 有明确的 source 和 id（如从继续观看进入）
-        // 优先使用详情请求获取指定源的数据，同时后台搜索其他可用源
-        console.log('有明确的 source 和 id，优先获取详情');
-
-        // 同时发起详情请求和搜索请求
-        const detailPromise = (async (): Promise<SearchResult | null> => {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
-            const resp = await fetch(
-              `/api/detail?source=${currentSource}&id=${currentId}`,
-              { signal: controller.signal }
-            );
-            clearTimeout(timeoutId);
-            if (resp.ok) {
-              const data = await resp.json();
-              // 验证返回的数据是否有效
-              if (data && data.episodes && Array.isArray(data.episodes) && data.episodes.length > 0) {
-                console.log('详情API返回有效数据:', data.source, data.id, '集数:', data.episodes.length);
-                return data as SearchResult;
-              } else {
-                console.warn('详情API返回无效数据:', data);
-              }
-            } else {
-              console.warn('详情API返回非200状态:', resp.status);
-            }
-          } catch (err) {
-            console.error('详情请求失败:', err);
-          }
-          return null;
-        })();
-
-        // 搜索请求 Promise（后台执行，用于获取其他可用源）
-        const searchPromise = fetchSourcesData(searchTitle || videoTitle);
-
-        // 🔥 关键修改：始终等待详情请求完成，确保使用正确的源
-        const detailResult = await detailPromise;
-
-        if (detailResult) {
-          // 详情请求成功，使用详情数据作为主源
-          console.log('详情请求成功，使用指定源:', currentSource, currentId);
-          sourcesInfo = [detailResult];
-          setAvailableSources(sourcesInfo);
-
-          // 后台等待搜索结果合并（添加其他可用源）
-          searchPromise.then((otherSources) => {
-            if (otherSources.length > 0) {
-              setAvailableSources((prev) => {
-                const merged = [...prev];
-                otherSources.forEach((s) => {
-                  if (!merged.some((m) => m.source === s.source && m.id === s.id)) {
-                    merged.push(s);
-                  }
-                });
-                return merged;
-              });
-            }
-          });
-        } else {
-          // 详情请求失败，等待搜索结果
-          console.log('详情请求失败，等待搜索结果...');
-          const searchResult = await searchPromise;
-
-          if (searchResult.length > 0) {
-            sourcesInfo = searchResult;
-            setAvailableSources(sourcesInfo);
-
-            // 检查搜索结果中是否有匹配的源
-            const matchingSource = sourcesInfo.find(
-              (s) => s.source === currentSource && s.id === currentId
-            );
-
-            if (matchingSource) {
-              console.log('在搜索结果中找到匹配源');
-              // 将匹配的源移到第一位
-              sourcesInfo = [matchingSource, ...sourcesInfo.filter(s => s !== matchingSource)];
-              setAvailableSources(sourcesInfo);
-            } else {
-              // 🔥 搜索结果中没有匹配源，再次尝试请求详情API（不使用超时）
-              console.log('搜索结果中未找到匹配源，再次尝试请求详情...');
-              try {
-                const retryResp = await fetch(
-                  `/api/detail?source=${currentSource}&id=${currentId}`
-                );
-                if (retryResp.ok) {
-                  const retryData = await retryResp.json();
-                  if (retryData && retryData.episodes && Array.isArray(retryData.episodes) && retryData.episodes.length > 0) {
-                    console.log('重试详情请求成功，使用指定源');
-                    sourcesInfo = [retryData, ...sourcesInfo];
-                    setAvailableSources(sourcesInfo);
-                  } else {
-                    console.log('重试详情请求返回无效数据，使用第一个搜索结果');
-                  }
-                } else {
-                  console.log('重试详情请求失败，使用第一个搜索结果');
-                }
-              } catch (retryErr) {
-                console.error('重试详情请求异常:', retryErr);
-                console.log('使用第一个搜索结果');
-              }
-            }
-          }
-        }
-
-        // 如果有 shortdrama_id，后台添加短剧源
-        if (shortdramaId) {
-          fetchSourceDetail('shortdrama', shortdramaId).then((shortdramaSource) => {
-            if (shortdramaSource.length > 0) {
-              setAvailableSources((prev) => {
-                if (prev.some((s) => s.source === 'shortdrama' && s.id === shortdramaId)) {
-                  return prev;
-                }
-                return [...prev, ...shortdramaSource];
-              });
-            }
-          }).catch((err) => {
-            console.error('添加短剧源失败:', err);
-          });
-        }
       } else {
-        // 没有明确的 source 和 id，进行搜索
+        // 其他情况先搜索所有视频源
         sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+
+        // 如果有指定的 source 和 id，但搜索结果中没有匹配的源
+        // 则直接调用 fetchSourceDetail 获取指定源的详情
+        if (
+          currentSource &&
+          currentId &&
+          !sourcesInfo.some(
+            (source) => source.source === currentSource && source.id === currentId
+          )
+        ) {
+          console.log('搜索结果中未找到指定源，直接获取详情:', currentSource, currentId);
+          sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+        }
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
         if (shortdramaId) {
@@ -2451,21 +2344,19 @@ function PlayPageClient() {
         return;
       }
 
-      // 🚀 选择要播放的源
-      // 如果有指定的 source 和 id（从继续观看进入），sourcesInfo[0] 已经是正确的源
-      // 否则使用第一个搜索结果
       let detailData: SearchResult = sourcesInfo[0];
-
-      // 如果需要优选且没有指定源，在搜索结果中查找匹配的源
+      // 指定源和id且无需优选
       if (currentSource && currentId && !needPreferRef.current) {
         const target = sourcesInfo.find(
           (source) => source.source === currentSource && source.id === currentId
         );
         if (target) {
           detailData = target;
-          console.log('使用指定源:', currentSource, currentId);
         } else {
-          console.log('未找到指定源，使用第一个结果:', sourcesInfo[0]?.source, sourcesInfo[0]?.id);
+          // 找不到匹配的源，报错返回
+          setError('未找到匹配结果');
+          setLoading(false);
+          return;
         }
       }
 
@@ -5930,9 +5821,4 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
 };
 
 export default function PlayPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <PlayPageClient />
-    </Suspense>
-  );
 }
