@@ -5821,4 +5821,9 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
 };
 
 export default function PlayPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PlayPageClient />
+    </Suspense>
+  );
 }
