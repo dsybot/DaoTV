@@ -25,6 +25,22 @@ import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
 import TMDBFilterPanel, { TMDBFilterState } from '@/components/TMDBFilterPanel';
 
 function SearchPageClient() {
+  // 根据 type_name 推断内容类型的辅助函数
+  const inferTypeFromName = (typeName?: string, episodeCount?: number): string => {
+    if (!typeName) {
+      // 如果没有 type_name，使用集数判断（向后兼容）
+      return episodeCount && episodeCount > 1 ? 'tv' : 'movie';
+    }
+    const lowerType = typeName.toLowerCase();
+    if (lowerType.includes('综艺') || lowerType.includes('variety')) return 'variety';
+    if (lowerType.includes('电影') || lowerType.includes('movie')) return 'movie';
+    if (lowerType.includes('电视剧') || lowerType.includes('剧集') || lowerType.includes('tv') || lowerType.includes('series')) return 'tv';
+    if (lowerType.includes('动漫') || lowerType.includes('动画') || lowerType.includes('anime')) return 'anime';
+    if (lowerType.includes('纪录片') || lowerType.includes('documentary')) return 'documentary';
+    // 默认根据集数判断
+    return episodeCount && episodeCount > 1 ? 'tv' : 'movie';
+  };
+
   // 搜索历史
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   // 返回顶部按钮显示状态
@@ -907,8 +923,8 @@ function SearchPageClient() {
                     }
                   }}
                   className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'video'
-                      ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-105'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-105'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                     }`}
                 >
                   🎬 影视资源
@@ -931,8 +947,8 @@ function SearchPageClient() {
                     }
                   }}
                   className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'netdisk'
-                      ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                     }`}
                 >
                   💾 网盘资源
@@ -960,8 +976,8 @@ function SearchPageClient() {
                     }
                   }}
                   className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'youtube'
-                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/30 scale-105'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/30 scale-105'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                     }`}
                 >
                   📺 YouTube
@@ -985,8 +1001,8 @@ function SearchPageClient() {
                     }
                   }}
                   className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'tmdb-actor'
-                      ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/30 scale-105'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/30 scale-105'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                     }`}
                 >
                   🎬 TMDB演员
@@ -1107,8 +1123,8 @@ function SearchPageClient() {
                               }
                             }}
                             className={`px-3 py-1 text-sm rounded-full border transition-colors ${tmdbActorType === type.key
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
                               }`}
                             disabled={tmdbActorLoading}
                           >
@@ -1199,8 +1215,8 @@ function SearchPageClient() {
                             setYoutubeWarning(null);
                           }}
                           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                             }`}
                         >
                           🔍 搜索视频
@@ -1215,8 +1231,8 @@ function SearchPageClient() {
                             setYoutubeWarning(null);
                           }}
                           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                             }`}
                         >
                           🔗 直接播放
@@ -1266,8 +1282,8 @@ function SearchPageClient() {
                               }
                             }}
                             className={`px-3 py-1 text-sm rounded-full border transition-colors ${youtubeContentType === type.key
-                                ? 'bg-red-500 text-white border-red-500'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                              ? 'bg-red-500 text-white border-red-500'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
                               }`}
                             disabled={youtubeLoading}
                           >
@@ -1297,8 +1313,8 @@ function SearchPageClient() {
                                 }
                               }}
                               className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${youtubeSortOrder === sort.key
-                                  ? 'bg-blue-500 text-white border-blue-500'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
                                 }`}
                               disabled={youtubeLoading}
                             >
@@ -1526,7 +1542,7 @@ function SearchPageClient() {
                                 }
                                 year={item.year}
                                 from='search'
-                                type={item.episodes.length > 1 ? 'tv' : 'movie'}
+                                type={inferTypeFromName(item.type_name, item.episodes.length)}
                                 episodeBadgeVariant='dark'
                               />
                             </div>
@@ -1607,8 +1623,8 @@ function SearchPageClient() {
                             setYoutubeWarning(null);
                           }}
                           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                             }`}
                         >
                           🔍 搜索视频
@@ -1622,8 +1638,8 @@ function SearchPageClient() {
                             setYoutubeWarning(null);
                           }}
                           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                             }`}
                         >
                           🔗 直接播放
