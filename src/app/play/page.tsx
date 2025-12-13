@@ -2356,9 +2356,14 @@ function PlayPageClient() {
         );
         if (target) {
           detailData = target;
+        } else {
+          // 如果找不到精确匹配的源，检查第一个结果是否来自同一个源
+          // （可能是通过 fetchSourceDetail 获取的，id 格式可能略有不同）
+          if (sourcesInfo[0]?.source === currentSource) {
+            detailData = sourcesInfo[0];
+            console.log('使用同源的第一个结果:', detailData.source, detailData.id);
+          }
         }
-        // 如果找不到精确匹配的源，使用第一个结果（可能是通过 fetchSourceDetail 获取的）
-        // 不再报错返回，因为 fetchSourceDetail 已经尝试获取了指定源
       }
 
       // 未指定源和 id 或需要优选，且开启优选开关
