@@ -223,8 +223,8 @@ export default function HomeCarousel() {
       {/* 内容区域 - 底部留出空间给缩略图导航 */}
       <div className="relative z-10 h-full flex flex-col justify-end px-6 sm:px-8 md:px-12 pt-6 sm:pt-8 md:pt-12 pb-32 sm:pb-36">
         <div className="max-w-2xl">
-          {/* 标题 */}
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-4 drop-shadow-lg line-clamp-2">
+          {/* 标题 - 移动端单行截断，桌面端最多两行 */}
+          <h2 className="text-xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-4 drop-shadow-lg line-clamp-1 sm:line-clamp-2">
             {currentItem.title}
           </h2>
 
