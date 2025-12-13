@@ -2315,7 +2315,11 @@ function PlayPageClient() {
           )
         ) {
           console.log('搜索结果中未找到指定源，直接获取详情:', currentSource, currentId);
-          sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+          const detailResult = await fetchSourceDetail(currentSource, currentId);
+          if (detailResult.length > 0) {
+            // 将详情结果添加到搜索结果前面
+            sourcesInfo = [...detailResult, ...sourcesInfo];
+          }
         }
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
