@@ -2315,11 +2315,7 @@ function PlayPageClient() {
           )
         ) {
           console.log('搜索结果中未找到指定源，直接获取详情:', currentSource, currentId);
-          const detailResult = await fetchSourceDetail(currentSource, currentId);
-          if (detailResult.length > 0) {
-            // 将详情结果添加到搜索结果前面
-            sourcesInfo = [...detailResult, ...sourcesInfo];
-          }
+          sourcesInfo = await fetchSourceDetail(currentSource, currentId);
         }
 
         // 如果有 shortdrama_id，额外添加短剧源到可用源列表
@@ -2357,12 +2353,10 @@ function PlayPageClient() {
         if (target) {
           detailData = target;
         } else {
-          // 如果找不到精确匹配的源，检查第一个结果是否来自同一个源
-          // （可能是通过 fetchSourceDetail 获取的，id 格式可能略有不同）
-          if (sourcesInfo[0]?.source === currentSource) {
-            detailData = sourcesInfo[0];
-            console.log('使用同源的第一个结果:', detailData.source, detailData.id);
-          }
+          // 找不到匹配的源，报错返回
+          setError('未找到匹配结果');
+          setLoading(false);
+          return;
         }
       }
 
