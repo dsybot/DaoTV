@@ -2352,12 +2352,9 @@ function PlayPageClient() {
         );
         if (target) {
           detailData = target;
-        } else {
-          // 找不到匹配的源，报错返回
-          setError('未找到匹配结果');
-          setLoading(false);
-          return;
         }
+        // 如果找不到精确匹配的源，使用第一个结果（可能是通过 fetchSourceDetail 获取的）
+        // 不再报错返回，因为 fetchSourceDetail 已经尝试获取了指定源
       }
 
       // 未指定源和 id 或需要优选，且开启优选开关
