@@ -3535,20 +3535,29 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
-            // 🚀 弹幕开关按钮（仅Web端显示）
+            // 🚀 B站风格弹幕开关按钮（仅Web端显示）
             ...(isMobile ? [] : [{
               position: 'right',
               index: 8,
-              html: `<div class="danmaku-toggle-btn" style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="M7 9h4M13 9h4M7 13h3M12 13h5" stroke-linecap="round" />
+              html: `<div class="danmaku-toggle-btn" style="position: relative; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
+                <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+                  <!-- 电视机外框 -->
+                  <rect x="3" y="8" width="26" height="20" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                  <!-- 天线 -->
+                  <path d="M12 8L16 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M24 8L20 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <!-- 弹字 -->
+                  <text x="16" y="22" font-size="11" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="sans-serif">弹</text>
                 </svg>
-                <div class="danmaku-check" style="position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: ${externalDanmuEnabled ? 'flex' : 'none'}; align-items: center; justify-content: center;">
-                  <svg width="6" height="6" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2">
-                    <path d="M2 6l3 3 5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
+                <!-- 开启状态：蓝色对钩 -->
+                <svg class="danmaku-check-on" width="14" height="14" viewBox="0 0 24 24" fill="none" style="position: absolute; bottom: 0; right: 0; display: ${externalDanmuEnabled ? 'block' : 'none'};">
+                  <path d="M4 12l6 6L20 6" stroke="#00AEEC" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <!-- 关闭状态：禁止符号 -->
+                <svg class="danmaku-check-off" width="14" height="14" viewBox="0 0 24 24" fill="none" style="position: absolute; bottom: 0; right: 0; display: ${externalDanmuEnabled ? 'none' : 'block'};">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
+                  <path d="M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
               </div>`,
               click: function () {
                 const nextState = !externalDanmuEnabledRef.current;
@@ -3556,9 +3565,11 @@ function PlayPageClient() {
 
                 // 更新按钮UI
                 const wrapper = document.querySelector('.danmaku-toggle-btn');
-                const check = wrapper?.querySelector('.danmaku-check') as HTMLElement;
-                if (check) {
-                  check.style.display = nextState ? 'flex' : 'none';
+                const checkOn = wrapper?.querySelector('.danmaku-check-on') as HTMLElement;
+                const checkOff = wrapper?.querySelector('.danmaku-check-off') as HTMLElement;
+                if (checkOn && checkOff) {
+                  checkOn.style.display = nextState ? 'block' : 'none';
+                  checkOff.style.display = nextState ? 'none' : 'block';
                 }
                 if (wrapper) {
                   wrapper.setAttribute('title', nextState ? '关闭弹幕' : '开启弹幕');
