@@ -3535,25 +3535,72 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
-            // 🚀 简单弹幕发送按钮（仅Web端显示）
+            // 🚀 B站风格弹幕输入框（仅Web端显示）
             ...(isMobile ? [] : [{
               position: 'right',
               index: 10,
-              html: '弹',
-              tooltip: '发送弹幕',
-              click: function () {
-                if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-                  // 手动弹出输入框发送弹幕
-                  const text = prompt('请输入弹幕内容', '');
-                  if (text && text.trim()) {
+              html: `<div class="danmaku-input-wrapper" style="display: flex; align-items: center; gap: 8px; margin-right: 8px;">
+                <input type="text" class="danmaku-input" placeholder="发送弹幕..." maxlength="50" style="
+                  width: 180px;
+                  height: 28px;
+                  padding: 0 12px;
+                  border: 1px solid rgba(255,255,255,0.2);
+                  border-radius: 14px;
+                  background: rgba(255,255,255,0.1);
+                  color: #fff;
+                  font-size: 13px;
+                  outline: none;
+                  transition: all 0.2s ease;
+                " onfocus="this.style.borderColor='rgba(34,197,94,0.6)';this.style.background='rgba(255,255,255,0.15)';" onblur="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='rgba(255,255,255,0.1)';" />
+                <button class="danmaku-send-btn" style="
+                  height: 28px;
+                  padding: 0 16px;
+                  border: none;
+                  border-radius: 14px;
+                  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                  color: #fff;
+                  font-size: 13px;
+                  font-weight: 500;
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                  white-space: nowrap;
+                " onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 2px 8px rgba(34,197,94,0.4)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">发送</button>
+              </div>`,
+              mounted: function (element: HTMLElement) {
+                const input = element.querySelector('.danmaku-input') as HTMLInputElement;
+                const btn = element.querySelector('.danmaku-send-btn') as HTMLButtonElement;
+
+                const sendDanmaku = () => {
+                  if (!input || !artPlayerRef.current?.plugins?.artplayerPluginDanmuku) return;
+                  const text = input.value.trim();
+                  if (text) {
                     artPlayerRef.current.plugins.artplayerPluginDanmuku.emit({
-                      text: text.trim(),
+                      text: text,
                       time: artPlayerRef.current.currentTime,
                       color: '#FFFFFF',
                       mode: 0,
                     });
+                    input.value = '';
                   }
-                }
+                };
+
+                // 点击发送按钮
+                btn?.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  sendDanmaku();
+                });
+
+                // 回车发送
+                input?.addEventListener('keydown', (e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sendDanmaku();
+                  }
+                });
+
+                // 阻止输入框的点击事件冒泡（防止触发播放器暂停）
+                input?.addEventListener('click', (e) => e.stopPropagation());
               },
             }]),
             // 🚀 选集菜单按钮（仅在全屏/网页全屏/隐藏选集面板时显示）
