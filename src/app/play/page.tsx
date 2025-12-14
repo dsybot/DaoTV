@@ -3520,7 +3520,7 @@ function PlayPageClient() {
             // 🚀 B站风格弹幕开关按钮（仅Web端显示）- 使用和弹幕插件完全一致的SVG图标
             ...(isMobile ? [] : [{
               position: 'right',
-              index: 11,
+              index: 9,
               html: `<div class="danmaku-toggle-btn" style="display: flex; align-items: center; justify-content: center; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
                 <!-- 弹幕开启状态图标 - 和插件apd-toggle-on完全一致 -->
                 <svg class="danmaku-icon-on" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display: ${externalDanmuEnabled ? 'block' : 'none'};">
