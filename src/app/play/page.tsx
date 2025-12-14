@@ -3379,24 +3379,6 @@ function PlayPageClient() {
               },
             },
             {
-              name: '外部弹幕',
-              html: '外部弹幕',
-              icon: '<text x="50%" y="50%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">外</text>',
-              tooltip: externalDanmuEnabled ? '外部弹幕已开启' : '外部弹幕已关闭',
-              switch: externalDanmuEnabled,
-              onSwitch: function (item: any) {
-                const nextState = !item.switch;
-
-                // 🚀 使用优化后的弹幕操作处理函数
-                handleDanmuOperationOptimized(nextState);
-
-                // 更新tooltip显示
-                item.tooltip = nextState ? '外部弹幕已开启' : '外部弹幕已关闭';
-
-                return nextState; // 立即返回新状态
-              },
-            },
-            {
               name: '弹幕设置',
               html: '弹幕设置',
               icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
@@ -3538,8 +3520,8 @@ function PlayPageClient() {
             // 🚀 B站风格弹幕开关按钮（仅Web端显示）- 使用和弹幕插件完全一致的SVG图标
             ...(isMobile ? [] : [{
               position: 'right',
-              index: 8,
-              html: `<div class="danmaku-toggle-btn" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
+              index: 11,
+              html: `<div class="danmaku-toggle-btn" style="display: flex; align-items: center; justify-content: center; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
                 <!-- 弹幕开启状态图标 - 和插件apd-toggle-on完全一致 -->
                 <svg class="danmaku-icon-on" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display: ${externalDanmuEnabled ? 'block' : 'none'};">
                   <path fill-rule="evenodd" d="M11.989 4.828q-.705 0-1.515.012l-1.71-2.566a1.008 1.008 0 0 0-1.678 1.118l.999 1.5q-1.022.027-2.164.068a4.01 4.01 0 0 0-3.83 3.44q-.246 1.725-.245 4.185-.001 2.947.35 5.116a4.01 4.01 0 0 0 3.763 3.363l.906.046c1.205.063 1.808.095 3.607.095a.988.988 0 0 0 0-1.975c-1.758 0-2.339-.03-3.501-.092l-.915-.047a2.04 2.04 0 0 1-1.91-1.708q-.325-1.987-.325-4.798 0-2.344.225-3.904c.14-.977.96-1.713 1.945-1.747q3.666-.13 6.063-.131 2.398 0 6.064.13c.96.034 1.71.81 1.855 1.814.075.524.113 1.962.141 3.065v.002c.01.342.017.65.025.88a.987.987 0 1 0 1.974-.068c-.008-.226-.016-.523-.025-.856v-.027c-.03-1.118-.073-2.663-.16-3.276-.273-1.906-1.783-3.438-3.74-3.507q-1.35-.048-2.531-.078l1.05-1.46a1.008 1.008 0 0 0-1.638-1.177l-1.862 2.59q-.571-.006-1.088-.007Zm.521 4.775h-1.32v4.631h2.222v.847h-2.618v1.078h2.618l.003.678c.36.026.714.163 1.01.407h.11v-1.085h2.694v-1.078h-2.695v-.847H16.8v-4.63h-1.276a8.6 8.6 0 0 0 .748-1.42L15.183 7.8a14 14 0 0 1-.814 1.804h-1.518l.693-.308a9 9 0 0 0-.814-1.408l-1.045.352c.297.396.572.847.825 1.364Zm-4.18 3.564.154-1.485h1.98V8.294h-3.2v.98H9.33v1.43H7.472l-.308 3.453h2.277c0 1.166-.044 1.925-.12 2.277-.078.352-.386.528-.936.528-.308 0-.616-.022-.902-.055l.297 1.067.062.005c.285.02.551.04.818.04 1.001-.067 1.562-.419 1.694-1.057.11-.638.176-1.903.176-3.795Zm7.458.11v-.858h-1.254v.858Zm-2.376-.858v.858h-1.199v-.858h1.2Zm-1.199-.946h1.2v-.902h-1.2Zm2.321 0v-.902h1.254v.902Z" clip-rule="evenodd"/>
