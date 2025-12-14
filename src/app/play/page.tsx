@@ -3535,40 +3535,68 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
+            // 🚀 弹幕开关按钮（仅Web端显示）
+            ...(isMobile ? [] : [{
+              position: 'right',
+              index: 8,
+              html: `<div class="danmaku-toggle-btn" style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M7 9h4M13 9h4M7 13h3M12 13h5" stroke-linecap="round" />
+                </svg>
+                <div class="danmaku-check" style="position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: ${externalDanmuEnabled ? 'flex' : 'none'}; align-items: center; justify-content: center;">
+                  <svg width="6" height="6" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2">
+                    <path d="M2 6l3 3 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>`,
+              click: function () {
+                const nextState = !externalDanmuEnabledRef.current;
+                handleDanmuOperationOptimized(nextState);
+
+                // 更新按钮UI
+                const wrapper = document.querySelector('.danmaku-toggle-btn');
+                const check = wrapper?.querySelector('.danmaku-check') as HTMLElement;
+                if (check) {
+                  check.style.display = nextState ? 'flex' : 'none';
+                }
+                if (wrapper) {
+                  wrapper.setAttribute('title', nextState ? '关闭弹幕' : '开启弹幕');
+                }
+              },
+            }]),
             // 🚀 B站风格弹幕输入框（仅Web端显示）
             ...(isMobile ? [] : [{
               position: 'right',
               index: 10,
-              html: `<div class="danmaku-input-wrapper" style="display: flex; align-items: center; gap: 8px; margin-right: 8px;">
+              html: `<div class="danmaku-input-wrapper" style="display: flex; align-items: center; height: 28px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
                 <input type="text" class="danmaku-input" placeholder="发送弹幕..." maxlength="50" style="
-                  width: 180px;
-                  height: 28px;
-                  padding: 0 12px;
-                  border: 1px solid rgba(255,255,255,0.2);
-                  border-radius: 14px;
-                  background: rgba(255,255,255,0.1);
-                  color: #fff;
+                  width: 160px;
+                  height: 100%;
+                  padding: 0 10px;
+                  border: none;
+                  background: transparent;
+                  color: rgba(255,255,255,0.9);
                   font-size: 13px;
                   outline: none;
-                  transition: all 0.2s ease;
-                " onfocus="this.style.borderColor='rgba(34,197,94,0.6)';this.style.background='rgba(255,255,255,0.15)';" onblur="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='rgba(255,255,255,0.1)';" />
+                " />
                 <button class="danmaku-send-btn" style="
-                  height: 28px;
-                  padding: 0 16px;
+                  height: 100%;
+                  padding: 0 14px;
                   border: none;
-                  border-radius: 14px;
-                  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                  color: #fff;
+                  border-left: 1px solid rgba(255,255,255,0.15);
+                  background: rgba(255,255,255,0.1);
+                  color: rgba(255,255,255,0.9);
                   font-size: 13px;
-                  font-weight: 500;
                   cursor: pointer;
-                  transition: all 0.2s ease;
+                  transition: background 0.15s ease;
                   white-space: nowrap;
-                " onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 2px 8px rgba(34,197,94,0.4)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">发送</button>
+                " onmouseover="this.style.background='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.1)';">发送</button>
               </div>`,
               mounted: function (element: HTMLElement) {
                 const input = element.querySelector('.danmaku-input') as HTMLInputElement;
                 const btn = element.querySelector('.danmaku-send-btn') as HTMLButtonElement;
+                const wrapper = element.querySelector('.danmaku-input-wrapper') as HTMLElement;
 
                 const sendDanmaku = () => {
                   if (!input || !artPlayerRef.current?.plugins?.artplayerPluginDanmuku) return;
@@ -3583,6 +3611,14 @@ function PlayPageClient() {
                     input.value = '';
                   }
                 };
+
+                // 输入框聚焦效果
+                input?.addEventListener('focus', () => {
+                  if (wrapper) wrapper.style.borderColor = 'rgba(255,255,255,0.4)';
+                });
+                input?.addEventListener('blur', () => {
+                  if (wrapper) wrapper.style.borderColor = 'rgba(255,255,255,0.2)';
+                });
 
                 // 点击发送按钮
                 btn?.addEventListener('click', (e) => {
