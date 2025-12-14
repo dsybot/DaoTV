@@ -3535,28 +3535,28 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
-            // 🚀 B站风格弹幕开关按钮（仅Web端显示）
+            // 🚀 B站风格弹幕开关按钮（仅Web端显示）- 和弹幕样式按钮风格一致
             ...(isMobile ? [] : [{
               position: 'right',
               index: 8,
-              html: `<div class="danmaku-toggle-btn" style="position: relative; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
-                <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-                  <!-- 电视机外框 -->
-                  <rect x="3" y="8" width="26" height="20" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+              html: `<div class="danmaku-toggle-btn" style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; cursor: pointer;" title="${externalDanmuEnabled ? '关闭弹幕' : '开启弹幕'}">
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+                  <!-- 电视机外框（和弹幕样式按钮一致） -->
+                  <rect x="6" y="10" width="30" height="22" rx="2" stroke="currentColor" stroke-width="3" fill="none"/>
                   <!-- 天线 -->
-                  <path d="M12 8L16 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <path d="M24 8L20 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M14 10L20 4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M28 10L22 4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
                   <!-- 弹字 -->
-                  <text x="16" y="22" font-size="11" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="sans-serif">弹</text>
+                  <text x="21" y="26" font-size="12" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="sans-serif">弹</text>
                 </svg>
-                <!-- 开启状态：蓝色对钩 -->
-                <svg class="danmaku-check-on" width="14" height="14" viewBox="0 0 24 24" fill="none" style="position: absolute; bottom: 0; right: 0; display: ${externalDanmuEnabled ? 'block' : 'none'};">
-                  <path d="M4 12l6 6L20 6" stroke="#00AEEC" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- 开启状态：蓝色对钩（右下角） -->
+                <svg class="danmaku-check-on" width="12" height="12" viewBox="0 0 24 24" fill="none" style="position: absolute; bottom: 4px; right: 2px; display: ${externalDanmuEnabled ? 'block' : 'none'};">
+                  <path d="M3 12l6 6L21 6" stroke="#00AEEC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <!-- 关闭状态：禁止符号 -->
-                <svg class="danmaku-check-off" width="14" height="14" viewBox="0 0 24 24" fill="none" style="position: absolute; bottom: 0; right: 0; display: ${externalDanmuEnabled ? 'none' : 'block'};">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
-                  <path d="M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <!-- 关闭状态：禁止符号（右下角） -->
+                <svg class="danmaku-check-off" width="12" height="12" viewBox="0 0 24 24" fill="none" style="position: absolute; bottom: 4px; right: 2px; display: ${externalDanmuEnabled ? 'none' : 'block'};">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                  <path d="M6 18L18 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                 </svg>
               </div>`,
               click: function () {
