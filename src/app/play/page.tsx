@@ -5569,7 +5569,7 @@ function PlayPageClient() {
 
               {/* 主演图片（TMDB） */}
               {tmdbCast.length > 0 && (
-                <CastPhotos tmdbCast={tmdbCast} onEnabledChange={setTmdbCastEnabled} />
+                <CastPhotos tmdbCast={tmdbCast} doubanId={videoDoubanId ? videoDoubanId.toString() : undefined} onEnabledChange={setTmdbCastEnabled} />
               )}
 
               {/* 推荐影片 */}

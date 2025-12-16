@@ -28,12 +28,20 @@ interface ActorWork {
   rate: string;
 }
 
+interface DoubanCelebrity {
+  name: string;
+  role: string;
+  character: string;
+  douban_id: string;
+}
+
 interface CastPhotosProps {
   tmdbCast?: TMDBCastItem[];  // TMDB演员数据
+  doubanId?: string;          // 豆瓣ID，用于获取角色名
   onEnabledChange?: (enabled: boolean) => void;
 }
 
-export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProps) {
+export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: CastPhotosProps) {
   const [actors, setActors] = useState<ActorPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -52,15 +60,61 @@ export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProp
   const [showWorksLeftArrow, setShowWorksLeftArrow] = useState(false);
   const [showWorksRightArrow, setShowWorksRightArrow] = useState(false);
 
-  // 处理TMDB演员数据
+  // 豆瓣演员数据（用于补充角色名）
+  const [doubanCelebrities, setDoubanCelebrities] = useState<DoubanCelebrity[]>([]);
+
+  // 获取豆瓣演员表
+  useEffect(() => {
+    if (!doubanId) return;
+
+    const fetchDoubanCelebrities = async () => {
+      try {
+        const response = await fetch(`/api/douban/celebrities?id=${doubanId}`);
+        const data = await response.json();
+        if (data.code === 200 && data.data?.celebrities) {
+          setDoubanCelebrities(data.data.celebrities);
+        }
+      } catch (error) {
+        console.error('获取豆瓣演员表失败:', error);
+      }
+    };
+
+    fetchDoubanCelebrities();
+  }, [doubanId]);
+
+  // 处理TMDB演员数据，优先使用豆瓣的角色名
   useEffect(() => {
     if (tmdbCast && tmdbCast.length > 0) {
-      const actorsWithPhoto = tmdbCast.filter(a => a.photo).map(a => ({
-        name: a.name,
-        photo: a.photo,
-        id: a.id,
-        character: a.character,
-      }));
+      const actorsWithPhoto = tmdbCast.filter(a => a.photo).map(a => {
+        let character = a.character;
+
+        // 优先使用豆瓣的角色名
+        if (doubanCelebrities.length > 0) {
+          // 尝试匹配演员名（支持中文名匹配）
+          const doubanMatch = doubanCelebrities.find(dc => {
+            // 完全匹配
+            if (dc.name === a.name) return true;
+            // TMDB名字包含豆瓣名字（如 "邓超" 在 "Chao Deng" 中）
+            if (a.name.includes(dc.name)) return true;
+            // 豆瓣名字包含TMDB名字的一部分
+            const tmdbNameParts = a.name.split(/\s+/);
+            if (tmdbNameParts.some(part => dc.name.includes(part) && part.length > 1)) return true;
+            return false;
+          });
+
+          if (doubanMatch && doubanMatch.character) {
+            character = doubanMatch.character;
+          }
+        }
+
+        return {
+          name: a.name,
+          photo: a.photo,
+          id: a.id,
+          character,
+        };
+      });
+
       if (actorsWithPhoto.length > 0) {
         setEnabled(true);
         setActors(actorsWithPhoto);
@@ -68,7 +122,7 @@ export default function CastPhotos({ tmdbCast, onEnabledChange }: CastPhotosProp
       }
     }
     setLoading(false);
-  }, [tmdbCast, onEnabledChange]);
+  }, [tmdbCast, doubanCelebrities, onEnabledChange]);
 
   // 获取演员作品
   const fetchActorWorks = async (actorName: string, type: 'movie' | 'tv') => {
