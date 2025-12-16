@@ -745,7 +745,7 @@ function DetailPageClient() {
 
             {/* 主演照片和作品 */}
             {tmdbCast.length > 0 && (
-              <CastPhotos tmdbCast={tmdbCast} />
+              <CastPhotos tmdbCast={tmdbCast} doubanId={doubanId ? doubanId.toString() : undefined} />
             )}
           </div>
         </div>
