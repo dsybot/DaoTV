@@ -9,15 +9,16 @@ const USER_AGENTS = [
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
 ];
 
-// 请求限制器
+// 请求限制器 - 使用代理时可以更快
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2秒最小间隔
+const MIN_REQUEST_INTERVAL = 500; // 降低到0.5秒（使用代理时风险较低）
+const MIN_REQUEST_INTERVAL_NO_PROXY = 2000; // 无代理时保持2秒
 
 function getRandomUserAgent(): string {
   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
-function randomDelay(min = 1000, max = 3000): Promise<void> {
+function randomDelay(min = 100, max = 300): Promise<void> {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
   return new Promise(resolve => setTimeout(resolve, delay));
 }
@@ -49,18 +50,23 @@ export async function GET(request: Request) {
 
   try {
 
-    // 请求限流：确保请求间隔
+    // 请求限流：确保请求间隔（使用代理时间隔更短）
+    const interval = proxyUrl ? MIN_REQUEST_INTERVAL : MIN_REQUEST_INTERVAL_NO_PROXY;
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    if (timeSinceLastRequest < interval) {
       await new Promise(resolve =>
-        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+        setTimeout(resolve, interval - timeSinceLastRequest)
       );
     }
     lastRequestTime = Date.now();
 
-    // 添加随机延时
-    await randomDelay(500, 1500);
+    // 添加随机延时（使用代理时延时更短）
+    if (proxyUrl) {
+      await randomDelay(50, 150); // 使用代理：50-150ms
+    } else {
+      await randomDelay(500, 1500); // 无代理：500-1500ms
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
