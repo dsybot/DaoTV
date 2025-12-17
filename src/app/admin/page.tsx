@@ -5033,7 +5033,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         </div>
 
         {/* 启用TMDB轮播图 */}
-        <div className='flex items-center justify-between'>
+        <div className='flex items-center justify-between mb-6'>
           <div>
             <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
               启用 TMDB 轮播图
@@ -5050,7 +5050,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 EnableTMDBCarousel: !prev.EnableTMDBCarousel,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${siteSettings.EnableTMDBCarousel
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${siteSettings.EnableTMDBCarousel
               ? 'bg-green-600'
               : 'bg-gray-200 dark:bg-gray-700'
               }`}
@@ -5080,7 +5080,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 EnableDetailPage: !prev.EnableDetailPage,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${siteSettings.EnableDetailPage
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${siteSettings.EnableDetailPage
               ? 'bg-green-600'
               : 'bg-gray-200 dark:bg-gray-700'
               }`}
