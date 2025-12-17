@@ -48,8 +48,20 @@ if (typeof document !== 'undefined') {
 .artplayer-plugin-liquid-glass.art-control-show .art-bottom .art-liquid-glass {
     border-radius: 8px;
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     background-color: rgba(0, 0, 0, 0.25);
     padding: var(--art-padding) calc(var(--art-padding) * 1.5) 5px;
+}
+
+/* 🔧 修复Chrome全屏模式下backdrop-filter导致的鼠标事件延迟问题 */
+/* 全屏模式下禁用毛玻璃效果，使用纯色半透明背景代替 */
+.artplayer-plugin-liquid-glass:fullscreen .art-bottom .art-liquid-glass,
+.artplayer-plugin-liquid-glass:-webkit-full-screen .art-bottom .art-liquid-glass,
+.artplayer-plugin-liquid-glass:-moz-full-screen .art-bottom .art-liquid-glass,
+.artplayer-plugin-liquid-glass:-ms-fullscreen .art-bottom .art-liquid-glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(0, 0, 0, 0.75) !important;
 }
 
 .artplayer-plugin-liquid-glass.art-control-show .art-settings {
