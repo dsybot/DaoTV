@@ -4,7 +4,7 @@
 export default function artplayerPluginLiquidGlass(option = {}) {
   return (art) => {
     const { constructor } = art;
-    const { addClass, append, createElement } = constructor.utils;
+    const { addClass, removeClass, append, createElement } = constructor.utils;
     const { $bottom, $progress, $controls, $player } = art.template;
 
     const $liquidGlass = createElement('div');
@@ -16,8 +16,24 @@ export default function artplayerPluginLiquidGlass(option = {}) {
     append($liquidGlass, $progress);
     append($liquidGlass, $controls);
 
-    // 移除control事件监听，完全由CSS控制宽度
-    // 避免与CSS的!important冲突，防止拖动进度条时布局错乱
+    // 🔧 修复Chrome全屏模式下backdrop-filter导致的鼠标事件延迟问题
+    // 通过JavaScript监听全屏状态变化，动态添加/移除类
+    art.on('fullscreen', (state) => {
+      if (state) {
+        addClass($player, 'art-fullscreen-active');
+      } else {
+        removeClass($player, 'art-fullscreen-active');
+      }
+    });
+
+    // 同时监听网页全屏
+    art.on('fullscreenWeb', (state) => {
+      if (state) {
+        addClass($player, 'art-fullscreen-web-active');
+      } else {
+        removeClass($player, 'art-fullscreen-web-active');
+      }
+    });
 
     return {
       name: 'artplayerPluginLiquidGlass',
@@ -55,10 +71,8 @@ if (typeof document !== 'undefined') {
 
 /* 🔧 修复Chrome全屏模式下backdrop-filter导致的鼠标事件延迟问题 */
 /* 全屏模式下禁用毛玻璃效果，使用纯色半透明背景代替 */
-.artplayer-plugin-liquid-glass:fullscreen .art-bottom .art-liquid-glass,
-.artplayer-plugin-liquid-glass:-webkit-full-screen .art-bottom .art-liquid-glass,
-.artplayer-plugin-liquid-glass:-moz-full-screen .art-bottom .art-liquid-glass,
-.artplayer-plugin-liquid-glass:-ms-fullscreen .art-bottom .art-liquid-glass {
+.artplayer-plugin-liquid-glass.art-fullscreen-active .art-bottom .art-liquid-glass,
+.artplayer-plugin-liquid-glass.art-fullscreen-web-active .art-bottom .art-liquid-glass {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-color: rgba(0, 0, 0, 0.75) !important;
