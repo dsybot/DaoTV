@@ -101,6 +101,16 @@ if (typeof document !== 'undefined') {
     background-color: rgba(0, 0, 0, 0.75) !important;
 }
 
+/* 🔧 修复Chrome全屏模式下弹幕若隐若现的GPU渲染问题 */
+/* 强制弹幕使用软件渲染，避免GPU合成层bug */
+.artplayer-plugin-liquid-glass.art-fullscreen-active .art-danmuku *,
+.artplayer-plugin-liquid-glass.art-fullscreen-web-active .art-danmuku * {
+    will-change: auto !important;
+    transform: none !important;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+}
+
 .artplayer-plugin-liquid-glass.art-liquid-glass-styled .art-settings {
     bottom: calc(var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding));
 }
