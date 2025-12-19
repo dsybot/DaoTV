@@ -3921,10 +3921,6 @@ function PlayPageClient() {
               right: 20px !important; /* 距离右边20px */
               left: auto !important;
               z-index: 2147483647 !important;
-              /* 🔧 修复Chrome全屏模式下backdrop-filter导致弹幕若隐若现的问题 */
-              backdrop-filter: none !important;
-              -webkit-backdrop-filter: none !important;
-              background: rgba(0, 0, 0, 0.9) !important;
             }
             
             /* 确保全屏模式下弹幕面板内部元素可点击 */
