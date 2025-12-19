@@ -284,7 +284,8 @@ interface SiteConfig {
   ShowAdultContent: boolean;
   FluidSearch: boolean;
   // TMDB配置
-  TMDBApiKey?: string;
+  TMDBApiKey?: string;  // 单个API Key（向后兼容）
+  TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
   EnableTMDBCarousel?: boolean;
@@ -4295,6 +4296,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     FluidSearch: true,
     // TMDB配置默认值
     TMDBApiKey: '',
+    TMDBApiKeys: [],
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
     EnableTMDBCarousel: false,
@@ -4378,6 +4380,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         FluidSearch: config.SiteConfig.FluidSearch || true,
         // TMDB配置
         TMDBApiKey: config.SiteConfig.TMDBApiKey || '',
+        TMDBApiKeys: config.SiteConfig.TMDBApiKeys || [],
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
         EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? false,
@@ -4963,22 +4966,60 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           TMDB 配置
         </h3>
 
-        {/* TMDB API Key */}
+        {/* TMDB API Keys（支持多个轮询） */}
         <div className='mb-6'>
           <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-            TMDB API Key
+            TMDB API Keys
+            <span className='ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal'>
+              （支持多个Key轮询，避免速率限制）
+            </span>
           </label>
-          <input
-            type='password'
-            value={siteSettings.TMDBApiKey || ''}
-            onChange={(e) =>
-              setSiteSettings((prev) => ({ ...prev, TMDBApiKey: e.target.value }))
-            }
-            placeholder='请输入TMDB API Key'
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
-          />
-          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-            请在 <a href='https://www.themoviedb.org/settings/api' target='_blank' rel='noopener noreferrer' className='text-blue-500 hover:text-blue-600'>TMDB 官网</a> 申请免费的 API Key
+
+          {/* 显示已添加的API Keys */}
+          <div className='space-y-2 mb-3'>
+            {(siteSettings.TMDBApiKeys || []).map((key, index) => (
+              <div key={index} className='flex items-center gap-2'>
+                <input
+                  type='password'
+                  value={key}
+                  onChange={(e) => {
+                    const newKeys = [...(siteSettings.TMDBApiKeys || [])];
+                    newKeys[index] = e.target.value;
+                    setSiteSettings((prev) => ({ ...prev, TMDBApiKeys: newKeys }));
+                  }}
+                  placeholder={`API Key #${index + 1}`}
+                  className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                />
+                <button
+                  type='button'
+                  onClick={() => {
+                    const newKeys = (siteSettings.TMDBApiKeys || []).filter((_, i) => i !== index);
+                    setSiteSettings((prev) => ({ ...prev, TMDBApiKeys: newKeys }));
+                  }}
+                  className={buttonStyles.dangerSmall}
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* 添加新Key按钮 */}
+          <button
+            type='button'
+            onClick={() => {
+              setSiteSettings((prev) => ({
+                ...prev,
+                TMDBApiKeys: [...(prev.TMDBApiKeys || []), '']
+              }));
+            }}
+            className={buttonStyles.successSmall}
+          >
+            + 添加 API Key
+          </button>
+
+          <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+            请在 <a href='https://www.themoviedb.org/settings/api' target='_blank' rel='noopener noreferrer' className='text-blue-500 hover:text-blue-600'>TMDB 官网</a> 申请免费的 API Key。添加多个Key可以分散请求，避免触发速率限制。
           </p>
         </div>
 

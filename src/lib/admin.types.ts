@@ -19,7 +19,8 @@ export interface AdminConfig {
     ShowAdultContent: boolean; // 是否显示成人内容，默认 false
     FluidSearch: boolean;
     // TMDB配置
-    TMDBApiKey?: string;
+    TMDBApiKey?: string;  // 单个API Key（向后兼容）
+    TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
     EnableTMDBCarousel?: boolean;

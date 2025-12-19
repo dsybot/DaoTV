@@ -4,6 +4,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+// TMDB API Key 轮询索引
+let tmdbApiKeyIndex = 0;
+
+/**
+ * 获取下一个可用的TMDB API Key（轮询）
+ */
+function getNextTMDBApiKey(config: any): string | null {
+  // 优先使用多Key配置
+  const apiKeys = config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
+
+  // 如果有多个Key，使用轮询
+  if (apiKeys.length > 0) {
+    const key = apiKeys[tmdbApiKeyIndex % apiKeys.length];
+    tmdbApiKeyIndex = (tmdbApiKeyIndex + 1) % apiKeys.length;
+    return key;
+  }
+
+  // 降级到单Key配置
+  if (config.SiteConfig.TMDBApiKey) {
+    return config.SiteConfig.TMDBApiKey;
+  }
+
+  return null;
+}
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
@@ -181,7 +206,7 @@ export async function GET(request: NextRequest) {
     }
 
     const config = await getConfig();
-    const apiKey = config.SiteConfig.TMDBApiKey;
+    const apiKey = getNextTMDBApiKey(config);
 
     if (!apiKey) {
       return NextResponse.json({ error: 'TMDB API Key 未配置' }, { status: 503 });

@@ -10,6 +10,31 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w300'; // 演员头像尺寸
 const CACHE_TIME = 24 * 60 * 60; // 24小时缓存
 
+// TMDB API Key 轮询索引
+let tmdbApiKeyIndex = 0;
+
+/**
+ * 获取下一个可用的TMDB API Key（轮询）
+ */
+function getNextTMDBApiKey(config: any): string | null {
+  // 优先使用多Key配置
+  const apiKeys = config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
+
+  // 如果有多个Key，使用轮询
+  if (apiKeys.length > 0) {
+    const key = apiKeys[tmdbApiKeyIndex % apiKeys.length];
+    tmdbApiKeyIndex = (tmdbApiKeyIndex + 1) % apiKeys.length;
+    return key;
+  }
+
+  // 降级到单Key配置
+  if (config.SiteConfig.TMDBApiKey) {
+    return config.SiteConfig.TMDBApiKey;
+  }
+
+  return null;
+}
+
 export const runtime = 'nodejs';
 
 interface ActorPhoto {
@@ -79,7 +104,7 @@ export async function GET(request: NextRequest) {
       console.warn('TMDB演员图片缓存检查失败:', cacheError);
     }
 
-    const apiKey = config.SiteConfig.TMDBApiKey;
+    const apiKey = getNextTMDBApiKey(config);
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
 
     // 并发获取所有演员图片

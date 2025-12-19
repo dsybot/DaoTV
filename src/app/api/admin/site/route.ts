@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       ShowAdultContent,
       FluidSearch,
       TMDBApiKey,
+      TMDBApiKeys,
       TMDBLanguage,
       EnableTMDBActorSearch,
       EnableTMDBCarousel,
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
       ShowAdultContent: boolean;
       FluidSearch: boolean;
       TMDBApiKey?: string;
+      TMDBApiKeys?: string[];
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
       EnableTMDBCarousel?: boolean;
@@ -148,6 +150,7 @@ export async function POST(request: NextRequest) {
       ShowAdultContent,
       FluidSearch,
       TMDBApiKey: TMDBApiKey || '',
+      TMDBApiKeys: (TMDBApiKeys || []).filter((k: string) => k && k.trim()),  // 过滤空值
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
       EnableTMDBCarousel: finalEnableTMDBCarousel,

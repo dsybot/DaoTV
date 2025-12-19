@@ -115,11 +115,20 @@ export interface TMDBFilterOptions {
 }
 
 /**
+ * 检查是否有可用的TMDB API Key
+ */
+function hasTMDBApiKey(config: any): boolean {
+  const hasMultiKeys = config.SiteConfig.TMDBApiKeys?.some((k: string) => k && k.trim());
+  const hasSingleKey = !!config.SiteConfig.TMDBApiKey;
+  return hasMultiKeys || hasSingleKey;
+}
+
+/**
  * 检查TMDB是否已配置并启用（用于演员搜索）
  */
 export async function isTMDBEnabled(): Promise<boolean> {
   const config = await getConfig();
-  return !!(config.SiteConfig.EnableTMDBActorSearch && config.SiteConfig.TMDBApiKey);
+  return !!(config.SiteConfig.EnableTMDBActorSearch && hasTMDBApiKey(config));
 }
 
 /**
@@ -127,7 +136,33 @@ export async function isTMDBEnabled(): Promise<boolean> {
  */
 export async function isCarouselEnabled(): Promise<boolean> {
   const config = await getConfig();
-  return !!(config.SiteConfig.EnableTMDBCarousel && config.SiteConfig.TMDBApiKey);
+  return !!(config.SiteConfig.EnableTMDBCarousel && hasTMDBApiKey(config));
+}
+
+// TMDB API Key 轮询索引（内存中维护）
+let tmdbApiKeyIndex = 0;
+
+/**
+ * 获取下一个可用的TMDB API Key（轮询）
+ */
+function getNextTMDBApiKey(config: any): string {
+  // 优先使用多Key配置
+  const apiKeys = config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
+
+  // 如果有多个Key，使用轮询
+  if (apiKeys.length > 0) {
+    const key = apiKeys[tmdbApiKeyIndex % apiKeys.length];
+    tmdbApiKeyIndex = (tmdbApiKeyIndex + 1) % apiKeys.length;
+    console.log(`[TMDB API] 使用API Key #${(tmdbApiKeyIndex === 0 ? apiKeys.length : tmdbApiKeyIndex)}/${apiKeys.length}`);
+    return key;
+  }
+
+  // 降级到单Key配置
+  if (config.SiteConfig.TMDBApiKey) {
+    return config.SiteConfig.TMDBApiKey;
+  }
+
+  throw new Error('TMDB API Key 未配置');
 }
 
 /**
@@ -136,12 +171,10 @@ export async function isCarouselEnabled(): Promise<boolean> {
 async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
   const config = await getConfig();
 
-  if (!config.SiteConfig.TMDBApiKey) {
-    throw new Error('TMDB API Key 未配置');
-  }
+  const apiKey = getNextTMDBApiKey(config);
 
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
-  url.searchParams.append('api_key', config.SiteConfig.TMDBApiKey);
+  url.searchParams.append('api_key', apiKey);
   url.searchParams.append('language', config.SiteConfig.TMDBLanguage || 'zh-CN');
 
   // 添加其他参数

@@ -223,6 +223,7 @@ async function getInitConfig(configFile: string, subConfig: {
         process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
       // TMDB配置默认值
       TMDBApiKey: process.env.TMDB_API_KEY || '',
+      TMDBApiKeys: [],  // 多个API Key（轮询使用）
       TMDBLanguage: 'zh-CN',
       EnableTMDBActorSearch: false, // 默认关闭，需要配置API Key后手动开启
     },
