@@ -3736,8 +3736,11 @@ function PlayPageClient() {
                         }
                       }
 
-                      // 🎯 硬件加速优化
-                      if (danmu.$ref && danmu.mode === 0) {
+                      // 🎯 硬件加速优化（Chrome全屏模式下跳过，避免GPU渲染bug导致弹幕若隐若现）
+                      const isFullscreenMode = document.fullscreenElement || (document as any).webkitFullscreenElement;
+                      const isChromeBrowser = /Chrome/.test(navigator.userAgent) && !/Edge|Edg/.test(navigator.userAgent);
+
+                      if (danmu.$ref && danmu.mode === 0 && !(isChromeBrowser && isFullscreenMode)) {
                         danmu.$ref.style.willChange = 'transform';
                         danmu.$ref.style.backfaceVisibility = 'hidden';
 
