@@ -101,17 +101,6 @@ if (typeof document !== 'undefined') {
     background-color: rgba(0, 0, 0, 0.75) !important;
 }
 
-/* 🔧 修复Chrome全屏模式下弹幕若隐若现的GPU渲染问题 */
-/* 给弹幕容器添加独立的层叠上下文和渲染层 */
-.artplayer-plugin-liquid-glass.art-fullscreen-active .art-danmuku,
-.artplayer-plugin-liquid-glass.art-fullscreen-web-active .art-danmuku {
-    isolation: isolate !important;
-    contain: layout style !important;
-    will-change: auto !important;
-    transform: translateZ(0) !important;
-    backface-visibility: visible !important;
-}
-
 .artplayer-plugin-liquid-glass.art-liquid-glass-styled .art-settings {
     bottom: calc(var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding));
 }
