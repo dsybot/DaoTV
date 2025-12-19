@@ -433,10 +433,15 @@ div[data-media-provider] video {
 /* Firefox 特定修复 - 解决hover时backdrop-blur导致的徽章消失和图片模糊问题 */
 /* Firefox使用-moz-appearance来检测 */
 @supports (-moz-appearance: none) {
-  /* 给徽章创建独立的层叠上下文，避免与hover遮罩层冲突 */
-  .group .backdrop-blur-sm {
-    isolation: isolate;
-    transform: translateZ(0);
-    will-change: transform;
+  /* VideoCard hover时禁用backdrop-blur，使用纯色背景替代 */
+  .group:hover .backdrop-blur-sm {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+  }
+
+  /* 暗色模式下的调整 */
+  .dark .group:hover .backdrop-blur-sm {
+    background-color: rgba(255, 255, 255, 0.5) !important;
   }
 }
