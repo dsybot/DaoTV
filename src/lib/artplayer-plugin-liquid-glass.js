@@ -121,14 +121,6 @@ if (typeof document !== 'undefined') {
     align-items: center;  /* 官方唯一的对齐设置 */
 }
 
-/* 🔧 修复Chrome下backdrop-filter影响弹幕渲染的问题 */
-/* 确保弹幕层不受毛玻璃效果的层叠上下文影响 */
-.artplayer-plugin-liquid-glass .artplayer-danmuku {
-    isolation: isolate;
-    transform: translateZ(0);
-    will-change: contents;
-}
-
 /* 移动端优化 */
 @media (max-width: 768px) {
     .artplayer-plugin-liquid-glass .art-control {
