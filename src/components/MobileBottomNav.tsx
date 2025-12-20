@@ -323,20 +323,47 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             className="flex items-center overflow-x-auto scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2"
             style={{ minHeight: '3.5rem' }}
           >
+            {/* 移动端：显示前4个非desktopOnly项目 */}
+            {navItems
+              .filter((item: any) => !item.desktopOnly)
+              .slice(0, 4)
+              .map((item: any) => {
+                const active = isActive(item.href);
+                const theme = getColorTheme(item.href);
+
+                return (
+                  <li key={item.href} className="flex-1 flex-shrink-0 md:hidden">
+                    <Link
+                      href={item.href}
+                      className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
+                    >
+                      <item.icon
+                        className={`h-6 w-6 transition-all duration-200 ${active ? theme.active : 'text-gray-700 dark:text-gray-200'
+                          }`}
+                        style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
+                      />
+                      <span
+                        className={`text-[10px] transition-all duration-200 ${active ? `${theme.active} font-semibold` : 'text-gray-700 dark:text-gray-200'
+                          }`}
+                        style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+
+            {/* 桌面端：根据maxVisibleCount显示 */}
             {visibleItems.map((item: any, index: number) => {
               const active = isActive(item.href);
-              const hideOnMobile = item.desktopOnly;
-              // 移动端：计算非desktopOnly项目的索引，超过4个隐藏
-              const mobileItems = navItems.filter((i: any) => !i.desktopOnly);
-              const mobileIndex = mobileItems.findIndex((i: any) => i.href === item.href);
-              const hideOnMobileAfterFour = mobileIndex >= 4;
               const theme = getColorTheme(item.href);
 
               return (
                 <li
                   key={item.href}
-                  className={`flex-1 md:flex-initial flex-shrink-0 md:flex-shrink-0 ${hideOnMobile ? 'hidden md:flex' : ''} ${hideOnMobileAfterFour ? 'hidden md:flex' : ''
-                    } ${onLayoutModeChange ? 'md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0' : ''}`}
+                  className={`hidden md:flex flex-shrink-0 ${onLayoutModeChange ? 'md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0' : ''
+                    }`}
                   style={
                     onLayoutModeChange
                       ? { animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards` }
@@ -345,17 +372,17 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 >
                   <Link
                     href={item.href}
-                    className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs md:w-auto md:h-auto md:min-w-[70px] md:px-3 md:py-2 md:rounded-full md:hover:bg-white/40 md:dark:hover:bg-gray-800/40 transition-all duration-200"
+                    className="group flex flex-col items-center justify-center min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200"
                   >
                     <item.icon
                       className={`h-6 w-6 transition-all duration-200 ${active
-                        ? `${theme.active} md:scale-110`
-                        : `text-gray-700 dark:text-gray-200 ${theme.hover} md:group-hover:scale-110`
+                          ? `${theme.active} scale-110`
+                          : `text-gray-700 dark:text-gray-200 ${theme.hover} group-hover:scale-110`
                         }`}
                       style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
                     />
                     <span
-                      className={`text-[10px] md:text-xs transition-all duration-200 ${active ? `${theme.active} font-semibold` : `text-gray-700 dark:text-gray-200 ${theme.hover}`
+                      className={`text-xs transition-all duration-200 ${active ? `${theme.active} font-semibold` : `text-gray-700 dark:text-gray-200 ${theme.hover}`
                         }`}
                       style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
                     >
