@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface MobileBottomNavProps {
@@ -30,6 +30,7 @@ interface MobileBottomNavProps {
 const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // 构建完整的当前路径（包含查询参数）
   const currentFullPath = activePath ?? (searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname);
@@ -39,10 +40,13 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   // 桌面端下拉菜单状态
   const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement>(null);
   const navContainerRef = useRef<HTMLDivElement>(null);
 
   // 动态计算的可见项数量
   const [maxVisibleCount, setMaxVisibleCount] = useState(20);
+  // 下拉菜单位置
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 60, right: 100 });
 
   // 每个导航项的宽度（包括间距）
   const ITEM_WIDTH = 76; // px
@@ -98,7 +102,13 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   // 点击外部关闭下拉菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        dropdownMenuRef.current &&
+        !dropdownMenuRef.current.contains(target)
+      ) {
         setShowDesktopDropdown(false);
       }
     };
@@ -108,6 +118,23 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDesktopDropdown]);
+
+  // 更新下拉菜单位置
+  useEffect(() => {
+    if (showDesktopDropdown && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, [showDesktopDropdown]);
+
+  // 处理下拉菜单项点击
+  const handleDropdownItemClick = useCallback((href: string) => {
+    setShowDesktopDropdown(false);
+    router.push(href);
+  }, [router]);
 
   const isActive = useCallback(
     (href: string) => {
@@ -410,10 +437,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       {/* 桌面端下拉菜单 - 放在nav外面避免被裁剪 */}
       {showDesktopDropdown && hasHiddenItems && onLayoutModeChange && (
         <div
-          className="hidden md:block fixed z-[800] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px]"
+          ref={dropdownMenuRef}
+          className="hidden md:block fixed z-[800] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px] pointer-events-auto"
           style={{
-            top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + 8 : 60,
-            right: dropdownRef.current ? window.innerWidth - dropdownRef.current.getBoundingClientRect().right : 100,
+            top: dropdownPosition.top,
+            right: dropdownPosition.right,
           }}
         >
           <div className="py-2">
@@ -422,17 +450,16 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               const Icon = item.icon;
               const theme = getColorTheme(item.href);
               return (
-                <Link
+                <button
                   key={item.href}
-                  href={item.href}
-                  onClick={() => setShowDesktopDropdown(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors ${active ? 'bg-gray-100/50 dark:bg-gray-800/50' : ''}`}
+                  onClick={() => handleDropdownItemClick(item.href)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors text-left ${active ? 'bg-gray-100/50 dark:bg-gray-800/50' : ''}`}
                 >
                   <Icon className={`h-5 w-5 ${active ? theme.color : 'text-gray-500 dark:text-gray-400'}`} />
                   <span className={`text-sm font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}>
                     {item.label}
                   </span>
-                </Link>
+                </button>
               );
             })}
           </div>
