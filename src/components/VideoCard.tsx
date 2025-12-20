@@ -10,6 +10,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useOptimistic,
   useState,
 } from 'react';
 
@@ -94,6 +95,16 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [searchFavorited, setSearchFavorited] = useState<boolean | null>(null); // 搜索结果的收藏状态
 
+  // 🚀 React 19 useOptimistic - 乐观更新收藏状态，提供即时UI反馈
+  const [optimisticFavorited, setOptimisticFavorited] = useOptimistic(
+    favorited,
+    (_state, newValue: boolean) => newValue
+  );
+  const [optimisticSearchFavorited, setOptimisticSearchFavorited] = useOptimistic(
+    searchFavorited,
+    (_state, newValue: boolean | null) => newValue
+  );
+
   // 可外部修改的可控字段
   const [dynamicEpisodes, setDynamicEpisodes] = useState<number | undefined>(
     episodes
@@ -105,17 +116,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     douban_id
   );
 
+  // ✅ 合并重复的 useEffect - 减少不必要的渲染
   useEffect(() => {
     setDynamicEpisodes(episodes);
-  }, [episodes]);
-
-  useEffect(() => {
     setDynamicSourceNames(source_names);
-  }, [source_names]);
-
-  useEffect(() => {
     setDynamicDoubanId(douban_id);
-  }, [douban_id]);
+  }, [episodes, source_names, douban_id]);
 
   useImperativeHandle(ref, () => ({
     setEpisodes: (eps?: number) => setDynamicEpisodes(eps),
@@ -174,6 +180,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     return unsubscribe;
   }, [from, actualSource, actualId, isUpcoming]);
 
+  // 🚀 使用 useOptimistic 优化收藏功能 - React 19 新特性
   const handleToggleFavorite = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault();
@@ -185,10 +192,20 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       try {
         // 确定当前收藏状态
         const currentFavorited = from === 'search' ? searchFavorited : favorited;
+        const newFavoritedState = !currentFavorited;
 
+        // 🎯 立即更新 UI（乐观更新）- 用户感知零延迟
+        if (from === 'search') {
+          setOptimisticSearchFavorited(newFavoritedState);
+        } else {
+          setOptimisticFavorited(newFavoritedState);
+        }
+
+        // 🔄 后台异步执行数据库操作
         if (currentFavorited) {
           // 如果已收藏，删除收藏
           await deleteFavorite(actualSource, actualId);
+          // 操作成功后更新真实状态
           if (from === 'search') {
             setSearchFavorited(false);
           } else {
@@ -209,6 +226,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             releaseDate: releaseDate, // 保存上映日期
             remarks: remarks, // 保存备注信息
           });
+          // 操作成功后更新真实状态
           if (from === 'search') {
             setSearchFavorited(true);
           } else {
@@ -216,6 +234,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           }
         }
       } catch (err) {
+        // ⚠ 如果操作失败，恢复原状态（useOptimistic会自动回滚）
+        console.error('切换收藏状态失败:', err);
         throw new Error('切换收藏状态失败');
       }
     },
@@ -232,6 +252,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       actualQuery,
       favorited,
       searchFavorited,
+      setOptimisticFavorited,
+      setOptimisticSearchFavorited,
     ]
   );
 
@@ -574,7 +596,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
     // 收藏/取消收藏操作
     if (config.showHeart && actualSource && actualId) {
-      const currentFavorited = from === 'search' ? searchFavorited : favorited;
+      // 🚀 使用乐观状态显示，提供即时UI反馈
+      const currentFavorited = from === 'search' ? optimisticSearchFavorited : optimisticFavorited;
 
       if (from === 'search') {
         // 搜索结果：根据加载状态显示不同的选项
@@ -680,8 +703,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     from,
     actualSource,
     actualId,
-    favorited,
-    searchFavorited,
+    optimisticFavorited,
+    optimisticSearchFavorited,
     actualDoubanId,
     isBangumi,
     isAggregate,
@@ -896,7 +919,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 <Heart
                   onClick={handleToggleFavorite}
                   size={20}
-                  className={`transition-all duration-300 ease-out ${favorited
+                  className={`transition-all duration-300 ease-out ${optimisticFavorited
                     ? 'fill-red-600 stroke-red-600'
                     : 'fill-transparent stroke-white hover:stroke-red-400'
                     } hover:scale-[1.1]`}
