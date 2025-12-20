@@ -327,7 +327,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               const active = isActive(item.href);
               const hideOnMobile = item.desktopOnly;
               // 移动端：计算非desktopOnly项目的索引，超过4个隐藏
-              const mobileItems = visibleItems.filter((i: any) => !i.desktopOnly);
+              const mobileItems = navItems.filter((i: any) => !i.desktopOnly);
               const mobileIndex = mobileItems.findIndex((i: any) => i.href === item.href);
               const hideOnMobileAfterFour = mobileIndex >= 4;
               const theme = getColorTheme(item.href);
