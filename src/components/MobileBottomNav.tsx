@@ -88,6 +88,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   const isActive = (href: string) => {
     const typeMatch = href.match(/type=([^&]+)/)?.[1];
+    const customIndexMatch = href.match(/customIndex=([^&]+)/)?.[1];
 
     // 解码URL以进行正确的比较
     const decodedActive = decodeURIComponent(currentActive);
@@ -98,10 +99,20 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       return false;
     }
 
+    // 自定义分类需要同时匹配type=custom和customIndex
+    if (typeMatch === 'custom' && customIndexMatch) {
+      return (
+        decodedActive.startsWith('/douban') &&
+        decodedActive.includes('type=custom') &&
+        decodedActive.includes(`customIndex=${customIndexMatch}`)
+      );
+    }
+
     return (
       decodedActive === decodedItemHref ||
       (decodedActive.startsWith('/douban') &&
-        decodedActive.includes(`type=${typeMatch}`)) ||
+        decodedActive.includes(`type=${typeMatch}`) &&
+        typeMatch !== 'custom') || // 排除custom类型，因为上面已经处理
       (href === '/shortdrama' && decodedActive.startsWith('/shortdrama'))
     );
   };
