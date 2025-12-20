@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface MobileBottomNavProps {
@@ -29,7 +29,10 @@ interface MobileBottomNavProps {
 
 const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProps) => {
   const pathname = usePathname();
-  const currentActive = activePath ?? pathname;
+  const searchParams = useSearchParams();
+
+  // 构建完整的当前路径（包含查询参数）
+  const currentFullPath = activePath ?? (searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname);
 
   // 更多菜单状态
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -42,11 +45,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const [maxVisibleCount, setMaxVisibleCount] = useState(20);
 
   // 每个导航项的宽度（包括间距）
-  const ITEM_WIDTH = 70; // px
+  const ITEM_WIDTH = 76; // px
   // 更多按钮宽度
-  const MORE_BUTTON_WIDTH = 70;
+  const MORE_BUTTON_WIDTH = 76;
   // 分隔线和侧边栏按钮宽度
-  const EXTRA_BUTTONS_WIDTH = 140;
+  const EXTRA_BUTTONS_WIDTH = 150;
   // 导航栏内边距
   const NAV_PADDING = 32;
 
@@ -110,7 +113,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     (href: string) => {
       const typeMatch = href.match(/type=([^&]+)/)?.[1];
       const customIndexMatch = href.match(/customIndex=([^&]+)/)?.[1];
-      const decodedActive = decodeURIComponent(currentActive);
+      const decodedActive = decodeURIComponent(currentFullPath);
       const decodedItemHref = decodeURIComponent(href);
 
       if (decodedActive.startsWith('/detail') || decodedActive.startsWith('/play')) {
@@ -133,7 +136,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         (href === '/shortdrama' && decodedActive.startsWith('/shortdrama'))
       );
     },
-    [currentActive]
+    [currentFullPath]
   );
 
   // 计算桌面端可见项和隐藏项
@@ -305,8 +308,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   >
                     <item.icon
                       className={`h-6 w-6 transition-all duration-200 ${active
-                          ? `${theme.active} md:scale-110`
-                          : `text-gray-700 dark:text-gray-200 ${theme.hover} md:group-hover:scale-110`
+                        ? `${theme.active} md:scale-110`
+                        : `text-gray-700 dark:text-gray-200 ${theme.hover} md:group-hover:scale-110`
                         }`}
                       style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
                     />
@@ -322,7 +325,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               );
             })}
 
-            {/* 桌面端更多下拉菜单 */}
+            {/* 桌面端更多下拉菜单按钮 */}
             {hasHiddenItems && onLayoutModeChange && (
               <li
                 className="hidden md:flex flex-shrink-0 relative"
@@ -345,33 +348,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   </div>
                   <span style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>更多</span>
                 </button>
-
-                {/* 下拉菜单 */}
-                {showDesktopDropdown && (
-                  <div className="absolute top-full mt-2 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px] z-[700]">
-                    <div className="py-2">
-                      {hiddenItems.map((item: any) => {
-                        const active = isActive(item.href);
-                        const Icon = item.icon;
-                        const theme = getColorTheme(item.href);
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setShowDesktopDropdown(false)}
-                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors ${active ? 'bg-gray-100/50 dark:bg-gray-800/50' : ''
-                              }`}
-                          >
-                            <Icon className={`h-5 w-5 ${active ? theme.color : 'text-gray-500 dark:text-gray-400'}`} />
-                            <span className={`text-sm font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}>
-                              {item.label}
-                            </span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </li>
             )}
 
@@ -430,6 +406,38 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
           </ul>
         </div>
       </nav>
+
+      {/* 桌面端下拉菜单 - 放在nav外面避免被裁剪 */}
+      {showDesktopDropdown && hasHiddenItems && onLayoutModeChange && (
+        <div
+          className="hidden md:block fixed z-[800] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px]"
+          style={{
+            top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + 8 : 60,
+            right: dropdownRef.current ? window.innerWidth - dropdownRef.current.getBoundingClientRect().right : 100,
+          }}
+        >
+          <div className="py-2">
+            {hiddenItems.map((item: any) => {
+              const active = isActive(item.href);
+              const Icon = item.icon;
+              const theme = getColorTheme(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setShowDesktopDropdown(false)}
+                  className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors ${active ? 'bg-gray-100/50 dark:bg-gray-800/50' : ''}`}
+                >
+                  <Icon className={`h-5 w-5 ${active ? theme.color : 'text-gray-500 dark:text-gray-400'}`} />
+                  <span className={`text-sm font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </>
   );
 };
