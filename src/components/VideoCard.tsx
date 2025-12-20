@@ -52,6 +52,7 @@ export interface VideoCardProps {
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
   episodeBadgeVariant?: 'default' | 'dark';
+  priority?: boolean; // 🚀 图片优先加载标记 - 用于首屏图片优化LCP
 }
 
 export type VideoCardHandle = {
@@ -84,6 +85,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     remarks,
     releaseDate,
     episodeBadgeVariant = 'default',
+    priority = false,
   }: VideoCardProps,
   ref
 ) {
@@ -721,7 +723,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   return (
     <>
       <div
-        className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500] hover:drop-shadow-2xl'
+        className='@container group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500] hover:drop-shadow-2xl'
         {...longPressProps}
         onClick={(e) => {
           // 检查是否点击的是按钮元素，如果是则不触发跳转详情页
@@ -795,7 +797,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
               }`}
             referrerPolicy='no-referrer'
-            loading='lazy'
+            loading={priority ? 'eager' : 'lazy'}
+            priority={priority}
             quality={85}
             onLoadingComplete={() => {
               setIsLoading(true);
@@ -1113,12 +1116,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             );
           })()}
 
-          {/* 评分徽章 - 动态颜色（右上角倾斜丝带） */}
+          {/* 评分徽章 - 动态颜色（右上角倾斜丝带） - 🎯 使用容器查询替代媒体查询 */}
           {config.showRating && rate && (() => {
             const badgeStyle = getRatingBadgeStyle(rate);
             return (
               <div
-                className={`absolute top-[10px] right-[-35px] z-30 w-[120px] ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] sm:text-xs font-bold py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 rotate-45 pointer-events-none`}
+                className={`absolute top-[10px] right-[-35px] z-30 w-[120px] ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] @[180px]:text-xs font-bold py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 rotate-45 pointer-events-none`}
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -1209,7 +1212,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   } as React.CSSProperties}
                 >
                   <div
-                    className='bg-gradient-to-br from-orange-500/95 via-amber-500/95 to-yellow-500/95 text-white text-xs font-bold w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30 hover:scale-[1.15] transition-all duration-300 ease-out cursor-pointer hover:shadow-orange-500/50'
+                    className='bg-gradient-to-br from-orange-500/95 via-amber-500/95 to-yellow-500/95 text-white text-xs font-bold w-9 h-9 @[180px]:w-10 @[180px]:h-10 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30 hover:scale-[1.15] transition-all duration-300 ease-out cursor-pointer hover:shadow-orange-500/50'
                     style={{
                       WebkitUserSelect: 'none',
                       userSelect: 'none',
@@ -1221,8 +1224,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                     }}
                   >
                     <span className="flex flex-col items-center justify-center leading-none">
-                      <span className="text-[9px] sm:text-[10px] font-normal">源</span>
-                      <span className="text-xs sm:text-sm font-extrabold">{sourceCount}</span>
+                      <span className="@[180px]:text-[10px] text-[9px] font-normal">源</span>
+                      <span className="@[180px]:text-sm text-xs font-extrabold">{sourceCount}</span>
                     </span>
                   </div>
 
@@ -1359,7 +1362,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             <div className='absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-900/0 group-hover:via-green-50/50 dark:group-hover:via-green-900/30 transition-all duration-300 rounded-md'></div>
 
             <span
-              className='block text-sm font-bold line-clamp-2 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out group-hover:scale-[1.02] peer relative z-10 group-hover:bg-gradient-to-r group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 dark:group-hover:from-green-400 dark:group-hover:via-emerald-400 dark:group-hover:to-teal-400 group-hover:bg-clip-text group-hover:text-transparent group-hover:drop-shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
+              className='block text-xs @[140px]:text-sm font-bold line-clamp-2 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out group-hover:scale-[1.02] peer relative z-10 group-hover:bg-gradient-to-r group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 dark:group-hover:from-green-400 dark:group-hover:via-emerald-400 dark:group-hover:to-teal-400 group-hover:bg-clip-text group-hover:text-transparent group-hover:drop-shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',

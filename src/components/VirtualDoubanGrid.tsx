@@ -202,6 +202,9 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
       return <div style={{ ...style, visibility: 'hidden' }} />;
     }
 
+    // 🎯 图片加载优化：首屏25张卡片使用 priority 预加载
+    const isPriorityImage = index < INITIAL_BATCH_SIZE;
+
     const item = cellDisplayData[index];
 
     if (!item) {
@@ -222,6 +225,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
           year={item.year}
           type={cellType === 'movie' ? 'movie' : cellType === 'show' ? 'variety' : cellType === 'tv' ? 'tv' : cellType === 'anime' ? 'anime' : ''}
           isBangumi={cellIsBangumi}
+          priority={isPriorityImage}
         />
       </div>
     );
