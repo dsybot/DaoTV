@@ -200,8 +200,7 @@ function DoubanPageClient() {
         new Set(customCategories.map((cat) => cat.type))
       );
       if (types.length > 0) {
-        // 优先选择 movie，如果没有 movie 则选择 tv
-        let selectedType = types[0]; // 默认选择第一个
+        let selectedType = types[0];
         if (types.includes('movie')) {
           selectedType = 'movie';
         } else {
@@ -209,7 +208,6 @@ function DoubanPageClient() {
         }
         setPrimarySelection(selectedType);
 
-        // 设置选中类型的第一个分类的 query 作为二级选择
         const firstCategory = customCategories.find(
           (cat) => cat.type === selectedType
         );

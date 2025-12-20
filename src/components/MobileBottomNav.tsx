@@ -72,12 +72,15 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      const customItems = runtimeConfig.CUSTOM_CATEGORIES.map((category: any, index: number) => ({
-        icon: Star,
-        label: category.name || category.label || '自定义',
-        href: `/douban?type=custom&customIndex=${index}`,
-      }));
-      setNavItems((prevItems) => [...prevItems, ...customItems]);
+      // 只添加一个"自定义"按钮，不管有多少个自定义分类
+      setNavItems((prevItems) => [
+        ...prevItems,
+        {
+          icon: Star,
+          label: '自定义',
+          href: '/douban?type=custom',
+        },
+      ]);
     }
   }, []);
 
@@ -139,7 +142,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const isActive = useCallback(
     (href: string) => {
       const typeMatch = href.match(/type=([^&]+)/)?.[1];
-      const customIndexMatch = href.match(/customIndex=([^&]+)/)?.[1];
       const decodedActive = decodeURIComponent(currentFullPath);
       const decodedItemHref = decodeURIComponent(href);
 
@@ -147,19 +149,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         return false;
       }
 
-      if (typeMatch === 'custom' && customIndexMatch) {
-        return (
-          decodedActive.startsWith('/douban') &&
-          decodedActive.includes('type=custom') &&
-          decodedActive.includes(`customIndex=${customIndexMatch}`)
-        );
-      }
-
       return (
         decodedActive === decodedItemHref ||
         (decodedActive.startsWith('/douban') &&
-          decodedActive.includes(`type=${typeMatch}`) &&
-          typeMatch !== 'custom') ||
+          typeMatch &&
+          decodedActive.includes(`type=${typeMatch}`)) ||
         (href === '/shortdrama' && decodedActive.startsWith('/shortdrama'))
       );
     },

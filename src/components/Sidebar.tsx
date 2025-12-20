@@ -171,14 +171,15 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      // 为每个自定义分类创建导航项
-      const customItems = runtimeConfig.CUSTOM_CATEGORIES.map((category: any, index: number) => ({
-        icon: Star,
-        label: category.name || category.label || '自定义',
-        href: `/douban?type=custom&customIndex=${index}`,
-      }));
-
-      setMenuItems((prevItems) => [...prevItems, ...customItems]);
+      // 只添加一个"自定义"按钮
+      setMenuItems((prevItems) => [
+        ...prevItems,
+        {
+          icon: Star,
+          label: '自定义',
+          href: '/douban?type=custom',
+        },
+      ]);
     }
   }, []);
 
@@ -269,7 +270,6 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                 {menuItems.map((item, index) => {
                   // 检查当前路径是否匹配这个菜单项
                   const typeMatch = item.href.match(/type=([^&]+)/)?.[1];
-                  const customIndexMatch = item.href.match(/customIndex=([^&]+)/)?.[1];
 
                   // 解码URL以进行正确的比较
                   const decodedActive = decodeURIComponent(active);
@@ -278,24 +278,12 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                   // 详情页和播放页不高亮任何导航项
                   const isDetailOrPlay = decodedActive.startsWith('/detail') || decodedActive.startsWith('/play');
 
-                  // 自定义分类需要同时匹配type=custom和customIndex
-                  let isActive = false;
-                  if (!isDetailOrPlay) {
-                    if (typeMatch === 'custom' && customIndexMatch) {
-                      // 自定义分类：需要同时匹配type和customIndex
-                      isActive = decodedActive.startsWith('/douban') &&
-                        decodedActive.includes('type=custom') &&
-                        decodedActive.includes(`customIndex=${customIndexMatch}`);
-                    } else {
-                      // 其他分类：匹配完整路径或type参数
-                      isActive = decodedActive === decodedItemHref ||
-                        (decodedActive.startsWith('/douban') &&
-                          typeMatch &&
-                          typeMatch !== 'custom' &&
-                          decodedActive.includes(`type=${typeMatch}`)) ||
-                        (item.href === '/shortdrama' && decodedActive.startsWith('/shortdrama'));
-                    }
-                  }
+                  const isActive = !isDetailOrPlay &&
+                    (decodedActive === decodedItemHref ||
+                      (decodedActive.startsWith('/douban') &&
+                        typeMatch &&
+                        decodedActive.includes(`type=${typeMatch}`)) ||
+                      (item.href === '/shortdrama' && decodedActive.startsWith('/shortdrama')));
                   const Icon = item.icon;
 
                   // 为每个菜单项定义独特的渐变色主题
