@@ -325,8 +325,11 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
           >
             {visibleItems.map((item: any, index: number) => {
               const active = isActive(item.href);
-              const hideOnMobile = item.desktopOnly && !onLayoutModeChange;
-              const hideOnMobileAfterFour = index >= 5;
+              const hideOnMobile = item.desktopOnly;
+              // 移动端：计算非desktopOnly项目的索引，超过4个隐藏
+              const mobileItems = visibleItems.filter((i: any) => !i.desktopOnly);
+              const mobileIndex = mobileItems.findIndex((i: any) => i.href === item.href);
+              const hideOnMobileAfterFour = mobileIndex >= 4;
               const theme = getColorTheme(item.href);
 
               return (
