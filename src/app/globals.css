@@ -3,6 +3,12 @@
 /* Tailwind 4 Dark Mode Configuration - 使用 class 选择器而非媒体查询 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tailwind 4 修复：按钮默认鼠标指针样式 */
+button,
+[role='button'] {
+  cursor: pointer;
+}
+
 /* Tailwind 4 Theme Configuration */
 @theme {
   /* Font Family */
