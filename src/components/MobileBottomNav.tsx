@@ -2,10 +2,10 @@
 
 'use client';
 
-import { Cat, Clover, Film, Globe, Home, MoreHorizontal, PanelLeft, PlaySquare, Radio, Search, Star, Tv, X } from 'lucide-react';
+import { Cat, ChevronDown, Clover, Film, Globe, Home, MoreHorizontal, PanelLeft, PlaySquare, Radio, Search, Star, Tv, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface MobileBottomNavProps {
   /**
@@ -26,6 +26,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   // 更多菜单状态
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  // 桌面端下拉菜单状态
+  const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLLIElement>(null);
+
+  // 基础导航项数量（不包括自定义分类）
+  const BASE_NAV_COUNT = 9;
+  // 桌面端显示的最大导航项数量（超出的放入下拉菜单）
+  const MAX_VISIBLE_DESKTOP = 10;
 
   const [navItems, setNavItems] = useState([
     { icon: Home, label: '首页', href: '/' },
@@ -86,7 +94,23 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     }
   }, []);
 
-  const isActive = (href: string) => {
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDesktopDropdown(false);
+      }
+    };
+
+    if (showDesktopDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDesktopDropdown]);
+
+  const isActive = useCallback((href: string) => {
     const typeMatch = href.match(/type=([^&]+)/)?.[1];
     const customIndexMatch = href.match(/customIndex=([^&]+)/)?.[1];
 
@@ -115,6 +139,35 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         typeMatch !== 'custom') || // 排除custom类型，因为上面已经处理
       (href === '/shortdrama' && decodedActive.startsWith('/shortdrama'))
     );
+  }, [currentActive]);
+
+  // 计算桌面端可见项和隐藏项
+  const visibleItems = navItems.slice(0, MAX_VISIBLE_DESKTOP);
+  const hiddenItems = navItems.slice(MAX_VISIBLE_DESKTOP);
+  const hasHiddenItems = hiddenItems.length > 0;
+
+  // 检查隐藏项中是否有激活的
+  const hasActiveHiddenItem = hiddenItems.some(item => isActive(item.href));
+
+  // 获取颜色主题
+  const getColorTheme = (href: string) => {
+    const colorThemes: Record<string, { hover: string; active: string; gradient: string; color: string }> = {
+      '/': { hover: 'md:group-hover:text-green-600 md:dark:group-hover:text-green-400', active: 'text-green-600 dark:text-green-400', gradient: 'from-green-500 to-emerald-500', color: 'text-green-500' },
+      '/search': { hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400', active: 'text-blue-600 dark:text-blue-400', gradient: 'from-blue-500 to-cyan-500', color: 'text-blue-500' },
+      '/source-browser': { hover: 'md:group-hover:text-emerald-600 md:dark:group-hover:text-emerald-400', active: 'text-emerald-600 dark:text-emerald-400', gradient: 'from-emerald-500 to-green-500', color: 'text-emerald-500' },
+      '/douban?type=movie': { hover: 'md:group-hover:text-red-600 md:dark:group-hover:text-red-400', active: 'text-red-600 dark:text-red-400', gradient: 'from-red-500 to-pink-500', color: 'text-red-500' },
+      '/douban?type=tv': { hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400', active: 'text-blue-600 dark:text-blue-400', gradient: 'from-blue-600 to-indigo-600', color: 'text-blue-600' },
+      '/shortdrama': { hover: 'md:group-hover:text-purple-600 md:dark:group-hover:text-purple-400', active: 'text-purple-600 dark:text-purple-400', gradient: 'from-purple-500 to-violet-500', color: 'text-purple-500' },
+      '/douban?type=anime': { hover: 'md:group-hover:text-pink-600 md:dark:group-hover:text-pink-400', active: 'text-pink-600 dark:text-pink-400', gradient: 'from-pink-500 to-rose-500', color: 'text-pink-500' },
+      '/douban?type=show': { hover: 'md:group-hover:text-orange-600 md:dark:group-hover:text-orange-400', active: 'text-orange-600 dark:text-orange-400', gradient: 'from-orange-500 to-amber-500', color: 'text-orange-500' },
+      '/live': { hover: 'md:group-hover:text-teal-600 md:dark:group-hover:text-teal-400', active: 'text-teal-600 dark:text-teal-400', gradient: 'from-teal-500 to-cyan-500', color: 'text-teal-500' },
+    };
+
+    let theme = colorThemes[href];
+    if (!theme && href.includes('type=custom')) {
+      theme = { hover: 'md:group-hover:text-yellow-600 md:dark:group-hover:text-yellow-400', active: 'text-yellow-600 dark:text-yellow-400', gradient: 'from-yellow-500 to-amber-500', color: 'text-yellow-500' };
+    }
+    return theme || colorThemes['/'];
   };
 
   return (
@@ -149,46 +202,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               {navItems.filter((item: any) => !item.desktopOnly).map((item: any) => {
                 const active = isActive(item.href);
                 const Icon = item.icon;
-
-                // 颜色渐变映射
-                const gradientMap: Record<string, string> = {
-                  '/': 'from-green-500 to-emerald-500',
-                  '/search': 'from-blue-500 to-cyan-500',
-                  '/source-browser': 'from-emerald-500 to-green-500',
-                  '/douban?type=movie': 'from-red-500 to-pink-500',
-                  '/douban?type=tv': 'from-blue-600 to-indigo-600',
-                  '/shortdrama': 'from-purple-500 to-violet-500',
-                  '/douban?type=anime': 'from-pink-500 to-rose-500',
-                  '/douban?type=show': 'from-orange-500 to-amber-500',
-                  '/live': 'from-teal-500 to-cyan-500',
-                };
-
-                // 对于自定义分类，使用黄色渐变
-                let gradient = gradientMap[item.href];
-                if (!gradient && item.href.includes('type=custom')) {
-                  gradient = 'from-yellow-500 to-amber-500';
-                }
-                gradient = gradient || 'from-gray-500 to-slate-500';
-
-                // 颜色主题映射
-                const colorMap: Record<string, string> = {
-                  '/': 'text-green-500',
-                  '/search': 'text-blue-500',
-                  '/source-browser': 'text-emerald-500',
-                  '/douban?type=movie': 'text-red-500',
-                  '/douban?type=tv': 'text-blue-600',
-                  '/shortdrama': 'text-purple-500',
-                  '/douban?type=anime': 'text-pink-500',
-                  '/douban?type=show': 'text-orange-500',
-                  '/live': 'text-teal-500',
-                };
-
-                // 对于自定义分类，使用黄色
-                let color = colorMap[item.href];
-                if (!color && item.href.includes('type=custom')) {
-                  color = 'text-yellow-500';
-                }
-                color = color || 'text-gray-500';
+                const theme = getColorTheme(item.href);
 
                 return (
                   <Link
@@ -199,7 +213,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   >
                     <div
                       className={`flex items-center justify-center w-12 h-12 rounded-2xl ${active
-                        ? `bg-gradient-to-br ${gradient}`
+                        ? `bg-gradient-to-br ${theme.gradient}`
                         : 'bg-gray-100 dark:bg-gray-800'
                         }`}
                     >
@@ -212,7 +226,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                     </div>
                     <span
                       className={`text-xs font-medium ${active
-                        ? color
+                        ? theme.color
                         : 'text-gray-700 dark:text-gray-300'
                         }`}
                     >
@@ -235,7 +249,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         }}
       >
         <div
-          className='pointer-events-auto w-full md:w-auto md:max-w-[calc(100vw-2rem)] bg-white/30 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/20 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-hidden md:mx-4'
+          className='pointer-events-auto w-full md:w-auto md:max-w-[calc(100vw-2rem)] bg-white/30 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/20 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-visible md:mx-4 relative'
         >
           <ul className='flex items-center overflow-x-auto scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2'
             style={{
@@ -243,7 +257,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               minHeight: '3.5rem',
             }}
           >
-            {navItems.map((item: any, index: number) => {
+            {visibleItems.map((item: any, index: number) => {
               const active = isActive(item.href);
               // 移动端隐藏桌面端专属项（搜索）
               const hideOnMobile = item.desktopOnly && !onLayoutModeChange;
@@ -251,25 +265,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               // 移动端只显示前4个非搜索项（首页、源浏览、电影、剧集），index 5+ 的项隐藏到"更多"菜单
               const hideOnMobileAfterFour = index >= 5;
 
-              // 为每个菜单项定义独特的颜色主题（与侧边栏保持一致）
-              const colorThemes: Record<string, { hover: string; active: string }> = {
-                '/': { hover: 'md:group-hover:text-green-600 md:dark:group-hover:text-green-400', active: 'text-green-600 dark:text-green-400' }, // 首页
-                '/search': { hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400', active: 'text-blue-600 dark:text-blue-400' }, // 搜索
-                '/source-browser': { hover: 'md:group-hover:text-emerald-600 md:dark:group-hover:text-emerald-400', active: 'text-emerald-600 dark:text-emerald-400' }, // 源浏览器
-                '/douban?type=movie': { hover: 'md:group-hover:text-red-600 md:dark:group-hover:text-red-400', active: 'text-red-600 dark:text-red-400' }, // 电影
-                '/douban?type=tv': { hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400', active: 'text-blue-600 dark:text-blue-400' }, // 剧集
-                '/shortdrama': { hover: 'md:group-hover:text-purple-600 md:dark:group-hover:text-purple-400', active: 'text-purple-600 dark:text-purple-400' }, // 短剧
-                '/douban?type=anime': { hover: 'md:group-hover:text-pink-600 md:dark:group-hover:text-pink-400', active: 'text-pink-600 dark:text-pink-400' }, // 动漫
-                '/douban?type=show': { hover: 'md:group-hover:text-orange-600 md:dark:group-hover:text-orange-400', active: 'text-orange-600 dark:text-orange-400' }, // 综艺
-                '/live': { hover: 'md:group-hover:text-teal-600 md:dark:group-hover:text-teal-400', active: 'text-teal-600 dark:text-teal-400' }, // 直播
-              };
-
-              // 对于自定义分类，使用黄色主题
-              let theme = colorThemes[item.href];
-              if (!theme && item.href.includes('type=custom')) {
-                theme = { hover: 'md:group-hover:text-yellow-600 md:dark:group-hover:text-yellow-400', active: 'text-yellow-600 dark:text-yellow-400' };
-              }
-              theme = theme || colorThemes['/'];
+              const theme = getColorTheme(item.href);
 
               return (
                 <li
@@ -286,7 +282,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 >
                   <Link
                     href={item.href}
-                    className='group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs md:w-auto md:h-auto md:min-w-[70px] md:px-3 md:py-2 md:rounded-full md:hover:bg-white/40 md:dark:hover:bg-gray-800/40 transition-all duration-200'
+                    className='group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs md:w-auto md:h-auto md:min-w-[56px] md:px-2 md:py-2 md:rounded-full md:hover:bg-white/40 md:dark:hover:bg-gray-800/40 transition-all duration-200'
                   >
                     <item.icon
                       className={`h-6 w-6 transition-all duration-200 ${active
@@ -308,6 +304,64 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 </li>
               );
             })}
+
+            {/* 桌面端更多下拉菜单 */}
+            {hasHiddenItems && onLayoutModeChange && (
+              <li
+                className='hidden md:flex flex-shrink-0 relative md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
+                style={{
+                  animation: `slideInFromBottom 0.3s ease-out ${visibleItems.length * 0.05}s forwards`,
+                }}
+                ref={dropdownRef}
+              >
+                <button
+                  onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
+                  className={`group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[56px] px-2 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200 ${hasActiveHiddenItem ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-200'}`}
+                >
+                  <div className='relative'>
+                    <ChevronDown
+                      className={`h-6 w-6 transition-all duration-200 group-hover:scale-110 ${showDesktopDropdown ? 'rotate-180' : ''}`}
+                      style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
+                    />
+                    {hasActiveHiddenItem && (
+                      <span className='absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full'></span>
+                    )}
+                  </div>
+                  <span style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>更多</span>
+                </button>
+
+                {/* 下拉菜单 */}
+                {showDesktopDropdown && (
+                  <div className='absolute top-full mt-2 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px] z-50'>
+                    <div className='py-2'>
+                      {hiddenItems.map((item: any) => {
+                        const active = isActive(item.href);
+                        const Icon = item.icon;
+                        const theme = getColorTheme(item.href);
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setShowDesktopDropdown(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors ${active ? 'bg-gray-100/50 dark:bg-gray-800/50' : ''}`}
+                          >
+                            <Icon
+                              className={`h-5 w-5 ${active ? theme.color : 'text-gray-500 dark:text-gray-400'}`}
+                            />
+                            <span
+                              className={`text-sm font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}
+                            >
+                              {item.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </li>
+            )}
 
             {/* 更多按钮 - 仅在移动端显示 */}
             <li className='flex-1 md:hidden flex-shrink-0'>
@@ -333,7 +387,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               <li
                 className='hidden md:flex items-center px-2 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
                 style={{
-                  animation: `slideInFromBottom 0.3s ease-out ${navItems.length * 0.05}s forwards`,
+                  animation: `slideInFromBottom 0.3s ease-out ${(visibleItems.length + (hasHiddenItems ? 1 : 0)) * 0.05}s forwards`,
                 }}
               >
                 <div className='w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600'></div>
@@ -345,12 +399,12 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               <li
                 className='hidden md:flex flex-shrink-0 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
                 style={{
-                  animation: `slideInFromBottom 0.3s ease-out ${(navItems.length + 1) * 0.05}s forwards`,
+                  animation: `slideInFromBottom 0.3s ease-out ${(visibleItems.length + (hasHiddenItems ? 2 : 1)) * 0.05}s forwards`,
                 }}
               >
                 <button
                   onClick={() => onLayoutModeChange('sidebar')}
-                  className='group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-700 hover:text-indigo-600 dark:text-gray-200 dark:hover:text-indigo-400 transition-all duration-200'
+                  className='group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[56px] px-2 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-700 hover:text-indigo-600 dark:text-gray-200 dark:hover:text-indigo-400 transition-all duration-200'
                   title='切换到侧边栏'
                 >
                   <PanelLeft
