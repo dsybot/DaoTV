@@ -89,17 +89,34 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     if (!onLayoutModeChange) return; // 只在桌面端顶栏模式下计算
 
     const calculateVisibleCount = () => {
-      const viewportWidth = window.innerWidth;
-      // 可用宽度 = 视口宽度 - 外边距 - 内边距 - 额外按钮宽度
-      const availableWidth = viewportWidth - 32 - NAV_PADDING - EXTRA_BUTTONS_WIDTH;
-      // 计算能放下多少个导航项（预留更多按钮的位置）
-      const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH) / ITEM_WIDTH);
-      setMaxVisibleCount(Math.max(3, count)); // 至少显示3个
+      // 获取左侧标题和右侧按钮组元素
+      const titleEl = document.getElementById('nav-title');
+      const buttonsEl = document.getElementById('nav-buttons');
+
+      if (titleEl && buttonsEl) {
+        const titleRect = titleEl.getBoundingClientRect();
+        const buttonsRect = buttonsEl.getBoundingClientRect();
+        // 可用宽度 = 右侧按钮左边 - 左侧标题右边 - 间距
+        const availableWidth = buttonsRect.left - titleRect.right - 48; // 48px 为两侧间距
+        // 计算能放下多少个导航项（预留更多按钮和侧边栏按钮的位置）
+        const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH - EXTRA_BUTTONS_WIDTH) / ITEM_WIDTH);
+        setMaxVisibleCount(Math.max(3, count)); // 至少显示3个
+      } else {
+        // 降级方案：使用视口宽度
+        const viewportWidth = window.innerWidth;
+        const availableWidth = viewportWidth - 400; // 预留左右元素空间
+        const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH - EXTRA_BUTTONS_WIDTH) / ITEM_WIDTH);
+        setMaxVisibleCount(Math.max(3, count));
+      }
     };
 
-    calculateVisibleCount();
+    // 延迟执行以确保DOM已渲染
+    const timer = setTimeout(calculateVisibleCount, 100);
     window.addEventListener('resize', calculateVisibleCount);
-    return () => window.removeEventListener('resize', calculateVisibleCount);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', calculateVisibleCount);
+    };
   }, [onLayoutModeChange]);
 
   // 点击外部关闭下拉菜单

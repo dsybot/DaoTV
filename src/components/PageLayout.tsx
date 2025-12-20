@@ -113,7 +113,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
             <div className='hidden md:flex fixed top-4 left-0 right-0 z-[999] pointer-events-none'>
               <div className='w-full max-w-[1920px] mx-auto px-6 flex items-center justify-between'>
                 {/* 左侧：网站标题 - 悬浮样式 */}
-                <Link href='/' className='flex-shrink-0 pointer-events-auto'>
+                <Link href='/' id='nav-title' className='flex-shrink-0 pointer-events-auto'>
                   <div className='bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40 shadow-lg rounded-full px-4 py-2'>
                     <div className='text-xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200'>
                       {siteName}
@@ -122,7 +122,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
                 </Link>
 
                 {/* 右侧：功能按钮 - 悬浮样式 */}
-                <div className='flex items-center gap-2 pointer-events-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40 shadow-lg rounded-full px-3 py-2'>
+                <div id='nav-buttons' className='flex items-center gap-2 pointer-events-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40 shadow-lg rounded-full px-3 py-2'>
                   {/* AI推荐按钮 */}
                   {shouldShowAIButton && (
                     <button
