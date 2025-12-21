@@ -42,6 +42,14 @@
 html:not(.dark) [class*="hover:text-indigo-600"]:hover { color: #4f46e5 !important; }
 /* 紫色 - AI推荐按钮 */
 html:not(.dark) [class*="hover:text-purple-500"]:hover { color: #a855f7 !important; }
+/* 琥珀色 - 明暗切换按钮 */
+html:not(.dark) [class*="hover:text-amber-500"]:hover { color: #f59e0b !important; }
+/* 蓝色 - 用户面板按钮 */
+html:not(.dark) [class*="hover:text-blue-500"]:hover { color: #3b82f6 !important; }
+/* 灰色 hover - 关闭按钮等 */
+html:not(.dark) [class*="hover:text-gray-700"]:hover { color: #374151 !important; }
+/* 红色 hover - 重置按钮等 */
+html:not(.dark) [class*="hover:text-red-700"]:hover { color: #b91c1c !important; }
 /* hover 时放大 */
 [class*="hover:scale-110"]:hover { transform: scale(1.1) !important; }
 
