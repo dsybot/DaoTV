@@ -190,55 +190,55 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       { hover: string; active: string; gradient: string; color: string }
     > = {
       '/': {
-        hover: 'md:group-hover:text-green-600 md:dark:group-hover:text-green-400',
+        hover: 'group-hover:text-green-600 dark:group-hover:text-green-400',
         active: 'text-green-600 dark:text-green-400',
         gradient: 'from-green-500 to-emerald-500',
         color: 'text-green-500',
       },
       '/search': {
-        hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400',
+        hover: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
         active: 'text-blue-600 dark:text-blue-400',
         gradient: 'from-blue-500 to-cyan-500',
         color: 'text-blue-500',
       },
       '/source-browser': {
-        hover: 'md:group-hover:text-emerald-600 md:dark:group-hover:text-emerald-400',
+        hover: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
         active: 'text-emerald-600 dark:text-emerald-400',
         gradient: 'from-emerald-500 to-green-500',
         color: 'text-emerald-500',
       },
       '/douban?type=movie': {
-        hover: 'md:group-hover:text-red-600 md:dark:group-hover:text-red-400',
+        hover: 'group-hover:text-red-600 dark:group-hover:text-red-400',
         active: 'text-red-600 dark:text-red-400',
         gradient: 'from-red-500 to-pink-500',
         color: 'text-red-500',
       },
       '/douban?type=tv': {
-        hover: 'md:group-hover:text-blue-600 md:dark:group-hover:text-blue-400',
+        hover: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
         active: 'text-blue-600 dark:text-blue-400',
         gradient: 'from-blue-600 to-indigo-600',
         color: 'text-blue-600',
       },
       '/shortdrama': {
-        hover: 'md:group-hover:text-purple-600 md:dark:group-hover:text-purple-400',
+        hover: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
         active: 'text-purple-600 dark:text-purple-400',
         gradient: 'from-purple-500 to-violet-500',
         color: 'text-purple-500',
       },
       '/douban?type=anime': {
-        hover: 'md:group-hover:text-pink-600 md:dark:group-hover:text-pink-400',
+        hover: 'group-hover:text-pink-600 dark:group-hover:text-pink-400',
         active: 'text-pink-600 dark:text-pink-400',
         gradient: 'from-pink-500 to-rose-500',
         color: 'text-pink-500',
       },
       '/douban?type=show': {
-        hover: 'md:group-hover:text-orange-600 md:dark:group-hover:text-orange-400',
+        hover: 'group-hover:text-orange-600 dark:group-hover:text-orange-400',
         active: 'text-orange-600 dark:text-orange-400',
         gradient: 'from-orange-500 to-amber-500',
         color: 'text-orange-500',
       },
       '/live': {
-        hover: 'md:group-hover:text-teal-600 md:dark:group-hover:text-teal-400',
+        hover: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
         active: 'text-teal-600 dark:text-teal-400',
         gradient: 'from-teal-500 to-cyan-500',
         color: 'text-teal-500',
@@ -248,7 +248,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     let theme = colorThemes[href];
     if (!theme && href.includes('type=custom')) {
       theme = {
-        hover: 'md:group-hover:text-yellow-600 md:dark:group-hover:text-yellow-400',
+        hover: 'group-hover:text-yellow-600 dark:group-hover:text-yellow-400',
         active: 'text-yellow-600 dark:text-yellow-400',
         gradient: 'from-yellow-500 to-amber-500',
         color: 'text-yellow-500',
@@ -376,8 +376,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   >
                     <item.icon
                       className={`h-6 w-6 transition-all duration-200 ${active
-                          ? `${theme.active} scale-110`
-                          : `text-gray-700 dark:text-gray-200 ${theme.hover} group-hover:scale-110`
+                        ? `${theme.active} scale-110`
+                        : `text-gray-700 dark:text-gray-200 ${theme.hover} group-hover:scale-110`
                         }`}
                       style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
                     />

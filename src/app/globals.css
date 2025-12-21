@@ -3,6 +3,27 @@
 /* Tailwind 4 Dark Mode Configuration - 使用 class 选择器而非媒体查询 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tailwind 4 Safelist - 强制生成动态类名
+   这些类名在代码中是动态拼接的（如 ${theme.hover}），JIT 无法扫描到
+   通过在 CSS 中声明来强制生成 */
+@layer utilities {
+  .tw-safelist {
+    /* group-hover 文字颜色 - 用于导航栏和侧边栏 */
+    @apply group-hover:text-green-600 group-hover:text-green-400;
+    @apply group-hover:text-blue-600 group-hover:text-blue-400;
+    @apply group-hover:text-emerald-600 group-hover:text-emerald-400;
+    @apply group-hover:text-red-600 group-hover:text-red-400;
+    @apply group-hover:text-purple-600 group-hover:text-purple-400;
+    @apply group-hover:text-pink-600 group-hover:text-pink-400;
+    @apply group-hover:text-orange-600 group-hover:text-orange-400;
+    @apply group-hover:text-teal-600 group-hover:text-teal-400;
+    @apply group-hover:text-yellow-600 group-hover:text-yellow-400;
+    @apply group-hover:text-indigo-600 group-hover:text-indigo-400;
+    /* group-hover 变换效果 */
+    @apply group-hover:scale-110 group-hover:rotate-12;
+  }
+}
+
 /* Tailwind 4 修复：按钮默认鼠标指针样式 */
 button,
 [role='button'] {
