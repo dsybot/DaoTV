@@ -5,37 +5,37 @@
 
 /* 导航栏 hover 变色 - 原生 CSS 实现，绕过 Tailwind JIT 动态类名问题 */
 /* 绿色 - 首页 */
-.group:hover .group-hover\:text-green-600 { color: #16a34a; }
-.dark .group:hover .dark\:group-hover\:text-green-400 { color: #4ade80; }
+.group:hover .group-hover\:text-green-600 { color: #16a34a !important; }
+.dark .group:hover .dark\:group-hover\:text-green-400 { color: #4ade80 !important; }
 /* 蓝色 - 搜索/剧集 */
-.group:hover .group-hover\:text-blue-600 { color: #2563eb; }
-.dark .group:hover .dark\:group-hover\:text-blue-400 { color: #60a5fa; }
+.group:hover .group-hover\:text-blue-600 { color: #2563eb !important; }
+.dark .group:hover .dark\:group-hover\:text-blue-400 { color: #60a5fa !important; }
 /* 翠绿色 - 源浏览 */
-.group:hover .group-hover\:text-emerald-600 { color: #059669; }
-.dark .group:hover .dark\:group-hover\:text-emerald-400 { color: #34d399; }
+.group:hover .group-hover\:text-emerald-600 { color: #059669 !important; }
+.dark .group:hover .dark\:group-hover\:text-emerald-400 { color: #34d399 !important; }
 /* 红色 - 电影 */
-.group:hover .group-hover\:text-red-600 { color: #dc2626; }
-.dark .group:hover .dark\:group-hover\:text-red-400 { color: #f87171; }
+.group:hover .group-hover\:text-red-600 { color: #dc2626 !important; }
+.dark .group:hover .dark\:group-hover\:text-red-400 { color: #f87171 !important; }
 /* 紫色 - 短剧 */
-.group:hover .group-hover\:text-purple-600 { color: #9333ea; }
-.dark .group:hover .dark\:group-hover\:text-purple-400 { color: #c084fc; }
+.group:hover .group-hover\:text-purple-600 { color: #9333ea !important; }
+.dark .group:hover .dark\:group-hover\:text-purple-400 { color: #c084fc !important; }
 /* 粉色 - 动漫 */
-.group:hover .group-hover\:text-pink-600 { color: #db2777; }
-.dark .group:hover .dark\:group-hover\:text-pink-400 { color: #f472b6; }
+.group:hover .group-hover\:text-pink-600 { color: #db2777 !important; }
+.dark .group:hover .dark\:group-hover\:text-pink-400 { color: #f472b6 !important; }
 /* 橙色 - 综艺 */
-.group:hover .group-hover\:text-orange-600 { color: #ea580c; }
-.dark .group:hover .dark\:group-hover\:text-orange-400 { color: #fb923c; }
+.group:hover .group-hover\:text-orange-600 { color: #ea580c !important; }
+.dark .group:hover .dark\:group-hover\:text-orange-400 { color: #fb923c !important; }
 /* 青色 - 直播 */
-.group:hover .group-hover\:text-teal-600 { color: #0d9488; }
-.dark .group:hover .dark\:group-hover\:text-teal-400 { color: #2dd4bf; }
+.group:hover .group-hover\:text-teal-600 { color: #0d9488 !important; }
+.dark .group:hover .dark\:group-hover\:text-teal-400 { color: #2dd4bf !important; }
 /* 黄色 - 自定义 */
-.group:hover .group-hover\:text-yellow-600 { color: #ca8a04; }
-.dark .group:hover .dark\:group-hover\:text-yellow-400 { color: #facc15; }
+.group:hover .group-hover\:text-yellow-600 { color: #ca8a04 !important; }
+.dark .group:hover .dark\:group-hover\:text-yellow-400 { color: #facc15 !important; }
 /* 靛蓝色 */
-.group:hover .group-hover\:text-indigo-600 { color: #4f46e5; }
-.dark .group:hover .dark\:group-hover\:text-indigo-400 { color: #818cf8; }
+.group:hover .group-hover\:text-indigo-600 { color: #4f46e5 !important; }
+.dark .group:hover .dark\:group-hover\:text-indigo-400 { color: #818cf8 !important; }
 /* hover 时图标放大 */
-.group:hover .group-hover\:scale-110 { transform: scale(1.1); }
+.group:hover .group-hover\:scale-110 { transform: scale(1.1) !important; }
 
 /* Tailwind 4 修复：按钮默认鼠标指针样式 */
 button,
