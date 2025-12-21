@@ -39,9 +39,9 @@
 
 /* 普通 hover 变色 - 用于侧边栏按钮和右侧按钮（非 group-hover） */
 /* 靛蓝色 - 侧边栏切换按钮 */
-[class*="hover:text-indigo-600"]:hover { color: #4f46e5 !important; }
+html:not(.dark) [class*="hover:text-indigo-600"]:hover { color: #4f46e5 !important; }
 /* 紫色 - AI推荐按钮 */
-[class*="hover:text-purple-500"]:hover { color: #a855f7 !important; }
+html:not(.dark) [class*="hover:text-purple-500"]:hover { color: #a855f7 !important; }
 /* hover 时放大 */
 [class*="hover:scale-110"]:hover { transform: scale(1.1) !important; }
 
