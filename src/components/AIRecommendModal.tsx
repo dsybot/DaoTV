@@ -241,7 +241,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* 背景遮罩 */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -324,8 +324,8 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             >
               <div
                 className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-lg ${message.role === 'user'
-                    ? 'bg-[#95EC69] text-gray-900'
-                    : 'bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-gray-600/60'
+                  ? 'bg-[#95EC69] text-gray-900'
+                  : 'bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-gray-600/60'
                   }`}
               >
                 {message.role === 'assistant' ? (
@@ -423,7 +423,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                           </div>
                           <button
                             onClick={() => setPlayingVideoId(null)}
-                            className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-opacity"
+                            className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-opacity"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -437,7 +437,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                           <div className="flex items-start gap-4">
                             <div className="relative">
                               <img src={video.thumbnail} alt={video.title} className="w-16 h-12 object-cover rounded flex-shrink-0" />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
                                 <div className="bg-red-600 text-white rounded-full p-1">
                                   <Play className="w-3 h-3" />
                                 </div>
@@ -487,7 +487,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                               </div>
                               <button
                                 onClick={() => setPlayingVideoId(null)}
-                                className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-opacity"
+                                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-opacity"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -504,7 +504,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                                   alt={video.title}
                                   className="w-20 h-15 object-cover rounded"
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
                                   <div className="bg-green-600 text-white rounded-full p-2">
                                     <Play className="w-4 h-4" />
                                   </div>
