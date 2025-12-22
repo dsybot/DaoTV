@@ -3,6 +3,16 @@
 /* Tailwind 4 Dark Mode Configuration - 使用 class 选择器而非媒体查询 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================
+   @property - 注册自定义属性支持动画
+   这是 Tailwind CSS 4.0 的新特性，提升性能
+   ============================================ */
+@property --shimmer-position {
+  syntax: '<percentage>';
+  initial-value: -200%;
+  inherits: false;
+}
+
 /* 导航栏 hover 变色 - 原生 CSS 实现，绕过 Tailwind JIT 动态类名问题 */
 /* 绿色 - 首页 */
 .group:hover .group-hover\:text-green-600 { color: #16a34a !important; }
@@ -249,77 +259,61 @@ html:not(.dark) body {
   }
 }
 
-/* 隐藏所有滚动条（兼容 WebKit、Firefox、IE/Edge）- 排除ArtPlayer和episode-list */
-*:not(.artplayer):not(.artplayer *):not(.episode-list) {
+/* 隐藏所有滚动条（兼容 WebKit、Firefox、IE/Edge）- 排除ArtPlayer */
+*:not(.artplayer):not(.artplayer *) {
   -ms-overflow-style: none; /* IE & Edge */
   scrollbar-width: none; /* Firefox */
 }
 
-*:not(.artplayer):not(.artplayer *):not(.episode-list)::-webkit-scrollbar {
+*:not(.artplayer):not(.artplayer *)::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* 剧集列表滚动条样式 */
-.episode-list {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.5) transparent;
+/* ============================================
+   View Transitions API 动画
+   优化：0.8s → 0.6s (更流畅的过渡体验)
+   ============================================ */
+@keyframes slide-from-top {
+  from {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
 }
 
-.episode-list::-webkit-scrollbar {
-  display: block;
-  height: 6px;
+@keyframes slide-from-bottom {
+  from {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
 }
 
-.episode-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.episode-list::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.5);
-  border-radius: 3px;
-}
-
-.episode-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.7);
-}
-
-/* View Transitions API 动画 - 优雅的缩放淡入淡出效果 */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.35s;
+  animation-duration: 0.6s; /* 优化：从 0.8s 减少到 0.6s */
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  /* GPU 硬件加速 - 只使用 opacity 和 transform，性能最佳 */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  animation-fill-mode: both;
 }
 
-/* 旧视图：缩小淡出 */
+/*
+  切换时，旧的视图不应该有动画，它应该在下面，等待被新的视图覆盖。
+  这可以防止在动画完成前，页面底部提前变色。
+*/
 ::view-transition-old(root) {
-  animation-name: theme-zoom-fade-out;
+  animation: none;
 }
 
-/* 新视图：从小放大淡入 */
-::view-transition-new(root) {
-  animation-name: theme-zoom-fade-in;
+/* 从浅色到深色：新内容（深色）从顶部滑入 */
+html.dark::view-transition-new(root) {
+  animation-name: slide-from-top;
 }
 
-@keyframes theme-zoom-fade-out {
-  to {
-    opacity: 0;
-    transform: scale(0.95) translateZ(0);
-  }
-}
-
-@keyframes theme-zoom-fade-in {
-  from {
-    opacity: 0;
-    transform: scale(1.05) translateZ(0);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateZ(0);
-  }
+/* 从深色到浅色：新内容（浅色）从底部滑入 */
+html:not(.dark)::view-transition-new(root) {
+  animation-name: slide-from-bottom;
 }
 
 /* 强制播放器内部的 video 元素高度为 100%，并保持内容完整显示 */
@@ -443,13 +437,10 @@ div[data-media-provider] video {
   }
 }
 
-/* VideoCard 光泽扫过动画 */
+/* VideoCard 光泽扫过动画 - 使用 @property 优化 */
 @keyframes card-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
+  to {
+    --shimmer-position: 200%;
   }
 }
 
