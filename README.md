@@ -17,10 +17,10 @@
 
 <div align="center">
 
-![Next.js](https://img.shields.io/badge/Next.js-14.2.23-000?logo=nextdotjs)
-![React](https://img.shields.io/badge/React-18.2.0-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-3178c6?logo=typescript)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.17-38bdf8?logo=tailwindcss)
+![Next.js](https://img.shields.io/badge/Next.js-16.1.0-000?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19.0.0-61dafb?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178c6?logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.18-38bdf8?logo=tailwindcss)
 ![ArtPlayer](https://img.shields.io/badge/ArtPlayer-5.3.0-ff6b6b)
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.15-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -231,11 +231,11 @@
 
 | 分类      | 主要依赖                                                                                              |
 | --------- | ----------------------------------------------------------------------------------------------------- |
-| 前端框架  | [Next.js 14.2.23](https://nextjs.org/) · App Router                                                        |
-| UI & 样式 | [Tailwind CSS 3.4.17](https://tailwindcss.com/) · [Framer Motion 12](https://www.framer.com/motion/)                                                       |
-| 语言      | TypeScript 4.9.5                                                                                          |
+| 前端框架  | [Next.js 16.1.0](https://nextjs.org/) · App Router                                                        |
+| UI & 样式 | [Tailwind CSS 4.1.18](https://tailwindcss.com/) · [Framer Motion 12.18.1](https://www.framer.com/motion/)                                                       |
+| 语言      | TypeScript 5.8.3                                                                                          |
 | 播放器    | [ArtPlayer 5.3.0](https://github.com/zhw2590582/ArtPlayer) · [HLS.js 1.6.15](https://github.com/video-dev/hls.js/)  · [artplayer-plugin-danmuku 5.2.0](https://github.com/zhw2590582/ArtPlayer) |
-| 状态管理  | React Context API · React Hooks                                                                              |
+| 状态管理  | React 19.0.0 Context API · React Hooks                                                                              |
 | 数据存储  | Kvrocks · Redis · Upstash · localStorage                                                                              |
 | 虚拟化  | [react-window 2.2.0](https://github.com/bvaughn/react-window) · ResizeObserver                                                                              |
 | UI 组件  | [@headlessui/react 2](https://headlessui.com/) · [Lucide Icons](https://lucide.dev/) · [React Icons 5](https://react-icons.github.io/react-icons/)                                                                              |
