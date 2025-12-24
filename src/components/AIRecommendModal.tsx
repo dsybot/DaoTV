@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 'use client';
 
@@ -30,7 +30,8 @@ interface ExtendedAIMessage extends AIMessage {
   type?: string;
 }
 
-// 鈿?浼樺寲锛氳蹇嗗寲鐨勬秷鎭粍浠?interface MessageItemProps {
+// ⚡ 优化：记忆化的消息组件
+interface MessageItemProps {
   message: ExtendedAIMessage;
   index: number;
   handleTitleClick: (title: string) => void;
@@ -51,7 +52,8 @@ const MessageItem = memo(({
   playingVideoId,
   setPlayingVideoId
 }: MessageItemProps) => {
-  // 浣跨敤 useMemo 缂撳瓨鏍煎紡鍖栧悗鐨勬秷鎭唴瀹?  const formattedContent = useMemo(() => {
+  // 使用 useMemo 缓存格式化后的消息内容
+  const formattedContent = useMemo(() => {
     if (message.role === 'assistant') {
       return formatAIResponseWithLinks(message.content, handleTitleClick);
     }
@@ -67,7 +69,7 @@ const MessageItem = memo(({
           message.role === 'user'
             ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-blue-500/20'
             : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 shadow-gray-200/50 dark:shadow-gray-900/50'
-        } ${message.content === '鎬濊€冧腑...' ? 'opacity-70 animate-pulse' : ''}`}
+        } ${message.content === '思考中...' ? 'opacity-70 animate-pulse' : ''}`}
       >
         {message.role === 'assistant' ? (
           <div
@@ -79,20 +81,20 @@ const MessageItem = memo(({
         )}
       </div>
 
-      {/* 鎺ㄨ崘褰辩墖鍗＄墖 */}
+      {/* 推荐影片卡片 */}
       {message.role === 'assistant' && message.recommendations && message.recommendations.length > 0 && (
         <div className="mt-3 space-y-2 max-w-[80%]">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-950 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm ring-1 ring-blue-200/50 dark:ring-blue-800/50">
-                馃幀 鐐瑰嚮鎼滅储
+                🎬 点击搜索
               </span>
-              <span className="font-medium">鎺ㄨ崘褰辩墖</span>
+              <span className="font-medium">推荐影片</span>
             </div>
             <span className="text-gray-400 dark:text-gray-500 opacity-75">
               {message.recommendations.length < 4
-                ? `${message.recommendations.length} 涓帹鑽恅
-                : `鍓?4 涓帹鑽恅
+                ? `${message.recommendations.length} 个推荐`
+                : `前 4 个推荐`
               }
             </span>
           </div>
@@ -117,7 +119,7 @@ const MessageItem = memo(({
                       <span className="text-gray-500 dark:text-gray-400 font-normal">({movie.year})</span>
                     )}
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200 text-blue-600 dark:text-blue-400 text-xs font-medium flex items-center gap-0.5">
-                      馃攳 <span>鎼滅储</span>
+                      🔍 <span>搜索</span>
                     </span>
                   </h4>
                   {movie.genre && (
@@ -133,18 +135,19 @@ const MessageItem = memo(({
         </div>
       )}
 
-      {/* YouTube瑙嗛鎺ㄨ崘鍗＄墖 */}
+      {/* YouTube视频推荐卡片 */}
       {message.role === 'assistant' && message.youtubeVideos && message.youtubeVideos.length > 0 && (
         <div className="mt-3 space-y-2 max-w-[80%]">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
             <div className="flex items-center">
               <span className="bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-1 rounded-full text-xs font-medium mr-2">
-                馃摵 鐐瑰嚮鎾斁
+                📺 点击播放
               </span>
-              YouTube瑙嗛鎺ㄨ崘
+              YouTube视频推荐
             </div>
             <span className="text-gray-400 dark:text-gray-500">
-              {message.youtubeVideos.length} 涓棰?            </span>
+              {message.youtubeVideos.length} 个视频
+            </span>
           </div>
           {message.youtubeVideos.map((video, idx) => (
             <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -194,18 +197,19 @@ const MessageItem = memo(({
         </div>
       )}
 
-      {/* 瑙嗛閾炬帴瑙ｆ瀽鍗＄墖 */}
+      {/* 视频链接解析卡片 */}
       {message.role === 'assistant' && message.videoLinks && message.videoLinks.length > 0 && (
         <div className="mt-3 space-y-2 max-w-[80%]">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
             <div className="flex items-center">
               <span className="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium mr-2">
-                馃敆 閾炬帴瑙ｆ瀽
+                🔗 链接解析
               </span>
-              瑙嗛閾炬帴瑙ｆ瀽缁撴灉
+              视频链接解析结果
             </div>
             <span className="text-gray-400 dark:text-gray-500">
-              {message.videoLinks.length} 涓摼鎺?            </span>
+              {message.videoLinks.length} 个链接
+            </span>
           </div>
           {message.videoLinks.map((video, idx) => (
             <div key={idx} className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
@@ -251,7 +255,7 @@ const MessageItem = memo(({
                           {video.channelName}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          鍘熼摼鎺? {video.originalUrl}
+                          原链接: {video.originalUrl}
                         </p>
                       </div>
                     </div>
@@ -264,7 +268,7 @@ const MessageItem = memo(({
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 text-sm"
                       >
                         <Play className="w-4 h-4" />
-                        鐩存帴鎾斁
+                        直接播放
                       </button>
                     )}
                     <button
@@ -272,15 +276,15 @@ const MessageItem = memo(({
                       className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 text-sm"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      鍘熷閾炬帴
+                      原始链接
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="text-red-600 dark:text-red-400">
-                  <p className="font-medium">瑙ｆ瀽澶辫触</p>
+                  <p className="font-medium">解析失败</p>
                   <p className="text-sm">{video.error}</p>
-                  <p className="text-xs mt-1">鍘熼摼鎺? {video.originalUrl}</p>
+                  <p className="text-xs mt-1">原链接: {video.originalUrl}</p>
                 </div>
               )}
             </div>
@@ -305,16 +309,16 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 鉁?React 19: useOptimistic for optimistic UI updates
+  // ✨ React 19: useOptimistic for optimistic UI updates
   const [optimisticMessages, addOptimisticMessage] = useOptimistic(
     messages,
     (state, newMessage: ExtendedAIMessage) => [...state, newMessage]
   );
 
-  // 鉁?React 19: useTransition for non-urgent updates
+  // ✨ React 19: useTransition for non-urgent updates
   const [isPending, startTransition] = useTransition();
 
-  // 鈿?浼樺寲锛氶槻鎶栨粴鍔ㄥ埌搴曢儴
+  // ⚡ 优化：防抖滚动到底部
   const scrollToBottom = useCallback(() => {
     if (scrollTimerRef.current) {
       clearTimeout(scrollTimerRef.current);
@@ -324,14 +328,15 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     }, 100);
   }, []);
 
-  // 鈿?浼樺寲锛氬紓姝ヤ繚瀛樺埌 localStorage
+  // ⚡ 优化：异步保存到 localStorage
   const saveMessagesToStorage = useCallback((messagesToSave: ExtendedAIMessage[]) => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
     }
 
     saveTimerRef.current = setTimeout(() => {
-      // 浣跨敤 requestIdleCallback 鍦ㄦ祻瑙堝櫒绌洪棽鏃朵繚瀛?      if ('requestIdleCallback' in window) {
+      // 使用 requestIdleCallback 在浏览器空闲时保存
+      if ('requestIdleCallback' in window) {
         requestIdleCallback(() => {
           try {
             const existingCache = localStorage.getItem('ai-recommend-messages');
@@ -342,7 +347,8 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                 const parsed = JSON.parse(existingCache);
                 existingTimestamp = parsed.timestamp || existingTimestamp;
               } catch {
-                // 瑙ｆ瀽澶辫触鏃朵娇鐢ㄥ綋鍓嶆椂闂?              }
+                // 解析失败时使用当前时间
+              }
             }
 
             const cache = {
@@ -355,7 +361,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           }
         });
       } else {
-        // 闄嶇骇澶勭悊锛氫娇鐢?setTimeout
+        // 降级处理：使用 setTimeout
         setTimeout(() => {
           try {
             const existingCache = localStorage.getItem('ai-recommend-messages');
@@ -366,7 +372,8 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                 const parsed = JSON.parse(existingCache);
                 existingTimestamp = parsed.timestamp || existingTimestamp;
               } catch {
-                // 瑙ｆ瀽澶辫触鏃朵娇鐢ㄥ綋鍓嶆椂闂?              }
+                // 解析失败时使用当前时间
+              }
             }
 
             const cache = {
@@ -379,10 +386,10 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           }
         }, 0);
       }
-    }, 300); // 300ms 闃叉姈寤惰繜
+    }, 300); // 300ms 防抖延迟
   }, []);
 
-  // 鉁?Native dialog control
+  // ✨ Native dialog control
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -401,45 +408,48 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     };
   }, [isOpen]);
 
-  // 浠巐ocalStorage鍔犺浇鍘嗗彶瀵硅瘽
+  // 从localStorage加载历史对话
   useEffect(() => {
     try {
       const cachedMessages = localStorage.getItem('ai-recommend-messages');
       if (cachedMessages) {
         const { messages: storedMessages, timestamp } = JSON.parse(cachedMessages);
         const now = new Date().getTime();
-        // 30鍒嗛挓缂撳瓨
+        // 30分钟缓存
         if (now - timestamp < 30 * 60 * 1000) {
           setMessages(storedMessages.map((msg: ExtendedAIMessage) => ({
             ...msg,
             timestamp: msg.timestamp || new Date().toISOString()
           })));
-          return; // 鏈夌紦瀛樺氨涓嶆樉绀烘杩庢秷鎭?        } else {
-          // 馃敟 淇Bug #2: 瓒呰繃30鍒嗛挓鏃剁湡姝ｅ垹闄ocalStorage涓殑杩囨湡鏁版嵁
-          console.log('AI鑱婂ぉ璁板綍宸茶秴杩?0鍒嗛挓锛岃嚜鍔ㄦ竻闄ょ紦瀛?);
+          return; // 有缓存就不显示欢迎消息
+        } else {
+          // 🔥 修复Bug #2: 超过30分钟时真正删除localStorage中的过期数据
+          console.log('AI聊天记录已超过30分钟，自动清除缓存');
           localStorage.removeItem('ai-recommend-messages');
         }
       }
 
-      // 娌℃湁鏈夋晥缂撳瓨鏃舵樉绀烘杩庢秷鎭?      const welcomeMessage: ExtendedAIMessage = {
+      // 没有有效缓存时显示欢迎消息
+      const welcomeMessage: ExtendedAIMessage = {
         role: 'assistant',
-        content: '浣犲ソ锛佹垜鏄疉I鏅鸿兘鍔╂墜锛屾敮鎸佷互涓嬪姛鑳斤細\n\n馃幀 褰辫鍓ф帹鑽?- 鎺ㄨ崘鐢靛奖銆佺數瑙嗗墽銆佸姩婕瓑\n馃敆 瑙嗛閾炬帴瑙ｆ瀽 - 瑙ｆ瀽YouTube閾炬帴骞舵挱鏀綷n馃摵 瑙嗛鍐呭鎼滅储 - 鎼滅储鐩稿叧瑙嗛鍐呭\n\n馃挕 鐩存帴鍛婅瘔鎴戜綘鎯崇湅浠€涔堢被鍨嬬殑鍐呭锛屾垨鍙戦€乊ouTube閾炬帴缁欐垜瑙ｆ瀽锛?,
+        content: '你好！我是AI智能助手，支持以下功能：\n\n🎬 影视剧推荐 - 推荐电影、电视剧、动漫等\n🔗 视频链接解析 - 解析YouTube链接并播放\n📺 视频内容搜索 - 搜索相关视频内容\n\n💡 直接告诉我你想看什么类型的内容，或发送YouTube链接给我解析！',
         timestamp: new Date().toISOString()
       };
       setMessages([welcomeMessage]);
     } catch (error) {
       console.error("Failed to load messages from cache", error);
-      // 鍙戠敓閿欒鏃朵篃娓呴櫎鍙兘鎹熷潖鐨勭紦瀛?      localStorage.removeItem('ai-recommend-messages');
+      // 发生错误时也清除可能损坏的缓存
+      localStorage.removeItem('ai-recommend-messages');
     }
   }, []);
 
-  // 鈿?浼樺寲锛氫繚瀛樺璇濆埌localStorage骞舵粴鍔ㄥ埌搴曢儴
+  // ⚡ 优化：保存对话到localStorage并滚动到底部
   useEffect(() => {
     scrollToBottom();
     saveMessagesToStorage(messages);
   }, [messages, scrollToBottom, saveMessagesToStorage]);
 
-  // 鈿?浼樺寲锛氫娇鐢?useCallback 缂撳瓨浜嬩欢澶勭悊鍑芥暟
+  // ⚡ 优化：使用 useCallback 缓存事件处理函数
   const handleTitleClick = useCallback((title: string) => {
     const cleanTitle = cleanMovieTitle(title);
     const searchUrl = generateSearchUrl(cleanTitle);
@@ -463,7 +473,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     }
   }, []);
 
-  // 鉁?Optimized sendMessage with useOptimistic and useTransition
+  // ✨ Optimized sendMessage with useOptimistic and useTransition
   const sendMessage = async (content: string) => {
     if (!content.trim() || isPending) return;
 
@@ -481,7 +491,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     // Add a temporary "AI is thinking" message
     const thinkingMessage: ExtendedAIMessage = {
       role: 'assistant',
-      content: '鎬濊€冧腑...',
+      content: '思考中...',
       timestamp: new Date().toISOString(),
     };
     addOptimisticMessage(thinkingMessage);
@@ -492,7 +502,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         const updatedMessages = [...messages, userMessage];
         setMessages(updatedMessages);
 
-        // 鏅鸿兘涓婁笅鏂囩鐞嗭細鍙彂閫佹渶杩?鏉℃秷鎭紙4杞璇濓級
+        // 智能上下文管理：只发送最近8条消息（4轮对话）
         const conversationHistory = updatedMessages.slice(-8);
 
         const response = await sendAIRecommendMessage(conversationHistory);
@@ -509,7 +519,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         // Replace thinking message with actual response
         setMessages([...updatedMessages, assistantMessage]);
       } catch (error) {
-        console.error('AI鎺ㄨ崘璇锋眰澶辫触:', error);
+        console.error('AI推荐请求失败:', error);
 
         if (error instanceof Error) {
           try {
@@ -521,13 +531,13 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           } catch {
             setError({
               message: error.message,
-              details: '濡傛灉闂鎸佺画锛岃鑱旂郴绠＄悊鍛樻鏌I閰嶇疆'
+              details: '如果问题持续，请联系管理员检查AI配置'
             });
           }
         } else {
           setError({
-            message: '璇锋眰澶辫触锛岃绋嶅悗閲嶈瘯',
-            details: '鏈煡閿欒锛岃妫€鏌ョ綉缁滆繛鎺?
+            message: '请求失败，请稍后重试',
+            details: '未知错误，请检查网络连接'
           });
         }
 
@@ -537,7 +547,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     });
   };
 
-  // 鈿?浼樺寲锛氫娇鐢?useCallback 缂撳瓨鏇村浜嬩欢澶勭悊鍑芥暟
+  // ⚡ 优化：使用 useCallback 缓存更多事件处理函数
   const handlePresetClick = useCallback((preset: { title: string; message: string }) => {
     sendMessage(preset.message);
   }, []);
@@ -563,7 +573,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
 
     const welcomeMessage: ExtendedAIMessage = {
       role: 'assistant',
-      content: '浣犲ソ锛佹垜鏄疉I鏅鸿兘鍔╂墜锛屾敮鎸佷互涓嬪姛鑳斤細\n\n馃幀 褰辫鍓ф帹鑽?- 鎺ㄨ崘鐢靛奖銆佺數瑙嗗墽銆佸姩婕瓑\n馃敆 瑙嗛閾炬帴瑙ｆ瀽 - 瑙ｆ瀽YouTube閾炬帴骞舵挱鏀綷n馃摵 瑙嗛鍐呭鎼滅储 - 鎼滅储鐩稿叧瑙嗛鍐呭\n\n馃挕 鐩存帴鍛婅瘔鎴戜綘鎯崇湅浠€涔堢被鍨嬬殑鍐呭锛屾垨鍙戦€乊ouTube閾炬帴缁欐垜瑙ｆ瀽锛?,
+      content: '你好！我是AI智能助手，支持以下功能：\n\n🎬 影视剧推荐 - 推荐电影、电视剧、动漫等\n🔗 视频链接解析 - 解析YouTube链接并播放\n📺 视频内容搜索 - 搜索相关视频内容\n\n💡 直接告诉我你想看什么类型的内容，或发送YouTube链接给我解析！',
       timestamp: new Date().toISOString()
     };
     setMessages([welcomeMessage]);
@@ -571,25 +581,26 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
     setInputMessage('');
   }, []);
 
-  // 涓嶅啀闇€瑕佷负娑堟伅鍐呭娣诲姞鐐瑰嚮鐩戝惉鍣紝鍥犱负鐐瑰嚮鍔熻兘宸茬Щ鑷冲彸渚у崱鐗?
+  // 不再需要为消息内容添加点击监听器，因为点击功能已移至右侧卡片
+
   return (
-    /* 鉁?Native HTML dialog element with Tailwind 4.0 styling */
+    /* ✨ Native HTML dialog element with Tailwind 4.0 styling */
     <dialog
       ref={dialogRef}
       onClose={onClose}
       className="w-full max-w-4xl h-[80vh] mx-auto p-0 bg-transparent backdrop:bg-black/60 backdrop:backdrop-blur-md rounded-2xl shadow-2xl border-0 open:animate-in open:fade-in open:zoom-in-95 open:duration-300"
     >
-      {/* 瀵硅瘽妗嗗唴瀹瑰鍣?- 浣跨敤 @container 鏌ヨ */}
+      {/* 对话框内容容器 - 使用 @container 查询 */}
       <div className="@container relative w-full h-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        {/* 澶撮儴 - 浣跨敤 Tailwind 4.0 鏀硅繘鐨勬笎鍙?*/}
+        {/* 头部 - 使用 Tailwind 4.0 改进的渐变 */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 shadow-lg">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm ring-1 ring-white/30 shadow-inner">
               <Brain className="h-6 w-6 text-white drop-shadow-md" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white drop-shadow-sm">AI 鏅鸿兘鍔╂墜</h2>
-              <p className="text-blue-50/90 text-sm font-medium">褰辫鎺ㄨ崘 路 瑙嗛瑙ｆ瀽 路 YouTube鎼滅储</p>
+              <h2 className="text-xl font-bold text-white drop-shadow-sm">AI 智能助手</h2>
+              <p className="text-blue-50/90 text-sm font-medium">影视推荐 · 视频解析 · YouTube搜索</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -598,7 +609,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                 onClick={resetChat}
                 className="px-3 py-1.5 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 active:scale-95 transition-all duration-200 backdrop-blur-sm ring-1 ring-white/30 font-medium"
               >
-                娓呯┖瀵硅瘽
+                清空对话
               </button>
             )}
             <button
@@ -610,23 +621,24 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           </div>
         </div>
 
-        {/* 娑堟伅鍖哄煙 - 浣跨敤 optimisticMessages */}
+        {/* 消息区域 - 使用 optimisticMessages */}
         <div
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-900/50"
         >
-          {optimisticMessages.length <= 1 && optimisticMessages.every(msg => msg.role === 'assistant' && msg.content.includes('AI鏅鸿兘鍔╂墜')) && (
+          {optimisticMessages.length <= 1 && optimisticMessages.every(msg => msg.role === 'assistant' && msg.content.includes('AI智能助手')) && (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4">
                 <Sparkles className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                娆㈣繋浣跨敤AI鏅鸿兘鍔╂墜
+                欢迎使用AI智能助手
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                鏀寔褰辫鎺ㄨ崘銆乊ouTube閾炬帴瑙ｆ瀽鍜岃棰戞悳绱㈡帹鑽?              </p>
+                支持影视推荐、YouTube链接解析和视频搜索推荐
+              </p>
               
-              {/* 棰勮闂 */}
+              {/* 预设问题 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                 {AI_RECOMMEND_PRESETS.map((preset, index) => (
                   <button
@@ -644,7 +656,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             </div>
           )}
 
-          {/* 鈿?浼樺寲锛氫娇鐢ㄨ蹇嗗寲鐨勬秷鎭粍浠?*/}
+          {/* ⚡ 优化：使用记忆化的消息组件 */}
           {optimisticMessages.map((message, index) => (
             <MessageItem
               key={index}
@@ -659,8 +671,8 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             />
           ))}
 
-          {/* 鍔犺浇鐘舵€?- 浣跨敤 isPending */}
-          {isPending && optimisticMessages[optimisticMessages.length - 1]?.content !== '鎬濊€冧腑...' && (
+          {/* 加载状态 - 使用 isPending */}
+          {isPending && optimisticMessages[optimisticMessages.length - 1]?.content !== '思考中...' && (
             <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="bg-white dark:bg-gray-700 p-3 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
                 <div className="flex space-x-1.5">
@@ -672,7 +684,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
             </div>
           )}
 
-          {/* 閿欒鎻愮ず - 浼樺寲鏍峰紡 */}
+          {/* 错误提示 - 优化样式 */}
           {error && (
             <div className="bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-950/30 border border-red-200/50 dark:border-red-800/50 text-red-700 dark:text-red-400 p-4 rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex items-start space-x-3">
@@ -695,7 +707,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                       onClick={() => setError(null)}
                       className="text-sm bg-red-200 hover:bg-red-300 dark:bg-red-800 dark:hover:bg-red-700 text-red-900 dark:text-red-100 px-4 py-1.5 rounded-lg transition-all duration-200 font-medium shadow-sm active:scale-95"
                     >
-                      鍏抽棴
+                      关闭
                     </button>
                   </div>
                 </div>
@@ -706,7 +718,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 杈撳叆鍖哄煙 - 鏀硅繘鏍峰紡 */}
+        {/* 输入区域 - 改进样式 */}
         <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-900 shadow-inner">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <div className="flex-1">
@@ -714,7 +726,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="杈撳叆褰辫鎺ㄨ崘绫诲瀷銆乊ouTube鎼滅储鍐呭鎴栫洿鎺ョ矘璐碮ouTube閾炬帴..."
+                placeholder="输入影视推荐类型、YouTube搜索内容或直接粘贴YouTube链接..."
                 className="w-full p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-750 resize-none transition-all duration-200 shadow-sm"
                 rows={2}
                 disabled={isPending}
@@ -726,16 +738,17 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               className="px-6 py-3 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-blue-500/30 disabled:shadow-none active:scale-95"
             >
               <Send className="h-4 w-4" />
-              <span>{isPending ? '鍙戦€佷腑' : '鍙戦€?}</span>
+              <span>{isPending ? '发送中' : '发送'}</span>
             </button>
           </form>
 
-          {/* 鎻愮ず淇℃伅 */}
+          {/* 提示信息 */}
           <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span className="flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
-              鏀寔褰辫鎺ㄨ崘銆乊ouTube閾炬帴瑙ｆ瀽鍜岃棰戞悳绱?            </span>
-            <span className="opacity-75">鎸?Enter 鍙戦€侊紝Shift+Enter 鎹㈣</span>
+              支持影视推荐、YouTube链接解析和视频搜索
+            </span>
+            <span className="opacity-75">按 Enter 发送，Shift+Enter 换行</span>
           </div>
         </div>
       </div>
