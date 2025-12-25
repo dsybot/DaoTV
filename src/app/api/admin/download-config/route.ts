@@ -8,7 +8,7 @@ import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
-// GET: 获取下载配置（公开接口，不需要管理员权限）
+// GET: 获取下载配置（已登录用户可访问）
 export async function GET() {
   try {
     const config = await getConfig();

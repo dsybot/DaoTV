@@ -49,8 +49,6 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        // 使用 admin download-config GET 接口获取配置
-        // 这个接口不需要管理员权限，只返回 enabled 状态
         const response = await fetch('/api/admin/download-config');
         if (response.ok) {
           const data = await response.json();
