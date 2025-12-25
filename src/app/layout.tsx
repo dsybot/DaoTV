@@ -11,6 +11,7 @@ import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { WatchRoomProvider } from '../components/WatchRoomProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 
@@ -124,12 +125,14 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <DownloadProvider>
-            <SiteProvider siteName={siteName} announcement={announcement} enableTMDBCarousel={enableTMDBCarousel} enableDetailPage={enableDetailPage}>
-              <SessionTracker />
-              {children}
-              <GlobalErrorIndicator />
-            </SiteProvider>
-            <DownloadPanel />
+            <WatchRoomProvider>
+              <SiteProvider siteName={siteName} announcement={announcement} enableTMDBCarousel={enableTMDBCarousel} enableDetailPage={enableDetailPage}>
+                <SessionTracker />
+                {children}
+                <GlobalErrorIndicator />
+              </SiteProvider>
+              <DownloadPanel />
+            </WatchRoomProvider>
           </DownloadProvider>
         </ThemeProvider>
       </body>

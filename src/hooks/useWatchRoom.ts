@@ -26,6 +26,7 @@ export interface UseWatchRoomReturn {
   currentRoom: Room | null;
   members: Member[];
   messages: ChatMessage[];
+  isOwner: boolean;
 
   // 房间操作
   createRoom: (data: {
@@ -336,12 +337,18 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
     };
   }, [socket]);
 
+  // 计算当前用户是否为房主
+  const isOwner = currentRoom
+    ? members.find(m => m.name === userName)?.isOwner || false
+    : false;
+
   return {
     socket,
     connected,
     currentRoom,
     members,
     messages,
+    isOwner,
     createRoom,
     joinRoom,
     leaveRoom,
