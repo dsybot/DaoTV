@@ -162,7 +162,7 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
 
   // 获取服务器统计信息
   const fetchStats = async () => {
-    if (!settings.enabled) {
+    if (!settings.enabled || !settings.serverUrl) {
       return;
     }
 
@@ -170,7 +170,14 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
     setStatsError(null);
 
     try {
-      const response = await fetch('/api/watch-room/stats');
+      const response = await fetch('/api/watch-room/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serverUrl: settings.serverUrl.trim(),
+          authKey: settings.authKey.trim(),
+        }),
+      });
       const result = await response.json();
 
       if (result.success && result.data) {

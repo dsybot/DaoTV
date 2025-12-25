@@ -2,34 +2,19 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function POST(request: Request) {
   try {
-    // 从配置API获取观影室服务器信息
-    const configResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/watch-room/config`,
-      {
-        method: 'POST',
-      }
-    );
+    const { serverUrl, authKey } = await request.json();
 
-    if (!configResponse.ok) {
+    if (!serverUrl) {
       return NextResponse.json(
-        { success: false, error: '获取配置失败' },
-        { status: 500 }
+        { success: false, error: '服务器地址不能为空' },
+        { status: 400 }
       );
     }
 
-    const config = await configResponse.json();
-
-    if (!config.enabled || !config.serverUrl || !config.authKey) {
-      return NextResponse.json({
-        success: false,
-        error: '观影室未配置或未启用',
-      });
-    }
-
     // 请求统计信息
-    const statsUrl = `${config.serverUrl.replace(/\/$/, '')}/stats`;
+    const statsUrl = `${serverUrl.replace(/\/$/, '')}/stats`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -38,7 +23,7 @@ export async function GET() {
       const response = await fetch(statsUrl, {
         signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${config.authKey}`,
+          Authorization: `Bearer ${authKey}`,
           Accept: 'application/json',
         },
       });
