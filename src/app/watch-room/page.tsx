@@ -12,7 +12,7 @@ type TabType = 'create' | 'join' | 'list';
 
 export default function WatchRoomPage() {
   const watchRoom = useWatchRoomContext();
-  const { getRoomList, isConnected, createRoom, joinRoom, leaveRoom, currentRoom, isOwner, members } = watchRoom;
+  const { getRoomList, isConnected, createRoom, joinRoom, leaveRoom, currentRoom, isOwner, members, configLoading } = watchRoom;
   const [activeTab, setActiveTab] = useState<TabType>('create');
 
   // 本地观影室启用状态（每次进入页面都重新获取）
@@ -185,6 +185,22 @@ export default function WatchRoomPage() {
     { id: 'join' as TabType, label: '加入房间', icon: UserPlus },
     { id: 'list' as TabType, label: '房间列表', icon: ListIcon },
   ];
+
+  // 配置加载中
+  if (configLoading) {
+    return (
+      <PageLayout>
+        <div className='flex items-center justify-center min-h-screen'>
+          <div className='text-center max-w-md'>
+            <RefreshCw className='w-16 h-16 mx-auto mb-4 text-indigo-500 animate-spin' />
+            <h2 className='text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2'>
+              加载配置中...
+            </h2>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   // 未启用提示（使用本地状态，确保每次进入页面都是最新配置）
   if (localIsEnabled === null) {

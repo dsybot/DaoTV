@@ -8,13 +8,14 @@ import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import type { Room, Member, ChatMessage } from '@/types/watch-room.types';
 
 export interface WatchRoomContextType {
+  socket: any | null;
   isConnected: boolean;
   currentRoom: Room | null;
   members: Member[];
   chatMessages: ChatMessage[];
   isOwner: boolean;
   isEnabled: boolean;
-  socket: any; // Socket.io client instance
+  configLoading: boolean;
 
   // 房间操作
   createRoom: (data: {
@@ -64,6 +65,7 @@ interface WatchRoomProviderProps {
 export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   const [config, setConfig] = useState<{ enabled: boolean; serverUrl: string } | null>(null);
   const [isEnabled, setIsEnabled] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
   const [authKey, setAuthKey] = useState('');
   const [currentUserName, setCurrentUserName] = useState('游客');
 
@@ -119,6 +121,8 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
       } catch (error) {
         console.error('[WatchRoom] Error loading config:', error);
         setIsEnabled(false);
+      } finally {
+        setConfigLoading(false);
       }
     };
 
@@ -140,13 +144,14 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   }, [isEnabled, config, authKey]);
 
   const contextValue: WatchRoomContextType = {
+    socket: watchRoom.socket,
     isConnected: watchRoom.connected,
     currentRoom: watchRoom.currentRoom,
     members: watchRoom.members,
     chatMessages: watchRoom.messages,
     isOwner: watchRoom.isOwner,
     isEnabled,
-    socket: watchRoom.socket,
+    configLoading,
     createRoom: async (data) => {
       const result = await watchRoom.createRoom(data);
       if (!result.success || !result.room) {

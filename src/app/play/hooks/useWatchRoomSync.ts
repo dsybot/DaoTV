@@ -14,27 +14,26 @@ export function useWatchRoomSync({ watchRoom, artPlayerRef, detail, episodeIndex
   const lastSyncTimeRef = useRef(0);
 
   useEffect(() => {
-    if (!watchRoom?.currentRoom || !watchRoom?.isOwner || !artPlayerRef.current || !watchRoom?.socket) {
+    if (!watchRoom?.currentRoom || !watchRoom?.isOwner || !watchRoom?.socket) {
       return;
     }
 
     const player = artPlayerRef.current;
+    if (!player) return;
 
     // 房主：同步播放状态到其他成员
     const handlePlay = () => {
-      if (!watchRoom.isOwner) return;
       console.log('[WatchRoomSync] Owner: play');
       watchRoom.play();
     };
 
     const handlePause = () => {
-      if (!watchRoom.isOwner) return;
       console.log('[WatchRoomSync] Owner: pause');
       watchRoom.pause();
     };
 
     const handleSeeking = () => {
-      if (!watchRoom.isOwner || isSyncingRef.current) return;
+      if (isSyncingRef.current) return;
       const currentTime = player.currentTime;
       const now = Date.now();
 
@@ -51,20 +50,25 @@ export function useWatchRoomSync({ watchRoom, artPlayerRef, detail, episodeIndex
     player.on('pause', handlePause);
     player.on('seeking', handleSeeking);
 
+    console.log('[WatchRoomSync] Owner: event listeners added');
+
     return () => {
       player.off('play', handlePlay);
       player.off('pause', handlePause);
       player.off('seeking', handleSeeking);
+      console.log('[WatchRoomSync] Owner: event listeners removed');
     };
-  }, [watchRoom?.currentRoom, watchRoom?.isOwner, artPlayerRef.current, watchRoom?.socket]);
+  }, [watchRoom?.currentRoom?.id, watchRoom?.isOwner, watchRoom?.socket]);
 
   // 非房主：接收并同步播放状态
   useEffect(() => {
-    if (!watchRoom?.currentRoom || watchRoom?.isOwner || !artPlayerRef.current || !watchRoom?.socket) {
+    if (!watchRoom?.currentRoom || watchRoom?.isOwner || !watchRoom?.socket) {
       return;
     }
 
     const player = artPlayerRef.current;
+    if (!player) return;
+
     const socket = watchRoom.socket;
 
     // 接收播放指令
@@ -136,21 +140,25 @@ export function useWatchRoomSync({ watchRoom, artPlayerRef, detail, episodeIndex
     socket.on('play:seek', handleSeekEvent);
     socket.on('play:change', handleChangeEvent);
 
+    console.log('[WatchRoomSync] Member: event listeners added');
+
     return () => {
       socket.off('play:play', handlePlayEvent);
       socket.off('play:pause', handlePauseEvent);
       socket.off('play:seek', handleSeekEvent);
       socket.off('play:change', handleChangeEvent);
+      console.log('[WatchRoomSync] Member: event listeners removed');
     };
-  }, [watchRoom?.currentRoom, watchRoom?.isOwner, artPlayerRef.current, watchRoom?.socket, detail, episodeIndex]);
+  }, [watchRoom?.currentRoom?.id, watchRoom?.isOwner, watchRoom?.socket, detail?.vod_id, episodeIndex]);
 
   // 房主：切换视频时同步状态
   useEffect(() => {
-    if (!watchRoom?.currentRoom || !watchRoom?.isOwner || !detail || !artPlayerRef.current) {
+    if (!watchRoom?.currentRoom || !watchRoom?.isOwner || !detail) {
       return;
     }
 
     const player = artPlayerRef.current;
+    if (!player) return;
 
     // 发送视频切换状态
     const syncState = {
@@ -166,5 +174,5 @@ export function useWatchRoomSync({ watchRoom, artPlayerRef, detail, episodeIndex
 
     console.log('[WatchRoomSync] Owner: sending video change state', syncState);
     watchRoom.changeVideo(syncState);
-  }, [detail?.vod_id, episodeIndex, watchRoom?.currentRoom?.id, watchRoom?.isOwner]);
+  }, [detail?.vod_id, episodeIndex, watchRoom?.currentRoom?.id, watchRoom?.isOwner, watchRoom]);
 }

@@ -272,6 +272,10 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
   const leaveRoom = useCallback(() => {
     if (socket && connected) {
       socket.emit('room:leave');
+      // 立即清空本地状态，不等服务器响应
+      setCurrentRoom(null);
+      setMembers([]);
+      setMessages([]);
     }
   }, [socket, connected]);
 
