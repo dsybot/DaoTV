@@ -7,7 +7,7 @@ import { useWatchRoom } from '@/hooks/useWatchRoom';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import type { Room, Member, ChatMessage } from '@/types/watch-room.types';
 
-interface WatchRoomContextType {
+export interface WatchRoomContextType {
   isConnected: boolean;
   currentRoom: Room | null;
   members: Member[];
