@@ -55,7 +55,7 @@ interface WakeLockSentinel {
 function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { createTask, setShowDownloadPanel } = useDownload();
+  const { createTask, setShowDownloadPanel, isEnabled: downloadEnabled } = useDownload();
   const watchRoom = useWatchRoomContextSafe();
 
   // -----------------------------------------------------------------------------
@@ -5751,59 +5751,63 @@ function PlayPageClient() {
                     </button>
 
                     {/* 下载按钮 */}
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        // 获取当前播放URL
-                        const currentUrl = videoUrl;
-                        if (!currentUrl) {
-                          alert('无法获取视频地址');
-                          return;
-                        }
+                    {downloadEnabled && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          // 获取当前播放URL
+                          const currentUrl = videoUrl;
+                          if (!currentUrl) {
+                            alert('无法获取视频地址');
+                            return;
+                          }
 
-                        // 检查是否是M3U8
-                        if (!currentUrl.includes('.m3u8')) {
-                          alert('仅支持M3U8格式视频下载');
-                          return;
-                        }
+                          // 检查是否是M3U8
+                          if (!currentUrl.includes('.m3u8')) {
+                            alert('仅支持M3U8格式视频下载');
+                            return;
+                          }
 
-                        try {
-                          // 生成下载标题：视频名_第X集
-                          const episodeName = detail?.episodes && detail.episodes.length > 0
-                            ? `第${currentEpisodeIndex + 1}集`
-                            : '';
-                          const downloadTitle = `${videoTitle || '视频'}${episodeName ? `_${episodeName}` : ''}`;
+                          try {
+                            // 生成下载标题：视频名_第X集
+                            const episodeName = detail?.episodes && detail.episodes.length > 0
+                              ? `第${currentEpisodeIndex + 1}集`
+                              : '';
+                            const downloadTitle = `${videoTitle || '视频'}${episodeName ? `_${episodeName}` : ''}`;
 
-                          // 创建下载任务
-                          await createTask(currentUrl, downloadTitle, 'TS');
-                        } catch (error) {
-                          console.error('创建下载任务失败:', error);
-                          alert('创建下载任务失败: ' + (error as Error).message);
-                        }
-                      }}
-                      className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
-                    >
-                      <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
-                      <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
-                        <Download className='h-4 w-4' />
-                        <span>下载</span>
-                      </div>
-                    </button>
+                            // 创建下载任务
+                            await createTask(currentUrl, downloadTitle, 'TS');
+                          } catch (error) {
+                            console.error('创建下载任务失败:', error);
+                            alert('创建下载任务失败: ' + (error as Error).message);
+                          }
+                        }}
+                        className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
+                      >
+                        <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
+                        <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
+                          <Download className='h-4 w-4' />
+                          <span>下载</span>
+                        </div>
+                      </button>
+                    )}
 
                     {/* 查看下载按钮 */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDownloadPanel(true);
-                      }}
-                      className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
-                    >
-                      <div className='absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
-                      <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
-                        📥
-                        <span>下载管理</span>
-                      </div>
-                    </button>
+                    {downloadEnabled && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDownloadPanel(true);
+                        }}
+                        className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
+                      >
+                        <div className='absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
+                        <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
+                          📥
+                          <span>下载管理</span>
+                        </div>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

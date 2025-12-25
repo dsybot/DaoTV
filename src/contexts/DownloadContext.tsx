@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { M3U8Downloader, M3U8DownloadTask } from '@/lib/download/m3u8-downloader';
 
 interface DownloadContextType {
@@ -13,6 +13,7 @@ interface DownloadContextType {
   cancelTask: (taskId: string) => void;
   retryFailedSegments: (taskId: string) => void;
   getProgress: (taskId: string) => number;
+  isEnabled: boolean; // 下载功能是否启用
 }
 
 const DownloadContext = createContext<DownloadContextType | undefined>(undefined);
@@ -42,6 +43,27 @@ function getDownloader(updateTasks: () => void): M3U8Downloader {
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<M3U8DownloadTask[]>([]);
   const [showDownloadPanel, setShowDownloadPanel] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true); // 默认启用
+
+  // 获取下载配置
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const data = await response.json();
+          // 检查 DownloadConfig.enabled，默认为 true
+          const enabled = data.DownloadConfig?.enabled ?? true;
+          setIsEnabled(enabled);
+        }
+      } catch (error) {
+        console.error('获取下载配置失败:', error);
+        // 出错时默认启用
+        setIsEnabled(true);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   const updateTasks = useCallback(() => {
     const downloader = getDownloader(updateTasks);
@@ -122,6 +144,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         cancelTask,
         retryFailedSegments,
         getProgress,
+        isEnabled,
       }}
     >
       {children}
