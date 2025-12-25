@@ -122,6 +122,9 @@ export interface AdminConfig {
     alternativeApiUrl: string;           // 备用API地址（私密）
     enableAlternative: boolean;          // 是否启用备用API
   };
+  DownloadConfig?: {
+    enabled: boolean;                    // 是否启用下载功能（全局开关）
+  };
 }
 
 export interface AdminConfigResult {

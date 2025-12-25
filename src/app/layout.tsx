@@ -11,6 +11,8 @@ import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { DownloadProvider } from '../contexts/DownloadContext';
+import { DownloadPanel } from '../components/download/DownloadPanel';
 
 const inter = Inter({ subsets: ['latin'] });
 export const dynamic = 'force-dynamic';
@@ -121,11 +123,14 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SiteProvider siteName={siteName} announcement={announcement} enableTMDBCarousel={enableTMDBCarousel} enableDetailPage={enableDetailPage}>
-            <SessionTracker />
-            {children}
-            <GlobalErrorIndicator />
-          </SiteProvider>
+          <DownloadProvider>
+            <SiteProvider siteName={siteName} announcement={announcement} enableTMDBCarousel={enableTMDBCarousel} enableDetailPage={enableDetailPage}>
+              <SessionTracker />
+              {children}
+              <GlobalErrorIndicator />
+            </SiteProvider>
+            <DownloadPanel />
+          </DownloadProvider>
         </ThemeProvider>
       </body>
     </html>
