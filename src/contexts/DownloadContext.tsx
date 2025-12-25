@@ -13,7 +13,7 @@ interface DownloadContextType {
   cancelTask: (taskId: string) => void;
   retryFailedSegments: (taskId: string) => void;
   getProgress: (taskId: string) => number;
-  isEnabled: boolean; // 下载功能是否启用
+  isEnabled: boolean | null; // 下载功能是否启用，null 表示加载中
 }
 
 const DownloadContext = createContext<DownloadContextType | undefined>(undefined);
@@ -43,7 +43,7 @@ function getDownloader(updateTasks: () => void): M3U8Downloader {
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<M3U8DownloadTask[]>([]);
   const [showDownloadPanel, setShowDownloadPanel] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(true); // 默认启用
+  const [isEnabled, setIsEnabled] = useState<boolean | null>(null); // null 表示加载中
 
   // 获取下载配置
   useEffect(() => {
@@ -53,6 +53,9 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         if (response.ok) {
           const data = await response.json();
           setIsEnabled(data.enabled ?? true);
+        } else {
+          // API 失败时默认启用
+          setIsEnabled(true);
         }
       } catch (error) {
         console.error('获取下载配置失败:', error);
