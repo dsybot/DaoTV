@@ -257,7 +257,25 @@ function PlayPageClient() {
   });
 
   // 集数相关
-  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(initialEpisodeIndex);
+  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(() => {
+    // 从 URL 读取初始集数（优先使用 index 参数，其次使用 episode 参数）
+    const indexParam = searchParams.get('index');
+    if (indexParam) {
+      return parseInt(indexParam, 10);
+    }
+    // 兼容旧的 episode 参数
+    return initialEpisodeIndex;
+  });
+
+  // 监听 URL index 参数变化（观影室切集同步）
+  useEffect(() => {
+    const indexParam = searchParams.get('index');
+    const newIndex = indexParam ? parseInt(indexParam, 10) : null;
+    if (newIndex !== null && newIndex !== currentEpisodeIndex) {
+      console.log('[PlayPage] URL index changed, updating episode:', newIndex);
+      setCurrentEpisodeIndex(newIndex);
+    }
+  }, [searchParams]);
 
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
