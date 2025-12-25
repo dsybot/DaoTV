@@ -49,7 +49,9 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch('/api/admin/download-config');
+        const response = await fetch('/api/admin/download-config', {
+          cache: 'no-store', // 禁用缓存，确保获取最新配置
+        });
         if (response.ok) {
           const data = await response.json();
           setIsEnabled(data.enabled ?? true);

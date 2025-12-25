@@ -11,17 +11,28 @@ export const runtime = 'nodejs';
 // GET: 获取下载配置（已登录用户可访问）
 export async function GET() {
   try {
-    const config = await getConfig();
-    const enabled = config.DownloadConfig?.enabled ?? true;
+    // 直接从数据库读取，不使用缓存，确保获取最新配置
+    const config = await db.getAdminConfig();
+    const enabled = config?.DownloadConfig?.enabled ?? true;
 
-    return NextResponse.json({
-      enabled,
-    });
+    return NextResponse.json(
+      { enabled },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('获取下载配置失败:', error);
-    return NextResponse.json({
-      enabled: true, // 出错时默认启用
-    });
+    return NextResponse.json(
+      { enabled: true },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
   }
 }
 
