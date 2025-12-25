@@ -55,8 +55,32 @@ interface WakeLockSentinel {
 function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { createTask, setShowDownloadPanel, isEnabled: downloadEnabled } = useDownload();
+  const { createTask, setShowDownloadPanel } = useDownload();
   const watchRoom = useWatchRoomContextSafe();
+
+  // 下载功能是否启用（本地状态，每次进入页面都重新获取）
+  const [downloadEnabled, setDownloadEnabled] = useState<boolean | null>(null);
+
+  // 获取下载配置
+  useEffect(() => {
+    const fetchDownloadConfig = async () => {
+      try {
+        const response = await fetch('/api/admin/download-config', {
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setDownloadEnabled(data.enabled ?? true);
+        } else {
+          setDownloadEnabled(true);
+        }
+      } catch (error) {
+        console.error('获取下载配置失败:', error);
+        setDownloadEnabled(true);
+      }
+    };
+    fetchDownloadConfig();
+  }, []);
 
   // -----------------------------------------------------------------------------
   // 状态变量（State）
