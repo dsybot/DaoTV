@@ -89,7 +89,9 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/watch-room/config');
+        const response = await fetch('/api/watch-room/config', {
+          cache: 'no-store',
+        });
         if (response.ok) {
           const data = await response.json();
           setConfig(data);
@@ -100,6 +102,7 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
             try {
               const authResponse = await fetch('/api/watch-room/config', {
                 method: 'POST',
+                cache: 'no-store',
               });
               if (authResponse.ok) {
                 const authData = await authResponse.json();
