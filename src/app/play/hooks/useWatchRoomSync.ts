@@ -73,17 +73,6 @@ export function useWatchRoomSync({
         return;
       }
 
-      // 检查是否是同一个视频和集数，避免跨集数同步
-      if (state.videoId !== detail?.vod_id || state.episode !== episodeIndex) {
-        console.log('[PlaySync] Ignoring play:update - different video or episode:', {
-          stateVideoId: state.videoId,
-          currentVideoId: detail?.vod_id,
-          stateEpisode: state.episode,
-          currentEpisode: episodeIndex
-        });
-        return;
-      }
-
       console.log('[PlaySync] Processing play update - current state:', {
         playerPlaying: player.playing,
         statePlaying: state.isPlaying,
