@@ -69,13 +69,18 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   const [authKey, setAuthKey] = useState('');
   const [currentUserName, setCurrentUserName] = useState('游客');
 
-  // 获取当前登录用户名
+  // 获取当前登录用户名（延迟获取，确保 cookie 已加载）
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const authInfo = getAuthInfoFromBrowserCookie();
-      const username = authInfo?.username || '游客';
-      setCurrentUserName(username);
-      console.log('[WatchRoom] Current user:', username);
+      // 延迟一点时间确保 cookie 已加载
+      const timer = setTimeout(() => {
+        const authInfo = getAuthInfoFromBrowserCookie();
+        const username = authInfo?.username || '游客';
+        setCurrentUserName(username);
+        console.log('[WatchRoom] Current user:', username);
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -89,18 +94,28 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
 
   // 加载配置
   useEffect(() => {
-    const loadConfig = async () => {
-      console.log('[WatchRoom] Loading config...');
+    const loadConfig = async (retryCount = 0) => {
+      console.log('[WatchRoom] Loading config... (attempt', retryCount + 1, ')');
       try {
         const response = await fetch('/api/watch-room/config', {
           cache: 'no-store',
         });
         console.log('[WatchRoom] Config response status:', response.status);
+
+        // 如果 401 且是第一次尝试，延迟后重试一次
+        if (response.status === 401 && retryCount === 0) {
+          console.log('[WatchRoom] Got 401, retrying after delay...');
+          setTimeout(() => loadConfig(1), 500);
+          return;
+        }
+
         if (response.ok) {
           const data = await response.json();
           console.log('[WatchRoom] Config loaded:', data);
+          const enabledValue = data.enabled === true;
+          console.log('[WatchRoom] Setting isEnabled to:', enabledValue);
           setConfig(data);
-          setIsEnabled(data.enabled === true);
+          setIsEnabled(enabledValue);
 
           // 如果需要 authKey，从完整配置API获取
           if (data.enabled && data.serverUrl) {
@@ -126,7 +141,7 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
         console.error('[WatchRoom] Error loading config:', error);
         setIsEnabled(false);
       } finally {
-        console.log('[WatchRoom] Config loading finished, isEnabled:', isEnabled);
+        console.log('[WatchRoom] Config loading finished');
         setConfigLoading(false);
       }
     };
