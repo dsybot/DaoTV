@@ -83,7 +83,6 @@ export default function WatchRoomPage() {
         description: createForm.description.trim(),
         password: createForm.password.trim() || undefined,
         isPublic: createForm.isPublic,
-        userName: currentUsername,
       });
 
       // 清空表单
@@ -93,6 +92,8 @@ export default function WatchRoomPage() {
         password: '',
         isPublic: true,
       });
+
+      alert('房间创建成功！');
     } catch (error: any) {
       alert(error.message || '创建房间失败');
     } finally {
@@ -114,7 +115,6 @@ export default function WatchRoomPage() {
       await joinRoom({
         roomId: targetRoomId,
         password: joinForm.password.trim() || undefined,
-        userName: currentUsername,
       });
 
       // 清空表单
@@ -122,6 +122,8 @@ export default function WatchRoomPage() {
         roomId: '',
         password: '',
       });
+
+      alert('加入房间成功！');
     } catch (error: any) {
       alert(error.message || '加入房间失败');
     } finally {

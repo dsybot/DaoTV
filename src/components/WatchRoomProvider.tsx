@@ -2,8 +2,9 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useWatchRoom } from '@/hooks/useWatchRoom';
+import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import type { Room, Member, ChatMessage } from '@/types/watch-room.types';
 
 interface WatchRoomContextType {
@@ -20,12 +21,10 @@ interface WatchRoomContextType {
     description: string;
     password?: string;
     isPublic: boolean;
-    userName: string;
   }) => Promise<Room>;
   joinRoom: (data: {
     roomId: string;
     password?: string;
-    userName: string;
   }) => Promise<{ room: Room; members: Member[] }>;
   leaveRoom: () => void;
   getRoomList: () => Promise<Room[]>;
@@ -65,11 +64,22 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   const [config, setConfig] = useState<{ enabled: boolean; serverUrl: string } | null>(null);
   const [isEnabled, setIsEnabled] = useState(false);
   const [authKey, setAuthKey] = useState('');
+  const [currentUserName, setCurrentUserName] = useState('游客');
+
+  // 获取当前登录用户名
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const authInfo = getAuthInfoFromBrowserCookie();
+      const username = authInfo?.username || '游客';
+      setCurrentUserName(username);
+      console.log('[WatchRoom] Current user:', username);
+    }
+  }, []);
 
   const watchRoom = useWatchRoom({
     serverUrl: config?.serverUrl || '',
     authKey: authKey,
-    userName: '游客',
+    userName: currentUserName,
     onError: (error) => console.error('[WatchRoom] Error:', error),
     onDisconnect: () => console.log('[WatchRoom] Disconnected'),
   });
