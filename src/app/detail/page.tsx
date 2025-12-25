@@ -665,7 +665,7 @@ function DetailPageClient() {
                       <span>加载剧集信息...</span>
                     </div>
                   ) : (
-                    <div className="episode-list overflow-x-auto pb-2">
+                    <div className="episode-list overflow-x-auto pb-2 show-scrollbar">
                       <div className="flex gap-3" style={{ width: 'max-content' }}>
                         {episodes.slice(episodePage * pageSize, (episodePage + 1) * pageSize).map((ep) => (
                           <div
