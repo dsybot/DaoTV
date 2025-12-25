@@ -52,23 +52,25 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
     setTestResult(null);
 
     try {
-      // 测试健康检查端点
-      const healthUrl = `${settings.serverUrl}/health`;
-      const response = await fetch(healthUrl);
-
-      if (!response.ok) {
-        throw new Error(`服务器返回错误: ${response.status}`);
-      }
+      // 通过后端API测试连接，避免CORS问题
+      const response = await fetch('/api/watch-room/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serverUrl: settings.serverUrl.trim(),
+          authKey: settings.authKey.trim(),
+        }),
+      });
 
       const data = await response.json();
 
-      if (data.status === 'ok') {
+      if (data.success) {
         setTestResult({
           success: true,
-          message: `连接成功！服务器运行时间: ${Math.floor(data.uptime / 60)} 分钟`,
+          message: data.message || '连接成功！',
         });
       } else {
-        throw new Error('服务器状态异常');
+        throw new Error(data.error || '连接失败');
       }
     } catch (error: any) {
       setTestResult({
@@ -94,28 +96,48 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
       }
     }
 
+    if (!config) {
+      showMessage('error', '配置未加载');
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // 更新完整配置
+      const updatedConfig = {
+        ...config,
+        WatchRoomConfig: {
+          enabled: settings.enabled,
+          serverUrl: settings.serverUrl.trim(),
+          authKey: settings.authKey.trim(),
+        }
+      };
+
       const response = await fetch('/api/admin/config', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          WatchRoomConfig: {
-            enabled: settings.enabled,
-            serverUrl: settings.serverUrl.trim(),
-            authKey: settings.authKey.trim(),
-          }
-        })
+        body: JSON.stringify(updatedConfig)
       });
 
+      // 检查响应是否有内容
+      const contentType = response.headers.get('content-type');
+      let data;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || '服务器返回了非JSON响应');
+      }
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '保存失败');
+        throw new Error(data.error || '保存失败');
       }
 
       showMessage('success', '观影室配置已保存');
       await refreshConfig();
     } catch (error: any) {
+      console.error('保存配置失败:', error);
       showMessage('error', error.message || '保存失败');
     } finally {
       setIsLoading(false);
