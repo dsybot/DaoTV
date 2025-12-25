@@ -238,6 +238,28 @@ html:not(.dark) body {
   background: rgba(107, 114, 128, 0.5);
 }
 
+/* 全局隐藏滚动条（除了特定区域） */
+*:not(.show-scrollbar):not(.show-scrollbar *):not(.artplayer):not(.artplayer *)::-webkit-scrollbar {
+  display: none;
+}
+
+*:not(.show-scrollbar):not(.show-scrollbar *):not(.artplayer):not(.artplayer *) {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 显示滚动条的特定区域 */
+.show-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: 6px;
+  height: 6px;
+}
+
+.show-scrollbar {
+  -ms-overflow-style: auto !important;
+  scrollbar-width: thin !important;
+}
+
 /* 视频卡片悬停效果 */
 .video-card-hover {
   transition: transform 0.3s ease;

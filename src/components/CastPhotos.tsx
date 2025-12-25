@@ -395,7 +395,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
           {actorWorks.length > 0 ? (
             <div
               ref={worksScrollRef}
-              className="overflow-x-auto pb-2"
+              className="overflow-x-auto pb-2 show-scrollbar"
               style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
             >
               <div className="flex gap-3 pt-2 px-1" style={{ minWidth: 'max-content' }}>

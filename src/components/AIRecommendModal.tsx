@@ -65,11 +65,10 @@ const MessageItem = memo(({
       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
     >
       <div
-        className={`max-w-[80%] p-3 rounded-xl shadow-sm ${
-          message.role === 'user'
-            ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-blue-500/20'
-            : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 shadow-gray-200/50 dark:shadow-gray-900/50'
-        } ${message.content === '思考中...' ? 'opacity-70 animate-pulse' : ''}`}
+        className={`max-w-[80%] p-3 rounded-xl shadow-sm ${message.role === 'user'
+          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-blue-500/20'
+          : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 shadow-gray-200/50 dark:shadow-gray-900/50'
+          } ${message.content === '思考中...' ? 'opacity-70 animate-pulse' : ''}`}
       >
         {message.role === 'assistant' ? (
           <div
@@ -301,7 +300,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
   const router = useRouter();
   const [messages, setMessages] = useState<ExtendedAIMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [error, setError] = useState<{message: string, details?: string} | null>(null);
+  const [error, setError] = useState<{ message: string, details?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -637,7 +636,7 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 支持影视推荐、YouTube链接解析和视频搜索推荐
               </p>
-              
+
               {/* 预设问题 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                 {AI_RECOMMEND_PRESETS.map((preset, index) => (
