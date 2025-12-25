@@ -26,6 +26,9 @@ import {
 import { getDoubanDetails, getDoubanComments } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
+import ChatFloatingWindow from '@/components/watch-room/ChatFloatingWindow';
+import { useWatchRoomSync } from './hooks/useWatchRoomSync';
 
 import CastPhotos from '@/components/CastPhotos';
 import EpisodeSelector from '@/components/EpisodeSelector';
@@ -53,6 +56,7 @@ function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { createTask, setShowDownloadPanel } = useDownload();
+  const watchRoom = useWatchRoomContextSafe();
 
   // -----------------------------------------------------------------------------
   // 状态变量（State）
@@ -271,6 +275,14 @@ function PlayPageClient() {
     videoDoubanId,
     availableSources,
   ]);
+
+  // 观影室同步
+  useWatchRoomSync({
+    watchRoom,
+    artPlayerRef,
+    detail,
+    episodeIndex: currentEpisodeIndex,
+  });
 
   // 获取自定义去广告代码
   useEffect(() => {
@@ -6439,8 +6451,11 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
 
 export default function PlayPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <PlayPageClient />
-    </Suspense>
+    <>
+      <Suspense fallback={<div>Loading...</div>}>
+        <PlayPageClient />
+      </Suspense>
+      <ChatFloatingWindow />
+    </>
   );
 }
