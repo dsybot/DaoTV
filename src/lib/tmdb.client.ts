@@ -635,26 +635,124 @@ export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearc
 }
 
 /**
- * 去掉电视剧标题末尾的“第X季/第X部/第X期/S3/Season 3”等后缀
+ * 生成搜索标题的多种变体，提高TMDB搜索命中率
  */
-function normalizeTVTitle(title: string): string {
+function generateTitleVariants(title: string): string[] {
+  const variants: string[] = [];
   const trimmed = title.trim();
-  const patterns = [
-    /\s+第[0-9一二三四五六七八九十]+季$/u,
-    /\s+第[0-9一二三四五六七八九十]+部$/u,
-    /\s+第[0-9一二三四五六七八九十]+期$/u,
+  variants.push(trimmed);
+
+  // 去掉季数后缀
+  const seasonPatterns = [
+    /\s*第[0-9一二三四五六七八九十百]+季$/u,
+    /\s*第[0-9一二三四五六七八九十百]+部$/u,
+    /\s*第[0-9一二三四五六七八九十百]+期$/u,
+    /\s*第[0-9一二三四五六七八九十百]+部分?$/u,
     /\s+S[0-9]+$/i,
     /\s+Season\s+[0-9]+$/i,
   ];
-  let result = trimmed;
-  for (const pattern of patterns) {
-    if (pattern.test(result)) {
-      result = result.replace(pattern, '');
+  let withoutSeason = trimmed;
+  for (const pattern of seasonPatterns) {
+    if (pattern.test(withoutSeason)) {
+      withoutSeason = withoutSeason.replace(pattern, '').trim();
     }
   }
-  return result;
-}
+  if (withoutSeason !== trimmed && withoutSeason.length >= 2) {
+    variants.push(withoutSeason);
+  }
 
+  // 去掉数字后缀
+  const numberMatch = trimmed.match(/^(.+?)(\d+)$/);
+  if (numberMatch && numberMatch[1].length >= 2) {
+    const withoutNumber = numberMatch[1].trim();
+    if (!variants.includes(withoutNumber)) variants.push(withoutNumber);
+  }
+
+  // 去掉"数字+冒号+副标题"
+  const numberColonMatch = trimmed.match(/^(.+?)(\d+)[：:].+$/);
+  if (numberColonMatch && numberColonMatch[1].length >= 2) {
+    const mainTitle = numberColonMatch[1].trim();
+    if (!variants.includes(mainTitle)) variants.push(mainTitle);
+  }
+
+  // 中文冒号变体
+  if (trimmed.includes('：')) {
+    const withSpace = trimmed.replace(/：/g, ' ');
+    if (!variants.includes(withSpace)) variants.push(withSpace);
+    const noColon = trimmed.replace(/：/g, '');
+    if (!variants.includes(noColon)) variants.push(noColon);
+    const englishColon = trimmed.replace(/：/g, ':');
+    if (!variants.includes(englishColon)) variants.push(englishColon);
+    const beforeColon = trimmed.split('：')[0].trim();
+    if (beforeColon && beforeColon.length >= 2 && !variants.includes(beforeColon)) variants.push(beforeColon);
+  }
+
+  // 英文冒号变体
+  if (trimmed.includes(':')) {
+    const withSpace = trimmed.replace(/:/g, ' ');
+    if (!variants.includes(withSpace)) variants.push(withSpace);
+    const noColon = trimmed.replace(/:/g, '');
+    if (!variants.includes(noColon)) variants.push(noColon);
+    const beforeColon = trimmed.split(':')[0].trim();
+    if (beforeColon && beforeColon.length >= 2 && !variants.includes(beforeColon)) variants.push(beforeColon);
+  }
+
+  // 去掉"之XXX"后缀
+  const suffixMatch = trimmed.match(/^(.+?)之.+$/);
+  if (suffixMatch && suffixMatch[1].length >= 2) {
+    const mainTitle = suffixMatch[1].trim();
+    if (!variants.includes(mainTitle)) variants.push(mainTitle);
+  }
+
+  // 去掉中间点后的内容
+  const dotMatch = trimmed.match(/^(.+?)[].+$/);
+  if (dotMatch && dotMatch[1].length >= 2) {
+    const mainTitle = dotMatch[1].trim();
+    if (!variants.includes(mainTitle)) variants.push(mainTitle);
+  }
+
+  // 去掉语言版本后缀
+  const langMatch = trimmed.match(/^(.+?)\s*(国语版|粤语版|日语版|英语版|中文版|原声版|配音版)$/);
+  if (langMatch && langMatch[1].length >= 2) {
+    const mainTitle = langMatch[1].trim();
+    if (!variants.includes(mainTitle)) variants.push(mainTitle);
+  }
+
+  // 去掉括号内的语言/版本标记
+  const bracketLangMatch = trimmed.match(/^(.+?)[（(](粤|国|国语|粤语|日语|英语|中文|原声|配音|港版|台版|美版)[）)]$/);
+  if (bracketLangMatch && bracketLangMatch[1].length >= 2) {
+    const mainTitle = bracketLangMatch[1].trim();
+    if (!variants.includes(mainTitle)) variants.push(mainTitle);
+  }
+
+  // 去掉末尾的括号内容
+  const bracketMatch = trimmed.match(/^(.+?)[（(][^）)]+[）)]$/);
+  if (bracketMatch && bracketMatch[1].length >= 2) {
+    const bracketContent = trimmed.slice(bracketMatch[1].length);
+    if (bracketContent.length <= 6) {
+      const mainTitle = bracketMatch[1].trim();
+      if (!variants.includes(mainTitle)) variants.push(mainTitle);
+    }
+  }
+
+  // 空格变体
+  if (trimmed.includes(' ')) {
+    const noSpaces = trimmed.replace(/\s+/g, '');
+    if (!variants.includes(noSpaces)) variants.push(noSpaces);
+    const withChineseColon = trimmed.replace(/\s+/g, '：');
+    if (!variants.includes(withChineseColon)) variants.push(withChineseColon);
+    const withEnglishColon = trimmed.replace(/\s+/g, ':');
+    if (!variants.includes(withEnglishColon)) variants.push(withEnglishColon);
+  }
+
+  // 去除所有标点符号的变体
+  const noPunctuation = trimmed.replace(/[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>\s]/g, '');
+  if (noPunctuation !== trimmed && noPunctuation.length >= 2 && !variants.includes(noPunctuation)) {
+    variants.push(noPunctuation);
+  }
+
+  return variants;
+}
 // TMDB Find API 响应类型
 interface TMDBFindResponse {
   movie_results: TMDBMovie[];
@@ -741,37 +839,41 @@ export async function getCarouselItemByTitle(
   try {
     console.log(`[TMDB轮播] 🔍 标题搜索 ${type}: "${title}"`);
 
+    // 生成搜索变体
+    const titleVariants = generateTitleVariants(title);
+    console.log(`[TMDB轮播] 生成 ${titleVariants.length} 个搜索变体:`, titleVariants.slice(0, 5));
+
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
     let mediaId = 0;
 
     if (type === 'movie') {
-      const movieSearch = await searchTMDBMovie(title);
-      console.log(`[TMDB轮播] "${title}" 搜索结果: ${movieSearch.results.length}个匹配`);
-      if (movieSearch.results.length > 0) {
-        // 优先选择有海报的结果
-        searchResult = movieSearch.results.find(r => r.backdrop_path || r.poster_path) || movieSearch.results[0];
-        mediaId = searchResult.id;
-        const selectedIndex = movieSearch.results.indexOf(searchResult);
-        console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.title} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
-      }
-    } else {
-      let tvSearch = await searchTMDBTV(title);
-      console.log(`[TMDB轮播] "${title}" 搜索结果: ${tvSearch.results.length}个匹配`);
-      if (tvSearch.results.length === 0) {
-        const normalizedTitle = normalizeTVTitle(title);
-        if (normalizedTitle && normalizedTitle !== title.trim()) {
-          console.log(`[TMDB轮播] "${title}" 搜索结果为空，尝试精简标题 "${normalizedTitle}" 重新搜索`);
-          tvSearch = await searchTMDBTV(normalizedTitle);
-          console.log(`[TMDB轮播] 精简标题 "${normalizedTitle}" 搜索结果: ${tvSearch.results.length}个匹配`);
+      // 尝试所有变体直到找到结果
+      for (const variant of titleVariants) {
+        const movieSearch = await searchTMDBMovie(variant);
+        console.log(`[TMDB轮播] 电影变体 "${variant}" 搜索结果: ${movieSearch.results.length}个匹配`);
+        if (movieSearch.results.length > 0) {
+          // 优先选择有海报的结果
+          searchResult = movieSearch.results.find(r => r.backdrop_path || r.poster_path) || movieSearch.results[0];
+          mediaId = searchResult.id;
+          const selectedIndex = movieSearch.results.indexOf(searchResult);
+          console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.title} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
+          break;
         }
       }
-      if (tvSearch.results.length > 0) {
-        // 优先选择有海报的结果
-        searchResult = tvSearch.results.find(r => r.backdrop_path || r.poster_path) || tvSearch.results[0];
-        mediaId = searchResult.id;
-        const selectedIndex = tvSearch.results.indexOf(searchResult);
-        console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.name} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
+    } else {
+      // 尝试所有变体直到找到结果
+      for (const variant of titleVariants) {
+        const tvSearch = await searchTMDBTV(variant);
+        console.log(`[TMDB轮播] 电视剧变体 "${variant}" 搜索结果: ${tvSearch.results.length}个匹配`);
+        if (tvSearch.results.length > 0) {
+          // 优先选择有海报的结果
+          searchResult = tvSearch.results.find(r => r.backdrop_path || r.poster_path) || tvSearch.results[0];
+          mediaId = searchResult.id;
+          const selectedIndex = tvSearch.results.indexOf(searchResult);
+          console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.name} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
+          break;
+        }
       }
     }
 
