@@ -73,6 +73,17 @@ export function useWatchRoomSync({
         return;
       }
 
+      // 检查是否是同一个视频和集数，避免跨集数同步
+      if (state.videoId !== detail?.vod_id || state.episode !== episodeIndex) {
+        console.log('[PlaySync] Ignoring play:update - different video or episode:', {
+          stateVideoId: state.videoId,
+          currentVideoId: detail?.vod_id,
+          stateEpisode: state.episode,
+          currentEpisode: episodeIndex
+        });
+        return;
+      }
+
       console.log('[PlaySync] Processing play update - current state:', {
         playerPlaying: player.playing,
         statePlaying: state.isPlaying,
@@ -204,27 +215,10 @@ export function useWatchRoomSync({
         return;
       }
 
-      // 检查是否是同一个视频
-      if (detail && state.videoId === detail.vod_id && state.episode === episodeIndex) {
-        // 已经在播放这个视频，只同步时间
-        if (state.currentTime !== undefined) {
-          const player = artPlayerRef.current;
-          if (player) {
-            isHandlingRemoteCommandRef.current = true;
-            player.currentTime = state.currentTime;
-            setTimeout(() => {
-              isHandlingRemoteCommandRef.current = false;
-            }, 500);
-          }
-        }
-      } else {
-        // 需要切换视频 - 提示用户
-        const episodeName = state.episode ? `第${state.episode + 1}集` : '';
-        if (confirm(`房主切换到了 ${state.videoName} ${episodeName}，是否跟随切换？`)) {
-          const url = `/play?id=${state.videoId}&source=${encodeURIComponent(state.source)}&index=${state.episode || 0}`;
-          router.push(url);
-        }
-      }
+      // 跟随房主切换视频/集数（直接跳转，参考 MoonTVPlus）
+      const url = `/play?id=${state.videoId}&source=${encodeURIComponent(state.source)}&index=${state.episode || 0}`;
+      console.log('[PlaySync] Member redirecting to:', url);
+      router.push(url);
     };
 
     // 监听socket事件
@@ -322,24 +316,30 @@ export function useWatchRoomSync({
     player.on('pause', handlePause);
     player.on('seeked', handleSeeked); // 注意：用 'seeked' 而不是 'seeking'
 
-    // 定期同步播放进度（每5秒）
-    const syncInterval = setInterval(() => {
-      if (!player.playing) return; // 暂停时不同步
+    // 定期同步播放进度（每5秒）- watch-room-server 只允许房主发送 play:update
+    let syncInterval: NodeJS.Timeout | null = null;
+    if (isOwner) {
+      syncInterval = setInterval(() => {
+        if (!player.playing) return; // 暂停时不同步
 
-      console.log('[PlaySync] Periodic sync - broadcasting state');
-      broadcastPlayState();
-    }, 5000);
-
-    console.log('[PlaySync] Player event listeners registered with periodic sync');
+        console.log('[PlaySync] Periodic sync - broadcasting state (owner only)');
+        broadcastPlayState();
+      }, 5000);
+      console.log('[PlaySync] Player event listeners registered with periodic sync (owner mode)');
+    } else {
+      console.log('[PlaySync] Player event listeners registered (member mode, no periodic sync)');
+    }
 
     return () => {
       console.log('[PlaySync] Cleaning up player event listeners');
       player.off('play', handlePlay);
       player.off('pause', handlePause);
       player.off('seeked', handleSeeked);
-      clearInterval(syncInterval);
+      if (syncInterval) {
+        clearInterval(syncInterval);
+      }
     };
-  }, [socket, currentRoom, watchRoom, broadcastPlayState, isInRoom, playerReady]);
+  }, [socket, currentRoom, watchRoom, broadcastPlayState, isInRoom, playerReady, isOwner]);
 
   // === 3. 房主：监听视频/集数变化并广播 ===
   const lastBroadcastRef = useRef<{
