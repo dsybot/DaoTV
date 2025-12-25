@@ -660,6 +660,9 @@ function PlayPageClient() {
   const artPlayerRef = useRef<any>(null);
   const artRef = useRef<HTMLDivElement | null>(null);
 
+  // 播放器就绪状态
+  const [playerReady, setPlayerReady] = useState(false);
+
   // Wake Lock 相关
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -669,6 +672,7 @@ function PlayPageClient() {
     artPlayerRef,
     detail,
     episodeIndex: currentEpisodeIndex,
+    playerReady,
   });
 
   // -----------------------------------------------------------------------------
@@ -1607,12 +1611,14 @@ function PlayPageClient() {
         // 3. 销毁ArtPlayer实例 (使用false参数避免DOM清理冲突)
         artPlayerRef.current.destroy(false);
         artPlayerRef.current = null;
+        setPlayerReady(false); // 重置播放器就绪状态
 
         console.log('播放器资源已清理');
       } catch (err) {
         console.warn('清理播放器资源时出错:', err);
         // 即使出错也要确保引用被清空
         artPlayerRef.current = null;
+        setPlayerReady(false); // 重置播放器就绪状态
       }
     }
   };
@@ -4341,6 +4347,7 @@ function PlayPageClient() {
         // 监听播放器事件
         artPlayerRef.current.on('ready', async () => {
           setError(null);
+          setPlayerReady(true); // 标记播放器已就绪，启用观影室同步
 
           // iOS设备自动播放优化：如果是静音启动的，在开始播放后恢复音量
           if ((isIOS || isSafari) && artPlayerRef.current.muted) {

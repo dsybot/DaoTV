@@ -243,6 +243,22 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
         </div>
       </div>
 
+      {/* 多站点共享警告 */}
+      <div className='bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4'>
+        <div className='flex items-start gap-3'>
+          <AlertCircle className='w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5' />
+          <div className='text-sm text-yellow-800 dark:text-yellow-200'>
+            <p className='font-medium mb-2'>⚠️ 重要提示：多站点共享</p>
+            <ul className='space-y-1 list-disc list-inside'>
+              <li><strong>如果多个 LunaTV 站点使用同一个观影室服务器，所有站点将共享房间列表</strong></li>
+              <li>站点A创建的房间，站点B的用户也能看到和加入</li>
+              <li>这可能导致用户困惑，建议每个站点使用独立的观影室服务器</li>
+              <li>如果需要跨站点观影，可以有意共用服务器（但需在房间名称中注明站点）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       {/* 启用开关 */}
       <div className='flex items-center gap-3'>
         <label className='relative inline-flex items-center cursor-pointer'>
