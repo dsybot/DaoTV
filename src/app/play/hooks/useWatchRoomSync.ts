@@ -9,6 +9,8 @@ interface UseWatchRoomSyncOptions {
   detail: any;
   episodeIndex: number;
   playerReady: boolean;
+  videoId: string;  // 视频ID（来自URL参数）
+  currentSource: string;  // 当前播放源
 }
 
 export function useWatchRoomSync({
@@ -16,7 +18,9 @@ export function useWatchRoomSync({
   artPlayerRef,
   detail,
   episodeIndex,
-  playerReady
+  playerReady,
+  videoId,
+  currentSource
 }: UseWatchRoomSyncOptions) {
   const router = useRouter();
   const isHandlingRemoteCommandRef = useRef(false);
@@ -40,11 +44,11 @@ export function useWatchRoomSync({
       url: player.url || '',
       currentTime: player.currentTime || 0,
       isPlaying: player.playing || false,
-      videoId: detail?.vod_id || '',
+      videoId: videoId,  // 使用URL参数的videoId
       videoName: detail?.vod_name || '',
       videoYear: detail?.vod_year || '',
       episode: episodeIndex,
-      source: detail?.type_name || '',
+      source: currentSource,  // 使用currentSource参数
     };
 
     // 使用防抖，避免频繁发送
@@ -53,7 +57,7 @@ export function useWatchRoomSync({
     lastSyncTimeRef.current = now;
 
     watchRoom.updatePlayState(state);
-  }, [socket, watchRoom, artPlayerRef, isInRoom, detail, episodeIndex]);
+  }, [socket, watchRoom, artPlayerRef, isInRoom, detail, episodeIndex, videoId, currentSource]);
 
   // === 1. 接收并同步其他成员的播放状态（所有人都监听）===
   useEffect(() => {
@@ -341,10 +345,10 @@ export function useWatchRoomSync({
       lastBroadcastRef.current = null;
       return;
     }
-    if (!detail?.vod_id) return;
+    if (!videoId) return;  // 使用URL参数的videoId
 
     const currentState = {
-      videoId: detail.vod_id,
+      videoId: videoId,
       episode: episodeIndex,
     };
 
@@ -371,11 +375,11 @@ export function useWatchRoomSync({
         url: player?.url || '',
         currentTime: player?.currentTime || 0,
         isPlaying: player?.playing || false,
-        videoId: detail.vod_id,
-        videoName: detail.vod_name,
-        videoYear: detail.vod_year,
+        videoId: videoId,
+        videoName: detail?.vod_name || '',
+        videoYear: detail?.vod_year || '',
         episode: episodeIndex,
-        source: detail.type_name || '',
+        source: currentSource,
       };
 
       console.log('[PlaySync] Broadcasting play:change:', state);
@@ -386,7 +390,7 @@ export function useWatchRoomSync({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isOwner, socket, currentRoom, isInRoom, watchRoom, detail?.vod_id, episodeIndex]);
+  }, [isOwner, socket, currentRoom, isInRoom, watchRoom, videoId, episodeIndex, currentSource, detail, artPlayerRef]);
 
   return {
     isInRoom,
