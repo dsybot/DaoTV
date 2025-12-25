@@ -8,6 +8,23 @@ import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
+// GET: 获取下载配置（公开接口，不需要管理员权限）
+export async function GET() {
+  try {
+    const config = await getConfig();
+    const enabled = config.DownloadConfig?.enabled ?? true;
+
+    return NextResponse.json({
+      enabled,
+    });
+  } catch (error) {
+    console.error('获取下载配置失败:', error);
+    return NextResponse.json({
+      enabled: true, // 出错时默认启用
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
   // 权限检查
   try {

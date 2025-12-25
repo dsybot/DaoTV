@@ -49,12 +49,12 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch('/api/config');
+        // 使用 admin download-config GET 接口获取配置
+        // 这个接口不需要管理员权限，只返回 enabled 状态
+        const response = await fetch('/api/admin/download-config');
         if (response.ok) {
           const data = await response.json();
-          // 检查 DownloadConfig.enabled，默认为 true
-          const enabled = data.DownloadConfig?.enabled ?? true;
-          setIsEnabled(enabled);
+          setIsEnabled(data.enabled ?? true);
         }
       } catch (error) {
         console.error('获取下载配置失败:', error);
