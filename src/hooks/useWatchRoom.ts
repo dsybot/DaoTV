@@ -233,6 +233,17 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
 
     return new Promise<{ success: boolean; room?: Room; error?: string }>((resolve) => {
       socket.emit('room:create', { ...data, userName }, (response) => {
+        if (response.success && response.room) {
+          // 立即更新状态
+          setCurrentRoom(response.room);
+          setMembers([{
+            id: socket.id!,
+            name: userName,
+            isOwner: true,
+            lastHeartbeat: Date.now(),
+          }]);
+          setMessages([]);
+        }
         resolve(response);
       });
     });
@@ -246,6 +257,12 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
 
     return new Promise<{ success: boolean; room?: Room; members?: Member[]; error?: string }>((resolve) => {
       socket.emit('room:join', { roomId, password, userName }, (response) => {
+        if (response.success && response.room && response.members) {
+          // 立即更新状态
+          setCurrentRoom(response.room);
+          setMembers(response.members);
+          setMessages([]);
+        }
         resolve(response);
       });
     });

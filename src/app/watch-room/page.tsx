@@ -92,8 +92,6 @@ export default function WatchRoomPage() {
         password: '',
         isPublic: true,
       });
-
-      alert('房间创建成功！');
     } catch (error: any) {
       alert(error.message || '创建房间失败');
     } finally {
@@ -122,8 +120,6 @@ export default function WatchRoomPage() {
         roomId: '',
         password: '',
       });
-
-      alert('加入房间成功！');
     } catch (error: any) {
       alert(error.message || '加入房间失败');
     } finally {
