@@ -14,6 +14,7 @@ export interface WatchRoomContextType {
   chatMessages: ChatMessage[];
   isOwner: boolean;
   isEnabled: boolean;
+  socket: any; // Socket.io client instance
 
   // 房间操作
   createRoom: (data: {
@@ -142,6 +143,7 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
     chatMessages: watchRoom.messages,
     isOwner: watchRoom.isOwner,
     isEnabled,
+    socket: watchRoom.socket,
     createRoom: async (data) => {
       const result = await watchRoom.createRoom(data);
       if (!result.success || !result.room) {
