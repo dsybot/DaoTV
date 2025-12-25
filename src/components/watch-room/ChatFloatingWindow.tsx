@@ -132,7 +132,7 @@ export default function ChatFloatingWindow() {
   // 悬浮按钮组
   if (!isOpen && !showRoomInfo) {
     return (
-      <div className="fixed bottom-20 right-4 z-[700] flex flex-col gap-3 md:bottom-4">
+      <div className="fixed bottom-20 right-20 z-[700] flex flex-col gap-3 md:bottom-6 md:right-20">
         {/* 房间信息按钮 */}
         <button
           onClick={() => setShowRoomInfo(true)}
@@ -164,7 +164,7 @@ export default function ChatFloatingWindow() {
   // 房间信息面板
   if (showRoomInfo) {
     return (
-      <div className="fixed bottom-20 right-4 z-[700] w-80 rounded-2xl bg-white dark:bg-gray-800 shadow-2xl md:bottom-4">
+      <div className="fixed bottom-20 right-20 z-[700] w-80 rounded-2xl bg-white dark:bg-gray-800 shadow-2xl md:bottom-6 md:right-20">
         {/* 头部 */}
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function ChatFloatingWindow() {
 
   // 聊天窗口
   return (
-    <div className="fixed bottom-20 right-4 z-[700] flex w-80 flex-col rounded-2xl bg-white dark:bg-gray-800 shadow-2xl md:bottom-4" style={{ height: '500px' }}>
+    <div className="fixed bottom-20 right-20 z-[700] flex w-80 flex-col rounded-2xl bg-white dark:bg-gray-800 shadow-2xl md:bottom-6 md:right-20" style={{ height: '500px' }}>
       {/* 头部 */}
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center gap-2">

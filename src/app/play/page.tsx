@@ -27,7 +27,6 @@ import { getDoubanDetails, getDoubanComments } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
-import ChatFloatingWindow from '@/components/watch-room/ChatFloatingWindow';
 import { useWatchRoomSync } from './hooks/useWatchRoomSync';
 
 import CastPhotos from '@/components/CastPhotos';
@@ -6506,7 +6505,6 @@ export default function PlayPage() {
       <Suspense fallback={<div>Loading...</div>}>
         <PlayPageClient />
       </Suspense>
-      <ChatFloatingWindow />
     </>
   );
 }
