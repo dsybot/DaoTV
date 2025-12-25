@@ -30,6 +30,9 @@ export interface AdminConfig {
     // 弹幕API配置
     DanmuApiEndpoint?: string;  // 自建弹幕API地址（如：https://your-danmu-api.vercel.app）
     DanmuApiToken?: string;      // 弹幕API访问Token
+    // 自定义去广告代码
+    CustomAdFilterCode?: string;
+    CustomAdFilterVersion?: number;
   };
   UserConfig: {
     AllowRegister?: boolean; // 是否允许用户注册，默认 true

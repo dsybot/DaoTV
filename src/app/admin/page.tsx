@@ -60,6 +60,7 @@ import { TVBoxTokenCell, TVBoxTokenModal } from '@/components/TVBoxTokenManager'
 import YouTubeConfig from '@/components/YouTubeConfig';
 import ShortDramaConfig from '@/components/ShortDramaConfig';
 import DownloadConfig from '@/components/OfflineDownloadConfig';
+import CustomAdFilterConfig from '@/components/CustomAdFilterConfig';
 import PageLayout from '@/components/PageLayout';
 
 // 统一按钮样式系统
@@ -6046,6 +6047,7 @@ function AdminPageClient() {
     youtubeConfig: false,
     shortDramaConfig: false,
     downloadConfig: false,
+    customAdFilter: false,
     tvboxSecurityConfig: false,
     telegramAuthConfig: false,
     configFile: false,
@@ -6339,6 +6341,21 @@ function AdminPageClient() {
               onToggle={() => toggleTab('downloadConfig')}
             >
               <DownloadConfig config={config} refreshConfig={fetchConfig} />
+            </CollapsibleTab>
+
+            {/* 自定义去广告标签 */}
+            <CollapsibleTab
+              title='自定义去广告'
+              icon={
+                <Video
+                  size={20}
+                  className='text-purple-600 dark:text-purple-400'
+                />
+              }
+              isExpanded={expandedTabs.customAdFilter}
+              onToggle={() => toggleTab('customAdFilter')}
+            >
+              <CustomAdFilterConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
             {/* TVBox安全配置标签 */}
