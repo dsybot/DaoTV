@@ -17,6 +17,7 @@ import {
   Shield,
   Tv,
   User,
+  Users,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -71,6 +72,7 @@ export const UserMenu: React.FC = () => {
   const [playRecords, setPlayRecords] = useState<(PlayRecord & { key: string })[]>([]);
   const [favorites, setFavorites] = useState<(Favorite & { key: string })[]>([]);
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(false);
+  const [showWatchRoom, setShowWatchRoom] = useState(false);
 
   // Body 滚动锁定 - 使用 overflow 方式避免布局问题
   useEffect(() => {
@@ -191,6 +193,22 @@ export const UserMenu: React.FC = () => {
       const auth = getAuthInfoFromBrowserCookie();
       setAuthInfo(auth);
     }
+  }, []);
+
+  // 检查观影室功能是否启用
+  useEffect(() => {
+    const checkWatchRoomConfig = async () => {
+      try {
+        const response = await fetch('/api/watch-room/config');
+        const config = await response.json();
+        setShowWatchRoom(config.enabled === true);
+      } catch (error) {
+        console.error('Failed to check watch room config:', error);
+        setShowWatchRoom(false);
+      }
+    };
+
+    checkWatchRoomConfig();
   }, []);
 
   // 从 localStorage 读取设置
@@ -617,6 +635,11 @@ export const UserMenu: React.FC = () => {
   const handleTVBoxConfig = () => {
     setIsOpen(false);
     router.push('/tvbox');
+  };
+
+  const handleWatchRoom = () => {
+    setIsOpen(false);
+    router.push('/watch-room');
   };
 
   const handleReleaseCalendar = () => {
@@ -1110,6 +1133,17 @@ export const UserMenu: React.FC = () => {
             <Tv className='w-4 h-4 text-gray-500 dark:text-gray-400' />
             <span className='font-medium'>TVBox 配置</span>
           </button>
+
+          {/* 观影室按钮 */}
+          {showWatchRoom && (
+            <button
+              onClick={handleWatchRoom}
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+            >
+              <Users className='w-4 h-4 text-gray-500 dark:text-gray-400' />
+              <span className='font-medium'>观影室</span>
+            </button>
+          )}
 
           {/* 修改密码按钮 */}
           {showChangePassword && (
