@@ -302,6 +302,8 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
   const updatePlayState = useCallback((state: PlayState) => {
     if (socket && connected) {
       socket.emit('play:update', state);
+      // 本地也更新 currentState（因为服务器不会广播回给发送者）
+      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
     }
   }, [socket, connected]);
 
@@ -326,6 +328,8 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
   const changeVideo = useCallback((state: PlayState) => {
     if (socket && connected) {
       socket.emit('play:change', state);
+      // 本地也更新 currentState（因为服务器不会广播回给发送者）
+      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
     }
   }, [socket, connected]);
 
