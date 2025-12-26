@@ -9,6 +9,12 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useDownload } from '@/contexts/DownloadContext';
+import DownloadEpisodeSelector from '@/components/download/DownloadEpisodeSelector';
+import EpisodeSelector from '@/components/EpisodeSelector';
+import NetDiskSearchResults from '@/components/NetDiskSearchResults';
+import PageLayout from '@/components/PageLayout';
+import SkipController, { SkipSettingsButton } from '@/components/SkipController';
+import VideoCard from '@/components/VideoCard';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import { ClientCache } from '@/lib/client-cache';
@@ -130,6 +136,9 @@ function PlayPageClient() {
   const [isSkipSettingOpen, setIsSkipSettingOpen] = useState(false);
   const [currentPlayTime, setCurrentPlayTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
+
+  // 下载选集面板状态
+  const [showDownloadEpisodeSelector, setShowDownloadEpisodeSelector] = useState(false);
 
   // 进度条拖拽状态管理
   const isDraggingProgressRef = useRef(false);
@@ -5825,46 +5834,19 @@ function PlayPageClient() {
                     </button>
 
                     {/* 下载按钮 */}
-                    {downloadEnabled && (
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          // 获取当前播放URL
-                          const currentUrl = videoUrl;
-                          if (!currentUrl) {
-                            alert('无法获取视频地址');
-                            return;
-                          }
-
-                          // 检查是否是M3U8
-                          if (!currentUrl.includes('.m3u8')) {
-                            alert('仅支持M3U8格式视频下载');
-                            return;
-                          }
-
-                          try {
-                            // 生成下载标题：视频名_第X集
-                            const episodeName = detail?.episodes && detail.episodes.length > 0
-                              ? `第${currentEpisodeIndex + 1}集`
-                              : '';
-                            const downloadTitle = `${videoTitle || '视频'}${episodeName ? `_${episodeName}` : ''}`;
-
-                            // 创建下载任务
-                            await createTask(currentUrl, downloadTitle, 'TS');
-                          } catch (error) {
-                            console.error('创建下载任务失败:', error);
-                            alert('创建下载任务失败: ' + (error as Error).message);
-                          }
-                        }}
-                        className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
-                      >
-                        <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
-                        <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
-                          <Download className='h-4 w-4' />
-                          <span>下载</span>
-                        </div>
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDownloadEpisodeSelector(true);
+                      }}
+                      className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
+                    >
+                      <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
+                      <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
+                        <Download className='h-4 w-4' />
+                        <span>下载</span>
+                      </div>
+                    </button>
 
                     {/* 查看下载按钮 */}
                     {downloadEnabled && (
@@ -6554,6 +6536,57 @@ function PlayPageClient() {
         portalContainer
       )}
     </PageLayout>
+
+    {/* 下载选集面板 */}
+    <DownloadEpisodeSelector
+      isOpen={showDownloadEpisodeSelector}
+      onClose={() => setShowDownloadEpisodeSelector(false)}
+      totalEpisodes={detail?.episodes?.length || 1}
+      episodesTitles={detail?.episodes_titles || []}
+      videoTitle={videoTitle || '视频'}
+      currentEpisodeIndex={currentEpisodeIndex}
+      onDownload={async (episodeIndexes) => {
+        if (!detail?.episodes || detail.episodes.length === 0) {
+          // 单集视频，直接下载当前
+          const currentUrl = videoUrl;
+          if (!currentUrl) {
+            alert('无法获取视频地址');
+            return;
+          }
+          if (!currentUrl.includes('.m3u8')) {
+            alert('仅支持M3U8格式视频下载');
+            return;
+          }
+          try {
+            await createTask(currentUrl, videoTitle || '视频', 'TS');
+          } catch (error) {
+            console.error('创建下载任务失败:', error);
+            alert('创建下载任务失败: ' + (error as Error).message);
+          }
+          return;
+        }
+
+        // 批量下载多集
+        for (const episodeIndex of episodeIndexes) {
+          try {
+            const episodeUrl = detail.episodes[episodeIndex];
+            if (!episodeUrl) continue;
+
+            // 检查是否是M3U8
+            if (!episodeUrl.includes('.m3u8')) {
+              console.warn(`第${episodeIndex + 1}集不是M3U8格式，跳过`);
+              continue;
+            }
+
+            const episodeName = `第${episodeIndex + 1}集`;
+            const downloadTitle = `${videoTitle || '视频'}_${episodeName}`;
+            await createTask(episodeUrl, downloadTitle, 'TS');
+          } catch (error) {
+            console.error(`创建第${episodeIndex + 1}集下载任务失败:`, error);
+          }
+        }
+      }}
+    />
   );
 }
 
