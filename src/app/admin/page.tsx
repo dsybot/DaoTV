@@ -43,7 +43,7 @@ import {
   Video,
 } from 'lucide-react';
 import { GripVertical } from 'lucide-react';
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
@@ -126,10 +126,15 @@ const AlertModal = ({
   timer,
   showConfirm = false
 }: AlertModalProps) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
     if (isOpen) {
+      dialog.showModal();
       setIsVisible(true);
       if (timer) {
         setTimeout(() => {
@@ -138,10 +143,9 @@ const AlertModal = ({
       }
     } else {
       setIsVisible(false);
+      dialog.close();
     }
   }, [isOpen, timer, onClose]);
-
-  if (!isOpen) return null;
 
   const getIcon = () => {
     switch (type) {
@@ -169,9 +173,13 @@ const AlertModal = ({
     }
   };
 
-  return createPortal(
-    <div className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full border ${getBgColor()} transition-all duration-200 ${isVisible ? 'scale-100' : 'scale-95'}`}>
+  return (
+    <dialog
+      ref={dialogRef}
+      onClose={onClose}
+      className={`p-0 bg-transparent backdrop:bg-black/50 backdrop:backdrop-blur-sm rounded-lg border-0 transition-all duration-200 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+    >
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full border ${getBgColor()}`}>
         <div className="p-6 text-center">
           <div className="flex justify-center mb-4">
             {getIcon()}
@@ -197,8 +205,7 @@ const AlertModal = ({
           )}
         </div>
       </div>
-    </div>,
-    document.body
+    </dialog>
   );
 };
 
