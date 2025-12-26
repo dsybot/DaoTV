@@ -41,15 +41,24 @@ const CustomAdFilterConfig = ({ config, refreshConfig }: CustomAdFilterConfigPro
   const handleSave = async () => {
     setIsLoading(true);
     try {
+      if (!config) {
+        throw new Error('配置未加载');
+      }
+
+      // 合并完整的 AdminConfig（参考 MoonTVPlus）
+      const updatedConfig = {
+        ...config,
+        SiteConfig: {
+          ...config.SiteConfig,
+          CustomAdFilterCode: filterSettings.customAdFilterCode,
+          CustomAdFilterVersion: filterSettings.customAdFilterVersion,
+        }
+      };
+
       const response = await fetch('/api/admin/config', {
-        method: 'PUT',
+        method: 'POST',  // 改为 POST
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          SiteConfig: {
-            CustomAdFilterCode: filterSettings.customAdFilterCode,
-            CustomAdFilterVersion: filterSettings.customAdFilterVersion,
-          }
-        })
+        body: JSON.stringify(updatedConfig)  // 发送完整配置
       });
 
       if (!response.ok) {
