@@ -67,17 +67,17 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   const [isEnabled, setIsEnabled] = useState(false);
   const [configLoading, setConfigLoading] = useState(true);
   const [authKey, setAuthKey] = useState('');
-  const [currentUserName, setCurrentUserName] = useState('游客');
 
-  // 获取当前登录用户名
-  useEffect(() => {
+  // 获取当前登录用户名（使用初始化函数，确保首次渲染就有正确的值）
+  const [currentUserName] = useState(() => {
     if (typeof window !== 'undefined') {
       const authInfo = getAuthInfoFromBrowserCookie();
       const username = authInfo?.username || '游客';
-      setCurrentUserName(username);
-      console.log('[WatchRoom] Current user:', username);
+      console.log('[WatchRoom] Initial user:', username);
+      return username;
     }
-  }, []);
+    return '游客';
+  });
 
   const watchRoom = useWatchRoom({
     serverUrl: config?.serverUrl || '',
