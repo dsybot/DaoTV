@@ -2,15 +2,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, List as ListIcon, Lock, RefreshCw, Video, LogOut } from 'lucide-react';
+import { Users, UserPlus, List as ListIcon, Lock, RefreshCw, Video, LogOut, Play } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useWatchRoomContext } from '@/components/WatchRoomProvider';
 import PageLayout from '@/components/PageLayout';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
-import type { Room } from '@/types/watch-room.types';
+import VideoCard from '@/components/VideoCard';
+import type { Room, PlayState } from '@/types/watch-room.types';
 
 type TabType = 'create' | 'join' | 'list';
 
 export default function WatchRoomPage() {
+  const router = useRouter();
   const watchRoom = useWatchRoomContext();
   const { getRoomList, isConnected, createRoom, joinRoom, leaveRoom, currentRoom, isOwner, members, configLoading } = watchRoom;
   const [activeTab, setActiveTab] = useState<TabType>('create');
@@ -700,6 +703,53 @@ export default function WatchRoomPage() {
                           <span>{formatTime(room.createdAt)}</span>
                         </div>
                       </div>
+
+                      {/* 正在观看的影片 - 小型卡片 */}
+                      {room.currentState && room.currentState.type === 'play' && (() => {
+                        const playState = room.currentState as PlayState;
+                        return (
+                          <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Play className="w-4 h-4 text-green-500" />
+                              <span className="text-sm font-medium text-green-600 dark:text-green-400">正在观看</span>
+                            </div>
+                            <div
+                              className="cursor-pointer transform hover:scale-[1.02] transition-transform"
+                              onClick={() => {
+                                // 构建URL，携带时间参数实现同步
+                                const params = new URLSearchParams();
+                                params.set('id', playState.videoId);
+                                params.set('source', playState.source);
+                                params.set('title', playState.videoName);
+                                if (playState.videoYear) params.set('year', playState.videoYear);
+                                if (playState.searchTitle) params.set('stitle', playState.searchTitle);
+                                if (playState.episode !== undefined && playState.episode !== null) {
+                                  params.set('index', playState.episode.toString());
+                                }
+                                // 🎯 关键：携带当前播放时间，实现时间同步
+                                if (playState.currentTime) {
+                                  params.set('t', playState.currentTime.toString());
+                                }
+                                params.set('prefer', 'true');
+
+                                router.push(`/play?${params.toString()}`);
+                              }}
+                            >
+                              <VideoCard
+                                id={playState.videoId}
+                                source={playState.source}
+                                title={playState.videoName}
+                                query={playState.searchTitle}
+                                year={playState.videoYear}
+                                currentEpisode={playState.episode}
+                                from="search"
+                                isAggregate={true}
+                                priority={false}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       <button
                         onClick={() => handleJoinFromList(room)}
