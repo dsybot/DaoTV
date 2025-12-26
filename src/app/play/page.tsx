@@ -10,11 +10,6 @@ import { createPortal } from 'react-dom';
 
 import { useDownload } from '@/contexts/DownloadContext';
 import DownloadEpisodeSelector from '@/components/download/DownloadEpisodeSelector';
-import EpisodeSelector from '@/components/EpisodeSelector';
-import NetDiskSearchResults from '@/components/NetDiskSearchResults';
-import PageLayout from '@/components/PageLayout';
-import SkipController, { SkipSettingsButton } from '@/components/SkipController';
-import VideoCard from '@/components/VideoCard';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import { ClientCache } from '@/lib/client-cache';
@@ -5570,963 +5565,965 @@ function PlayPageClient() {
   return (
     <>
       <PageLayout activePath='/play'>
-      <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
-        {/* 第一行：影片标题 */}
-        <div className='py-1'>
-          <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
-            {videoTitle || '影片标题'}
-            {totalEpisodes > 1 && (
-              <span className='text-gray-500 dark:text-gray-400'>
-                {` > ${detail?.episodes_titles?.[currentEpisodeIndex] || `第 ${currentEpisodeIndex + 1} 集`}`}
-              </span>
-            )}
-          </h1>
-        </div>
-        {/* 第二行：播放器和选集 */}
-        <div className='space-y-2'>
-          {/* 折叠控制 */}
-          <div className='flex justify-end items-center'>
-            {/* 折叠控制按钮 - 仅在 lg 及以上屏幕显示 */}
-            <button
-              onClick={() =>
-                setIsEpisodeSelectorCollapsed(!isEpisodeSelectorCollapsed)
-              }
-              className='hidden lg:flex group relative items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200'
-              title={
-                isEpisodeSelectorCollapsed ? '显示选集面板' : '隐藏选集面板'
-              }
-            >
-              <svg
-                className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isEpisodeSelectorCollapsed ? 'rotate-180' : 'rotate-0'
-                  }`}
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth='2'
-                  d='M9 5l7 7-7 7'
-                />
-              </svg>
-              <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>
-                {isEpisodeSelectorCollapsed ? '显示' : '隐藏'}
-              </span>
-
-              {/* 精致的状态指示点 */}
-              <div
-                className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full transition-all duration-200 ${isEpisodeSelectorCollapsed
-                  ? 'bg-orange-400 animate-pulse'
-                  : 'bg-green-400'
-                  }`}
-              ></div>
-            </button>
+        <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
+          {/* 第一行：影片标题 */}
+          <div className='py-1'>
+            <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
+              {videoTitle || '影片标题'}
+              {totalEpisodes > 1 && (
+                <span className='text-gray-500 dark:text-gray-400'>
+                  {` > ${detail?.episodes_titles?.[currentEpisodeIndex] || `第 ${currentEpisodeIndex + 1} 集`}`}
+                </span>
+              )}
+            </h1>
           </div>
+          {/* 第二行：播放器和选集 */}
+          <div className='space-y-2'>
+            {/* 折叠控制 */}
+            <div className='flex justify-end items-center'>
+              {/* 折叠控制按钮 - 仅在 lg 及以上屏幕显示 */}
+              <button
+                onClick={() =>
+                  setIsEpisodeSelectorCollapsed(!isEpisodeSelectorCollapsed)
+                }
+                className='hidden lg:flex group relative items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200'
+                title={
+                  isEpisodeSelectorCollapsed ? '显示选集面板' : '隐藏选集面板'
+                }
+              >
+                <svg
+                  className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isEpisodeSelectorCollapsed ? 'rotate-180' : 'rotate-0'
+                    }`}
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M9 5l7 7-7 7'
+                  />
+                </svg>
+                <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>
+                  {isEpisodeSelectorCollapsed ? '显示' : '隐藏'}
+                </span>
 
-          <div
-            className={`grid gap-4 lg:h-[500px] xl:h-[650px] 2xl:h-[750px] transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
-              ? 'grid-cols-1'
-              : 'grid-cols-1 md:grid-cols-4'
-              }`}
-          >
-            {/* 播放器 */}
+                {/* 精致的状态指示点 */}
+                <div
+                  className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full transition-all duration-200 ${isEpisodeSelectorCollapsed
+                    ? 'bg-orange-400 animate-pulse'
+                    : 'bg-green-400'
+                    }`}
+                ></div>
+              </button>
+            </div>
+
             <div
-              className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-3'
+              className={`grid gap-4 lg:h-[500px] xl:h-[650px] 2xl:h-[750px] transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
+                ? 'grid-cols-1'
+                : 'grid-cols-1 md:grid-cols-4'
                 }`}
             >
-              <div className='relative w-full h-[300px] lg:h-full'>
-                <div
-                  ref={artRef}
-                  className='bg-black w-full h-full rounded-xl overflow-hidden shadow-lg'
-                ></div>
+              {/* 播放器 */}
+              <div
+                className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-3'
+                  }`}
+              >
+                <div className='relative w-full h-[300px] lg:h-full'>
+                  <div
+                    ref={artRef}
+                    className='bg-black w-full h-full rounded-xl overflow-hidden shadow-lg'
+                  ></div>
 
-                {/* 跳过设置按钮 - 播放器内右上角 */}
-                {currentSource && currentId && (
-                  <div className='absolute top-4 right-4 z-10'>
-                    <button
-                      onClick={() => setIsSkipSettingOpen(true)}
-                      className='group flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-xl border border-white/30 hover:border-white/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:shadow-[0_8px_32px_0_rgba(255,255,255,0.18)] hover:scale-105 transition-all duration-300 ease-out'
-                      title='跳过设置'
-                      style={{
-                        backdropFilter: 'blur(20px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                      }}
-                    >
-                      <svg
-                        className='w-5 h-5 text-white drop-shadow-lg group-hover:rotate-90 transition-all duration-300'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
+                  {/* 跳过设置按钮 - 播放器内右上角 */}
+                  {currentSource && currentId && (
+                    <div className='absolute top-4 right-4 z-10'>
+                      <button
+                        onClick={() => setIsSkipSettingOpen(true)}
+                        className='group flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-xl border border-white/30 hover:border-white/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:shadow-[0_8px_32px_0_rgba(255,255,255,0.18)] hover:scale-105 transition-all duration-300 ease-out'
+                        title='跳过设置'
+                        style={{
+                          backdropFilter: 'blur(20px) saturate(180%)',
+                          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        }}
                       >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-                        />
-                      </svg>
-                      <span className='text-sm font-medium text-white drop-shadow-lg transition-all duration-300 hidden sm:inline'>
-                        跳过设置
-                      </span>
-                    </button>
-                  </div>
-                )}
+                        <svg
+                          className='w-5 h-5 text-white drop-shadow-lg group-hover:rotate-90 transition-all duration-300'
+                          fill='none'
+                          stroke='currentColor'
+                          viewBox='0 0 24 24'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
+                          />
+                        </svg>
+                        <span className='text-sm font-medium text-white drop-shadow-lg transition-all duration-300 hidden sm:inline'>
+                          跳过设置
+                        </span>
+                      </button>
+                    </div>
+                  )}
 
-                {/* SkipController 组件 */}
-                {currentSource && currentId && detail?.title && (
-                  <SkipController
-                    source={currentSource}
-                    id={currentId}
-                    title={detail.title}
-                    episodeIndex={currentEpisodeIndex}
-                    artPlayerRef={artPlayerRef}
-                    currentTime={currentPlayTime}
-                    duration={videoDuration}
-                    isSettingMode={isSkipSettingOpen}
-                    onSettingModeChange={setIsSkipSettingOpen}
-                    onNextEpisode={handleNextEpisode}
-                  />
-                )}
+                  {/* SkipController 组件 */}
+                  {currentSource && currentId && detail?.title && (
+                    <SkipController
+                      source={currentSource}
+                      id={currentId}
+                      title={detail.title}
+                      episodeIndex={currentEpisodeIndex}
+                      artPlayerRef={artPlayerRef}
+                      currentTime={currentPlayTime}
+                      duration={videoDuration}
+                      isSettingMode={isSkipSettingOpen}
+                      onSettingModeChange={setIsSkipSettingOpen}
+                      onNextEpisode={handleNextEpisode}
+                    />
+                  )}
 
-                {/* 换源加载蒙层 */}
-                {isVideoLoading && (
-                  <div className='absolute inset-0 bg-black/85 backdrop-blur-sm rounded-xl flex items-center justify-center z-[500] transition-all duration-300'>
-                    <div className='text-center max-w-md mx-auto px-6'>
-                      {/* 动画影院图标 */}
-                      <div className='relative mb-8'>
-                        <div className='relative mx-auto w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
-                          <div className='text-white text-4xl'>🎬</div>
-                          {/* 旋转光环 */}
-                          <div className='absolute -inset-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
+                  {/* 换源加载蒙层 */}
+                  {isVideoLoading && (
+                    <div className='absolute inset-0 bg-black/85 backdrop-blur-sm rounded-xl flex items-center justify-center z-[500] transition-all duration-300'>
+                      <div className='text-center max-w-md mx-auto px-6'>
+                        {/* 动画影院图标 */}
+                        <div className='relative mb-8'>
+                          <div className='relative mx-auto w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
+                            <div className='text-white text-4xl'>🎬</div>
+                            {/* 旋转光环 */}
+                            <div className='absolute -inset-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
+                          </div>
+
+                          {/* 浮动粒子效果 */}
+                          <div className='absolute top-0 left-0 w-full h-full pointer-events-none'>
+                            <div className='absolute top-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-bounce'></div>
+                            <div
+                              className='absolute top-4 right-4 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce'
+                              style={{ animationDelay: '0.5s' }}
+                            ></div>
+                            <div
+                              className='absolute bottom-3 left-6 w-1 h-1 bg-lime-400 rounded-full animate-bounce'
+                              style={{ animationDelay: '1s' }}
+                            ></div>
+                          </div>
                         </div>
 
-                        {/* 浮动粒子效果 */}
-                        <div className='absolute top-0 left-0 w-full h-full pointer-events-none'>
-                          <div className='absolute top-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-bounce'></div>
-                          <div
-                            className='absolute top-4 right-4 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce'
-                            style={{ animationDelay: '0.5s' }}
-                          ></div>
-                          <div
-                            className='absolute bottom-3 left-6 w-1 h-1 bg-lime-400 rounded-full animate-bounce'
-                            style={{ animationDelay: '1s' }}
-                          ></div>
+                        {/* 换源消息 */}
+                        <div className='space-y-2'>
+                          <p className='text-xl font-semibold text-white animate-pulse'>
+                            {videoLoadingStage === 'sourceChanging'
+                              ? '🔄 切换播放源...'
+                              : '🔄 视频加载中...'}
+                          </p>
                         </div>
-                      </div>
-
-                      {/* 换源消息 */}
-                      <div className='space-y-2'>
-                        <p className='text-xl font-semibold text-white animate-pulse'>
-                          {videoLoadingStage === 'sourceChanging'
-                            ? '🔄 切换播放源...'
-                            : '🔄 视频加载中...'}
-                        </p>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
+                </div>
+              </div>
+
+              {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
+              <div
+                className={`h-[300px] lg:h-full md:overflow-hidden transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
+                  ? 'md:col-span-1 lg:hidden lg:opacity-0 lg:scale-95'
+                  : 'md:col-span-1 lg:opacity-100 lg:scale-100'
+                  }`}
+              >
+                <EpisodeSelector
+                  totalEpisodes={totalEpisodes}
+                  episodes_titles={detail?.episodes_titles || []}
+                  value={currentEpisodeIndex + 1}
+                  onChange={handleEpisodeChange}
+                  onSourceChange={handleSourceChange}
+                  currentSource={currentSource}
+                  currentId={currentId}
+                  videoTitle={searchTitle || videoTitle}
+                  availableSources={availableSources.filter(source => {
+                    // 必须有集数数据
+                    if (!source.episodes || source.episodes.length < 1) return false;
+
+                    // 短剧源始终显示，不受集数差异限制
+                    if (source.source === 'shortdrama') return true;
+
+                    // 如果当前有 detail，只显示集数相近的源（允许 ±30% 的差异）
+                    if (detail && detail.episodes && detail.episodes.length > 0) {
+                      const currentEpisodes = detail.episodes.length;
+                      const sourceEpisodes = source.episodes.length;
+                      const tolerance = Math.max(5, Math.ceil(currentEpisodes * 0.3)); // 至少5集的容差
+
+                      // 在合理范围内
+                      return Math.abs(sourceEpisodes - currentEpisodes) <= tolerance;
+                    }
+
+                    return true;
+                  })}
+                  sourceSearchLoading={sourceSearchLoading}
+                  sourceSearchError={sourceSearchError}
+                  precomputedVideoInfo={precomputedVideoInfo}
+                  onRefreshSources={refreshSources}
+                />
               </div>
             </div>
-
-            {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
-            <div
-              className={`h-[300px] lg:h-full md:overflow-hidden transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
-                ? 'md:col-span-1 lg:hidden lg:opacity-0 lg:scale-95'
-                : 'md:col-span-1 lg:opacity-100 lg:scale-100'
-                }`}
-            >
-              <EpisodeSelector
-                totalEpisodes={totalEpisodes}
-                episodes_titles={detail?.episodes_titles || []}
-                value={currentEpisodeIndex + 1}
-                onChange={handleEpisodeChange}
-                onSourceChange={handleSourceChange}
-                currentSource={currentSource}
-                currentId={currentId}
-                videoTitle={searchTitle || videoTitle}
-                availableSources={availableSources.filter(source => {
-                  // 必须有集数数据
-                  if (!source.episodes || source.episodes.length < 1) return false;
-
-                  // 短剧源始终显示，不受集数差异限制
-                  if (source.source === 'shortdrama') return true;
-
-                  // 如果当前有 detail，只显示集数相近的源（允许 ±30% 的差异）
-                  if (detail && detail.episodes && detail.episodes.length > 0) {
-                    const currentEpisodes = detail.episodes.length;
-                    const sourceEpisodes = source.episodes.length;
-                    const tolerance = Math.max(5, Math.ceil(currentEpisodes * 0.3)); // 至少5集的容差
-
-                    // 在合理范围内
-                    return Math.abs(sourceEpisodes - currentEpisodes) <= tolerance;
-                  }
-
-                  return true;
-                })}
-                sourceSearchLoading={sourceSearchLoading}
-                sourceSearchError={sourceSearchError}
-                precomputedVideoInfo={precomputedVideoInfo}
-                onRefreshSources={refreshSources}
-              />
-            </div>
           </div>
-        </div>
 
-        {/* 详情展示 */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          {/* 文字区 */}
-          <div className='md:col-span-3'>
-            <div className='p-6 flex flex-col min-h-0'>
-              {/* 标题 */}
-              <div className='mb-4 flex-shrink-0'>
-                <div className='flex flex-col md:flex-row md:items-center gap-3'>
-                  <h1 className='text-2xl md:text-3xl font-bold tracking-wide text-center md:text-left bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent'>
-                    {videoTitle || '影片标题'}
-                  </h1>
+          {/* 详情展示 */}
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            {/* 文字区 */}
+            <div className='md:col-span-3'>
+              <div className='p-6 flex flex-col min-h-0'>
+                {/* 标题 */}
+                <div className='mb-4 flex-shrink-0'>
+                  <div className='flex flex-col md:flex-row md:items-center gap-3'>
+                    <h1 className='text-2xl md:text-3xl font-bold tracking-wide text-center md:text-left bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent'>
+                      {videoTitle || '影片标题'}
+                    </h1>
 
-                  {/* 按钮组 */}
-                  <div className='flex items-center justify-center md:justify-start gap-2 flex-wrap'>
-                    {/* 收藏按钮 */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite();
-                      }}
-                      className='group relative flex-shrink-0 transition-all duration-300 hover:scale-110'
-                    >
-                      <div className='absolute inset-0 bg-gradient-to-r from-red-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-300'></div>
-                      <FavoriteIcon filled={favorited} />
-                    </button>
-
-                    {/* 网盘资源按钮 */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // 触发网盘搜索（如果还没搜索过）
-                        if (!netdiskResults && !netdiskLoading && videoTitle) {
-                          handleNetDiskSearch(videoTitle);
-                        }
-                        // 滚动到网盘区域
-                        setTimeout(() => {
-                          const element = document.getElementById('netdisk-section');
-                          if (element) {
-                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                        }, 100);
-                      }}
-                      className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
-                    >
-                      <div className='absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
-                      <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
-                        📁
-                        {netdiskLoading ? (
-                          <span className='flex items-center gap-1'>
-                            <span className='inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin'></span>
-                            搜索中...
-                          </span>
-                        ) : netdiskTotal > 0 ? (
-                          <span>{netdiskTotal}个资源</span>
-                        ) : (
-                          <span>网盘资源</span>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* 下载按钮 */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDownloadEpisodeSelector(true);
-                      }}
-                      className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
-                    >
-                      <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
-                      <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
-                        <Download className='h-4 w-4' />
-                        <span>下载</span>
-                      </div>
-                    </button>
-
-                    {/* 查看下载按钮 */}
-                    {downloadEnabled && (
+                    {/* 按钮组 */}
+                    <div className='flex items-center justify-center md:justify-start gap-2 flex-wrap'>
+                      {/* 收藏按钮 */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowDownloadPanel(true);
+                          handleToggleFavorite();
+                        }}
+                        className='group relative flex-shrink-0 transition-all duration-300 hover:scale-110'
+                      >
+                        <div className='absolute inset-0 bg-gradient-to-r from-red-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-300'></div>
+                        <FavoriteIcon filled={favorited} />
+                      </button>
+
+                      {/* 网盘资源按钮 */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // 触发网盘搜索（如果还没搜索过）
+                          if (!netdiskResults && !netdiskLoading && videoTitle) {
+                            handleNetDiskSearch(videoTitle);
+                          }
+                          // 滚动到网盘区域
+                          setTimeout(() => {
+                            const element = document.getElementById('netdisk-section');
+                            if (element) {
+                              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                          }, 100);
                         }}
                         className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
                       >
-                        <div className='absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
-                        <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
-                          📥
-                          <span>下载管理</span>
+                        <div className='absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
+                        <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
+                          📁
+                          {netdiskLoading ? (
+                            <span className='flex items-center gap-1'>
+                              <span className='inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin'></span>
+                              搜索中...
+                            </span>
+                          ) : netdiskTotal > 0 ? (
+                            <span>{netdiskTotal}个资源</span>
+                          ) : (
+                            <span>网盘资源</span>
+                          )}
                         </div>
                       </button>
+
+                      {/* 下载按钮 */}
+                      {downloadEnabled && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDownloadEpisodeSelector(true);
+                          }}
+                          className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
+                        >
+                          <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
+                          <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
+                            <Download className='h-4 w-4' />
+                            <span>下载</span>
+                          </div>
+                        </button>
+                      )}
+
+                      {/* 查看下载按钮 */}
+                      {downloadEnabled && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDownloadPanel(true);
+                          }}
+                          className='group relative flex-shrink-0 transition-all duration-300 hover:scale-105'
+                        >
+                          <div className='absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300'></div>
+                          <div className='relative flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300'>
+                            📥
+                            <span>下载管理</span>
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 关键信息行 */}
+                <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
+                  {detail?.class && String(detail.class) !== '0' && (
+                    <span className='text-green-600 font-semibold'>
+                      {detail.class}
+                    </span>
+                  )}
+                  {(detail?.year || videoYear) && (
+                    <span>{detail?.year || videoYear}</span>
+                  )}
+                  {detail?.source_name && (
+                    <span className='border border-gray-500/60 px-2 py-[1px] rounded'>
+                      {detail.source_name}
+                    </span>
+                  )}
+                  {detail?.type_name && <span>{detail.type_name}</span>}
+                </div>
+
+                {/* 详细信息（豆瓣或bangumi） */}
+                {currentSource !== 'shortdrama' && videoDoubanId !== 0 && detail && detail.source !== 'shortdrama' && (
+                  <div className='mb-4 flex-shrink-0'>
+                    {/* 加载状态 */}
+                    {(loadingMovieDetails || loadingBangumiDetails) && !movieDetails && !bangumiDetails && (
+                      <div className='animate-pulse'>
+                        <div className='h-4 bg-gray-300 rounded w-64 mb-2'></div>
+                        <div className='h-4 bg-gray-300 rounded w-48'></div>
+                      </div>
+                    )}
+
+                    {/* Bangumi详情 */}
+                    {bangumiDetails && (
+                      <div className='space-y-2 text-sm'>
+                        {/* Bangumi评分 */}
+                        {bangumiDetails.rating?.score && parseFloat(bangumiDetails.rating.score) > 0 && (
+                          <div className='flex items-center gap-2'>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>Bangumi评分: </span>
+                            <div className='flex items-center group'>
+                              <span className='relative text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-rose-600 to-pink-600 dark:from-pink-400 dark:via-rose-400 dark:to-pink-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(236,72,153,0.5)]'>
+                                {bangumiDetails.rating.score}
+                              </span>
+                              <div className='flex ml-2 gap-0.5'>
+                                {[...Array(5)].map((_, i) => (
+                                  <svg
+                                    key={i}
+                                    className={`w-4 h-4 transition-all duration-300 ${i < Math.floor(parseFloat(bangumiDetails.rating.score) / 2)
+                                      ? 'text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.5)] group-hover:scale-110'
+                                      : 'text-gray-300 dark:text-gray-600'
+                                      }`}
+                                    fill='currentColor'
+                                    viewBox='0 0 20 20'
+                                    style={{ transitionDelay: `${i * 50}ms` }}
+                                  >
+                                    <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                                  </svg>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 制作信息从infobox提取 */}
+                        {bangumiDetails.infobox && bangumiDetails.infobox.map((info: any, index: number) => {
+                          if (info.key === '导演' && info.value) {
+                            const directors = Array.isArray(info.value) ? info.value.map((v: any) => v.v || v).join('、') : info.value;
+                            return (
+                              <div key={index}>
+                                <span className='font-semibold text-gray-700 dark:text-gray-300'>导演: </span>
+                                <span className='text-gray-600 dark:text-gray-400'>{directors}</span>
+                              </div>
+                            );
+                          }
+                          if (info.key === '制作' && info.value) {
+                            const studios = Array.isArray(info.value) ? info.value.map((v: any) => v.v || v).join('、') : info.value;
+                            return (
+                              <div key={index}>
+                                <span className='font-semibold text-gray-700 dark:text-gray-300'>制作: </span>
+                                <span className='text-gray-600 dark:text-gray-400'>{studios}</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })}
+
+                        {/* 播出日期 */}
+                        {bangumiDetails.date && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>播出日期: </span>
+                            <span className='text-gray-600 dark:text-gray-400'>{bangumiDetails.date}</span>
+                          </div>
+                        )}
+
+                        {/* 标签信息 */}
+                        <div className='flex flex-wrap gap-2 mt-3'>
+                          {bangumiDetails.tags && bangumiDetails.tags.slice(0, 4).map((tag: any, index: number) => (
+                            <span key={index} className='relative group bg-gradient-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>{tag.name}</span>
+                            </span>
+                          ))}
+                          {bangumiDetails.total_episodes && (
+                            <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>共{bangumiDetails.total_episodes}话</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 豆瓣详情 */}
+                    {movieDetails && (
+                      <div className='space-y-2 text-sm'>
+                        {/* 豆瓣评分 */}
+                        {movieDetails.rate && movieDetails.rate !== "0" && parseFloat(movieDetails.rate) > 0 && (
+                          <div className='flex items-center gap-2'>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>豆瓣评分: </span>
+                            <div className='flex items-center group'>
+                              <span className='relative text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 via-amber-600 to-yellow-600 dark:from-yellow-400 dark:via-amber-400 dark:to-yellow-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]'>
+                                {movieDetails.rate}
+                              </span>
+                              <div className='flex ml-2 gap-0.5'>
+                                {[...Array(5)].map((_, i) => (
+                                  <svg
+                                    key={i}
+                                    className={`w-4 h-4 transition-all duration-300 ${i < Math.floor(parseFloat(movieDetails.rate) / 2)
+                                      ? 'text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)] group-hover:scale-110'
+                                      : 'text-gray-300 dark:text-gray-600'
+                                      }`}
+                                    fill='currentColor'
+                                    viewBox='0 0 20 20'
+                                    style={{ transitionDelay: `${i * 50}ms` }}
+                                  >
+                                    <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                                  </svg>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 导演 */}
+                        {movieDetails.directors && movieDetails.directors.length > 0 && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>导演: </span>
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {movieDetails.directors.join('、')}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* 编剧 */}
+                        {movieDetails.screenwriters && movieDetails.screenwriters.length > 0 && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>编剧: </span>
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {movieDetails.screenwriters.join('、')}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* 主演 - 如果TMDB演员图片功能启用则隐藏，因为下方有更详细的显示 */}
+                        {movieDetails.cast && movieDetails.cast.length > 0 && !tmdbCastEnabled && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>主演: </span>
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {movieDetails.cast.join('、')}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* 首播日期 */}
+                        {movieDetails.first_aired && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                              {movieDetails.episodes ? '首播' : '上映'}:
+                            </span>
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {movieDetails.first_aired}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* 标签信息 */}
+                        <div className='flex flex-wrap gap-2 mt-3'>
+                          {movieDetails.countries && movieDetails.countries.slice(0, 2).map((country: string, index: number) => (
+                            <span key={index} className='relative group bg-gradient-to-r from-blue-500/90 to-cyan-500/90 dark:from-blue-600/90 dark:to-cyan-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>{country}</span>
+                            </span>
+                          ))}
+                          {movieDetails.languages && movieDetails.languages.slice(0, 2).map((language: string, index: number) => (
+                            <span key={index} className='relative group bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>{language}</span>
+                            </span>
+                          ))}
+                          {movieDetails.episodes && (
+                            <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>共{movieDetails.episodes}集</span>
+                            </span>
+                          )}
+                          {movieDetails.episode_length && (
+                            <span className='relative group bg-gradient-to-r from-orange-500/90 to-amber-500/90 dark:from-orange-600/90 dark:to-amber-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>单集{movieDetails.episode_length}分钟</span>
+                            </span>
+                          )}
+                          {movieDetails.movie_duration && (
+                            <span className='relative group bg-gradient-to-r from-red-500/90 to-rose-500/90 dark:from-red-600/90 dark:to-rose-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-red-400 to-rose-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>{movieDetails.movie_duration}分钟</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              </div>
-
-              {/* 关键信息行 */}
-              <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
-                {detail?.class && String(detail.class) !== '0' && (
-                  <span className='text-green-600 font-semibold'>
-                    {detail.class}
-                  </span>
                 )}
-                {(detail?.year || videoYear) && (
-                  <span>{detail?.year || videoYear}</span>
-                )}
-                {detail?.source_name && (
-                  <span className='border border-gray-500/60 px-2 py-[1px] rounded'>
-                    {detail.source_name}
-                  </span>
-                )}
-                {detail?.type_name && <span>{detail.type_name}</span>}
-              </div>
 
-              {/* 详细信息（豆瓣或bangumi） */}
-              {currentSource !== 'shortdrama' && videoDoubanId !== 0 && detail && detail.source !== 'shortdrama' && (
-                <div className='mb-4 flex-shrink-0'>
-                  {/* 加载状态 */}
-                  {(loadingMovieDetails || loadingBangumiDetails) && !movieDetails && !bangumiDetails && (
-                    <div className='animate-pulse'>
-                      <div className='h-4 bg-gray-300 rounded w-64 mb-2'></div>
-                      <div className='h-4 bg-gray-300 rounded w-48'></div>
-                    </div>
-                  )}
-
-                  {/* Bangumi详情 */}
-                  {bangumiDetails && (
+                {/* 短剧详细信息 */}
+                {(detail?.source === 'shortdrama' || shortdramaDetails) && (
+                  <div className='mb-4 flex-shrink-0'>
                     <div className='space-y-2 text-sm'>
-                      {/* Bangumi评分 */}
-                      {bangumiDetails.rating?.score && parseFloat(bangumiDetails.rating.score) > 0 && (
-                        <div className='flex items-center gap-2'>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>Bangumi评分: </span>
-                          <div className='flex items-center group'>
-                            <span className='relative text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-rose-600 to-pink-600 dark:from-pink-400 dark:via-rose-400 dark:to-pink-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(236,72,153,0.5)]'>
-                              {bangumiDetails.rating.score}
+                      {/* 集数信息 */}
+                      {((detail?.source === 'shortdrama' && detail?.episodes && detail.episodes.length > 0) ||
+                        (shortdramaDetails?.episodes && shortdramaDetails.episodes.length > 0)) && (
+                          <div className='flex flex-wrap gap-2'>
+                            <span className='relative group bg-gradient-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>共{(shortdramaDetails?.episodes || detail?.episodes)?.length}集</span>
                             </span>
-                            <div className='flex ml-2 gap-0.5'>
-                              {[...Array(5)].map((_, i) => (
-                                <svg
-                                  key={i}
-                                  className={`w-4 h-4 transition-all duration-300 ${i < Math.floor(parseFloat(bangumiDetails.rating.score) / 2)
-                                    ? 'text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.5)] group-hover:scale-110'
-                                    : 'text-gray-300 dark:text-gray-600'
-                                    }`}
-                                  fill='currentColor'
-                                  viewBox='0 0 20 20'
-                                  style={{ transitionDelay: `${i * 50}ms` }}
-                                >
-                                  <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                                </svg>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 制作信息从infobox提取 */}
-                      {bangumiDetails.infobox && bangumiDetails.infobox.map((info: any, index: number) => {
-                        if (info.key === '导演' && info.value) {
-                          const directors = Array.isArray(info.value) ? info.value.map((v: any) => v.v || v).join('、') : info.value;
-                          return (
-                            <div key={index}>
-                              <span className='font-semibold text-gray-700 dark:text-gray-300'>导演: </span>
-                              <span className='text-gray-600 dark:text-gray-400'>{directors}</span>
-                            </div>
-                          );
-                        }
-                        if (info.key === '制作' && info.value) {
-                          const studios = Array.isArray(info.value) ? info.value.map((v: any) => v.v || v).join('、') : info.value;
-                          return (
-                            <div key={index}>
-                              <span className='font-semibold text-gray-700 dark:text-gray-300'>制作: </span>
-                              <span className='text-gray-600 dark:text-gray-400'>{studios}</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
-
-                      {/* 播出日期 */}
-                      {bangumiDetails.date && (
-                        <div>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>播出日期: </span>
-                          <span className='text-gray-600 dark:text-gray-400'>{bangumiDetails.date}</span>
-                        </div>
-                      )}
-
-                      {/* 标签信息 */}
-                      <div className='flex flex-wrap gap-2 mt-3'>
-                        {bangumiDetails.tags && bangumiDetails.tags.slice(0, 4).map((tag: any, index: number) => (
-                          <span key={index} className='relative group bg-gradient-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>{tag.name}</span>
-                          </span>
-                        ))}
-                        {bangumiDetails.total_episodes && (
-                          <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>共{bangumiDetails.total_episodes}话</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 豆瓣详情 */}
-                  {movieDetails && (
-                    <div className='space-y-2 text-sm'>
-                      {/* 豆瓣评分 */}
-                      {movieDetails.rate && movieDetails.rate !== "0" && parseFloat(movieDetails.rate) > 0 && (
-                        <div className='flex items-center gap-2'>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>豆瓣评分: </span>
-                          <div className='flex items-center group'>
-                            <span className='relative text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 via-amber-600 to-yellow-600 dark:from-yellow-400 dark:via-amber-400 dark:to-yellow-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]'>
-                              {movieDetails.rate}
+                            <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>短剧</span>
                             </span>
-                            <div className='flex ml-2 gap-0.5'>
-                              {[...Array(5)].map((_, i) => (
-                                <svg
-                                  key={i}
-                                  className={`w-4 h-4 transition-all duration-300 ${i < Math.floor(parseFloat(movieDetails.rate) / 2)
-                                    ? 'text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)] group-hover:scale-110'
-                                    : 'text-gray-300 dark:text-gray-600'
-                                    }`}
-                                  fill='currentColor'
-                                  viewBox='0 0 20 20'
-                                  style={{ transitionDelay: `${i * 50}ms` }}
-                                >
-                                  <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                                </svg>
-                              ))}
-                            </div>
+                            <span className='relative group bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>{shortdramaDetails?.year || detail?.year}年</span>
+                            </span>
                           </div>
-                        </div>
-                      )}
-
-                      {/* 导演 */}
-                      {movieDetails.directors && movieDetails.directors.length > 0 && (
-                        <div>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>导演: </span>
-                          <span className='text-gray-600 dark:text-gray-400'>
-                            {movieDetails.directors.join('、')}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* 编剧 */}
-                      {movieDetails.screenwriters && movieDetails.screenwriters.length > 0 && (
-                        <div>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>编剧: </span>
-                          <span className='text-gray-600 dark:text-gray-400'>
-                            {movieDetails.screenwriters.join('、')}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* 主演 - 如果TMDB演员图片功能启用则隐藏，因为下方有更详细的显示 */}
-                      {movieDetails.cast && movieDetails.cast.length > 0 && !tmdbCastEnabled && (
-                        <div>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>主演: </span>
-                          <span className='text-gray-600 dark:text-gray-400'>
-                            {movieDetails.cast.join('、')}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* 首播日期 */}
-                      {movieDetails.first_aired && (
-                        <div>
-                          <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                            {movieDetails.episodes ? '首播' : '上映'}:
-                          </span>
-                          <span className='text-gray-600 dark:text-gray-400'>
-                            {movieDetails.first_aired}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* 标签信息 */}
-                      <div className='flex flex-wrap gap-2 mt-3'>
-                        {movieDetails.countries && movieDetails.countries.slice(0, 2).map((country: string, index: number) => (
-                          <span key={index} className='relative group bg-gradient-to-r from-blue-500/90 to-cyan-500/90 dark:from-blue-600/90 dark:to-cyan-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>{country}</span>
-                          </span>
-                        ))}
-                        {movieDetails.languages && movieDetails.languages.slice(0, 2).map((language: string, index: number) => (
-                          <span key={index} className='relative group bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>{language}</span>
-                          </span>
-                        ))}
-                        {movieDetails.episodes && (
-                          <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>共{movieDetails.episodes}集</span>
-                          </span>
                         )}
-                        {movieDetails.episode_length && (
-                          <span className='relative group bg-gradient-to-r from-orange-500/90 to-amber-500/90 dark:from-orange-600/90 dark:to-amber-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>单集{movieDetails.episode_length}分钟</span>
-                          </span>
-                        )}
-                        {movieDetails.movie_duration && (
-                          <span className='relative group bg-gradient-to-r from-red-500/90 to-rose-500/90 dark:from-red-600/90 dark:to-rose-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-red-400 to-rose-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>{movieDetails.movie_duration}分钟</span>
-                          </span>
-                        )}
-                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* 短剧详细信息 */}
-              {(detail?.source === 'shortdrama' || shortdramaDetails) && (
-                <div className='mb-4 flex-shrink-0'>
-                  <div className='space-y-2 text-sm'>
-                    {/* 集数信息 */}
-                    {((detail?.source === 'shortdrama' && detail?.episodes && detail.episodes.length > 0) ||
-                      (shortdramaDetails?.episodes && shortdramaDetails.episodes.length > 0)) && (
-                        <div className='flex flex-wrap gap-2'>
-                          <span className='relative group bg-gradient-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>共{(shortdramaDetails?.episodes || detail?.episodes)?.length}集</span>
-                          </span>
-                          <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>短剧</span>
-                          </span>
-                          <span className='relative group bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>{shortdramaDetails?.year || detail?.year}年</span>
-                          </span>
-                        </div>
-                      )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* 短剧元数据（备用API提供） */}
-              {shortdramaDetails?.metadata && (
-                <div className='mt-4 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4'>
-                  {/* 评分 */}
-                  {shortdramaDetails.metadata.vote_average > 0 && (
-                    <div className='flex items-center gap-2'>
-                      <span className='text-yellow-500'>⭐</span>
-                      <span className='font-semibold text-gray-800 dark:text-gray-200'>
-                        {shortdramaDetails.metadata.vote_average.toFixed(1)}
-                      </span>
-                      <span className='text-sm text-gray-500 dark:text-gray-400'>/ 10</span>
+                {/* 短剧元数据（备用API提供） */}
+                {shortdramaDetails?.metadata && (
+                  <div className='mt-4 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4'>
+                    {/* 评分 */}
+                    {shortdramaDetails.metadata.vote_average > 0 && (
+                      <div className='flex items-center gap-2'>
+                        <span className='text-yellow-500'>⭐</span>
+                        <span className='font-semibold text-gray-800 dark:text-gray-200'>
+                          {shortdramaDetails.metadata.vote_average.toFixed(1)}
+                        </span>
+                        <span className='text-sm text-gray-500 dark:text-gray-400'>/ 10</span>
+                      </div>
+                    )}
+                    {/* 演员 */}
+                    {shortdramaDetails.metadata.author && (
+                      <div className='flex items-start gap-2'>
+                        <span className='text-gray-600 dark:text-gray-400 flex-shrink-0'>🎭 演员:</span>
+                        <span className='text-gray-800 dark:text-gray-200'>
+                          {shortdramaDetails.metadata.author}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 剧情简介 */}
+                {(shortdramaDetails?.desc || detail?.desc || bangumiDetails?.summary) && (
+                  <div
+                    className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
+                    style={{ whiteSpace: 'pre-line' }}
+                  >
+                    {shortdramaDetails?.desc || bangumiDetails?.summary || detail?.desc}
+                  </div>
+                )}
+
+                {/* 主演图片（TMDB） */}
+                {tmdbCast.length > 0 && (
+                  <CastPhotos tmdbCast={tmdbCast} doubanId={videoDoubanId ? videoDoubanId.toString() : undefined} onEnabledChange={setTmdbCastEnabled} />
+                )}
+
+                {/* 推荐影片 */}
+                {movieDetails?.recommendations && movieDetails.recommendations.length > 0 && (
+                  <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
+                    <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
+                      <span>💡</span>
+                      <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
+                    </h3>
+                    <div className='overflow-x-auto pb-4 pt-2 pl-2 -ml-2 episode-list show-scrollbar'>
+                      <div className='flex gap-4 pr-2' style={{ width: 'max-content' }}>
+                        {movieDetails.recommendations.map((item: any) => (
+                          <div
+                            key={item.id}
+                            className='flex-shrink-0 w-32 sm:w-36 md:w-40'
+                          >
+                            <VideoCard
+                              id={item.id}
+                              title={item.title}
+                              poster={item.poster}
+                              rate={item.rate}
+                              douban_id={parseInt(item.id)}
+                              from='douban'
+                              isAggregate={true}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                  {/* 演员 */}
-                  {shortdramaDetails.metadata.author && (
-                    <div className='flex items-start gap-2'>
-                      <span className='text-gray-600 dark:text-gray-400 flex-shrink-0'>🎭 演员:</span>
-                      <span className='text-gray-800 dark:text-gray-200'>
-                        {shortdramaDetails.metadata.author}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
 
-              {/* 剧情简介 */}
-              {(shortdramaDetails?.desc || detail?.desc || bangumiDetails?.summary) && (
-                <div
-                  className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
-                  style={{ whiteSpace: 'pre-line' }}
-                >
-                  {shortdramaDetails?.desc || bangumiDetails?.summary || detail?.desc}
-                </div>
-              )}
-
-              {/* 主演图片（TMDB） */}
-              {tmdbCast.length > 0 && (
-                <CastPhotos tmdbCast={tmdbCast} doubanId={videoDoubanId ? videoDoubanId.toString() : undefined} onEnabledChange={setTmdbCastEnabled} />
-              )}
-
-              {/* 推荐影片 */}
-              {movieDetails?.recommendations && movieDetails.recommendations.length > 0 && (
-                <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
-                  <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
-                    <span>💡</span>
-                    <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
-                  </h3>
-                  <div className='overflow-x-auto pb-4 pt-2 pl-2 -ml-2 episode-list show-scrollbar'>
-                    <div className='flex gap-4 pr-2' style={{ width: 'max-content' }}>
-                      {movieDetails.recommendations.map((item: any) => (
+                {/* 豆瓣短评 */}
+                {movieComments && movieComments.length > 0 && (
+                  <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
+                    <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
+                      <span>💬</span>
+                      <span>豆瓣短评</span>
+                    </h3>
+                    <div className='space-y-4'>
+                      {movieComments.slice(0, 10).map((comment: any, index: number) => (
                         <div
-                          key={item.id}
-                          className='flex-shrink-0 w-32 sm:w-36 md:w-40'
+                          key={index}
+                          className='bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
                         >
-                          <VideoCard
-                            id={item.id}
-                            title={item.title}
-                            poster={item.poster}
-                            rate={item.rate}
-                            douban_id={parseInt(item.id)}
-                            from='douban'
-                            isAggregate={true}
-                          />
+                          <div className='flex items-start gap-3'>
+                            {/* 用户头像 */}
+                            <div className='flex-shrink-0'>
+                              {comment.avatar ? (
+                                <img
+                                  src={comment.avatar}
+                                  alt={comment.username}
+                                  className='w-10 h-10 rounded-full object-cover'
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <div className='w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-400'>
+                                  {comment.username.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 短评内容 */}
+                            <div className='flex-1 min-w-0'>
+                              <div className='flex items-center gap-2 mb-1 flex-wrap'>
+                                <span className='font-medium text-gray-800 dark:text-gray-200'>
+                                  {comment.username}
+                                </span>
+
+                                {/* 评分星级 */}
+                                {comment.rating > 0 && (
+                                  <div className='flex items-center'>
+                                    {[...Array(5)].map((_, i) => (
+                                      <svg
+                                        key={i}
+                                        className={`w-3 h-3 ${i < comment.rating
+                                          ? 'text-yellow-400'
+                                          : 'text-gray-300 dark:text-gray-600'
+                                          }`}
+                                        fill='currentColor'
+                                        viewBox='0 0 20 20'
+                                      >
+                                        <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                                      </svg>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* 时间和地点 */}
+                                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                  {comment.time}
+                                  {comment.location && ` · ${comment.location}`}
+                                </span>
+                              </div>
+
+                              {/* 短评正文 */}
+                              <p className='text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap'>
+                                {comment.content}
+                              </p>
+
+                              {/* 有用数 */}
+                              {comment.useful_count > 0 && (
+                                <div className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+                                  {comment.useful_count} 人认为有用
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
+
+                    {/* 查看更多链接 */}
+                    {videoDoubanId && (
+                      <div className='mt-4 text-center'>
+                        <a
+                          href={`https://movie.douban.com/subject/${videoDoubanId}/comments?status=P`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline'
+                        >
+                          查看更多短评
+                          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14' />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 网盘资源区域 */}
+                <div id="netdisk-section" className='mt-6'>
+                  <div className='border-t border-gray-200 dark:border-gray-700 pt-6'>
+                    <div className='mb-4'>
+                      <h3 className='text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2'>
+                        📁 网盘资源
+                        {netdiskLoading && (
+                          <span className='inline-block align-middle'>
+                            <span className='inline-block h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin'></span>
+                          </span>
+                        )}
+                        {netdiskTotal > 0 && (
+                          <span className='inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'>
+                            {netdiskTotal} 个资源
+                          </span>
+                        )}
+                      </h3>
+                      {videoTitle && !netdiskLoading && !netdiskResults && (
+                        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>
+                          点击上方"📁 网盘资源"按钮开始搜索
+                        </p>
+                      )}
+                      {videoTitle && !netdiskLoading && (netdiskResults || netdiskError) && (
+                        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>
+                          搜索关键词：{videoTitle}
+                        </p>
+                      )}
+                    </div>
+
+                    <NetDiskSearchResults
+                      results={netdiskResults}
+                      loading={netdiskLoading}
+                      error={netdiskError}
+                      total={netdiskTotal}
+                    />
                   </div>
                 </div>
-              )}
+              </div>
+            </div>
 
-              {/* 豆瓣短评 */}
-              {movieComments && movieComments.length > 0 && (
-                <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
-                  <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
-                    <span>💬</span>
-                    <span>豆瓣短评</span>
-                  </h3>
-                  <div className='space-y-4'>
-                    {movieComments.slice(0, 10).map((comment: any, index: number) => (
+            {/* 封面展示 */}
+            <div className='hidden md:block md:col-span-1 md:order-first'>
+              <div className='pl-0 py-4 pr-6'>
+                <div className='group relative bg-gray-300 dark:bg-gray-700 aspect-[2/3] flex items-center justify-center rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]'>
+                  {(videoCover || bangumiDetails?.images?.large) ? (
+                    <>
+                      {/* 渐变光泽动画层 */}
                       <div
-                        key={index}
-                        className='bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
-                      >
-                        <div className='flex items-start gap-3'>
-                          {/* 用户头像 */}
-                          <div className='flex-shrink-0'>
-                            {comment.avatar ? (
-                              <img
-                                src={comment.avatar}
-                                alt={comment.username}
-                                className='w-10 h-10 rounded-full object-cover'
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className='w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-400'>
-                                {comment.username.charAt(0)}
-                              </div>
-                            )}
+                        className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
+                        style={{
+                          background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'shimmer 2.5s ease-in-out infinite',
+                        }}
+                      />
+
+                      <img
+                        src={processImageUrl(bangumiDetails?.images?.large || videoCover)}
+                        alt={videoTitle}
+                        className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105'
+                      />
+
+                      {/* 悬浮遮罩 */}
+                      <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
+
+                      {/* 链接按钮（bangumi或豆瓣） */}
+                      {videoDoubanId !== 0 && (
+                        <a
+                          href={
+                            bangumiDetails
+                              ? `https://bgm.tv/subject/${videoDoubanId.toString()}`
+                              : `https://movie.douban.com/subject/${videoDoubanId.toString()}`
+                          }
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='absolute top-3 left-3 z-20'
+                        >
+                          <div className={`relative ${bangumiDetails ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'} text-white text-xs font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 ease-out hover:scale-110 group/link`}>
+                            <div className={`absolute inset-0 ${bangumiDetails ? 'bg-pink-400' : 'bg-green-400'} rounded-full opacity-0 group-hover/link:opacity-30 blur transition-opacity duration-300`}></div>
+                            <svg
+                              width='18'
+                              height='18'
+                              viewBox='0 0 24 24'
+                              fill='none'
+                              stroke='currentColor'
+                              strokeWidth='2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              className='relative z-10'
+                            >
+                              <path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'></path>
+                              <path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'></path>
+                            </svg>
                           </div>
-
-                          {/* 短评内容 */}
-                          <div className='flex-1 min-w-0'>
-                            <div className='flex items-center gap-2 mb-1 flex-wrap'>
-                              <span className='font-medium text-gray-800 dark:text-gray-200'>
-                                {comment.username}
-                              </span>
-
-                              {/* 评分星级 */}
-                              {comment.rating > 0 && (
-                                <div className='flex items-center'>
-                                  {[...Array(5)].map((_, i) => (
-                                    <svg
-                                      key={i}
-                                      className={`w-3 h-3 ${i < comment.rating
-                                        ? 'text-yellow-400'
-                                        : 'text-gray-300 dark:text-gray-600'
-                                        }`}
-                                      fill='currentColor'
-                                      viewBox='0 0 20 20'
-                                    >
-                                      <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                                    </svg>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* 时间和地点 */}
-                              <span className='text-xs text-gray-500 dark:text-gray-400'>
-                                {comment.time}
-                                {comment.location && ` · ${comment.location}`}
-                              </span>
-                            </div>
-
-                            {/* 短评正文 */}
-                            <p className='text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap'>
-                              {comment.content}
-                            </p>
-
-                            {/* 有用数 */}
-                            {comment.useful_count > 0 && (
-                              <div className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
-                                {comment.useful_count} 人认为有用
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* 查看更多链接 */}
-                  {videoDoubanId && (
-                    <div className='mt-4 text-center'>
-                      <a
-                        href={`https://movie.douban.com/subject/${videoDoubanId}/comments?status=P`}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline'
-                      >
-                        查看更多短评
-                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14' />
-                        </svg>
-                      </a>
-                    </div>
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <span className='text-gray-600 dark:text-gray-400'>
+                      封面图片
+                    </span>
                   )}
                 </div>
-              )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-              {/* 网盘资源区域 */}
-              <div id="netdisk-section" className='mt-6'>
-                <div className='border-t border-gray-200 dark:border-gray-700 pt-6'>
-                  <div className='mb-4'>
-                    <h3 className='text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2'>
-                      📁 网盘资源
-                      {netdiskLoading && (
-                        <span className='inline-block align-middle'>
-                          <span className='inline-block h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin'></span>
-                        </span>
-                      )}
-                      {netdiskTotal > 0 && (
-                        <span className='inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'>
-                          {netdiskTotal} 个资源
-                        </span>
-                      )}
-                    </h3>
-                    {videoTitle && !netdiskLoading && !netdiskResults && (
-                      <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>
-                        点击上方"📁 网盘资源"按钮开始搜索
-                      </p>
-                    )}
-                    {videoTitle && !netdiskLoading && (netdiskResults || netdiskError) && (
-                      <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>
-                        搜索关键词：{videoTitle}
-                      </p>
-                    )}
-                  </div>
+        {/* 返回顶部悬浮按钮 */}
+        <button
+          onClick={scrollToTop}
+          className={`fixed z-[500] w-12 h-12 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group relative overflow-hidden ${showBackToTop
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+            }`}
+          style={{
+            position: 'fixed',
+            right: '1.5rem',
+            bottom: typeof window !== 'undefined' && window.innerWidth < 768 ? '5rem' : '1.5rem',
+            left: 'auto'
+          }}
+          aria-label='返回顶部'
+        >
+          {/* 渐变背景 */}
+          <div className='absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 transition-all duration-300'></div>
 
-                  <NetDiskSearchResults
-                    results={netdiskResults}
-                    loading={netdiskLoading}
-                    error={netdiskError}
-                    total={netdiskTotal}
-                  />
+          {/* 发光效果 */}
+          <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-50 blur-md transition-all duration-300'></div>
+
+          {/* 脉冲光环 */}
+          <div className='absolute inset-0 rounded-full border-2 border-white/30 animate-ping group-hover:opacity-0 transition-opacity duration-300'></div>
+
+          <ChevronUp className='w-6 h-6 text-white relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1' />
+        </button>
+
+        {/* 观影室同步暂停提示条 */}
+        {isInWatchRoom && !isWatchRoomOwner && syncPaused && !pendingOwnerChange && (
+          <div className='fixed bottom-20 left-1/2 -translate-x-1/2 z-[9998] animate-fade-in'>
+            <div className='flex items-center gap-3 px-4 py-2.5 rounded-full bg-orange-500/90 backdrop-blur-sm shadow-lg'>
+              <span className='text-sm text-white font-medium'>已退出同步，自由观看中</span>
+              <button
+                onClick={resumeSync}
+                className='px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors'
+              >
+                重新同步
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 房主切换视频/集数确认框 */}
+        {pendingOwnerChange && (
+          <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]'>
+            <div className='bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl'>
+              <div className='text-center'>
+                <div className='w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center'>
+                  <svg className='w-6 h-6 text-blue-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' />
+                  </svg>
+                </div>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
+                  房主切换了内容
+                </h3>
+                <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>
+                  房主正在观看：
+                </p>
+                <p className='text-base font-medium text-gray-900 dark:text-white mb-1'>
+                  {pendingOwnerChange.videoName || '未知视频'}
+                </p>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mb-6'>
+                  第 {(pendingOwnerChange.episode || 0) + 1} 集
+                </p>
+                <div className='flex gap-3'>
+                  <button
+                    onClick={rejectFollowOwner}
+                    className='flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium'
+                  >
+                    自由观看
+                  </button>
+                  <button
+                    onClick={confirmFollowOwner}
+                    className='flex-1 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-colors font-medium'
+                  >
+                    跟随房主
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* 封面展示 */}
-          <div className='hidden md:block md:col-span-1 md:order-first'>
-            <div className='pl-0 py-4 pr-6'>
-              <div className='group relative bg-gray-300 dark:bg-gray-700 aspect-[2/3] flex items-center justify-center rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]'>
-                {(videoCover || bangumiDetails?.images?.large) ? (
-                  <>
-                    {/* 渐变光泽动画层 */}
-                    <div
-                      className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
-                      style={{
-                        background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
-                        backgroundSize: '200% 100%',
-                        animation: 'shimmer 2.5s ease-in-out infinite',
-                      }}
-                    />
-
-                    <img
-                      src={processImageUrl(bangumiDetails?.images?.large || videoCover)}
-                      alt={videoTitle}
-                      className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105'
-                    />
-
-                    {/* 悬浮遮罩 */}
-                    <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
-
-                    {/* 链接按钮（bangumi或豆瓣） */}
-                    {videoDoubanId !== 0 && (
-                      <a
-                        href={
-                          bangumiDetails
-                            ? `https://bgm.tv/subject/${videoDoubanId.toString()}`
-                            : `https://movie.douban.com/subject/${videoDoubanId.toString()}`
-                        }
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='absolute top-3 left-3 z-20'
-                      >
-                        <div className={`relative ${bangumiDetails ? 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'} text-white text-xs font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 ease-out hover:scale-110 group/link`}>
-                          <div className={`absolute inset-0 ${bangumiDetails ? 'bg-pink-400' : 'bg-green-400'} rounded-full opacity-0 group-hover/link:opacity-30 blur transition-opacity duration-300`}></div>
-                          <svg
-                            width='18'
-                            height='18'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeWidth='2'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            className='relative z-10'
-                          >
-                            <path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'></path>
-                            <path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'></path>
-                          </svg>
-                        </div>
-                      </a>
-                    )}
-                  </>
-                ) : (
-                  <span className='text-gray-600 dark:text-gray-400'>
-                    封面图片
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 返回顶部悬浮按钮 */}
-      <button
-        onClick={scrollToTop}
-        className={`fixed z-[500] w-12 h-12 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group relative overflow-hidden ${showBackToTop
-          ? 'opacity-100 translate-y-0 pointer-events-auto'
-          : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
-        style={{
-          position: 'fixed',
-          right: '1.5rem',
-          bottom: typeof window !== 'undefined' && window.innerWidth < 768 ? '5rem' : '1.5rem',
-          left: 'auto'
-        }}
-        aria-label='返回顶部'
-      >
-        {/* 渐变背景 */}
-        <div className='absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 transition-all duration-300'></div>
-
-        {/* 发光效果 */}
-        <div className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-50 blur-md transition-all duration-300'></div>
-
-        {/* 脉冲光环 */}
-        <div className='absolute inset-0 rounded-full border-2 border-white/30 animate-ping group-hover:opacity-0 transition-opacity duration-300'></div>
-
-        <ChevronUp className='w-6 h-6 text-white relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1' />
-      </button>
-
-      {/* 观影室同步暂停提示条 */}
-      {isInWatchRoom && !isWatchRoomOwner && syncPaused && !pendingOwnerChange && (
-        <div className='fixed bottom-20 left-1/2 -translate-x-1/2 z-[9998] animate-fade-in'>
-          <div className='flex items-center gap-3 px-4 py-2.5 rounded-full bg-orange-500/90 backdrop-blur-sm shadow-lg'>
-            <span className='text-sm text-white font-medium'>已退出同步，自由观看中</span>
-            <button
-              onClick={resumeSync}
-              className='px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors'
-            >
-              重新同步
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 房主切换视频/集数确认框 */}
-      {pendingOwnerChange && (
-        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]'>
-          <div className='bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl'>
-            <div className='text-center'>
-              <div className='w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center'>
-                <svg className='w-6 h-6 text-blue-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' />
-                </svg>
-              </div>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-                房主切换了内容
-              </h3>
-              <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>
-                房主正在观看：
-              </p>
-              <p className='text-base font-medium text-gray-900 dark:text-white mb-1'>
-                {pendingOwnerChange.videoName || '未知视频'}
-              </p>
-              <p className='text-xs text-gray-500 dark:text-gray-400 mb-6'>
-                第 {(pendingOwnerChange.episode || 0) + 1} 集
-              </p>
-              <div className='flex gap-3'>
-                <button
-                  onClick={rejectFollowOwner}
-                  className='flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium'
-                >
-                  自由观看
-                </button>
-                <button
-                  onClick={confirmFollowOwner}
-                  className='flex-1 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-colors font-medium'
-                >
-                  跟随房主
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
       </PageLayout>
 
       {/* 下载选集面板 */}
       <DownloadEpisodeSelector
-      isOpen={showDownloadEpisodeSelector}
-      onClose={() => setShowDownloadEpisodeSelector(false)}
-      totalEpisodes={detail?.episodes?.length || 1}
-      episodesTitles={detail?.episodes_titles || []}
-      videoTitle={videoTitle || '视频'}
-      currentEpisodeIndex={currentEpisodeIndex}
-      onDownload={async (episodeIndexes) => {
-        if (!detail?.episodes || detail.episodes.length === 0) {
-          // 单集视频，直接下载当前
-          const currentUrl = videoUrl;
-          if (!currentUrl) {
-            alert('无法获取视频地址');
-            return;
-          }
-          if (!currentUrl.includes('.m3u8')) {
-            alert('仅支持M3U8格式视频下载');
-            return;
-          }
-          try {
-            await createTask(currentUrl, videoTitle || '视频', 'TS');
-          } catch (error) {
-            console.error('创建下载任务失败:', error);
-            alert('创建下载任务失败: ' + (error as Error).message);
-          }
-          return;
-        }
-
-        // 批量下载多集
-        for (const episodeIndex of episodeIndexes) {
-          try {
-            const episodeUrl = detail.episodes[episodeIndex];
-            if (!episodeUrl) continue;
-
-            // 检查是否是M3U8
-            if (!episodeUrl.includes('.m3u8')) {
-              console.warn(`第${episodeIndex + 1}集不是M3U8格式，跳过`);
-              continue;
+        isOpen={showDownloadEpisodeSelector}
+        onClose={() => setShowDownloadEpisodeSelector(false)}
+        totalEpisodes={detail?.episodes?.length || 1}
+        episodesTitles={detail?.episodes_titles || []}
+        videoTitle={videoTitle || '视频'}
+        currentEpisodeIndex={currentEpisodeIndex}
+        onDownload={async (episodeIndexes) => {
+          if (!detail?.episodes || detail.episodes.length === 0) {
+            // 单集视频，直接下载当前
+            const currentUrl = videoUrl;
+            if (!currentUrl) {
+              alert('无法获取视频地址');
+              return;
             }
-
-            const episodeName = `第${episodeIndex + 1}集`;
-            const downloadTitle = `${videoTitle || '视频'}_${episodeName}`;
-            await createTask(episodeUrl, downloadTitle, 'TS');
-          } catch (error) {
-            console.error(`创建第${episodeIndex + 1}集下载任务失败:`, error);
+            if (!currentUrl.includes('.m3u8')) {
+              alert('仅支持M3U8格式视频下载');
+              return;
+            }
+            try {
+              await createTask(currentUrl, videoTitle || '视频', 'TS');
+            } catch (error) {
+              console.error('创建下载任务失败:', error);
+              alert('创建下载任务失败: ' + (error as Error).message);
+            }
+            return;
           }
-        }
-      }}
+
+          // 批量下载多集
+          for (const episodeIndex of episodeIndexes) {
+            try {
+              const episodeUrl = detail.episodes[episodeIndex];
+              if (!episodeUrl) continue;
+
+              // 检查是否是M3U8
+              if (!episodeUrl.includes('.m3u8')) {
+                console.warn(`第${episodeIndex + 1}集不是M3U8格式，跳过`);
+                continue;
+              }
+
+              const episodeName = `第${episodeIndex + 1}集`;
+              const downloadTitle = `${videoTitle || '视频'}_${episodeName}`;
+              await createTask(episodeUrl, downloadTitle, 'TS');
+            } catch (error) {
+              console.error(`创建第${episodeIndex + 1}集下载任务失败:`, error);
+            }
+          }
+        }}
       />
     </>
   );
