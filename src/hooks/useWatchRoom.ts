@@ -163,10 +163,9 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
       onError?.('房间已被删除');
     });
 
-    // 播放事件 - 更新 currentRoom.currentState
+    // 播放事件（由其他组件处理，这里只记录）
     newSocket.on('play:update', (state: PlayState) => {
       console.log('[WatchRoom] Play state updated:', state);
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
     });
 
     newSocket.on('play:seek', (currentTime: number) => {
@@ -183,12 +182,10 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
 
     newSocket.on('play:change', (state: PlayState) => {
       console.log('[WatchRoom] Video changed:', state);
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
     });
 
     newSocket.on('state:cleared', () => {
       console.log('[WatchRoom] State cleared');
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: null } : null);
     });
 
     // 聊天事件

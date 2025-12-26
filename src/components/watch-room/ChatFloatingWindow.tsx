@@ -2,15 +2,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Smile, Info, Users, LogOut, Mic, MicOff, Volume2, VolumeX, Play, Film } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { MessageCircle, X, Send, Smile, Info, Users, LogOut, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 
 const EMOJI_LIST = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👏', '🎉', '❤️', '🔥', '⭐'];
 
 export default function ChatFloatingWindow() {
-  const router = useRouter();
   const watchRoom = useWatchRoomContextSafe();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -199,47 +197,6 @@ export default function ChatFloatingWindow() {
             <p className="text-sm text-gray-500 dark:text-gray-400">房间号</p>
             <p className="font-mono font-bold text-lg text-gray-900 dark:text-gray-100">{currentRoom.id}</p>
           </div>
-
-          {/* 正在观看 */}
-          {currentRoom.currentState?.type === 'play' && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Film className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <p className="text-sm font-medium text-green-700 dark:text-green-300">正在观看</p>
-              </div>
-              <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                {currentRoom.currentState.videoName}
-                {currentRoom.currentState.videoYear && ` (${currentRoom.currentState.videoYear})`}
-              </p>
-              {currentRoom.currentState.episode && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  第 {currentRoom.currentState.episode} 集
-                </p>
-              )}
-              {!isOwner && (
-                <button
-                  onClick={() => {
-                    const state = currentRoom.currentState;
-                    if (state?.type === 'play') {
-                      const params = new URLSearchParams({
-                        id: state.videoId,
-                        name: state.videoName,
-                        ...(state.videoYear && { year: state.videoYear }),
-                        ...(state.searchTitle && { searchTitle: state.searchTitle }),
-                        ...(state.episode && { episode: state.episode.toString() }),
-                        source: state.source,
-                      });
-                      router.push(`/play?${params.toString()}`);
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-lg transition-colors text-sm"
-                >
-                  <Play className="h-4 w-4" />
-                  一键跳转观看
-                </button>
-              )}
-            </div>
-          )}
 
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
