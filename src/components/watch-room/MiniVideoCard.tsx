@@ -9,6 +9,7 @@ interface MiniVideoCardProps {
   year?: string;
   episode?: number;
   poster?: string;
+  totalEpisodes?: number;  // 总集数（用于判断是否显示集数信息）
   onClick?: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function MiniVideoCard({
   year,
   episode,
   poster,
+  totalEpisodes,
   onClick
 }: MiniVideoCardProps) {
   // 默认海报
@@ -52,7 +54,8 @@ export default function MiniVideoCard({
         </h4>
         <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
           {year && <span>{year}</span>}
-          {episode !== undefined && episode !== null && (
+          {/* 只有总集数大于1时才显示集数（避免电影显示"第1集"） */}
+          {totalEpisodes && totalEpisodes > 1 && episode !== undefined && episode !== null && (
             <>
               {year && <span>·</span>}
               <span>第 {episode + 1} 集</span>

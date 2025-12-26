@@ -70,17 +70,34 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   const [currentUserName, setCurrentUserName] = useState('游客');
   const [userNameLoaded, setUserNameLoaded] = useState(false);
 
-  // 获取当前登录用户名（客户端挂载后执行）
+  // 获取当前登录用户名（客户端挂载后执行，支持重试）
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 200; // 每次重试延迟200ms
+
+    const loadUsername = () => {
       console.log('[WatchRoom] All cookies:', document.cookie);
       const authInfo = getAuthInfoFromBrowserCookie();
       console.log('[WatchRoom] Auth info:', authInfo);
       const username = authInfo?.username || '游客';
-      console.log('[WatchRoom] Setting username to:', username);
-      setCurrentUserName(username);
-      setUserNameLoaded(true);
-    }
+
+      if (username === '游客' && retryCount < maxRetries) {
+        // Cookie 还没加载，延迟后重试
+        retryCount++;
+        console.log(`[WatchRoom] Cookie not ready, retry ${retryCount}/${maxRetries}...`);
+        setTimeout(loadUsername, retryDelay);
+      } else {
+        // 成功获取用户名或已达到最大重试次数
+        console.log('[WatchRoom] Setting username to:', username);
+        setCurrentUserName(username);
+        setUserNameLoaded(true);
+      }
+    };
+
+    loadUsername();
   }, []);
 
   const watchRoom = useWatchRoom({

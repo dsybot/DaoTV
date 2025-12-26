@@ -214,6 +214,7 @@ export default function ChatFloatingWindow() {
                 year={currentRoom.currentState.videoYear}
                 episode={currentRoom.currentState.episode}
                 poster={currentRoom.currentState.poster}
+                totalEpisodes={currentRoom.currentState.totalEpisodes}
                 onClick={() => {
                   const state = currentRoom.currentState as PlayState;
                   // 构建URL，携带时间参数实现同步

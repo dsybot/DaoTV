@@ -28,6 +28,7 @@ export interface OwnerPlayState {
   videoYear?: string;
   searchTitle?: string;
   poster?: string;
+  totalEpisodes?: number;
 }
 
 export function useWatchRoomSync({
@@ -149,6 +150,7 @@ export function useWatchRoomSync({
       episode: episodeIndex,
       source: currentSource,
       poster: detail?.poster || '',
+      totalEpisodes: detail?.episodes?.length || undefined,
     };
 
     // 使用防抖，避免频繁发送
@@ -190,6 +192,7 @@ export function useWatchRoomSync({
       videoYear: roomState.videoYear,
       searchTitle: roomState.searchTitle,
       poster: roomState.poster,
+      totalEpisodes: roomState.totalEpisodes,
     };
     setOwnerState(newOwnerState);
 
@@ -236,6 +239,7 @@ export function useWatchRoomSync({
         videoYear: state.videoYear,
         searchTitle: state.searchTitle,
         poster: state.poster,
+        totalEpisodes: state.totalEpisodes,
       };
       setOwnerState(newOwnerState);
 
@@ -378,6 +382,7 @@ export function useWatchRoomSync({
         videoYear: state.videoYear,
         searchTitle: state.searchTitle,
         poster: state.poster,
+        totalEpisodes: state.totalEpisodes,
       };
       setOwnerState(newOwnerState);
 
@@ -566,6 +571,7 @@ export function useWatchRoomSync({
         episode: episodeIndex,
         source: currentSource,
         poster: detail?.poster || '',
+        totalEpisodes: detail?.episodes?.length || undefined,
       };
 
       console.log('[PlaySync] Broadcasting play:change:', state);
