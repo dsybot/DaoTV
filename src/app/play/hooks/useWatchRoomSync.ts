@@ -97,8 +97,8 @@ export function useWatchRoomSync({
       currentTime: player.currentTime || 0,
       isPlaying: player.playing || false,
       videoId: videoId,
-      videoName: videoTitle || detail?.vod_name || '',
-      videoYear: videoYear || detail?.vod_year || '',
+      videoName: videoTitle || detail?.title || '',
+      videoYear: videoYear || detail?.year || '',
       episode: episodeIndex,
       source: currentSource,
     };
@@ -503,8 +503,8 @@ export function useWatchRoomSync({
         currentTime: player?.currentTime || 0,
         isPlaying: player?.playing || false,
         videoId: videoId,
-        videoName: detail?.vod_name || '',
-        videoYear: detail?.vod_year || '',
+        videoName: videoTitle || detail?.title || '',
+        videoYear: videoYear || detail?.year || '',
         episode: episodeIndex,
         source: currentSource,
       };

@@ -698,8 +698,8 @@ function PlayPageClient() {
     playerReady,
     videoId: currentId,  // 传入URL参数的id
     currentSource: currentSource,  // 传入当前播放源
-    videoTitle: detail?.vod_name || '',  // 传入视频标题
-    videoYear: detail?.vod_year || '',  // 传入视频年份
+    videoTitle: detail?.title || '',  // 传入视频标题
+    videoYear: detail?.year || '',  // 传入视频年份
   });
 
   // -----------------------------------------------------------------------------
