@@ -5568,7 +5568,8 @@ function PlayPageClient() {
   }
 
   return (
-    <PageLayout activePath='/play'>
+    <>
+      <PageLayout activePath='/play'>
       <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
         {/* 第一行：影片标题 */}
         <div className='py-1'>
@@ -6475,70 +6476,10 @@ function PlayPageClient() {
           </div>
         </div>
       )}
+      </PageLayout>
 
-      {/* 使用 Portal 的统一浮层 - 自动适应全屏和非全屏模式 */}
-      {showEpisodePopup && portalContainer && createPortal(
-        <div
-          className='fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center transition-all duration-300'
-          style={{
-            zIndex: 2147483647,
-            position: 'fixed',
-            pointerEvents: 'auto'
-          }}
-          onClick={(e) => {
-            // 点击背景关闭浮层
-            if (e.target === e.currentTarget) {
-              setShowEpisodePopup(false);
-            }
-          }}
-        >
-          <div className='relative w-full h-full max-w-4xl mx-auto p-8 md:p-12' style={{ pointerEvents: 'auto' }}>
-            {/* 关闭按钮 - 放在内容区右上角外侧 */}
-            <button
-              onClick={() => setShowEpisodePopup(false)}
-              className='absolute top-6 right-14 z-50 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group'
-              title='关闭 (ESC)'
-              style={{ pointerEvents: 'auto' }}
-            >
-              <svg className='w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2.5} d='M6 18L18 6M6 6l12 12' />
-              </svg>
-            </button>
-
-            {/* 选集内容 - 移除外层滚动，让 EpisodeSelector 内部管理滚动 */}
-            <div className='relative w-full h-full overflow-hidden px-12' style={{ pointerEvents: 'auto' }}>
-              <EpisodeSelector
-                totalEpisodes={totalEpisodes}
-                episodes_titles={detail?.episodes_titles || []}
-                value={currentEpisodeIndex + 1}
-                onChange={(episodeNumber) => {
-                  handleEpisodeChange(episodeNumber);
-                  setShowEpisodePopup(false);
-                }}
-                onSourceChange={(source, id, title) => {
-                  handleSourceChange(source, id, title);
-                  setShowEpisodePopup(false);
-                }}
-                currentSource={currentSource}
-                currentId={currentId}
-                videoTitle={videoTitle}
-                videoYear={videoYear}
-                availableSources={availableSources}
-                sourceSearchLoading={sourceSearchLoading}
-                sourceSearchError={sourceSearchError}
-                precomputedVideoInfo={precomputedVideoInfo}
-                onRefreshSources={refreshSources}
-                inModal={true}
-              />
-            </div>
-          </div>
-        </div>,
-        portalContainer
-      )}
-    </PageLayout>
-
-    {/* 下载选集面板 */}
-    <DownloadEpisodeSelector
+      {/* 下载选集面板 */}
+      <DownloadEpisodeSelector
       isOpen={showDownloadEpisodeSelector}
       onClose={() => setShowDownloadEpisodeSelector(false)}
       totalEpisodes={detail?.episodes?.length || 1}
@@ -6586,7 +6527,8 @@ function PlayPageClient() {
           }
         }
       }}
-    />
+      />
+    </>
   );
 }
 
