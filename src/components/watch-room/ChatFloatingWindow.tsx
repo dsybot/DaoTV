@@ -6,7 +6,7 @@ import { MessageCircle, X, Send, Smile, Info, Users, LogOut, Mic, MicOff, Volume
 import { useRouter } from 'next/navigation';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
-import VideoCard from '@/components/VideoCard';
+import MiniVideoCard from '@/components/watch-room/MiniVideoCard';
 import type { PlayState } from '@/types/watch-room.types';
 
 const EMOJI_LIST = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👏', '🎉', '❤️', '🔥', '⭐'];
@@ -209,8 +209,11 @@ export default function ChatFloatingWindow() {
                 <Play className="h-4 w-4 text-green-500" />
                 正在观看
               </p>
-              <div
-                className="cursor-pointer"
+              <MiniVideoCard
+                title={currentRoom.currentState.videoName}
+                year={currentRoom.currentState.videoYear}
+                episode={currentRoom.currentState.episode}
+                poster={currentRoom.currentState.poster}
                 onClick={() => {
                   const state = currentRoom.currentState as PlayState;
                   // 构建URL，携带时间参数实现同步
@@ -232,19 +235,7 @@ export default function ChatFloatingWindow() {
                   router.push(`/play?${params.toString()}`);
                   setShowRoomInfo(false);
                 }}
-              >
-                <VideoCard
-                  id={currentRoom.currentState.videoId}
-                  source={currentRoom.currentState.source}
-                  title={currentRoom.currentState.videoName}
-                  query={currentRoom.currentState.searchTitle}
-                  year={currentRoom.currentState.videoYear}
-                  currentEpisode={currentRoom.currentState.episode}
-                  from="search"
-                  isAggregate={true}
-                  priority={true}
-                />
-              </div>
+              />
             </div>
           )}
 

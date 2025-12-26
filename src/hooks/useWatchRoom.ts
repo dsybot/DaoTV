@@ -166,6 +166,8 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
     // 播放事件（由其他组件处理，这里只记录）
     newSocket.on('play:update', (state: PlayState) => {
       console.log('[WatchRoom] Play state updated:', state);
+      // 更新房间的 currentState
+      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
     });
 
     newSocket.on('play:seek', (currentTime: number) => {
@@ -182,10 +184,14 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
 
     newSocket.on('play:change', (state: PlayState) => {
       console.log('[WatchRoom] Video changed:', state);
+      // 更新房间的 currentState
+      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
     });
 
     newSocket.on('state:cleared', () => {
       console.log('[WatchRoom] State cleared');
+      // 清除房间的 currentState
+      setCurrentRoom((prev) => prev ? { ...prev, currentState: undefined } : null);
     });
 
     // 聊天事件

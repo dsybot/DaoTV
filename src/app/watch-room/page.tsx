@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useWatchRoomContext } from '@/components/WatchRoomProvider';
 import PageLayout from '@/components/PageLayout';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
-import VideoCard from '@/components/VideoCard';
+import MiniVideoCard from '@/components/watch-room/MiniVideoCard';
 import type { Room, PlayState } from '@/types/watch-room.types';
 
 type TabType = 'create' | 'join' | 'list';
@@ -661,29 +661,29 @@ export default function WatchRoomPage() {
 
               {/* 房间卡片列表 */}
               {rooms.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {rooms.map((room) => (
                     <div
                       key={room.id}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
+                      className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
                     >
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start justify-between mb-2.5">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">
+                          <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
                             {room.name}
                           </h3>
                           {room.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 mt-0.5">
                               {room.description}
                             </p>
                           )}
                         </div>
                         {room.password && (
-                          <Lock className="w-5 h-5 text-yellow-500 flex-shrink-0 ml-2" />
+                          <Lock className="w-4 h-4 text-yellow-500 flex-shrink-0 ml-2" />
                         )}
                       </div>
 
-                      <div className="space-y-2 text-sm mb-4">
+                      <div className="space-y-1.5 text-sm mb-3">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 dark:text-gray-400">房间号</span>
                           <span className="font-mono text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -708,13 +708,16 @@ export default function WatchRoomPage() {
                       {room.currentState && room.currentState.type === 'play' && (() => {
                         const playState = room.currentState as PlayState;
                         return (
-                          <div className="mb-4">
+                          <div className="mb-3">
                             <div className="flex items-center gap-2 mb-2">
                               <Play className="w-4 h-4 text-green-500" />
                               <span className="text-sm font-medium text-green-600 dark:text-green-400">正在观看</span>
                             </div>
-                            <div
-                              className="cursor-pointer transform hover:scale-[1.02] transition-transform"
+                            <MiniVideoCard
+                              title={playState.videoName}
+                              year={playState.videoYear}
+                              episode={playState.episode}
+                              poster={playState.poster}
                               onClick={() => {
                                 // 构建URL，携带时间参数实现同步
                                 const params = new URLSearchParams();
@@ -734,19 +737,7 @@ export default function WatchRoomPage() {
 
                                 router.push(`/play?${params.toString()}`);
                               }}
-                            >
-                              <VideoCard
-                                id={playState.videoId}
-                                source={playState.source}
-                                title={playState.videoName}
-                                query={playState.searchTitle}
-                                year={playState.videoYear}
-                                currentEpisode={playState.episode}
-                                from="search"
-                                isAggregate={true}
-                                priority={false}
-                              />
-                            </div>
+                            />
                           </div>
                         );
                       })()}

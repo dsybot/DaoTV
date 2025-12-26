@@ -48,6 +48,7 @@ export interface PlayState {
   searchTitle?: string;
   episode?: number;
   source: string;
+  poster?: string;  // 海报图片
 }
 
 // 直播状态

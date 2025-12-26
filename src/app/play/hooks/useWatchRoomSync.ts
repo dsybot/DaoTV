@@ -13,6 +13,7 @@ interface UseWatchRoomSyncOptions {
   currentSource: string;  // 当前播放源
   videoTitle: string;  // 视频标题
   videoYear: string;  // 视频年份
+  searchTitle?: string;  // 搜索标题（用于搜索时的原始标题）
 }
 
 // 房主当前播放状态（用于成员重新同步）
@@ -22,6 +23,9 @@ export interface OwnerPlayState {
   episode: number;
   currentTime: number;
   videoName?: string;
+  videoYear?: string;
+  searchTitle?: string;
+  poster?: string;
 }
 
 export function useWatchRoomSync({
@@ -33,7 +37,8 @@ export function useWatchRoomSync({
   videoId,
   currentSource,
   videoTitle,
-  videoYear
+  videoYear,
+  searchTitle
 }: UseWatchRoomSyncOptions) {
   const isHandlingRemoteCommandRef = useRef(false);
   const lastSyncTimeRef = useRef(0);
@@ -79,7 +84,23 @@ export function useWatchRoomSync({
 
   // 跳转到指定状态（使用 window.location 强制刷新）
   const navigateToState = useCallback((state: OwnerPlayState) => {
-    const url = `/play?id=${state.videoId}&source=${encodeURIComponent(state.source)}&index=${state.episode}&t=${Math.floor(state.currentTime || 0)}`;
+    const params = new URLSearchParams();
+    params.set('id', state.videoId);
+    params.set('source', state.source);
+    params.set('index', String(state.episode));
+    if (state.currentTime > 0) {
+      params.set('t', String(Math.floor(state.currentTime)));
+    }
+    if (state.videoName) {
+      params.set('title', state.videoName);
+    }
+    if (state.videoYear) {
+      params.set('year', state.videoYear);
+    }
+    if (state.searchTitle) {
+      params.set('stitle', state.searchTitle);
+    }
+    const url = `/play?${params.toString()}`;
     console.log('[PlaySync] Navigating to:', url);
     window.location.href = url;
   }, []);
@@ -99,8 +120,10 @@ export function useWatchRoomSync({
       videoId: videoId,
       videoName: videoTitle || detail?.title || '',
       videoYear: videoYear || detail?.year || '',
+      searchTitle: searchTitle,
       episode: episodeIndex,
       source: currentSource,
+      poster: detail?.poster || '',
     };
 
     // 使用防抖，避免频繁发送
@@ -139,6 +162,9 @@ export function useWatchRoomSync({
       episode: roomState.episode || 0,
       currentTime: roomState.currentTime || 0,
       videoName: roomState.videoName,
+      videoYear: roomState.videoYear,
+      searchTitle: roomState.searchTitle,
+      poster: roomState.poster,
     };
     setOwnerState(newOwnerState);
 
@@ -182,6 +208,9 @@ export function useWatchRoomSync({
         episode: state.episode || 0,
         currentTime: state.currentTime || 0,
         videoName: state.videoName,
+        videoYear: state.videoYear,
+        searchTitle: state.searchTitle,
+        poster: state.poster,
       };
       setOwnerState(newOwnerState);
 
@@ -321,6 +350,9 @@ export function useWatchRoomSync({
         episode: state.episode || 0,
         currentTime: state.currentTime || 0,
         videoName: state.videoName,
+        videoYear: state.videoYear,
+        searchTitle: state.searchTitle,
+        poster: state.poster,
       };
       setOwnerState(newOwnerState);
 
@@ -505,8 +537,10 @@ export function useWatchRoomSync({
         videoId: videoId,
         videoName: videoTitle || detail?.title || '',
         videoYear: videoYear || detail?.year || '',
+        searchTitle: searchTitle,
         episode: episodeIndex,
         source: currentSource,
+        poster: detail?.poster || '',
       };
 
       console.log('[PlaySync] Broadcasting play:change:', state);
