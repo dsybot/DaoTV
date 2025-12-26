@@ -71,7 +71,9 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
   // 获取当前登录用户名（使用初始化函数，确保首次渲染就有正确的值）
   const [currentUserName] = useState(() => {
     if (typeof window !== 'undefined') {
+      console.log('[WatchRoom] All cookies:', document.cookie);
       const authInfo = getAuthInfoFromBrowserCookie();
+      console.log('[WatchRoom] Auth info:', authInfo);
       const username = authInfo?.username || '游客';
       console.log('[WatchRoom] Initial user:', username);
       return username;
