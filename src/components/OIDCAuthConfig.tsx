@@ -592,7 +592,7 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
       </div>
     </div>
 
-      {/* Provider 编辑模态框 */}
+    /* Provider 编辑模态框 */
       {editingProvider && (
         <ProviderEditModal
           provider={editingProvider}
