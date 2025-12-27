@@ -135,7 +135,7 @@ function LoginPageClient() {
           console.log('[Login] OIDC is enabled!');
           setOidcEnabled(true);
           setOidcButtonText(data.OIDCConfig.buttonText || '使用OIDC登录');
-          // Note: Issuer is not returned for security, will be detected from button text or default
+          setOidcIssuer(data.OIDCConfig.issuer || '');
         } else {
           console.log('[Login] OIDC is NOT enabled');
         }
