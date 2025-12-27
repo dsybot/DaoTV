@@ -171,8 +171,14 @@ export async function POST(request: NextRequest) {
         ? config.SiteConfig.DefaultUserTags
         : undefined;
 
+      // 清除缓存（在注册前清除，避免读到旧缓存）
+      clearConfigCache();
+
       // 使用 V1 注册用户
       await db.registerUser(username, randomPassword);
+
+      // 重新获取配置（此时会调用 configSelfCheck 从数据库获取最新用户列表）
+      const updatedConfig = await getConfig();
 
       // 添加到 AdminConfig.UserConfig.Users（带 oidcSub）
       const newUser: any = {
@@ -186,12 +192,12 @@ export async function POST(request: NextRequest) {
         newUser.tags = defaultTags;
       }
 
-      config.UserConfig.Users.push(newUser);
+      updatedConfig.UserConfig.Users.push(newUser);
 
       // 保存配置
-      await db.saveAdminConfig(config);
+      await db.saveAdminConfig(updatedConfig);
 
-      // 清除缓存
+      // 再次清除缓存（确保其他API读取到最新配置）
       clearConfigCache();
 
       // 设置认证cookie

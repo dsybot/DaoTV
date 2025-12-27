@@ -132,10 +132,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '该用户名已被注册' }, { status: 400 });
       }
 
+      // 清除缓存（在注册前清除，避免读到旧缓存）
+      clearConfigCache();
+
       // 注册用户（V1）
       await db.registerUser(username, password);
 
-      // 重新获取配置来添加用户
+      // 重新获取配置来添加用户（此时会调用 configSelfCheck 从数据库获取最新用户列表）
       const config = await getConfig();
       const newUser = {
         username: username,
@@ -148,7 +151,7 @@ export async function POST(req: NextRequest) {
       // 保存更新后的配置
       await db.saveAdminConfig(config);
 
-      // 清除缓存
+      // 再次清除缓存（确保其他API读取到最新配置）
       clearConfigCache();
 
       // 注册成功后自动登录
