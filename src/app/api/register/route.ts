@@ -62,6 +62,7 @@ async function generateAuthCookie(
     const signature = await generateSignature(username, process.env.PASSWORD);
     authData.signature = signature;
     authData.timestamp = Date.now(); // 添加时间戳防重放攻击
+    authData.loginTime = Date.now(); // 添加登入时间记录
   }
 
   return encodeURIComponent(JSON.stringify(authData));
@@ -151,6 +152,31 @@ export async function POST(req: NextRequest) {
         undefined   // enabledApis
       );
 
+      // 将用户添加到 AdminConfig.UserConfig.Users 列表
+      const userEntry: any = {
+        username,
+        role: 'user',
+        createdAt: Date.now(),
+      };
+
+      if (defaultTags && defaultTags.length > 0) {
+        userEntry.tags = defaultTags;
+      }
+
+      // 确保 UserConfig 存在
+      if (!config.UserConfig) {
+        config.UserConfig = { Users: [] };
+      }
+
+      // 添加到配置的用户列表
+      if (!config.UserConfig.Users) {
+        config.UserConfig.Users = [];
+      }
+      config.UserConfig.Users.push(userEntry);
+
+      // 保存更新后的配置
+      await db.saveAdminConfig(config);
+
       // 清除缓存，确保下次获取配置时会同步新用户
       clearConfigCache();
 
@@ -169,7 +195,7 @@ export async function POST(req: NextRequest) {
       const expires = new Date();
       expires.setDate(expires.getDate() + 7); // 7天过期
 
-      response.cookies.set('auth', cookieValue, {
+      response.cookies.set('user_auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax',

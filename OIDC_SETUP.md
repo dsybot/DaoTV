@@ -9,7 +9,7 @@
 - [Google OAuth 2.0 配置](#google-oauth-20-配置)
 - [Microsoft Entra ID 配置](#microsoft-entra-id-配置)
 - [GitHub OAuth 配置](#github-oauth-配置)
-- [LinuxDo (Discourse) 配置](#linuxdo-discourse-配置)
+- [LinuxDo 配置](#linuxdo-配置)
 - [LunaTV 管理后台配置](#lunatv-管理后台配置)
 - [常见问题](#常见问题)
 
@@ -260,7 +260,7 @@ UserInfo Endpoint:      https://api.github.com/user
 
 ---
 
-## LinuxDo Connect OAuth2 配置
+## LinuxDo 配置
 
 LinuxDo 是基于 Discourse 论坛系统的中文技术社区，提供了独立的 OAuth2 认证服务 **LinuxDo Connect**，可直接用于第三方应用登录。
 
@@ -549,13 +549,13 @@ UserInfo Endpoint: https://api.github.com/user
 启用 OIDC 注册: ✅
 登录按钮文字: 使用 LinuxDo 账号登录
 
-Issuer URL: https://linux.do
+Issuer URL: 留空（不支持自动发现）
 Client ID: xxxxxxxxxx
 Client Secret: xxxxxxxxxx
 
-Authorization Endpoint: https://linux.do/oauth2/authorize
-Token Endpoint: https://linux.do/oauth2/token
-UserInfo Endpoint: https://linux.do/oauth2/userinfo
+Authorization Endpoint: https://connect.linux.do/oauth2/authorize
+Token Endpoint: https://connect.linux.do/oauth2/token
+UserInfo Endpoint: https://connect.linux.do/api/user
 
 最低信任等级: 2
 ```

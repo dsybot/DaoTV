@@ -152,6 +152,11 @@ export async function POST(request: NextRequest) {
           targetEntry.tags = tags;
         }
 
+        // 确保 UserConfig 存在
+        if (!adminConfig.UserConfig) {
+          adminConfig.UserConfig = { Users: [] };
+        }
+
         // 添加到配置的用户列表
         if (!adminConfig.UserConfig.Users) {
           adminConfig.UserConfig.Users = [];
