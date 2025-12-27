@@ -552,6 +552,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
           仅对 LinuxDo 有效，0 表示不限制。其他提供商请保持为 0
         </p>
       </div>
+        </div>
+      )}
 
       {/* 消息提示 */}
       {message && (
@@ -590,9 +592,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
           {saving ? '保存中...' : '保存配置'}
         </button>
       </div>
-    </div>
 
-    /* Provider 编辑模态框 */
+      {/* Provider 编辑模态框 */}
       {editingProvider && (
         <ProviderEditModal
           provider={editingProvider}
