@@ -33,6 +33,8 @@ export interface AdminConfig {
     // 自定义去广告代码
     CustomAdFilterCode?: string;
     CustomAdFilterVersion?: number;
+    // 默认用户组
+    DefaultUserTags?: string[];
   };
   UserConfig: {
     AllowRegister?: boolean; // 是否允许用户注册，默认 true
