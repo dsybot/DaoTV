@@ -48,6 +48,7 @@ export interface AdminConfig {
       tvboxToken?: string; // 用户专属的 TVBox Token
       tvboxEnabledSources?: string[]; // TVBox 可访问的源（为空则返回所有源）
       showAdultContent?: boolean; // 用户级别的成人内容显示控制
+      oidcSub?: string; // OIDC的唯一标识符(sub字段)
     }[];
     Tags?: {
       name: string;
@@ -119,6 +120,18 @@ export interface AdminConfig {
     buttonSize: 'large' | 'medium' | 'small'; // 按钮大小
     showAvatar: boolean;                 // 是否显示用户头像
     requestWriteAccess: boolean;         // 是否请求发送消息权限
+  };
+  OIDCAuthConfig?: {
+    enabled: boolean;                    // 是否启用OIDC登录
+    enableRegistration: boolean;         // 是否启用OIDC注册
+    issuer: string;                      // OIDC Issuer URL (用于自动发现)
+    authorizationEndpoint: string;       // 授权端点
+    tokenEndpoint: string;               // Token端点
+    userInfoEndpoint: string;            // 用户信息端点
+    clientId: string;                    // OIDC Client ID
+    clientSecret: string;                // OIDC Client Secret
+    buttonText: string;                  // OIDC登录按钮文字
+    minTrustLevel: number;               // 最低信任等级（仅LinuxDo网站有效，为0时不判断）
   };
   ShortDramaConfig?: {
     primaryApiUrl: string;               // 主API地址

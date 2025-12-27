@@ -171,12 +171,55 @@ export async function POST(req: NextRequest) {
 
     // 校验用户密码
     try {
-      const pass = await db.verifyUser(username, password);
+      let pass = false;
+      let needMigration = false;
+
+      // 1️⃣ 优先尝试 V2 验证（SHA256 加密）
+      pass = await db.verifyUserV2(username, password);
+
+      if (!pass) {
+        // 2️⃣ V2 失败，尝试 V1 验证（明文密码，兼容旧用户）
+        pass = await db.verifyUser(username, password);
+
+        if (pass) {
+          // V1 验证成功，标记需要迁移
+          needMigration = true;
+          console.log(`🔄 检测到 V1 用户 ${username}，将在登录成功后自动迁移到 V2`);
+        }
+      }
+
       if (!pass) {
         return NextResponse.json(
           { error: '用户名或密码错误' },
           { status: 401 }
         );
+      }
+
+      // 3️⃣ 如果需要迁移，自动升级到 V2
+      if (needMigration) {
+        try {
+          console.log(`🔄 开始迁移用户 ${username} 到 V2...`);
+
+          // 创建 V2 用户（密码会被 SHA256 加密）
+          await db.createUserV2(
+            username,
+            password,  // 明文密码，createUserV2 会自动加密
+            user?.role || 'user',
+            user?.tags,
+            undefined,  // oidcSub
+            user?.enabledApis
+          );
+
+          // 删除旧的 V1 密码数据（通过 storage 访问）
+          if (typeof (db.storage as any).client !== 'undefined') {
+            await (db.storage as any).client.del(`u:${username}:pwd`);
+          }
+
+          console.log(`✅ 用户 ${username} 已成功迁移到 V2（SHA256 加密）`);
+        } catch (migrationErr) {
+          console.error(`❌ 迁移用户 ${username} 到 V2 失败:`, migrationErr);
+          // 迁移失败不影响登录，下次登录会重试
+        }
       }
 
       // 验证成功，设置认证cookie

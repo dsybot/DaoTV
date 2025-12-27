@@ -126,28 +126,29 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        await db.registerUser(targetUsername!, targetPassword);
 
         // 获取用户组信息
         const { userGroup } = body as { userGroup?: string };
+        const tags = userGroup && userGroup.trim() ? [userGroup] : undefined;
 
-        // 更新配置
-        const newUser: any = {
-          username: targetUsername!,
-          role: 'user',
-          createdAt: Date.now(), // 设置创建时间戳
-        };
+        // 使用 V2 创建用户（SHA256 加密）
+        await db.createUserV2(
+          targetUsername!,
+          targetPassword,  // 会被 SHA256 加密
+          'user',
+          tags,
+          undefined,  // oidcSub
+          undefined   // enabledApis
+        );
 
-        // 如果指定了用户组，添加到tags中
-        if (userGroup && userGroup.trim()) {
-          newUser.tags = [userGroup];
-        }
+        // 清除配置缓存，确保下次获取配置时会同步新用户
+        clearConfigCache();
 
-        adminConfig.UserConfig.Users.push(newUser);
-        targetEntry =
-          adminConfig.UserConfig.Users[
-          adminConfig.UserConfig.Users.length - 1
-          ];
+        // 重新获取配置以获得最新的用户列表
+        adminConfig = await db.getAdminConfig();
+        targetEntry = adminConfig.UserConfig.Users.find(
+          (u) => u.username === targetUsername
+        );
         break;
       }
       case 'ban': {

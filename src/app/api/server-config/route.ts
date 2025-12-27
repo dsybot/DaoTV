@@ -34,5 +34,14 @@ export async function GET(request: NextRequest) {
     console.log('Telegram config is NOT enabled or missing');
   }
 
+  // 添加 OIDC 登录配置（仅公开必要信息）
+  if (config.OIDCAuthConfig?.enabled) {
+    result.OIDCConfig = {
+      enabled: true,
+      buttonText: config.OIDCAuthConfig.buttonText || '使用OIDC登录',
+      // 注意：不返回 ClientSecret、Issuer、Endpoints 等敏感信息
+    };
+  }
+
   return NextResponse.json(result);
 }

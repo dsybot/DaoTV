@@ -223,11 +223,14 @@ export async function GET(request: Request) {
     const username = `tg_${telegramUsername}`;
     console.log(`[Verify ${requestId}] Constructed username:`, username);
 
-    // 检查用户是否已存在
+    // 检查用户是否已存在（检查 V1 和 V2）
     let isNewUser = false;
     let initialPassword = '';
     console.log(`[Verify ${requestId}] Checking if user exists...`);
-    const userExists = await db.checkUserExist(username);
+    let userExists = await db.checkUserExistV2(username);
+    if (!userExists) {
+      userExists = await db.checkUserExist(username);  // 兼容 V1
+    }
     console.log(`[Verify ${requestId}] User exists:`, userExists);
 
     if (!userExists) {
@@ -237,12 +240,28 @@ export async function GET(request: Request) {
         initialPassword = generatePassword();
         console.log(`[Verify ${requestId}] Generated password:`, initialPassword);
 
-        console.log(`[Verify ${requestId}] Calling db.registerUser...`);
-        await db.registerUser(username, initialPassword);
-        console.log(`[Verify ${requestId}] User registered successfully`);
+        // 获取默认用户组
+        const fullConfig = await getConfig();
+        const defaultTags = fullConfig.SiteConfig?.DefaultUserTags && fullConfig.SiteConfig.DefaultUserTags.length > 0
+          ? fullConfig.SiteConfig.DefaultUserTags
+          : undefined;
+
+        console.log(`[Verify ${requestId}] Calling db.createUserV2 (SHA256 encrypted)...`);
+        await db.createUserV2(
+          username,
+          initialPassword,  // 会被 SHA256 加密
+          'user',
+          defaultTags,
+          undefined,  // oidcSub
+          undefined   // enabledApis
+        );
+        console.log(`[Verify ${requestId}] User registered successfully with V2 (encrypted)`);
 
         // 验证用户是否真的被创建
-        const verifyExists = await db.checkUserExist(username);
+        let verifyExists = await db.checkUserExistV2(username);
+        if (!verifyExists) {
+          verifyExists = await db.checkUserExist(username);  // 兼容检查
+        }
         console.log(`[Verify ${requestId}] Verification - user exists after registration:`, verifyExists);
 
         // 清除配置缓存，强制下次getConfig()时重新从数据库读取最新用户列表
