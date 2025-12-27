@@ -174,30 +174,17 @@ export async function POST(request: NextRequest) {
       // 清除缓存（在注册前清除，避免读到旧缓存）
       clearConfigCache();
 
-      // 使用 V1 注册用户
-      await db.registerUser(username, randomPassword);
+      // 使用 V2 注册用户（带 oidcSub 绑定）
+      await db.createUserV2(
+        username,
+        randomPassword,
+        'user',
+        defaultTags,
+        oidcSession.sub,  // 传入 oidcSub，会自动创建映射
+        undefined  // enabledApis
+      );
 
       // 重新获取配置（此时会调用 configSelfCheck 从数据库获取最新用户列表）
-      const updatedConfig = await getConfig();
-
-      // 添加到 AdminConfig.UserConfig.Users（带 oidcSub）
-      const newUser: any = {
-        username: username,
-        role: 'user' as const,
-        createdAt: Date.now(),
-        oidcSub: oidcSession.sub,  // 绑定 OIDC Sub
-      };
-
-      if (defaultTags && defaultTags.length > 0) {
-        newUser.tags = defaultTags;
-      }
-
-      updatedConfig.UserConfig.Users.push(newUser);
-
-      // 保存配置
-      await db.saveAdminConfig(updatedConfig);
-
-      // 再次清除缓存（确保其他API读取到最新配置）
       clearConfigCache();
 
       // 设置认证cookie
