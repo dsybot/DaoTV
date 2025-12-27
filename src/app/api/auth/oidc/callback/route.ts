@@ -226,6 +226,9 @@ export async function GET(request: NextRequest) {
     } else {
       // 其他 provider 需要调用 userinfo endpoint
       let userInfoUrl = oidcConfig.userInfoEndpoint;
+      const userInfoHeaders: Record<string, string> = {
+        'Authorization': `Bearer ${accessToken}`,
+      };
 
       if (providerId === 'facebook') {
         // Facebook Graph API 需要指定 fields
@@ -238,12 +241,14 @@ export async function GET(request: NextRequest) {
         url.searchParams.set('access_token', accessToken);
         url.searchParams.set('openid', openid);
         userInfoUrl = url.toString();
+      } else if (providerId === 'github') {
+        // GitHub REST API 需要特殊的 headers
+        userInfoHeaders['Accept'] = 'application/vnd.github+json';
+        userInfoHeaders['X-GitHub-Api-Version'] = '2022-11-28';
       }
 
       const userInfoResponse = await fetch(userInfoUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: userInfoHeaders,
       });
 
       if (!userInfoResponse.ok) {
@@ -254,11 +259,36 @@ export async function GET(request: NextRequest) {
       }
 
       userInfo = await userInfoResponse.json();
+      console.log('[OIDC Callback] User info received:', { providerId, hasEmail: !!userInfo.email, hasName: !!userInfo.name, hasSub: !!userInfo.sub, hasId: !!userInfo.id });
+
+      // GitHub 的 email 可能为 null（如果用户未公开），需要从 /user/emails 获取
+      if (providerId === 'github' && !userInfo.email) {
+        try {
+          const emailResponse = await fetch('https://api.github.com/user/emails', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
+          });
+          if (emailResponse.ok) {
+            const emails = await emailResponse.json();
+            // 使用 primary email 或第一个 verified email
+            const primaryEmail = emails.find((e: any) => e.primary && e.verified);
+            const verifiedEmail = emails.find((e: any) => e.verified);
+            userInfo.email = primaryEmail?.email || verifiedEmail?.email || null;
+            console.log('[OIDC Callback] GitHub email fetched:', { hasEmail: !!userInfo.email });
+          }
+        } catch (error) {
+          console.error('获取 GitHub email 失败:', error);
+        }
+      }
     }
     // OIDC的唯一标识符：
     // - 标准OIDC使用 sub
     // - Facebook使用 id
     // - 微信使用 openid
+    // - GitHub使用 id
     const oidcSub = userInfo.sub || userInfo.id || userInfo.openid;
 
     if (!oidcSub) {
@@ -338,6 +368,7 @@ export async function GET(request: NextRequest) {
       providerId: providerId, // 存储 provider ID 用于注册时验证
       timestamp: Date.now(),
     };
+    console.log('[OIDC Callback] Creating oidc_session:', { sub: oidcSession.sub, hasEmail: !!oidcSession.email, hasName: !!oidcSession.name, providerId });
 
     const response = NextResponse.redirect(new URL('/oidc-register', origin));
     response.cookies.set('oidc_session', JSON.stringify(oidcSession), {
