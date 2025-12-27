@@ -55,8 +55,11 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
-    // 使用环境变量SITE_BASE或当前请求的origin
-    const origin = process.env.SITE_BASE || request.nextUrl.origin;
+    // 使用环境变量SITE_BASE，或从请求头获取真实的origin
+    const origin = process.env.SITE_BASE ||
+                   request.headers.get('x-forwarded-host')
+                     ? `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host')}`
+                     : request.nextUrl.origin;
 
     // 检查是否有错误
     if (error) {

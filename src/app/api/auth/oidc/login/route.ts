@@ -29,8 +29,11 @@ export async function GET(request: NextRequest) {
     // 生成state参数用于防止CSRF攻击
     const state = crypto.randomUUID();
 
-    // 使用环境变量SITE_BASE或当前请求的origin
-    const origin = process.env.SITE_BASE || request.nextUrl.origin;
+    // 使用环境变量SITE_BASE，或从请求头获取真实的origin
+    const origin = process.env.SITE_BASE ||
+                   request.headers.get('x-forwarded-host')
+                     ? `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host')}`
+                     : request.nextUrl.origin;
     const redirectUri = `${origin}/api/auth/oidc/callback`;
 
     // 构建授权URL
