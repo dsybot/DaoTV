@@ -464,6 +464,13 @@ export class DbManager {
     }
   }
 
+  // 删除 V1 用户密码数据（用于 V1→V2 迁移）
+  async deleteV1Password(userName: string): Promise<void> {
+    if (typeof (this.storage as any).client !== 'undefined') {
+      await (this.storage as any).client.del(`u:${userName}:pwd`);
+    }
+  }
+
   // 检查存储类型是否支持统计功能
   isStatsSupported(): boolean {
     const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';

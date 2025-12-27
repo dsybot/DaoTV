@@ -210,10 +210,8 @@ export async function POST(req: NextRequest) {
             user?.enabledApis
           );
 
-          // 删除旧的 V1 密码数据（通过 storage 访问）
-          if (typeof (db.storage as any).client !== 'undefined') {
-            await (db.storage as any).client.del(`u:${username}:pwd`);
-          }
+          // 删除旧的 V1 密码数据
+          await db.deleteV1Password(username);
 
           console.log(`✅ 用户 ${username} 已成功迁移到 V2（SHA256 加密）`);
         } catch (migrationErr) {
