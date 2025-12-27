@@ -810,9 +810,9 @@ JWKS Endpoint:          https://appleid.apple.com/auth/keys
 | **按钮文字** | `使用 Apple 登录` | 可选，留空则使用默认文字 |
 | **允许注册** | ✅ 勾选（可选） | 是否允许新用户通过 Apple 注册 |
 | **Issuer URL** | `https://appleid.apple.com` | Apple 的 Issuer（支持自动发现） |
-| **Authorization Endpoint** | `https://appleid.apple.com/auth/authorize` | 授权端点 |
-| **Token Endpoint** | `https://appleid.apple.com/auth/token` | Token 端点 |
-| **UserInfo Endpoint** | 留空或随意填写 | Apple 不使用此端点 |
+| **Authorization Endpoint** | `https://appleid.apple.com/auth/authorize` | 授权端点（自动发现会填充） |
+| **Token Endpoint** | `https://appleid.apple.com/auth/token` | Token 端点（自动发现会填充） |
+| **JWKS URI** | `https://appleid.apple.com/auth/keys` | 用于验证 id_token 签名（自动发现会填充） |
 | **Client ID** | `com.yourcompany.lunatv.web` | 你的 Services ID |
 | **Client Secret** | `eyJhbGc...` | 生成的 JWT（很长的字符串） |
 
@@ -827,7 +827,8 @@ JWKS Endpoint:          https://appleid.apple.com/auth/keys
   "issuer": "https://appleid.apple.com",
   "authorizationEndpoint": "https://appleid.apple.com/auth/authorize",
   "tokenEndpoint": "https://appleid.apple.com/auth/token",
-  "userInfoEndpoint": "https://appleid.apple.com/auth/keys",
+  "userInfoEndpoint": "",
+  "jwksUri": "https://appleid.apple.com/auth/keys",
   "clientId": "com.yourcompany.lunatv.web",
   "clientSecret": "eyJhbGciOiJFUzI1NiIsImtpZCI6IkFCQ0RFRjEyMzQifQ.eyJpc3MiOiJBQkMxMjM0NTY3IiwiaWF0IjoxNjQwOTk1MjAwLCJleHAiOjE2NTY1NDcyMDAsImF1ZCI6Imh0dHBzOi8vYXBwbGVpZC5hcHBsZS5jb20iLCJzdWIiOiJjb20ueW91cmNvbXBhbnkubHVuYXR2LndlYiJ9.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 }
@@ -843,6 +844,7 @@ JWKS Endpoint:          https://appleid.apple.com/auth/keys
 |------|-----------|---------------|-------------|
 | **Client Secret** | 静态字符串 | 动态生成的 JWT（6个月有效期） | ✅ 支持 JWT |
 | **UserInfo Endpoint** | 提供 | ❌ 不提供 | ✅ 从 id_token 解析 |
+| **JWKS URI** | 可选 | ✅ 提供（验证签名） | ✅ 支持配置 |
 | **用户信息返回** | 每次都返回 | 只在首次授权时返回 | ✅ 自动处理 |
 | **Email 隐藏** | 真实邮箱 | 可选择隐藏（relay邮箱） | ✅ 支持 |
 
