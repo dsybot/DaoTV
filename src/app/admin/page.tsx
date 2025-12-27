@@ -42,7 +42,7 @@ import {
   Users,
   Video,
 } from 'lucide-react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, KeyRound } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
