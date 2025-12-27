@@ -56,10 +56,17 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
 
     // 使用环境变量SITE_BASE，或从请求头获取真实的origin
-    const origin = process.env.SITE_BASE ||
-                   request.headers.get('x-forwarded-host')
-                     ? `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host')}`
-                     : request.nextUrl.origin;
+    let origin: string;
+    if (process.env.SITE_BASE) {
+      origin = process.env.SITE_BASE;
+    } else if (request.headers.get('x-forwarded-host')) {
+      const proto = request.headers.get('x-forwarded-proto') || 'https';
+      const host = request.headers.get('x-forwarded-host');
+      origin = `${proto}://${host}`;
+    } else {
+      origin = request.nextUrl.origin;
+      origin = origin.replace('://0.0.0.0:', '://localhost:');
+    }
 
     // 检查是否有错误
     if (error) {
@@ -331,7 +338,17 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('OIDC回调处理失败:', error);
-    const origin = process.env.SITE_BASE || request.nextUrl.origin;
+    let origin: string;
+    if (process.env.SITE_BASE) {
+      origin = process.env.SITE_BASE;
+    } else if (request.headers.get('x-forwarded-host')) {
+      const proto = request.headers.get('x-forwarded-proto') || 'https';
+      const host = request.headers.get('x-forwarded-host');
+      origin = `${proto}://${host}`;
+    } else {
+      origin = request.nextUrl.origin;
+      origin = origin.replace('://0.0.0.0:', '://localhost:');
+    }
     return NextResponse.redirect(
       new URL('/login?error=' + encodeURIComponent('服务器错误'), origin)
     );
