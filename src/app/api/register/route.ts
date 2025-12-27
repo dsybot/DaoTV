@@ -126,20 +126,30 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      // 检查用户是否已存在（只检查V2存储）
-      const userExists = await db.checkUserExistV2(username);
+      // 检查用户是否已存在
+      const userExists = await db.checkUserExist(username);
       if (userExists) {
         return NextResponse.json({ error: '该用户名已被注册' }, { status: 400 });
       }
 
-      // 获取配置以获取默认用户组
-      const config = await getConfig();
-      const defaultTags = config.SiteConfig?.DefaultUserTags && config.SiteConfig.DefaultUserTags.length > 0
-        ? config.SiteConfig.DefaultUserTags
-        : undefined;
+      // 注册用户（V1）
+      await db.registerUser(username, password);
 
-      // 使用 V2 创建用户（带SHA256加密）
-      await db.createUserV2(username, password, 'user', defaultTags);
+      // 重新获取配置来添加用户
+      const config = await getConfig();
+      const newUser = {
+        username: username,
+        role: 'user' as const,
+        createdAt: Date.now(),
+      };
+
+      config.UserConfig.Users.push(newUser);
+
+      // 保存更新后的配置
+      await db.saveAdminConfig(config);
+
+      // 清除缓存
+      clearConfigCache();
 
       // 注册成功后自动登录
       const response = NextResponse.json({

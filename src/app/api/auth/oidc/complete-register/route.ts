@@ -171,8 +171,28 @@ export async function POST(request: NextRequest) {
         ? config.SiteConfig.DefaultUserTags
         : undefined;
 
-      // 使用新版本创建用户（带SHA256加密和OIDC绑定）
-      await db.createUserV2(username, randomPassword, 'user', defaultTags, oidcSession.sub);
+      // 使用 V1 注册用户
+      await db.registerUser(username, randomPassword);
+
+      // 添加到 AdminConfig.UserConfig.Users（带 oidcSub）
+      const newUser: any = {
+        username: username,
+        role: 'user' as const,
+        createdAt: Date.now(),
+        oidcSub: oidcSession.sub,  // 绑定 OIDC Sub
+      };
+
+      if (defaultTags && defaultTags.length > 0) {
+        newUser.tags = defaultTags;
+      }
+
+      config.UserConfig.Users.push(newUser);
+
+      // 保存配置
+      await db.saveAdminConfig(config);
+
+      // 清除缓存
+      clearConfigCache();
 
       // 设置认证cookie
       const response = NextResponse.json({ ok: true, message: '注册成功' });

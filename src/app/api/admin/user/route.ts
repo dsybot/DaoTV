@@ -127,31 +127,29 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // 使用 V1 注册用户
+        await db.registerUser(targetUsername!, targetPassword);
+
         // 获取用户组信息
         const { userGroup } = body as { userGroup?: string };
-        const tags = userGroup && userGroup.trim() ? [userGroup] : undefined;
 
-        // 使用 V2 创建用户（带SHA256加密）
-        await db.createUserV2(
-          targetUsername!,
-          targetPassword,
-          'user',
-          tags,
-          undefined,  // oidcSub
-          undefined   // enabledApis
-        );
+        // 更新配置
+        const newUser: any = {
+          username: targetUsername!,
+          role: 'user',
+          createdAt: Date.now(),
+        };
 
-        // 从 V2 获取用户信息作为 targetEntry（用于后续返回）
-        const userInfo = await db.getUserInfoV2(targetUsername!);
-        if (userInfo) {
-          targetEntry = {
-            username: targetUsername!,
-            role: userInfo.role,
-            banned: userInfo.banned,
-            tags: userInfo.tags,
-            createdAt: userInfo.created_at,
-          };
+        // 如果指定了用户组，添加到tags中
+        if (userGroup && userGroup.trim()) {
+          newUser.tags = [userGroup];
         }
+
+        adminConfig.UserConfig.Users.push(newUser);
+        targetEntry =
+          adminConfig.UserConfig.Users[
+          adminConfig.UserConfig.Users.length - 1
+          ];
         break;
       }
       case 'ban': {
