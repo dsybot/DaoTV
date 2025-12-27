@@ -660,8 +660,9 @@ function ProviderEditModal({
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm'>
-      <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 m-4'>
+    <div className='fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' onClick={onCancel}>
+      <div className='flex min-h-screen items-center justify-center p-4'>
+        <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl p-6 my-8' onClick={(e) => e.stopPropagation()}>
         <h3 className='text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6'>
           {provider.name === '新 Provider' ? '添加 Provider' : '编辑 Provider'}
         </h3>
@@ -918,5 +919,6 @@ function ProviderEditModal({
         </div>
       </div>
     </div>
+  </div>
   );
 }
