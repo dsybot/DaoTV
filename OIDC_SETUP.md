@@ -9,6 +9,7 @@
 - [Google OAuth 2.0 配置](#google-oauth-20-配置)
 - [Microsoft Entra ID 配置](#microsoft-entra-id-配置)
 - [GitHub OAuth 配置](#github-oauth-配置)
+- [Facebook OAuth 配置](#facebook-oauth-配置)
 - [LinuxDo 配置](#linuxdo-配置)
 - [LunaTV 管理后台配置](#lunatv-管理后台配置)
 - [常见问题](#常见问题)
@@ -257,6 +258,238 @@ UserInfo Endpoint:      https://api.github.com/user
 - [Creating an OAuth app - GitHub Docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
 - [Authorizing OAuth apps - GitHub Docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
 - [Setting up Github OAuth 2.0](https://apidog.com/blog/set-up-github-oauth2/)
+
+---
+
+## Facebook OAuth 配置
+
+Facebook 提供 OAuth 2.0 认证服务，拥有全球最大的用户基数。LunaTV 已针对 Facebook 的特殊实现进行了适配。
+
+### 步骤 1：创建 Facebook 应用
+
+#### 1.1 注册为开发者
+
+1. 访问 [Facebook for Developers](https://developers.facebook.com/)
+2. 使用您的 Facebook 账号登录
+3. 如果是首次使用，需要注册成为开发者（同意条款并验证账号）
+
+#### 1.2 创建新应用
+
+1. 登录后，点击右上角的 **"My Apps"**（我的应用）
+2. 点击 **"Create App"**（创建应用）按钮
+3. 选择应用类型：
+   - 推荐选择 **"Consumer"**（消费者）或 **"None"**（无）
+4. 填写应用信息：
+   - **App Name**（应用名称）：输入您的应用名称（例如：LunaTV）
+   - **App Contact Email**（联系邮箱）：输入有效的邮箱地址
+   - **App Purpose**（应用用途）：选择 **"Yourself or your own business"**
+5. 点击 **"Create App"**（创建应用）
+
+### 步骤 2：获取应用凭据
+
+#### 2.1 查看 App ID 和 App Secret
+
+1. 创建完成后，进入应用面板
+2. 在左侧菜单中点击 **"Settings"** → **"Basic"**（设置 → 基本）
+3. 您将看到：
+   - **App ID**（应用编号）- 这就是您的 **Client ID**
+   - **App Secret**（应用密钥）- 点击 **"Show"**（显示）按钮查看，这就是您的 **Client Secret**
+
+> ⚠️ **重要提示**：
+> - App Secret 类似于密码，切勿公开或提交到代码仓库
+> - 创建后请立即复制并妥善保管
+> - 如果泄露，请立即在 Facebook 后台重新生成新密钥
+
+### 步骤 3：添加 Facebook Login 产品
+
+1. 在应用面板左侧菜单中，点击 **"Add Product"**（添加产品）
+2. 找到 **"Facebook Login"**（Facebook 登录）
+3. 点击 **"Set Up"**（设置）按钮
+
+### 步骤 4：配置 OAuth 重定向 URI
+
+1. 在左侧菜单中点击 **"Facebook Login"** → **"Settings"**（设置）
+2. 找到 **"Valid OAuth Redirect URIs"**（有效的 OAuth 重定向 URI）
+3. 添加您的回调地址：
+   ```
+   https://your-domain.com/api/auth/oidc/callback
+   ```
+
+   **示例**：
+   - 生产环境：`https://lunatv.example.com/api/auth/oidc/callback`
+   - 本地测试（使用 ngrok）：`https://abc123.ngrok.io/api/auth/oidc/callback`
+
+4. 点击 **"Save Changes"**（保存更改）
+
+> ⚠️ **注意**：Facebook 要求重定向 URI 必须使用 **HTTPS** 协议（本地开发需要使用 ngrok 等工具）
+
+### 步骤 5：上线应用
+
+Facebook 应用默认处于 **"开发模式"**（Development），只有应用管理员和测试用户可以登录。
+
+#### 切换到生产模式
+
+1. 在 Facebook 应用面板顶部，找到模式切换开关
+2. 当前应该显示 **"In development"**（开发中）
+3. 点击切换开关，选择 **"Live"**（上线）
+4. 确认上线操作
+
+> 💡 **提示**：上线前建议配置应用图标和隐私政策 URL，虽然不是强制要求，但能提升用户信任度。
+
+### Facebook OAuth 端点信息
+
+Facebook 使用 OAuth 2.0 协议，端点配置如下：
+
+```
+Authorization Endpoint: https://www.facebook.com/v19.0/dialog/oauth
+Token Endpoint:         https://graph.facebook.com/v19.0/oauth/access_token
+UserInfo Endpoint:      https://graph.facebook.com/v19.0/me
+```
+
+**版本说明**：
+- 当前示例使用 `v19.0`（2025 年推荐版本）
+- Facebook 会定期发布新版本，可访问 [Graph API 版本文档](https://developers.facebook.com/docs/graph-api/changelog) 查看最新版本
+- 旧版本会在发布后至少 2 年内保持可用
+
+### LunaTV 后台配置（Facebook）
+
+在 LunaTV 管理后台 → **系统设置** → **OIDC 认证配置** 中：
+
+#### 点击 **"添加 Provider"**，填写以下信息：
+
+| 字段 | 值 | 说明 |
+|------|-----|------|
+| **Provider ID** | `facebook` | ⚠️ **必须**填写 `facebook`（全部小写）才能显示 Facebook logo |
+| **启用** | ✅ 勾选 | 启用此 Provider |
+| **按钮文字** | `使用 Facebook 登录` | 可选，留空则使用默认文字 |
+| **允许注册** | ✅ 勾选（可选） | 是否允许新用户通过 Facebook 注册 |
+| **Issuer URL** | `https://www.facebook.com` | Facebook 的 Issuer |
+| **Authorization Endpoint** | `https://www.facebook.com/v19.0/dialog/oauth` | 授权端点 |
+| **Token Endpoint** | `https://graph.facebook.com/v19.0/oauth/access_token` | Token 端点 |
+| **UserInfo Endpoint** | `https://graph.facebook.com/v19.0/me` | 用户信息端点 |
+| **Client ID** | `您的 App ID` | 从 Facebook 应用设置中获取 |
+| **Client Secret** | `您的 App Secret` | 从 Facebook 应用设置中获取 |
+
+#### 完整配置示例
+
+```json
+{
+  "id": "facebook",
+  "enabled": true,
+  "buttonText": "使用 Facebook 登录",
+  "enableRegistration": true,
+  "issuer": "https://www.facebook.com",
+  "authorizationEndpoint": "https://www.facebook.com/v19.0/dialog/oauth",
+  "tokenEndpoint": "https://graph.facebook.com/v19.0/oauth/access_token",
+  "userInfoEndpoint": "https://graph.facebook.com/v19.0/me",
+  "clientId": "1234567890123456",
+  "clientSecret": "abcdef1234567890abcdef1234567890"
+}
+```
+
+保存配置后，登录页面将显示蓝色的 **"使用 Facebook 登录"** 按钮（带 Facebook logo）。
+
+### 技术实现说明
+
+#### Facebook OAuth 与标准 OIDC 的差异
+
+Facebook 使用 OAuth 2.0 协议，与标准 OIDC 有以下差异（LunaTV 已自动处理）：
+
+| 差异项 | 标准 OIDC | Facebook OAuth | LunaTV 处理 |
+|--------|-----------|----------------|-------------|
+| **用户唯一标识** | `sub` 字段 | `id` 字段 | ✅ 自动兼容 |
+| **ID Token** | 返回 `id_token` | 不一定返回 | ✅ 已适配 |
+| **UserInfo 字段** | 自动返回基础字段 | 需要 `fields` 参数指定 | ✅ 自动添加 |
+
+#### 获取的用户信息
+
+LunaTV 从 Facebook 获取以下字段：
+- `id`：用户唯一标识符（用于关联账号）
+- `name`：用户姓名
+- `email`：邮箱地址（如果用户授权分享）
+- `picture`：头像图片（640×640 像素）
+
+> 📝 **说明**：Facebook 用户可以选择不分享邮箱，LunaTV 使用 `id` 字段作为唯一标识，不强制要求邮箱。
+
+### 常见问题（Facebook）
+
+#### Q1: 点击登录后提示 "redirect_uri_mismatch" 错误
+
+**原因**：重定向 URI 配置不匹配
+
+**解决方法**：
+1. 检查 Facebook 应用中配置的 **"Valid OAuth Redirect URIs"** 是否与您的实际域名一致
+2. 确保使用 `https://` 协议
+3. 确保路径为 `/api/auth/oidc/callback`（无额外斜杠）
+4. 域名大小写必须完全匹配
+
+#### Q2: 提示 "App Not Set Up" 错误
+
+**原因**：Facebook 应用未正确配置 Facebook Login 产品
+
+**解决方法**：
+1. 确保已在 Facebook 应用中添加 **"Facebook Login"** 产品
+2. 检查 OAuth 重定向 URI 是否已保存
+3. 确认应用已切换到 **"Live"** 模式（如果要给其他用户使用）
+
+#### Q3: 登录按钮显示 "使用 OIDC 登录" 而不是 Facebook logo
+
+**原因**：Provider ID 配置错误
+
+**解决方法**：
+1. 检查 LunaTV 配置中的 **"Provider ID"** 字段
+2. **必须**填写 `facebook`（全部小写，不能是 `Facebook` 或 `fb`）
+3. 保存配置后刷新登录页面
+
+#### Q4: 提示 "获取用户信息失败" 错误
+
+**原因**：UserInfo Endpoint 配置错误或权限问题
+
+**解决方法**：
+1. 确认 **"UserInfo Endpoint"** 配置为 `https://graph.facebook.com/v19.0/me`
+2. 查看服务器日志获取详细错误信息
+3. 检查 App ID 和 App Secret 是否正确
+
+#### Q5: 如何在本地开发环境测试？
+
+**方法 1：使用 ngrok（推荐）**
+
+```bash
+ngrok http 3000
+```
+
+使用 ngrok 提供的 HTTPS 地址（如 `https://abc123.ngrok.io`）作为重定向 URI。
+
+**方法 2：添加测试用户**
+
+1. 在 Facebook 应用面板中，进入 **"Roles"** → **"Test Users"**
+2. 创建测试用户
+3. 应用保持在 **"Development"** 模式，使用测试账号登录
+
+#### Q6: Facebook 登录后获取不到邮箱？
+
+**说明**：
+- Facebook 用户可以选择不分享邮箱
+- LunaTV 使用 Facebook 的唯一 ID（`id` 字段）作为用户标识，不强制要求邮箱
+- 如果需要邮箱，可以在首次注册时要求用户补充
+
+#### Q7: 如何更新到新版本的 Facebook Graph API？
+
+1. 访问 [Facebook Graph API Changelog](https://developers.facebook.com/docs/graph-api/changelog)
+2. 查看最新版本号（例如 `v20.0`）
+3. 在 LunaTV 配置中更新端点 URL 的版本号：
+   ```
+   https://www.facebook.com/v20.0/dialog/oauth
+   https://graph.facebook.com/v20.0/oauth/access_token
+   https://graph.facebook.com/v20.0/me
+   ```
+
+### 参考资料
+- [Facebook for Developers 官方文档](https://developers.facebook.com/docs/)
+- [Facebook Login 文档](https://developers.facebook.com/docs/facebook-login/)
+- [Facebook Graph API 文档](https://developers.facebook.com/docs/graph-api/)
+- [Set up Facebook login with OAuth 2](https://baserow.io/user-docs/configure-facebook-for-oauth-2-sso)
+- [Facebook OAuth 2.0 Access for Website](https://apidog.com/blog/facebook-oauth-2-0-access-for-website/)
 
 ---
 
@@ -541,6 +774,25 @@ Authorization Endpoint: https://github.com/login/oauth/authorize
 Token Endpoint: https://github.com/login/oauth/access_token
 UserInfo Endpoint: https://api.github.com/user
 ```
+
+#### Facebook 配置示例
+
+```
+Provider ID: facebook
+启用: ✅
+允许注册: ✅
+按钮文字: 使用 Facebook 登录
+
+Issuer URL: https://www.facebook.com
+Client ID: 1234567890123456
+Client Secret: abcdef1234567890abcdef1234567890
+
+Authorization Endpoint: https://www.facebook.com/v19.0/dialog/oauth
+Token Endpoint: https://graph.facebook.com/v19.0/oauth/access_token
+UserInfo Endpoint: https://graph.facebook.com/v19.0/me
+```
+
+> ⚠️ **重要**：Provider ID 必须填写 `facebook`（全部小写）才能正确显示 Facebook logo 和品牌色按钮。
 
 #### LinuxDo 配置示例
 

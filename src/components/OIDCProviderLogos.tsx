@@ -28,6 +28,14 @@ export const GitHubLogo = () => (
   </svg>
 );
 
+// Facebook Logo SVG
+export const FacebookLogo = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    <path fill="#FFFFFF" d="M16.671 15.543l.532-3.47h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.514V4.996s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.632H7.078v3.47h3.047v8.385a12.118 12.118 0 003.75 0v-8.385h2.796z"/>
+  </svg>
+);
+
 // LinuxDo Logo SVG (using a Linux penguin icon as placeholder)
 export const LinuxDoLogo = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -43,7 +51,7 @@ export const GenericOIDCLogo = () => (
 );
 
 // Helper function to detect provider from issuer URL
-export function detectProvider(issuer?: string): 'google' | 'microsoft' | 'github' | 'linuxdo' | 'generic' {
+export function detectProvider(issuer?: string): 'google' | 'microsoft' | 'github' | 'facebook' | 'linuxdo' | 'generic' {
   if (!issuer) return 'generic';
 
   const lowerIssuer = issuer.toLowerCase();
@@ -56,6 +64,9 @@ export function detectProvider(issuer?: string): 'google' | 'microsoft' | 'githu
   }
   if (lowerIssuer.includes('github')) {
     return 'github';
+  }
+  if (lowerIssuer.includes('facebook') || lowerIssuer.includes('graph.facebook.com')) {
+    return 'facebook';
   }
   if (lowerIssuer.includes('linux.do') || lowerIssuer.includes('connect.linux.do')) {
     return 'linuxdo';
@@ -73,6 +84,8 @@ export function getProviderButtonStyle(provider: ReturnType<typeof detectProvide
       return 'bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 dark:bg-gray-100 dark:hover:bg-white';
     case 'github':
       return 'bg-gray-900 hover:bg-gray-800 text-white border-2 border-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700';
+    case 'facebook':
+      return 'bg-[#1877F2] hover:bg-[#166FE5] text-white border-2 border-[#1877F2]';
     case 'linuxdo':
       return 'bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600';
     default:
@@ -91,6 +104,8 @@ export function getProviderButtonText(provider: ReturnType<typeof detectProvider
       return '使用 Microsoft 登录';
     case 'github':
       return '使用 GitHub 登录';
+    case 'facebook':
+      return '使用 Facebook 登录';
     case 'linuxdo':
       return '使用 LinuxDo 登录';
     default:
@@ -107,6 +122,8 @@ export const OIDCProviderLogo: React.FC<{ provider: ReturnType<typeof detectProv
       return <MicrosoftLogo />;
     case 'github':
       return <GitHubLogo />;
+    case 'facebook':
+      return <FacebookLogo />;
     case 'linuxdo':
       return <LinuxDoLogo />;
     default:

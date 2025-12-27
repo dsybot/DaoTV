@@ -689,6 +689,7 @@ function ProviderEditModal({
                 • Google: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>google</code><br />
                 • GitHub: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>github</code><br />
                 • Microsoft: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>microsoft</code><br />
+                • Facebook: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>facebook</code><br />
                 • LinuxDo: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>linuxdo</code>
               </div>
               <div>

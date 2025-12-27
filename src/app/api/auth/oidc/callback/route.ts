@@ -155,14 +155,24 @@ export async function GET(request: NextRequest) {
     const accessToken = tokenData.access_token;
     const idToken = tokenData.id_token;
 
-    if (!accessToken || !idToken) {
+    // Facebook 不一定返回 id_token（非标准OIDC）
+    if (!accessToken || (!idToken && providerId !== 'facebook')) {
       return NextResponse.redirect(
         new URL('/login?error=' + encodeURIComponent('token无效'), origin)
       );
     }
 
     // 获取用户信息
-    const userInfoResponse = await fetch(oidcConfig.userInfoEndpoint, {
+    // Facebook 需要特殊处理：添加 fields 参数
+    let userInfoUrl = oidcConfig.userInfoEndpoint;
+    if (providerId === 'facebook') {
+      // Facebook Graph API 需要指定 fields
+      const url = new URL(userInfoUrl);
+      url.searchParams.set('fields', 'id,name,email,picture.width(640).height(640)');
+      userInfoUrl = url.toString();
+    }
+
+    const userInfoResponse = await fetch(userInfoUrl, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -176,9 +186,11 @@ export async function GET(request: NextRequest) {
     }
 
     const userInfo = await userInfoResponse.json();
-    const oidcSub = userInfo.sub; // OIDC的唯一标识符
+    // OIDC的唯一标识符：Facebook使用id，其他使用sub
+    const oidcSub = userInfo.sub || userInfo.id;
 
     if (!oidcSub) {
+      console.error('用户信息缺少唯一标识符:', userInfo);
       return NextResponse.redirect(
         new URL('/login?error=' + encodeURIComponent('用户信息无效'), origin)
       );
