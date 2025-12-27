@@ -100,6 +100,13 @@ export async function GET(request: NextRequest) {
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('scope', 'public_profile email'); // Facebook 使用 public_profile email
       authUrl.searchParams.set('state', state);
+    } else if (providerId === 'github') {
+      // GitHub OAuth 参数（不支持 openid scope）
+      authUrl.searchParams.set('client_id', oidcConfig.clientId);
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('scope', 'read:user user:email'); // GitHub 使用 read:user user:email
+      authUrl.searchParams.set('state', state);
     } else {
       // 标准 OIDC 参数
       authUrl.searchParams.set('client_id', oidcConfig.clientId);

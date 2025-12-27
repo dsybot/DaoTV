@@ -50,22 +50,27 @@ async function generateAuthCookie(
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('[OIDC Callback] Request URL:', request.url);
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
+    console.log('[OIDC Callback] Params - code:', !!code, 'state:', !!state, 'error:', error);
 
     // 使用环境变量SITE_BASE，或从请求头获取真实的origin
     let origin: string;
     if (process.env.SITE_BASE) {
       origin = process.env.SITE_BASE;
+      console.log('[OIDC Callback] Using SITE_BASE:', origin);
     } else if (request.headers.get('x-forwarded-host')) {
       const proto = request.headers.get('x-forwarded-proto') || 'https';
       const host = request.headers.get('x-forwarded-host');
       origin = `${proto}://${host}`;
+      console.log('[OIDC Callback] Using x-forwarded-host:', origin);
     } else {
       origin = request.nextUrl.origin;
       origin = origin.replace('://0.0.0.0:', '://localhost:');
+      console.log('[OIDC Callback] Using request origin:', origin);
     }
 
     // 检查是否有错误
@@ -135,6 +140,8 @@ export async function GET(request: NextRequest) {
     }
 
     const redirectUri = `${origin}/api/auth/oidc/callback`;
+    console.log('[OIDC Callback] Token exchange - redirectUri:', redirectUri);
+    console.log('[OIDC Callback] Token exchange - providerId:', providerId);
 
     // 交换code获取token
     let tokenRequestBody: Record<string, string>;
@@ -158,16 +165,25 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // GitHub 需要 Accept: application/json 头才能返回 JSON 格式
+    const tokenHeaders: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    if (providerId === 'github') {
+      tokenHeaders['Accept'] = 'application/json';
+    }
+
+    console.log('[OIDC Callback] Fetching token from:', oidcConfig.tokenEndpoint);
     const tokenResponse = await fetch(oidcConfig.tokenEndpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: tokenHeaders,
       body: new URLSearchParams(tokenRequestBody),
     });
 
+    console.log('[OIDC Callback] Token response status:', tokenResponse.status);
     if (!tokenResponse.ok) {
-      console.error('获取token失败:', await tokenResponse.text());
+      const errorText = await tokenResponse.text();
+      console.error('获取token失败:', errorText);
       return NextResponse.redirect(
         new URL('/login?error=' + encodeURIComponent('获取token失败'), origin)
       );
@@ -178,8 +194,8 @@ export async function GET(request: NextRequest) {
     const idToken = tokenData.id_token;
     const openid = tokenData.openid; // 微信返回的 openid
 
-    // Facebook 和微信不一定返回 id_token（非标准OIDC）
-    if (!accessToken || (!idToken && providerId !== 'facebook' && providerId !== 'wechat')) {
+    // Facebook、微信和 GitHub 不一定返回 id_token（非标准OIDC）
+    if (!accessToken || (!idToken && providerId !== 'facebook' && providerId !== 'wechat' && providerId !== 'github')) {
       return NextResponse.redirect(
         new URL('/login?error=' + encodeURIComponent('token无效'), origin)
       );
@@ -338,6 +354,8 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('OIDC回调处理失败:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
     let origin: string;
     if (process.env.SITE_BASE) {
       origin = process.env.SITE_BASE;
@@ -349,8 +367,14 @@ export async function GET(request: NextRequest) {
       origin = request.nextUrl.origin;
       origin = origin.replace('://0.0.0.0:', '://localhost:');
     }
+
+    // 在开发环境显示详细错误信息
+    const errorMessage = process.env.NODE_ENV === 'development' && error instanceof Error
+      ? `服务器错误: ${error.message}`
+      : '服务器错误';
+
     return NextResponse.redirect(
-      new URL('/login?error=' + encodeURIComponent('服务器错误'), origin)
+      new URL('/login?error=' + encodeURIComponent(errorMessage), origin)
     );
   }
 }
