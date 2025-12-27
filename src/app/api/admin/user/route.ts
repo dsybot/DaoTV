@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取配置与存储
-    const adminConfig = await getConfig();
+    let adminConfig = await getConfig();
 
     // 判定操作者角色
     let operatorRole: 'owner' | 'admin';
