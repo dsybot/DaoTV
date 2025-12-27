@@ -443,7 +443,10 @@ function LoginPageClient() {
             {oidcProviders.length > 0 ? (
               <div className='mt-4 space-y-3'>
                 {oidcProviders.map((provider) => {
-                  const detectedProvider = detectProvider(provider.issuer || provider.buttonText);
+                  // 优先使用 provider.id，如果是自定义provider则从issuer推断
+                  const detectedProvider = ['google', 'github', 'microsoft', 'linuxdo'].includes(provider.id.toLowerCase())
+                    ? provider.id.toLowerCase()
+                    : detectProvider(provider.issuer || provider.buttonText);
                   const buttonStyle = getProviderButtonStyle(detectedProvider);
                   const customText = provider.buttonText && provider.buttonText !== '使用OIDC登录' ? provider.buttonText : undefined;
                   const buttonText = getProviderButtonText(detectedProvider, customText);
