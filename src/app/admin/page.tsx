@@ -6483,13 +6483,18 @@ function AdminPageClient() {
                   }}
                   onSaveProviders={async (newProviders) => {
                     if (!config) return;
+                    const updatedConfig = {
+                      ...config,
+                      OIDCProviders: newProviders,
+                    };
+                    // 如果切换到多provider模式，删除旧的单provider配置
+                    if (newProviders.length > 0) {
+                      delete updatedConfig.OIDCAuthConfig;
+                    }
                     await fetch('/api/admin/config', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        ...config,
-                        OIDCProviders: newProviders,
-                      }),
+                      body: JSON.stringify(updatedConfig),
                     });
                     await fetchConfig();
                   }}
