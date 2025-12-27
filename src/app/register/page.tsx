@@ -170,7 +170,7 @@ function RegisterPageClient() {
         // 给用户一个成功提示，然后再跳转
         setTimeout(() => {
           const redirect = searchParams.get('redirect') || '/';
-          window.location.href = redirect; // 使用完整页面重载以确保cookie被应用
+          router.replace(redirect);
         }, 1500); // 1.5秒后跳转，让用户看到成功消息
       } else {
         const data = await res.json();
