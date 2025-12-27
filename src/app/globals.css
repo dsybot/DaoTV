@@ -650,3 +650,13 @@ html:not(.dark) .hover\:bg-slate-100:hover {
 html:not(.dark) .hover\:bg-slate-50:hover {
   background-color: #f8fafc !important;
 }
+
+/* ============================================
+   Portal Modal 背景修复
+   修复 createPortal 渲染的 modal 背景变黑问题
+   使用 isolation 创建新的堆叠上下文
+   ============================================ */
+.fixed.inset-0.bg-black.bg-opacity-50 {
+  isolation: isolate;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
