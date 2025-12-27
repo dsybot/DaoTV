@@ -28,6 +28,27 @@ export async function GET(request: NextRequest) {
 
   try {
     const config = await getConfig();
+
+    // 动态从 V2 获取用户列表填充到 config.UserConfig.Users
+    try {
+      const userListResult = await db.getUserListV2(0, 1000, process.env.USERNAME);
+      if (userListResult && userListResult.users.length > 0) {
+        // 用 V2 的用户列表覆盖 config 中的
+        config.UserConfig.Users = userListResult.users.map(u => ({
+          username: u.username,
+          role: u.role,
+          banned: u.banned,
+          tags: u.tags,
+          createdAt: u.created_at,
+          enabledApis: u.enabledApis,
+          oidcSub: u.oidcSub,
+        }));
+      }
+    } catch (err) {
+      console.warn('[AdminConfig] 从 V2 获取用户列表失败，使用配置中的用户列表:', err);
+      // 失败不影响，继续使用配置中的用户列表
+    }
+
     const result: AdminConfigResult = {
       Role: 'owner',
       Config: config,

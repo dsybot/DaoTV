@@ -62,7 +62,6 @@ async function generateAuthCookie(
     const signature = await generateSignature(username, process.env.PASSWORD);
     authData.signature = signature;
     authData.timestamp = Date.now(); // 添加时间戳防重放攻击
-    authData.loginTime = Date.now(); // 添加登入时间记录
   }
 
   return encodeURIComponent(JSON.stringify(authData));
@@ -127,11 +126,8 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      // 检查用户是否已存在（检查 V1 和 V2）
-      let userExists = await db.checkUserExistV2(username);
-      if (!userExists) {
-        userExists = await db.checkUserExist(username);  // 兼容 V1
-      }
+      // 检查用户是否已存在（只检查V2存储）
+      const userExists = await db.checkUserExistV2(username);
       if (userExists) {
         return NextResponse.json({ error: '该用户名已被注册' }, { status: 400 });
       }
@@ -142,48 +138,13 @@ export async function POST(req: NextRequest) {
         ? config.SiteConfig.DefaultUserTags
         : undefined;
 
-      // 注册用户（使用 V2 - SHA256 加密密码）
-      await db.createUserV2(
-        username,
-        password,  // 会被 SHA256 加密
-        'user',
-        defaultTags,
-        undefined,  // oidcSub
-        undefined   // enabledApis
-      );
-
-      // 将用户添加到 AdminConfig.UserConfig.Users 列表
-      const userEntry: any = {
-        username,
-        role: 'user',
-        createdAt: Date.now(),
-      };
-
-      if (defaultTags && defaultTags.length > 0) {
-        userEntry.tags = defaultTags;
-      }
-
-      // 确保 UserConfig 存在
-      if (!config.UserConfig) {
-        config.UserConfig = { Users: [] };
-      }
-
-      // 添加到配置的用户列表
-      if (!config.UserConfig.Users) {
-        config.UserConfig.Users = [];
-      }
-      config.UserConfig.Users.push(userEntry);
-
-      // 保存更新后的配置
-      await db.saveAdminConfig(config);
-
-      // 清除缓存，确保下次获取配置时会同步新用户
-      clearConfigCache();
+      // 使用 V2 创建用户（带SHA256加密）
+      await db.createUserV2(username, password, 'user', defaultTags);
 
       // 注册成功后自动登录
-      const response = NextResponse.json({ 
-        ok: true, 
-        message: '注册成功，已自动登录' 
+      const response = NextResponse.json({
+        ok: true,
+        message: '注册成功，已自动登录'
       });
       
       const cookieValue = await generateAuthCookie(
@@ -195,7 +156,7 @@ export async function POST(req: NextRequest) {
       const expires = new Date();
       expires.setDate(expires.getDate() + 7); // 7天过期
 
-      response.cookies.set('user_auth', cookieValue, {
+      response.cookies.set('auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax',

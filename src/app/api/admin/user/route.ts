@@ -131,37 +131,27 @@ export async function POST(request: NextRequest) {
         const { userGroup } = body as { userGroup?: string };
         const tags = userGroup && userGroup.trim() ? [userGroup] : undefined;
 
-        // 使用 V2 创建用户（SHA256 加密）
+        // 使用 V2 创建用户（带SHA256加密）
         await db.createUserV2(
           targetUsername!,
-          targetPassword,  // 会被 SHA256 加密
+          targetPassword,
           'user',
           tags,
           undefined,  // oidcSub
           undefined   // enabledApis
         );
 
-        // 手动添加用户到 AdminConfig.UserConfig.Users 列表
-        targetEntry = {
-          username: targetUsername!,
-          role: 'user',
-          createdAt: Date.now(),
-        };
-
-        if (tags && tags.length > 0) {
-          targetEntry.tags = tags;
+        // 从 V2 获取用户信息作为 targetEntry（用于后续返回）
+        const userInfo = await db.getUserInfoV2(targetUsername!);
+        if (userInfo) {
+          targetEntry = {
+            username: targetUsername!,
+            role: userInfo.role,
+            banned: userInfo.banned,
+            tags: userInfo.tags,
+            createdAt: userInfo.created_at,
+          };
         }
-
-        // 确保 UserConfig 存在
-        if (!adminConfig.UserConfig) {
-          adminConfig.UserConfig = { Users: [] };
-        }
-
-        // 添加到配置的用户列表
-        if (!adminConfig.UserConfig.Users) {
-          adminConfig.UserConfig.Users = [];
-        }
-        adminConfig.UserConfig.Users.push(targetEntry);
         break;
       }
       case 'ban': {
