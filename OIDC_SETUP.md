@@ -260,72 +260,181 @@ UserInfo Endpoint:      https://api.github.com/user
 
 ---
 
-## LinuxDo (Discourse) 配置
+## LinuxDo Connect OAuth2 配置
 
-LinuxDo 是基于 Discourse 论坛系统的社区，支持作为 OIDC 提供商。
+LinuxDo 是基于 Discourse 论坛系统的中文技术社区，提供了独立的 OAuth2 认证服务 **LinuxDo Connect**，可直接用于第三方应用登录。
 
-### 前提条件
+### 步骤 1：注册 OAuth2 应用
 
-1. 你需要有 LinuxDo 管理员权限
-2. 或者联系 LinuxDo 管理员为你创建 OAuth 应用
-
-### 步骤 1：安装 Distrust 插件（管理员操作）
-
-Discourse 本身作为 OIDC 提供商需要使用第三方插件 **Distrust**。
-
-1. 访问 [Distrust GitHub 仓库](https://github.com/Parkour-Vienna/distrust)
-2. 在 Discourse 管理后台安装插件
-3. 或使用 Docker 配置文件添加插件：
-   ```yaml
-   hooks:
-     after_code:
-       - exec:
-           cd: $home/plugins
-           cmd:
-             - git clone https://github.com/Parkour-Vienna/distrust.git
+1. 访问 LinuxDo Connect 应用注册页面：
+   ```
+   https://connect.linux.do/dash/sso/new
    ```
 
-### 步骤 2：创建 OAuth 应用
+2. 登录你的 LinuxDo 账号（如果尚未登录）
 
-1. 进入 LinuxDo 管理后台
-2. 导航到 **API** → **OAuth 应用**
-3. 点击 **创建新应用**
-4. 填写信息：
-   - **应用名称**：`LunaTV`
-   - **回调 URL**：`https://your-domain.com/api/auth/oidc/callback`
-   - **允许的范围**：`openid profile email`
-5. 保存后获取 **Client ID** 和 **Client Secret**
+3. 填写应用注册表单：
 
-### LinuxDo OIDC 端点信息
+   | 字段 | 说明 | 示例值 |
+   |------|------|--------|
+   | **Client Name** | 应用显示名称 | `LunaTV 影视平台` |
+   | **Client URI** | 应用官网地址 | `https://your-domain.com` |
+   | **Redirect URI** | 授权回调地址（必须精确匹配） | `https://your-domain.com/api/auth/oidc/callback` |
+   | **Logo URI** | 应用Logo图标地址（可选） | `https://your-domain.com/logo.png` |
+   | **TOS URI** | 服务条款页面地址（可选） | `https://your-domain.com/terms` |
+   | **Policy URI** | 隐私政策页面地址（可选） | `https://your-domain.com/privacy` |
+   | **Software ID** | 软件包标识符（可选） | `com.yourcompany.lunatv` |
+   | **Software Version** | 软件版本号（可选） | `1.0.0` |
 
-假设 LinuxDo 的域名为 `linux.do`：
+4. 提交表单，等待审核通过
+
+### 步骤 2：获取认证凭据
+
+应用审核通过后，你会收到以下凭据：
+
+- **Client ID**：应用的唯一标识符
+- **Client Secret**：应用的密钥（请妥善保管，不要公开）
+
+⚠️ **安全提示**：
+- Client Secret 类似于密码，切勿公开或提交到代码仓库
+- 如果泄露，请立即删除应用并重新注册
+
+### LinuxDo Connect OAuth2 端点信息
+
+LinuxDo Connect 提供以下 OAuth2 端点：
+
+#### 主域名端点（推荐）
 
 ```
-Issuer URL:             https://linux.do
-Authorization Endpoint: https://linux.do/oauth2/authorize
-Token Endpoint:         https://linux.do/oauth2/token
-UserInfo Endpoint:      https://linux.do/oauth2/userinfo
+Authorization Endpoint: https://connect.linux.do/oauth2/authorize
+Token Endpoint:         https://connect.linux.do/oauth2/token
+UserInfo Endpoint:      https://connect.linux.do/api/user
 ```
 
-### Trust Level（信任等级）配置
+#### 备用域名端点
 
-LinuxDo (Discourse) 有信任等级系统（Trust Level 0-4），你可能需要配置：
+如果主域名无法访问，可以使用备用域名：
 
-- **TL0（新用户）**：刚注册，功能受限
-- **TL1（基础用户）**：阅读一定时间后获得
-- **TL2（成员）**：活跃参与后获得
-- **TL3（资深成员）**：高度活跃用户
-- **TL4（领袖）**：长期贡献者
+```
+Authorization Endpoint: https://connect.linuxdo.org/oauth2/authorize
+Token Endpoint:         https://connect.linuxdo.org/oauth2/token
+UserInfo Endpoint:      https://connect.linuxdo.org/api/user
+```
 
-**在 LunaTV 中配置最低信任等级**：
-- 设置为 `0`：允许所有注册用户登录
-- 设置为 `1`：只允许 TL1 及以上用户登录
-- 设置为 `2`：只允许 TL2 及以上用户登录（推荐，防止垃圾账号）
+### 技术实现要点
+
+#### 1. Token 请求认证方式
+
+LinuxDo Connect 使用 **HTTP Basic Authentication** 方式验证 Token 请求：
+
+```http
+POST /oauth2/token HTTP/1.1
+Host: connect.linux.do
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic <Base64(ClientId:ClientSecret)>
+
+grant_type=authorization_code&code=xxx&redirect_uri=https://your-domain.com/api/auth/oidc/callback
+```
+
+**计算 Authorization Header**：
+```javascript
+const credentials = `${clientId}:${clientSecret}`;
+const base64Credentials = Buffer.from(credentials).toString('base64');
+const authHeader = `Basic ${base64Credentials}`;
+```
+
+#### 2. UserInfo 响应格式
+
+调用 UserInfo 端点后，返回的 JSON 数据包含以下字段：
+
+```json
+{
+  "id": 12345,
+  "username": "johndoe",
+  "name": "John Doe",
+  "active": true,
+  "trust_level": 2,
+  "silenced": false
+}
+```
+
+**字段说明**：
+- `id`：用户在 LinuxDo 的唯一 ID
+- `username`：用户名
+- `name`：用户显示名称
+- `active`：账号是否激活
+- `trust_level`：信任等级（0-4）
+- `silenced`：是否被禁言
+
+### Trust Level（信任等级）说明
+
+LinuxDo 使用 Discourse 的信任等级系统（Trust Level 0-4）来管理用户权限：
+
+| 等级 | 名称 | 获得条件 | 特点 |
+|------|------|----------|------|
+| **TL0** | 新用户 | 刚注册 | 功能受限，防止垃圾账号 |
+| **TL1** | 基础用户 | 阅读主题、花费一定时间 | 可以发帖回复 |
+| **TL2** | 成员 | 持续活跃、收到点赞 | 更多权限，如上传图片 |
+| **TL3** | 资深成员 | 长期活跃、高质量内容 | 可以重新分类主题 |
+| **TL4** | 领袖 | 由管理员手动授予 | 接近版主权限 |
+
+**在 LunaTV 中配置最低信任等级**（`minTrustLevel` 字段）：
+
+- 设置为 `0`：允许所有 LinuxDo 注册用户登录
+- 设置为 `1`：只允许 TL1 及以上用户登录（有基础活跃度）
+- 设置为 `2`：只允许 TL2 及以上用户登录（**推荐**，过滤不活跃账号）
+- 设置为 `3` 或 `4`：仅限资深用户（适用于内测/邀请制）
+
+⚠️ **注意**：如果设置为 `0`，则不进行信任等级检查。
+
+### 配置示例（LunaTV 后台）
+
+在 LunaTV 管理后台 → OIDC 登录配置 中填写：
+
+```
+✅ 启用 OIDC 登录
+✅ 启用 OIDC 注册
+
+Issuer URL:              留空（LinuxDo 不支持自动发现）
+Authorization Endpoint:  https://connect.linux.do/oauth2/authorize
+Token Endpoint:          https://connect.linux.do/oauth2/token
+UserInfo Endpoint:       https://connect.linux.do/api/user
+Client ID:               你的 Client ID
+Client Secret:           你的 Client Secret
+登录按钮文字:             使用 LinuxDo 账号登录
+最低信任等级:             2
+```
+
+### 常见问题
+
+**Q1：为什么我的应用一直显示"待审核"？**
+
+A：LinuxDo Connect 应用需要人工审核，通常 1-3 个工作日内会处理。可以在论坛私信管理员催促审核。
+
+**Q2：Token 请求返回 401 Unauthorized？**
+
+A：检查以下几点：
+- Client ID 和 Client Secret 是否正确
+- Authorization Header 是否正确计算 Base64 编码
+- Redirect URI 是否与注册时填写的**完全一致**（包括协议、域名、路径）
+
+**Q3：用户登录后提示"信任等级不满足要求"？**
+
+A：该用户的 `trust_level` 低于你在后台配置的 `minTrustLevel`。解决方案：
+- 降低 `minTrustLevel` 设置
+- 或者让用户在 LinuxDo 论坛多活跃，提升信任等级
+
+**Q4：如何测试 OAuth2 流程？**
+
+A：可以使用 LinuxDo 提供的测试工具：
+1. 使用 Postman 或 curl 测试各端点
+2. 检查浏览器开发者工具的网络请求
+3. 查看 LunaTV 服务器日志中的 OIDC 相关输出
 
 ### 参考资料
-- [Distrust: Discourse as an OpenID Connect provider](https://meta.discourse.org/t/distrust-discourse-as-an-openid-connect-provider/195385)
-- [Discourse OpenID Connect (OIDC) Plugin](https://meta.discourse.org/t/discourse-openid-connect-oidc/103632)
-- [Trust Level Permissions Reference](https://meta.discourse.org/t/trust-level-permissions-reference/224824)
+- [LinuxDo Connect 官方文档](https://connect.linux.do/docs)（如有）
+- [小白也能懂的 LinuxDo OAuth2 快速上手](https://linux.do/t/topic/30578)
+- [Discourse Trust Levels 官方说明](https://blog.discourse.org/2018/06/understanding-discourse-trust-levels/)
 
 ---
 

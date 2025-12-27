@@ -141,14 +141,22 @@ export async function POST(request: NextRequest) {
           undefined   // enabledApis
         );
 
-        // 清除配置缓存，确保下次获取配置时会同步新用户
-        clearConfigCache();
+        // 手动添加用户到 AdminConfig.UserConfig.Users 列表
+        targetEntry = {
+          username: targetUsername!,
+          role: 'user',
+          createdAt: Date.now(),
+        };
 
-        // 重新获取配置以获得最新的用户列表
-        adminConfig = await db.getAdminConfig();
-        targetEntry = adminConfig.UserConfig.Users.find(
-          (u) => u.username === targetUsername
-        );
+        if (tags && tags.length > 0) {
+          targetEntry.tags = tags;
+        }
+
+        // 添加到配置的用户列表
+        if (!adminConfig.UserConfig.Users) {
+          adminConfig.UserConfig.Users = [];
+        }
+        adminConfig.UserConfig.Users.push(targetEntry);
         break;
       }
       case 'ban': {
