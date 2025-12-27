@@ -155,9 +155,11 @@ export async function POST(req: NextRequest) {
       clearConfigCache();
 
       // 注册成功后自动登录
+      const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
       const response = NextResponse.json({
         ok: true,
-        message: '注册成功，已自动登录'
+        message: '注册成功，已自动登录',
+        needDelay: storageType === 'upstash' // Upstash 需要延迟等待数据同步
       });
       
       const cookieValue = await generateAuthCookie(

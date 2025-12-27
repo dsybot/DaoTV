@@ -390,13 +390,27 @@ export class UpstashRedisStorage implements IStorage {
 
   // ---------- 获取全部用户 ----------
   async getAllUsers(): Promise<string[]> {
-    const keys = await withRetry(() => this.client.keys('u:*:pwd'));
-    return keys
+    // 获取 V1 用户（u:*:pwd）
+    const v1Keys = await withRetry(() => this.client.keys('u:*:pwd'));
+    const v1Users = v1Keys
       .map((k) => {
         const match = k.match(/^u:(.+?):pwd$/);
         return match ? ensureString(match[1]) : undefined;
       })
       .filter((u): u is string => typeof u === 'string');
+
+    // 获取 V2 用户（u:*:info）
+    const v2Keys = await withRetry(() => this.client.keys('u:*:info'));
+    const v2Users = v2Keys
+      .map((k) => {
+        const match = k.match(/^u:(.+?):info$/);
+        return match ? ensureString(match[1]) : undefined;
+      })
+      .filter((u): u is string => typeof u === 'string');
+
+    // 合并并去重（V2 优先，因为可能同时存在 V1 和 V2）
+    const allUsers = new Set([...v2Users, ...v1Users]);
+    return Array.from(allUsers);
   }
 
   // ---------- 管理员配置 ----------

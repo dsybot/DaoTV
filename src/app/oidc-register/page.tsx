@@ -56,8 +56,13 @@ export default function OIDCRegisterPage() {
       });
 
       if (res.ok) {
-        // 注册成功,跳转到首页
-        router.replace('/');
+        const data = await res.json();
+        // Upstash 需要额外延迟等待数据同步
+        const delay = data.needDelay ? 1500 : 0;
+
+        setTimeout(() => {
+          router.replace('/');
+        }, delay);
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || '注册失败');
