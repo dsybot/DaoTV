@@ -167,8 +167,8 @@ export async function POST(request: NextRequest) {
       const randomPassword = crypto.randomUUID();
 
       // 获取默认用户组
-      const defaultTags = siteConfig.DefaultUserTags && siteConfig.DefaultUserTags.length > 0
-        ? siteConfig.DefaultUserTags
+      const defaultTags = config.SiteConfig.DefaultUserTags && config.SiteConfig.DefaultUserTags.length > 0
+        ? config.SiteConfig.DefaultUserTags
         : undefined;
 
       // 使用新版本创建用户（带SHA256加密和OIDC绑定）
