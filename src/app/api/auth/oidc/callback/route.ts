@@ -130,18 +130,33 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${origin}/api/auth/oidc/callback`;
 
     // 交换code获取token
-    const tokenResponse = await fetch(oidcConfig.tokenEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
+    let tokenRequestBody: Record<string, string>;
+
+    if (providerId === 'wechat') {
+      // 微信使用 appid 和 secret，不是标准的 client_id/client_secret
+      tokenRequestBody = {
+        appid: oidcConfig.clientId,
+        secret: oidcConfig.clientSecret,
+        code: code,
+        grant_type: 'authorization_code',
+      };
+    } else {
+      // 标准 OAuth 2.0 参数
+      tokenRequestBody = {
         grant_type: 'authorization_code',
         code: code,
         redirect_uri: redirectUri,
         client_id: oidcConfig.clientId,
         client_secret: oidcConfig.clientSecret,
-      }),
+      };
+    }
+
+    const tokenResponse = await fetch(oidcConfig.tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams(tokenRequestBody),
     });
 
     if (!tokenResponse.ok) {
@@ -154,40 +169,74 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     const idToken = tokenData.id_token;
+    const openid = tokenData.openid; // 微信返回的 openid
 
-    // Facebook 不一定返回 id_token（非标准OIDC）
-    if (!accessToken || (!idToken && providerId !== 'facebook')) {
+    // Facebook 和微信不一定返回 id_token（非标准OIDC）
+    if (!accessToken || (!idToken && providerId !== 'facebook' && providerId !== 'wechat')) {
       return NextResponse.redirect(
         new URL('/login?error=' + encodeURIComponent('token无效'), origin)
       );
     }
 
     // 获取用户信息
-    // Facebook 需要特殊处理：添加 fields 参数
-    let userInfoUrl = oidcConfig.userInfoEndpoint;
-    if (providerId === 'facebook') {
-      // Facebook Graph API 需要指定 fields
-      const url = new URL(userInfoUrl);
-      url.searchParams.set('fields', 'id,name,email,picture.width(640).height(640)');
-      userInfoUrl = url.toString();
+    let userInfo: any;
+
+    if (providerId === 'apple') {
+      // Apple 的用户信息在 id_token 中，不需要调用 userinfo endpoint
+      // 解析 JWT (id_token) 获取用户信息
+      try {
+        // JWT 格式：header.payload.signature
+        // 我们只需要 payload 部分
+        const tokenParts = idToken.split('.');
+        if (tokenParts.length !== 3) {
+          throw new Error('Invalid id_token format');
+        }
+        // Base64 解码 payload
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        userInfo = payload;
+      } catch (error) {
+        console.error('解析 Apple id_token 失败:', error);
+        return NextResponse.redirect(
+          new URL('/login?error=' + encodeURIComponent('Apple 用户信息解析失败'), origin)
+        );
+      }
+    } else {
+      // 其他 provider 需要调用 userinfo endpoint
+      let userInfoUrl = oidcConfig.userInfoEndpoint;
+
+      if (providerId === 'facebook') {
+        // Facebook Graph API 需要指定 fields
+        const url = new URL(userInfoUrl);
+        url.searchParams.set('fields', 'id,name,email,picture.width(640).height(640)');
+        userInfoUrl = url.toString();
+      } else if (providerId === 'wechat') {
+        // 微信需要 access_token 和 openid 参数
+        const url = new URL(userInfoUrl);
+        url.searchParams.set('access_token', accessToken);
+        url.searchParams.set('openid', openid);
+        userInfoUrl = url.toString();
+      }
+
+      const userInfoResponse = await fetch(userInfoUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!userInfoResponse.ok) {
+        console.error('获取用户信息失败:', await userInfoResponse.text());
+        return NextResponse.redirect(
+          new URL('/login?error=' + encodeURIComponent('获取用户信息失败'), origin)
+        );
+      }
+
+      userInfo = await userInfoResponse.json();
     }
-
-    const userInfoResponse = await fetch(userInfoUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!userInfoResponse.ok) {
-      console.error('获取用户信息失败:', await userInfoResponse.text());
-      return NextResponse.redirect(
-        new URL('/login?error=' + encodeURIComponent('获取用户信息失败'), origin)
-      );
-    }
-
-    const userInfo = await userInfoResponse.json();
-    // OIDC的唯一标识符：Facebook使用id，其他使用sub
-    const oidcSub = userInfo.sub || userInfo.id;
+    // OIDC的唯一标识符：
+    // - 标准OIDC使用 sub
+    // - Facebook使用 id
+    // - 微信使用 openid
+    const oidcSub = userInfo.sub || userInfo.id || userInfo.openid;
 
     if (!oidcSub) {
       console.error('用户信息缺少唯一标识符:', userInfo);

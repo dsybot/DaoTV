@@ -203,7 +203,7 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
           OIDC 登录配置
         </h2>
         <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>
-          配置 OpenID Connect 登录，支持 Google、Microsoft、GitHub、LinuxDo 等提供商
+          配置 OpenID Connect 登录，支持 Google、Microsoft、GitHub、Facebook、微信、Apple、LinuxDo 等提供商
         </p>
       </div>
 
@@ -320,6 +320,9 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
               <li><strong>Google</strong>: https://accounts.google.com</li>
               <li><strong>Microsoft</strong>: https://login.microsoftonline.com/common/v2.0</li>
               <li><strong>GitHub</strong>: 需要使用 OAuth + OIDC 扩展</li>
+              <li><strong>Facebook</strong>: ID 设为 <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded text-xs'>facebook</code></li>
+              <li><strong>微信</strong>: ID 设为 <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded text-xs'>wechat</code>，参考 OIDC_SETUP.md</li>
+              <li><strong>Apple</strong>: ID 设为 <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded text-xs'>apple</code>，参考 OIDC_SETUP.md</li>
               <li><strong>LinuxDo</strong>: https://connect.linux.do</li>
               <li><strong>自建 Keycloak</strong>: https://your-domain/realms/your-realm</li>
             </ul>
@@ -660,9 +663,25 @@ function ProviderEditModal({
   };
 
   return (
-    <div className='fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' onClick={onCancel}>
-      <div className='flex min-h-screen items-center justify-center p-4'>
-        <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl p-6 my-8' onClick={(e) => e.stopPropagation()}>
+    <div
+      className='fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm'
+      onClick={(e) => {
+        // 只有直接点击背景时才关闭，避免拖拽选择文本时误关闭
+        if (e.target === e.currentTarget) {
+          onCancel();
+        }
+      }}
+    >
+      <div
+        className='flex min-h-screen items-center justify-center p-4'
+        onClick={(e) => {
+          // 只有直接点击此层时才关闭
+          if (e.target === e.currentTarget) {
+            onCancel();
+          }
+        }}
+      >
+        <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl p-6 my-8'>
         <h3 className='text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6'>
           {provider.name === '新 Provider' ? '添加 Provider' : '编辑 Provider'}
         </h3>
@@ -690,6 +709,8 @@ function ProviderEditModal({
                 • GitHub: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>github</code><br />
                 • Microsoft: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>microsoft</code><br />
                 • Facebook: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>facebook</code><br />
+                • 微信: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>wechat</code><br />
+                • Apple: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>apple</code><br />
                 • LinuxDo: <code className='px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded'>linuxdo</code>
               </div>
               <div>
