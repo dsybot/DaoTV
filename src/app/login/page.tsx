@@ -428,7 +428,9 @@ function LoginPageClient() {
             {(() => {
               const provider = detectProvider(oidcIssuer || oidcButtonText);
               const buttonStyle = getProviderButtonStyle(provider);
-              const buttonText = getProviderButtonText(provider, oidcButtonText);
+              // 只有当 buttonText 不是默认值时才作为自定义文字传递
+              const customText = oidcButtonText && oidcButtonText !== '使用OIDC登录' ? oidcButtonText : undefined;
+              const buttonText = getProviderButtonText(provider, customText);
 
               return (
                 <button
