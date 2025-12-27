@@ -409,3 +409,56 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Apple Sign In uses response_mode=form_post, which sends a POST request
+export async function POST(request: NextRequest) {
+  try {
+    console.log('[OIDC Callback POST] Request URL:', request.url);
+
+    // Apple sends params in form data instead of query params
+    const formData = await request.formData();
+    const code = formData.get('code') as string | null;
+    const state = formData.get('state') as string | null;
+    const error = formData.get('error') as string | null;
+    const userJson = formData.get('user') as string | null; // Apple may send user data
+
+    console.log('[OIDC Callback POST] Form params - code:', !!code, 'state:', !!state, 'error:', error, 'user:', !!userJson);
+
+    // Reconstruct URL with query params to reuse GET handler logic
+    const url = new URL(request.url);
+    if (code) url.searchParams.set('code', code);
+    if (state) url.searchParams.set('state', state);
+    if (error) url.searchParams.set('error', error);
+
+    // Create a new request with query params
+    const newRequest = new NextRequest(url, {
+      headers: request.headers,
+    });
+
+    // Reuse GET handler logic
+    return await GET(newRequest);
+  } catch (error) {
+    console.error('OIDC POST回调处理失败:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+    let origin: string;
+    if (process.env.SITE_BASE) {
+      origin = process.env.SITE_BASE;
+    } else if (request.headers.get('x-forwarded-host')) {
+      const proto = request.headers.get('x-forwarded-proto') || 'https';
+      const host = request.headers.get('x-forwarded-host');
+      origin = `${proto}://${host}`;
+    } else {
+      origin = request.nextUrl.origin;
+      origin = origin.replace('://0.0.0.0:', '://localhost:');
+    }
+
+    const errorMessage = process.env.NODE_ENV === 'development' && error instanceof Error
+      ? `服务器错误: ${error.message}`
+      : '服务器错误';
+
+    return NextResponse.redirect(
+      new URL('/login?error=' + encodeURIComponent(errorMessage), origin)
+    );
+  }
+}
