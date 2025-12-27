@@ -56,8 +56,8 @@ export default function OIDCRegisterPage() {
       });
 
       if (res.ok) {
-        // 注册成功,跳转到首页
-        router.replace('/');
+        // 注册成功,重载页面以应用cookie并跳转到首页
+        window.location.href = '/';
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || '注册失败');
