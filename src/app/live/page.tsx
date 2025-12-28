@@ -5,7 +5,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 
 import Hls from 'hls.js';
-import { Heart, Radio, RefreshCw, Search, Tv, X } from 'lucide-react';
+import { Heart, Menu, Radio, RefreshCw, Search, Tv, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, Tab, Box } from '@mui/material';
 
