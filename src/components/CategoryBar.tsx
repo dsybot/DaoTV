@@ -129,20 +129,19 @@ export default function CategoryBar({
 
   /**
    * 将选中的分组滚动到视口中央
-   * 使用 ref 避免依赖 selectedGroup，防止频繁重建
+   * 不依赖 groupedChannels 对象，避免每次渲染都重建
    */
   const scrollToActiveGroup = useCallback(() => {
     // 如果正在手动滚动，不执行自动居中（防止冲突）
     if (isManualScrolling) return;
 
-    const currentGroup = selectedGroup;
-    if (!currentGroup) return;
+    if (!selectedGroup) return;
 
-    const groupKeys = Object.keys(groupedChannels);
-    const groupIndex = groupKeys.indexOf(currentGroup);
-    if (groupIndex === -1) return;
+    // 直接从 buttonRefs 中查找，避免依赖 groupedChannels
+    const button = buttonRefs.current.find(
+      btn => btn?.getAttribute('data-group') === selectedGroup
+    );
 
-    const button = buttonRefs.current[groupIndex];
     if (!button) return;
 
     // 使用 setTimeout 延迟执行，确保 DOM 已更新
@@ -153,7 +152,7 @@ export default function CategoryBar({
         inline: 'center',
       });
     }, 0);
-  }, [isManualScrolling, selectedGroup, groupedChannels]);
+  }, [isManualScrolling, selectedGroup]); // 移除 groupedChannels 依赖
 
   /**
    * 组件挂载后初始化
