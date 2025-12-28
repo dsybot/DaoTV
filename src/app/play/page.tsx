@@ -2656,11 +2656,12 @@ function PlayPageClient() {
 
           console.log(`匹配结果: ${relevantMatches.length}/${allCandidates.length}`);
 
-          const maxResults = isEnglishQuery ? 5 : 20; // 英文更严格控制结果数
-          if (relevantMatches.length > 0 && relevantMatches.length <= maxResults) {
+          // 如果有匹配结果，直接返回（去重）
+          if (relevantMatches.length > 0) {
             finalResults = Array.from(
               new Map(relevantMatches.map(item => [`${item.source}-${item.id}`, item])).values()
             ) as SearchResult[];
+            console.log(`找到 ${finalResults.length} 个唯一匹配结果`);
           } else {
             console.log('没有找到合理的匹配，返回空结果');
             finalResults = [];
@@ -6720,8 +6721,8 @@ function PlayPageClient() {
                       }
                     }}
                     className={`sticky bottom-6 left-full -ml-14 sm:bottom-8 sm:-ml-16 w-11 h-11 sm:w-12 sm:h-12 ${netdiskResourceType === 'acg'
-                        ? 'bg-purple-500 hover:bg-purple-600'
-                        : 'bg-blue-500 hover:bg-blue-600'
+                      ? 'bg-purple-500 hover:bg-purple-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
                       } text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center active:scale-95 z-50 group`}
                     aria-label='返回顶部'
                   >
