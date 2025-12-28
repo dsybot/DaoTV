@@ -1417,7 +1417,6 @@ const PlayStatsPage: React.FC = () => {
                                 id={series.videoId}
                                 onDelete={undefined}
                                 remarks={series.remarks}
-                                episodeBadgeVariant='dark'
                                 douban_id={series.douban_id}
                               />
                               {/* 新集数提示光环效果 */}
@@ -1452,7 +1451,6 @@ const PlayStatsPage: React.FC = () => {
                                 id={series.videoId}
                                 onDelete={undefined}
                                 remarks={series.remarks}
-                                episodeBadgeVariant='dark'
                                 douban_id={series.douban_id}
                               />
                               {/* 新集数提示光环效果 */}
@@ -1504,7 +1502,6 @@ const PlayStatsPage: React.FC = () => {
                                 id={series.videoId}
                                 onDelete={undefined}
                                 remarks={series.remarks}
-                                episodeBadgeVariant='dark'
                                 douban_id={series.douban_id}
                               />
                               {/* 继续观看提示光环效果 */}
@@ -1534,7 +1531,6 @@ const PlayStatsPage: React.FC = () => {
                                 from="playrecord"
                                 progress={0}
                                 currentEpisode={series.currentEpisode}
-                                episodeBadgeVariant='dark'
                                 episodes={series.totalEpisodes}
                                 source={series.sourceKey}
                                 id={series.videoId}
@@ -2019,7 +2015,6 @@ const PlayStatsPage: React.FC = () => {
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
                             remarks={series.remarks}
-                            episodeBadgeVariant='dark'
                             douban_id={series.douban_id}
                           />
                           {/* 新集数提示光环效果 */}
@@ -2054,7 +2049,6 @@ const PlayStatsPage: React.FC = () => {
                             source={series.source_name}
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
-                            episodeBadgeVariant='dark'
                             remarks={series.remarks}
                             douban_id={series.douban_id}
                           />
@@ -2108,7 +2102,6 @@ const PlayStatsPage: React.FC = () => {
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
                             remarks={series.remarks}
-                            episodeBadgeVariant='dark'
                             douban_id={series.douban_id}
                           />
                           {/* 继续观看提示光环效果 */}
@@ -2144,7 +2137,6 @@ const PlayStatsPage: React.FC = () => {
                             id={`${series.title}_${series.year}`}
                             onDelete={undefined}
                             remarks={series.remarks}
-                            episodeBadgeVariant='dark'
                             douban_id={series.douban_id}
                           />
                           {/* 继续观看提示光环效果 */}

@@ -1573,7 +1573,6 @@ function SearchPageClient() {
                                       : ''
                                   }
                                   type={type}
-                                  episodeBadgeVariant='dark'
                                 />
                               </div>
                             );
@@ -1599,7 +1598,6 @@ function SearchPageClient() {
                                 year={item.year}
                                 from='search'
                                 type={inferTypeFromName(item.type_name, item.episodes.length)}
-                                episodeBadgeVariant='dark'
                               />
                             </div>
                           ))}

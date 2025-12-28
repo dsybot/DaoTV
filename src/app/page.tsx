@@ -774,7 +774,6 @@ function HomeClient() {
                           from='favorite'
                           type={item.type || (item.episodes > 1 ? 'tv' : '')}
                           remarks={calculatedRemarks}
-                          episodeBadgeVariant='dark'
                         />
                       </div>
                     );

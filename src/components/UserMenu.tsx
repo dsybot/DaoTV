@@ -1849,8 +1849,8 @@ export const UserMenu: React.FC = () => {
                   type='button'
                   onClick={() => handleDownloadFormatChange('TS')}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${downloadFormat === 'TS'
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                 >
                   <div className='flex flex-col items-center gap-2'>
@@ -1879,8 +1879,8 @@ export const UserMenu: React.FC = () => {
                   type='button'
                   onClick={() => handleDownloadFormatChange('MP4')}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${downloadFormat === 'MP4'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                 >
                   <div className='flex flex-col items-center gap-2'>
@@ -2144,7 +2144,6 @@ export const UserMenu: React.FC = () => {
                             onDelete={undefined}
                             type={series.totalEpisodes > 1 ? 'tv' : ''}
                             from="playrecord"
-                            episodeBadgeVariant='dark'
                           />
                         </div>
                         {/* 新集数徽章 */}
@@ -2317,7 +2316,6 @@ export const UserMenu: React.FC = () => {
                                   from='playrecord'
                                   type={record.total_episodes > 1 ? 'tv' : ''}
                                   remarks={record.remarks}
-                                  episodeBadgeVariant='dark'
                                   douban_id={record.douban_id}
                                 />
                                 {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
@@ -2534,7 +2532,6 @@ export const UserMenu: React.FC = () => {
                                 type={favorite.total_episodes > 1 ? 'tv' : ''}
                                 remarks={calculatedRemarks}
                                 releaseDate={favorite.releaseDate}
-                                episodeBadgeVariant='dark'
                               />
                               {/* 新上映高亮标记 - 7天内上映的显示 */}
                               {isNewRelease && (

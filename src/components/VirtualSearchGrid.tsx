@@ -243,7 +243,6 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
             douban_id={douban_id}
             query={cellSearchQuery.trim() !== title ? cellSearchQuery.trim() : ''}
             type={type}
-            episodeBadgeVariant='dark'
             remarks={group[0]?.remarks}
             priority={isPriorityImage}
           />
@@ -265,7 +264,6 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
             year={searchItem.year}
             from='search'
             type={searchItem.episodes.length > 1 ? 'tv' : 'movie'}
-            episodeBadgeVariant='dark'
             remarks={searchItem.remarks}
             priority={isPriorityImage}
           />
