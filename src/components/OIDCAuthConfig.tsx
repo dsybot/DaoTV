@@ -906,6 +906,37 @@ function ProviderEditModal({
             />
           </div>
 
+          {/* Redirect URI 显示 - 新增 */}
+          <div>
+            <label className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'>
+              Redirect URI（回调地址）
+            </label>
+            <div className='relative'>
+              <input
+                type='text'
+                readOnly
+                value={typeof window !== 'undefined' ? `${window.location.origin}/api/auth/oidc/callback` : ''}
+                className='w-full px-3 py-2 pr-16 sm:pr-20 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs sm:text-sm cursor-default'
+              />
+              <button
+                type='button'
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    navigator.clipboard.writeText(`${window.location.origin}/api/auth/oidc/callback`);
+                    setMessage({ type: 'success', text: '已复制到剪贴板' });
+                    setTimeout(() => setMessage(null), 2000);
+                  }
+                }}
+                className='absolute right-2 top-1/2 -translate-y-1/2 px-2 sm:px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors'
+              >
+                复制
+              </button>
+            </div>
+            <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+              请在 OIDC 提供商的应用配置中添加此地址作为允许的重定向 URI
+            </p>
+          </div>
+
           {/* Button Text */}
           <div>
             <label className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'>
