@@ -213,8 +213,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
         <button
           onClick={() => setMode('legacy')}
           className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'legacy'
-              ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
           单 Provider 模式（旧版）
@@ -222,8 +222,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
         <button
           onClick={() => setMode('multi')}
           className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'multi'
-              ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
           多 Provider 模式（推荐）
@@ -265,8 +265,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
                   <div className='flex items-center gap-2'>
                     <h3 className='font-medium text-gray-900 dark:text-gray-100'>{provider.name}</h3>
                     <span className={`flex-shrink-0 px-2 py-0.5 text-xs rounded-full ${provider.enabled
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                       }`}>
                       {provider.enabled ? '已启用' : '已禁用'}
                     </span>
@@ -382,20 +382,20 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
             <label htmlFor='oidcIssuer' className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'>
               OIDC Issuer URL（可选）
             </label>
-            <div className='flex gap-2'>
+            <div className='flex flex-col sm:flex-row gap-2'>
               <input
                 id='oidcIssuer'
                 type='text'
                 placeholder='https://accounts.google.com'
                 value={localConfig.issuer || ''}
                 onChange={(e) => setLocalConfig({ ...localConfig, issuer: e.target.value })}
-                className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                className='flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
               />
               <button
                 type='button'
                 onClick={handleDiscover}
                 disabled={discovering || !localConfig.issuer}
-                className='px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2'
+                className='flex-shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2'
               >
                 <Globe className='w-4 h-4' />
                 {discovering ? '发现中...' : '自动发现'}
@@ -556,8 +556,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
       {message && (
         <div
           className={`flex items-center gap-2 p-4 rounded-lg ${message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
             }`}
         >
           {message.type === 'success' ? (
@@ -567,8 +567,8 @@ export function OIDCAuthConfig({ config, providers = [], onSave, onSaveProviders
           )}
           <span
             className={`text-sm ${message.type === 'success'
-                ? 'text-green-800 dark:text-green-200'
-                : 'text-red-800 dark:text-red-200'
+              ? 'text-green-800 dark:text-green-200'
+              : 'text-red-800 dark:text-red-200'
               }`}
           >
             {message.text}
@@ -772,19 +772,19 @@ function ProviderEditModal({
               <label className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'>
                 Issuer URL（可选）
               </label>
-              <div className='flex gap-2'>
+              <div className='flex flex-col sm:flex-row gap-2'>
                 <input
                   type='text'
                   value={localProvider.issuer}
                   onChange={(e) => setLocalProvider({ ...localProvider, issuer: e.target.value })}
-                  className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                  className='flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
                   placeholder='https://accounts.google.com'
                 />
                 <button
                   type='button'
                   onClick={handleDiscover}
                   disabled={discovering || !localProvider.issuer}
-                  className='px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2'
+                  className='flex-shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2'
                 >
                   <Globe className='w-4 h-4' />
                   {discovering ? '发现中...' : '自动发现'}
@@ -925,8 +925,8 @@ function ProviderEditModal({
             {message && (
               <div
                 className={`flex items-center gap-2 p-4 rounded-lg ${message.type === 'success'
-                    ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                    : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                   }`}
               >
                 {message.type === 'success' ? (
@@ -936,8 +936,8 @@ function ProviderEditModal({
                 )}
                 <span
                   className={`text-sm ${message.type === 'success'
-                      ? 'text-green-800 dark:text-green-200'
-                      : 'text-red-800 dark:text-red-200'
+                    ? 'text-green-800 dark:text-green-200'
+                    : 'text-red-800 dark:text-red-200'
                     }`}
                 >
                   {message.text}
