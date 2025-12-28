@@ -667,7 +667,7 @@ function ProviderEditModal({
 
   return (
     <div
-      className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end md:items-start justify-center p-0 md:p-4'
+      className='fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4'
       onClick={(e) => {
         // 只有直接点击背景时才关闭，避免拖拽选择文本时误关闭
         if (e.target === e.currentTarget) {
@@ -675,7 +675,7 @@ function ProviderEditModal({
         }
       }}
     >
-      <div className='bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-xl shadow-2xl w-full md:max-w-2xl max-h-[90vh] md:max-h-[85vh] flex flex-col md:my-auto md:min-h-0'>
+      <div className='bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-xl shadow-2xl w-full md:w-auto md:min-w-[600px] md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
         {/* Header - Fixed */}
         <div className='flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0'>
           <h3 className='text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100'>
