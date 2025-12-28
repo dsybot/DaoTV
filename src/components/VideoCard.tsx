@@ -1029,10 +1029,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
               className={`absolute left-2 flex items-center bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99)
-                  ? 'top-[38px]'  // 有集数徽章时向下偏移
-                  : hasReleaseTag && type
-                    ? 'top-[38px]'  // 有类型徽章时向下偏移
-                    : 'top-2'
+                ? 'top-[38px]'  // 有集数徽章时向下偏移
+                : hasReleaseTag && type
+                  ? 'top-[38px]'  // 有类型徽章时向下偏移
+                  : 'top-2'
                 }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -1167,7 +1167,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </a>
           )}
 
-          {/* 聚合播放源指示器 */}
+          {/* 聚合播放源指示器 - Netflix 统一风格 */}
           {isAggregate && dynamicSourceNames && dynamicSourceNames.length > 0 && (() => {
             const uniqueSources = Array.from(new Set(dynamicSourceNames));
             const sourceCount = uniqueSources.length;
@@ -1193,8 +1193,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                     WebkitTouchCallout: 'none',
                   } as React.CSSProperties}
                 >
+                  {/* 源数量徽章 */}
                   <div
-                    className='bg-linear-to-br from-orange-500/95 via-amber-500/95 to-yellow-500/95 text-white text-xs font-bold w-9 h-9 @[180px]:w-10 @[180px]:h-10 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30 hover:scale-[1.15] transition-all duration-300 ease-out cursor-pointer hover:shadow-orange-500/50'
+                    className='bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg flex items-center gap-1 hover:scale-105 transition-all duration-300 cursor-pointer'
                     style={{
                       WebkitUserSelect: 'none',
                       userSelect: 'none',
@@ -1205,10 +1206,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                       return false;
                     }}
                   >
-                    <span className="flex flex-col items-center justify-center leading-none">
-                      <span className="@[180px]:text-[10px] text-[9px] font-normal">源</span>
-                      <span className="@[180px]:text-sm text-xs font-extrabold">{sourceCount}</span>
-                    </span>
+                    <span>{sourceCount}</span>
+                    <span className='text-white/60'>源</span>
                   </div>
 
                   {/* 播放源详情悬浮框 */}
