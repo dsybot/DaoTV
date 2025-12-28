@@ -225,12 +225,11 @@ function ShortDramaCard({
             </div>
           </div>
 
-          {/* 集数标识 - 只在集数>1时显示 */}
+          {/* 集数标识 - Netflix 统一风格 - 只在集数>1时显示 */}
           {showEpisodeCount && (
-            <div className="absolute top-2 left-2 rounded-md bg-black/30 dark:bg-white/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold text-white dark:text-gray-900 shadow-lg border border-white/10 dark:border-black/10 backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-              <span className="flex items-center gap-1">
-                <Play size={10} className="fill-current" />
-                {realEpisodeCount}集
+            <div className="absolute top-2 left-2 flex items-center overflow-hidden rounded-md shadow-lg transition-all duration-300 ease-out group-hover:scale-105 bg-black/70 backdrop-blur-sm px-2 py-0.5">
+              <span className="flex items-center text-[10px] font-medium text-white/80">
+                {realEpisodeCount} 集
               </span>
             </div>
           )}

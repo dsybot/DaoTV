@@ -965,30 +965,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
-          {hasReleaseTag && type && (
-            <div
-              className={
-                `absolute top-2 left-2 text-white dark:text-gray-900 font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ` +
-                `text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/30 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm`
-              }
-              style={{
-                WebkitUserSelect: 'none',
-                userSelect: 'none',
-                WebkitTouchCallout: 'none',
-              } as React.CSSProperties}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                return false;
-              }}
-            >
-              <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
-                <span className="hidden sm:inline-block text-[10px]">{type === 'movie' ? '🎬' : '📺'}</span>
-                {type === 'movie' ? '电影' : '电视剧'}
-              </span>
-            </div>
-          )}
-
           {/* 集数角标 - Netflix/DecoTV 风格 - 左上角 */}
           {/* 即将上映的内容不显示集数徽章（因为是占位符数据）*/}
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
@@ -1030,9 +1006,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             <div
               className={`absolute left-2 flex items-center bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99)
                 ? 'top-[38px]'  // 有集数徽章时向下偏移
-                : hasReleaseTag && type
-                  ? 'top-[38px]'  // 有类型徽章时向下偏移
-                  : 'top-2'
+                : 'top-2'
                 }`}
               style={{
                 WebkitUserSelect: 'none',
