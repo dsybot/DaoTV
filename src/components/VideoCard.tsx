@@ -989,12 +989,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 集数角标 - Netflix/DecoTV 风格 - 右上角 */}
+          {/* 集数角标 - Netflix/DecoTV 风格 - 左上角 */}
           {/* 即将上映的内容不显示集数徽章（因为是占位符数据）*/}
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
-              className='absolute top-2 right-2 flex items-stretch overflow-hidden rounded-md shadow-lg transition-all duration-300 ease-out group-hover:scale-105 z-30'
+              className='absolute top-2 left-2 flex items-stretch overflow-hidden rounded-md shadow-lg transition-all duration-300 ease-out group-hover:scale-105 z-30'
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -1025,10 +1025,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
+          {/* 年份徽章 - Netflix 风格 - 左上角第二位 */}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
-              className={`absolute left-2 bg-linear-to-br from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-purple-500/50 group-hover:ring-purple-300/50 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
+              className={`absolute left-2 flex items-center bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99)
+                  ? 'top-[38px]'  // 有集数徽章时向下偏移
+                  : hasReleaseTag && type
+                    ? 'top-[38px]'  // 有类型徽章时向下偏移
+                    : 'top-2'
                 }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -1044,10 +1048,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 已完结徽章 - 美化版，放在底部左侧 */}
+          {/* 已完结徽章 - Netflix 风格 - 底部左侧 */}
           {remarks && isSeriesCompleted(remarks) && (
             <div
-              className="absolute bottom-2 left-2 z-30 text-white dark:text-gray-900 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/30 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105"
+              className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30"
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -1058,27 +1062,26 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
-                <span className="hidden sm:inline-block text-[10px]">✓</span>
-                已完结
-              </span>
+              <span className="text-green-400">✓</span>
+              <span>已完结</span>
             </div>
           )}
 
-          {/* 上映状态徽章 - 美化版，放在底部左侧 */}
+          {/* 上映状态徽章 - Netflix 风格 - 底部左侧 */}
           {hasReleaseTag && (() => {
-            // 根据状态选择emoji
-            let emoji = '🔜';
+            // 根据状态选择颜色和文本
+            let statusColor = 'text-orange-400';
+            let statusText = remarks || '';
 
             if (remarks?.includes('已上映')) {
-              emoji = '🎬';
+              statusColor = 'text-green-400';
             } else if (remarks?.includes('今日上映')) {
-              emoji = '🎉';
+              statusColor = 'text-yellow-400';
             }
 
             return (
               <div
-                className="absolute bottom-2 left-2 z-30 text-white dark:text-gray-900 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md bg-black/30 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out group-hover:scale-105 animate-pulse"
+                className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30"
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -1089,10 +1092,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   return false;
                 }}
               >
-                <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
-                  <span className="hidden sm:inline-block text-[10px]">{emoji}</span>
-                  {remarks}
-                </span>
+                <span className={statusColor}>●</span>
+                <span className="text-white/80">{statusText}</span>
               </div>
             );
           })()}
