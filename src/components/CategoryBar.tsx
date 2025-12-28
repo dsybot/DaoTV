@@ -45,6 +45,9 @@ export default function CategoryBar({
   const [showRightArrow, setShowRightArrow] = useState(false);
   // 组件挂载状态
   const [isMounted, setIsMounted] = useState(false);
+  // 手动滚动状态（防止与自动居中冲突）
+  const [isManualScrolling, setIsManualScrolling] = useState(false);
+  const manualScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 滚动距离（每次点击箭头滚动的像素，约为容器宽度的 50%）
   const SCROLL_DISTANCE = 300;
@@ -79,10 +82,23 @@ export default function CategoryBar({
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    // 设置手动滚动标志
+    setIsManualScrolling(true);
+
+    // 清除之前的定时器
+    if (manualScrollTimeoutRef.current) {
+      clearTimeout(manualScrollTimeoutRef.current);
+    }
+
     container.scrollBy({
       left: -SCROLL_DISTANCE,
       behavior: 'smooth',
     });
+
+    // 600ms 后重置手动滚动标志（等待滚动动画完成）
+    manualScrollTimeoutRef.current = setTimeout(() => {
+      setIsManualScrolling(false);
+    }, 600);
   }, []);
 
   /**
@@ -92,16 +108,32 @@ export default function CategoryBar({
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    // 设置手动滚动标志
+    setIsManualScrolling(true);
+
+    // 清除之前的定时器
+    if (manualScrollTimeoutRef.current) {
+      clearTimeout(manualScrollTimeoutRef.current);
+    }
+
     container.scrollBy({
       left: SCROLL_DISTANCE,
       behavior: 'smooth',
     });
+
+    // 600ms 后重置手动滚动标志（等待滚动动画完成）
+    manualScrollTimeoutRef.current = setTimeout(() => {
+      setIsManualScrolling(false);
+    }, 600);
   }, []);
 
   /**
    * 将选中的分组滚动到视口中央
    */
   const scrollToActiveGroup = useCallback(() => {
+    // 如果正在手动滚动，不执行自动居中（防止冲突）
+    if (isManualScrolling) return;
+
     if (!selectedGroup) return;
 
     const groupIndex = groups.indexOf(selectedGroup);
@@ -116,7 +148,7 @@ export default function CategoryBar({
       block: 'nearest',
       inline: 'center',
     });
-  }, [selectedGroup, groups]);
+  }, [selectedGroup, groups, isManualScrolling]);
 
   /**
    * 组件挂载后初始化
@@ -165,6 +197,15 @@ export default function CategoryBar({
       scrollToActiveGroup();
     }
   }, [selectedGroup, isMounted, scrollToActiveGroup]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (manualScrollTimeoutRef.current) {
+        clearTimeout(manualScrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 如果没有分组，不渲染
   if (groups.length === 0) return null;
