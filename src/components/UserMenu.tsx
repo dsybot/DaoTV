@@ -999,14 +999,14 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 - 普通菜单无需模糊 */}
       <div
-        className='fixed inset-0 bg-transparent z-[1000]'
+        className='fixed inset-0 bg-transparent z-1000'
         onClick={handleCloseMenu}
       />
 
       {/* 菜单面板 */}
-      <div className='fixed top-14 right-4 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl z-[1001] border border-gray-200/50 dark:border-gray-700/50 overflow-hidden select-none'>
+      <div className='fixed top-14 right-4 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl z-1001 border border-gray-200/50 dark:border-gray-700/50 overflow-hidden select-none'>
         {/* 用户信息区域 */}
-        <div className='px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-800/50'>
+        <div className='px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-800/50'>
           <div className='space-y-1'>
             <div className='flex items-center justify-between'>
               <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
@@ -1205,7 +1205,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 z-[1000]'
+        className='fixed inset-0 bg-black/50 z-1000'
         onClick={handleCloseSettings}
         onTouchMove={(e) => {
           // 只阻止滚动，允许其他触摸事件
@@ -1222,7 +1222,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 设置面板 */}
       <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'
+        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-1001 flex flex-col'
       >
         {/* 内容容器 - 独立的滚动区域 */}
         <div
@@ -1308,7 +1308,7 @@ export const UserMenu: React.FC = () => {
                       >
                         <span className='truncate'>{option.label}</span>
                         {doubanDataSource === option.value && (
-                          <Check className='w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 ml-2' />
+                          <Check className='w-4 h-4 text-green-600 dark:text-green-400 shrink-0 ml-2' />
                         )}
                       </button>
                     ))}
@@ -1413,7 +1413,7 @@ export const UserMenu: React.FC = () => {
                       >
                         <span className='truncate'>{option.label}</span>
                         {doubanImageProxyType === option.value && (
-                          <Check className='w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 ml-2' />
+                          <Check className='w-4 h-4 text-green-600 dark:text-green-400 shrink-0 ml-2' />
                         )}
                       </button>
                     ))}
@@ -1586,22 +1586,22 @@ export const UserMenu: React.FC = () => {
                   const colorClasses = {
                     green: {
                       selected:
-                        'border-transparent bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-2 ring-green-400/60 dark:ring-green-500/50 shadow-[0_0_15px_-3px_rgba(34,197,94,0.4)] dark:shadow-[0_0_15px_-3px_rgba(34,197,94,0.3)]',
-                      icon: 'bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-800/50 dark:to-emerald-800/50',
+                        'border-transparent bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-2 ring-green-400/60 dark:ring-green-500/50 shadow-[0_0_15px_-3px_rgba(34,197,94,0.4)] dark:shadow-[0_0_15px_-3px_rgba(34,197,94,0.3)]',
+                      icon: 'bg-linear-to-br from-green-100 to-emerald-100 dark:from-green-800/50 dark:to-emerald-800/50',
                       check: 'text-green-500',
                       label: 'text-green-700 dark:text-green-300',
                     },
                     blue: {
                       selected:
-                        'border-transparent bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 ring-2 ring-blue-400/60 dark:ring-blue-500/50 shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] dark:shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]',
-                      icon: 'bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-800/50 dark:to-cyan-800/50',
+                        'border-transparent bg-linear-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 ring-2 ring-blue-400/60 dark:ring-blue-500/50 shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] dark:shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]',
+                      icon: 'bg-linear-to-br from-blue-100 to-cyan-100 dark:from-blue-800/50 dark:to-cyan-800/50',
                       check: 'text-blue-500',
                       label: 'text-blue-700 dark:text-blue-300',
                     },
                     purple: {
                       selected:
-                        'border-transparent bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 ring-2 ring-purple-400/60 dark:ring-purple-500/50 shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)] dark:shadow-[0_0_15px_-3px_rgba(168,85,247,0.3)]',
-                      icon: 'bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-800/50 dark:to-pink-800/50',
+                        'border-transparent bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 ring-2 ring-purple-400/60 dark:ring-purple-500/50 shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)] dark:shadow-[0_0_15px_-3px_rgba(168,85,247,0.3)]',
+                      icon: 'bg-linear-to-br from-purple-100 to-pink-100 dark:from-purple-800/50 dark:to-pink-800/50',
                       check: 'text-purple-500',
                       label: 'text-purple-700 dark:text-purple-300',
                     },
@@ -1929,7 +1929,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 z-[1000]'
+        className='fixed inset-0 bg-black/50 z-1000'
         onClick={handleCloseChangePassword}
         onTouchMove={(e) => {
           // 只阻止滚动，允许其他触摸事件
@@ -1946,7 +1946,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 修改密码面板 */}
       <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] overflow-hidden'
+        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl z-1001 overflow-hidden'
       >
         {/* 内容容器 - 独立的滚动区域 */}
         <div
@@ -2048,7 +2048,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 z-[1000]'
+        className='fixed inset-0 bg-black/50 z-1000'
         onClick={handleCloseWatchingUpdates}
         onTouchMove={(e) => {
           e.preventDefault();
@@ -2063,7 +2063,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 更新弹窗 */}
       <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'
+        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-1001 flex flex-col'
       >
         {/* 内容容器 - 独立的滚动区域 */}
         <div
@@ -2131,7 +2131,7 @@ export const UserMenu: React.FC = () => {
                     .filter(series => series.hasNewEpisode)
                     .map((series, index) => (
                       <div key={`new-${series.title}_${series.year}_${index}`} className='relative group/card'>
-                        <div className='relative group-hover/card:z-[5] transition-all duration-300'>
+                        <div className='relative group-hover/card:z-5 transition-all duration-300'>
                           <VideoCard
                             title={series.title}
                             poster={series.cover}
@@ -2148,7 +2148,7 @@ export const UserMenu: React.FC = () => {
                           />
                         </div>
                         {/* 新集数徽章 */}
-                        <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
+                        <div className='absolute -top-2 -right-2 bg-linear-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
                           +{series.newEpisodes}集
                         </div>
                       </div>
@@ -2201,7 +2201,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 z-[1000]'
+        className='fixed inset-0 bg-black/50 z-1000'
         onClick={handleCloseContinueWatching}
         onTouchMove={(e) => {
           e.preventDefault();
@@ -2216,11 +2216,11 @@ export const UserMenu: React.FC = () => {
 
       {/* 继续观看弹窗 */}
       <div
-        className='fixed inset-x-2 sm:inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[85vh] overflow-y-auto overflow-x-hidden'
+        className='fixed inset-x-2 sm:inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-1001 max-h-[85vh] overflow-y-auto overflow-x-hidden'
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <div className='flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-[600] px-3 sm:px-6 py-3 sm:py-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-600 px-3 sm:px-6 py-3 sm:py-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700'>
             <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
               <PlayCircle className='w-5 h-5 sm:w-6 sm:h-6 text-blue-500 fill-blue-500' />
               <span className='hidden sm:inline'>继续观看</span>
@@ -2274,16 +2274,16 @@ export const UserMenu: React.FC = () => {
                     <div key={dateKey} className='relative'>
                       {/* 时间线连接线 */}
                       {groupIndex < groupPlayRecordsByDate().length - 1 && (
-                        <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 opacity-30'></div>
+                        <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-linear-to-b from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 opacity-30'></div>
                       )}
 
                       {/* 日期标题 */}
                       <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
-                        <div className='relative flex-shrink-0'>
-                          <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 flex items-center justify-center shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20'>
+                        <div className='relative shrink-0'>
+                          <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-linear-to-br from-blue-500 via-cyan-500 to-sky-500 dark:from-blue-600 dark:via-cyan-600 dark:to-sky-600 flex items-center justify-center shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20'>
                             <span className='text-white text-xs sm:text-sm font-bold'>{records.length}</span>
                           </div>
-                          <div className='absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-cyan-400 to-sky-400 opacity-30 blur animate-pulse'></div>
+                          <div className='absolute inset-0 rounded-full bg-linear-to-br from-blue-400 via-cyan-400 to-sky-400 opacity-30 blur animate-pulse'></div>
                         </div>
                         <div className='flex-1 min-w-0'>
                           <h4 className='text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate'>
@@ -2302,7 +2302,7 @@ export const UserMenu: React.FC = () => {
                           const newEpisodesCount = getNewEpisodesCount(record);
                           return (
                             <div key={record.key} className='relative group/card'>
-                              <div className='relative group-hover/card:z-[5] transition-all duration-300'>
+                              <div className='relative group-hover/card:z-5 transition-all duration-300'>
                                 <VideoCard
                                   id={id}
                                   title={record.title}
@@ -2322,7 +2322,7 @@ export const UserMenu: React.FC = () => {
                                 />
                                 {/* 进度百分比徽章 - 定位在封面左下角（封面aspect-ratio为2:3） */}
                                 {getProgress(record) > 0 && getProgress(record) < 95 && (
-                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-[9] pointer-events-none ${record.remarks && isSeriesCompleted(record.remarks)
+                                  <div className={`absolute left-2 bg-blue-500/90 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-medium z-9 pointer-events-none ${record.remarks && isSeriesCompleted(record.remarks)
                                     ? 'bottom-28 sm:bottom-28'
                                     : 'bottom-20 sm:bottom-20'
                                     }`}>
@@ -2332,7 +2332,7 @@ export const UserMenu: React.FC = () => {
                               </div>
                               {/* 新集数徽章 */}
                               {newEpisodesCount > 0 && (
-                                <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
+                                <div className='absolute -top-2 -right-2 bg-linear-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
                                   +{newEpisodesCount}集
                                 </div>
                               )}
@@ -2351,12 +2351,12 @@ export const UserMenu: React.FC = () => {
               <div className='mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700'>
                 <div className='flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
                   <div className='flex items-center gap-1.5 sm:gap-2'>
-                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
+                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-linear-to-br from-blue-500 to-cyan-500'></div>
                     <span>共 {playRecords.length} 部观看</span>
                   </div>
                   <div className='w-px h-3 sm:h-4 bg-gray-300 dark:bg-gray-600'></div>
                   <div className='flex items-center gap-1.5 sm:gap-2'>
-                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500'></div>
+                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-linear-to-br from-purple-500 to-pink-500'></div>
                     <span>跨越 {groupPlayRecordsByDate().length} 天</span>
                   </div>
                 </div>
@@ -2399,7 +2399,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 z-[1000]'
+        className='fixed inset-0 bg-black/50 z-1000'
         onClick={handleCloseFavorites}
         onTouchMove={(e) => {
           e.preventDefault();
@@ -2414,11 +2414,11 @@ export const UserMenu: React.FC = () => {
 
       {/* 收藏弹窗 */}
       <div
-        className='fixed inset-x-2 sm:inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[1001] max-h-[85vh] overflow-y-auto overflow-x-hidden'
+        className='fixed inset-x-2 sm:inset-x-4 top-1/2 transform -translate-y-1/2 max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-1001 max-h-[85vh] overflow-y-auto overflow-x-hidden'
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <div className='flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-[600] px-3 sm:px-6 py-3 sm:py-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-600 px-3 sm:px-6 py-3 sm:py-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700'>
             <h3 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
               <Heart className='w-5 h-5 sm:w-6 sm:h-6 text-red-500 fill-red-500' />
               <span className='hidden sm:inline'>我的收藏时光</span>
@@ -2467,16 +2467,16 @@ export const UserMenu: React.FC = () => {
                     <div key={dateKey} className='relative'>
                       {/* 时间线连接线 - 移动端更靠左 */}
                       {groupIndex < groupFavoritesByDate().length - 1 && (
-                        <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-gradient-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
+                        <div className='absolute left-[11px] sm:left-[15px] top-[32px] sm:top-[40px] bottom-[-24px] sm:bottom-[-32px] w-[2px] bg-linear-to-b from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 opacity-30'></div>
                       )}
 
                       {/* 日期标题 */}
                       <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
-                        <div className='relative flex-shrink-0'>
-                          <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
+                        <div className='relative shrink-0'>
+                          <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-linear-to-br from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 dark:shadow-green-500/20'>
                             <span className='text-white text-xs sm:text-sm font-bold'>{items.length}</span>
                           </div>
-                          <div className='absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400 opacity-30 blur animate-pulse'></div>
+                          <div className='absolute inset-0 rounded-full bg-linear-to-br from-green-400 via-emerald-400 to-teal-400 opacity-30 blur animate-pulse'></div>
                         </div>
                         <div className='flex-1 min-w-0'>
                           <h4 className='text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate'>
@@ -2538,7 +2538,7 @@ export const UserMenu: React.FC = () => {
                               />
                               {/* 新上映高亮标记 - 7天内上映的显示 */}
                               {isNewRelease && (
-                                <div className='absolute top-2 left-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/50 animate-pulse z-40'>
+                                <div className='absolute top-2 left-2 bg-linear-to-r from-yellow-400 via-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/50 animate-pulse z-40'>
                                   <span className='flex items-center gap-1'>
                                     <span className='text-[10px]'>🎉</span>
                                     新上映
@@ -2560,12 +2560,12 @@ export const UserMenu: React.FC = () => {
               <div className='mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700'>
                 <div className='flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
                   <div className='flex items-center gap-1.5 sm:gap-2'>
-                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-green-500 to-emerald-500'></div>
+                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-linear-to-br from-green-500 to-emerald-500'></div>
                     <span>共 {favorites.length} 部</span>
                   </div>
                   <div className='w-px h-3 sm:h-4 bg-gray-300 dark:bg-gray-600'></div>
                   <div className='flex items-center gap-1.5 sm:gap-2'>
-                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500'></div>
+                    <div className='w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-linear-to-br from-blue-500 to-cyan-500'></div>
                     <span>跨越 {groupFavoritesByDate().length} 天</span>
                   </div>
                 </div>
@@ -2586,7 +2586,7 @@ export const UserMenu: React.FC = () => {
           aria-label='User Menu'
         >
           {/* 微光背景效果 */}
-          <div className='absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/0 to-purple-600/0 group-hover:from-blue-400/20 group-hover:to-purple-600/20 dark:group-hover:from-blue-300/20 dark:group-hover:to-purple-500/20 transition-all duration-300'></div>
+          <div className='absolute inset-0 rounded-full bg-linear-to-br from-blue-400/0 to-purple-600/0 group-hover:from-blue-400/20 group-hover:to-purple-600/20 dark:group-hover:from-blue-300/20 dark:group-hover:to-purple-500/20 transition-all duration-300'></div>
 
           <User className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' />
         </button>

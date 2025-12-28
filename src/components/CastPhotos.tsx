@@ -285,7 +285,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
           {actors.map((actor, index) => (
             <div
               key={`${actor.name}-${index}`}
-              className={`flex-shrink-0 w-20 text-center cursor-pointer transition-all duration-200 ${index === selectedIndex ? 'scale-105' : 'opacity-70 hover:opacity-100'
+              className={`shrink-0 w-20 text-center cursor-pointer transition-all duration-200 ${index === selectedIndex ? 'scale-105' : 'opacity-70 hover:opacity-100'
                 }`}
               onClick={() => handleActorClick(index)}
             >
@@ -402,7 +402,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
                 {actorWorks.map((work, index) => (
                   <div
                     key={work.id || index}
-                    className="flex-shrink-0 w-28 sm:w-32"
+                    className="shrink-0 w-28 sm:w-32"
                   >
                     <VideoCard
                       id={work.id}

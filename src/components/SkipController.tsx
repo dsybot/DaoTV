@@ -1200,12 +1200,12 @@ export default function SkipController({
             transition: isDraggingBall ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             transform: isDraggingBall ? 'scale(1.1)' : 'scale(1)',
           }}
-          className="z-[9998] group"
+          className="z-9998 group"
           title="拖动或点击展开"
         >
           {/* 圆形悬浯球（不靠近边缘时） */}
           {!isSnapped && (
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full shadow-2xl border-2 border-white/30 transition-all w-14 h-14 flex flex-col items-center justify-center">
+            <div className="bg-linear-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full shadow-2xl border-2 border-white/30 transition-all w-14 h-14 flex flex-col items-center justify-center">
               <svg className="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               </svg>
@@ -1215,7 +1215,7 @@ export default function SkipController({
           
           {/* 边缘吸附形态 */}
           {isSnapped && (
-            <div className={`bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-2xl border border-white/30 transition-all
+            <div className={`bg-linear-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-2xl border border-white/30 transition-all
               ${snap.edge === 'left' ? 'rounded-r-2xl pl-2 pr-3 py-3' : ''}
               ${snap.edge === 'right' ? 'rounded-l-2xl pr-2 pl-3 py-3' : ''}
               ${snap.edge === 'top' ? 'rounded-b-2xl pt-2 pb-3 px-3' : ''}
@@ -1274,7 +1274,7 @@ export default function SkipController({
           cursor: isDragging ? 'grabbing' : 'default',
           userSelect: isDragging ? 'none' : 'auto',
         }}
-        className={`z-[9998] max-w-sm ${isFullscreen ? 'bg-black/50 dark:bg-black/50' : 'bg-white/95 dark:bg-gray-800/95'} backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in`}
+        className={`z-9998 max-w-sm ${isFullscreen ? 'bg-black/50 dark:bg-black/50' : 'bg-white/95 dark:bg-gray-800/95'} backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in`}
       >
         <div className="p-3">
           {/* 全屏模式下显示保存成功提示和关闭按钮 */}
@@ -1346,7 +1346,7 @@ export default function SkipController({
                 {!isFullscreen && (
                   <button
                     onClick={() => handleDeleteSegment(index)}
-                    className="px-1.5 py-0.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors flex-shrink-0"
+                    className="px-1.5 py-0.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors shrink-0"
                     title="删除"
                   >
                     ×
@@ -1383,7 +1383,7 @@ export default function SkipController({
 
     const panel = (
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 animate-fade-in"
         onClick={handleCloseDialog}
       >
           <div
@@ -1412,7 +1412,7 @@ export default function SkipController({
             </div>
 
             {/* 全局开关 */}
-            <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-xl mb-6 border border-blue-100/50 dark:border-blue-800/50 shadow-sm backdrop-blur-sm">
+            <div className="bg-linear-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-xl mb-6 border border-blue-100/50 dark:border-blue-800/50 shadow-sm backdrop-blur-sm">
               <div className="flex items-center justify-between mb-2">
                 <label className="flex items-center space-x-2">
                   <input
@@ -1460,7 +1460,7 @@ export default function SkipController({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* 片头设置 */}
-              <div className="space-y-4 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border border-green-100/50 dark:border-green-800/50 backdrop-blur-sm">
+              <div className="space-y-4 bg-linear-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border border-green-100/50 dark:border-green-800/50 backdrop-blur-sm">
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-green-200/50 dark:border-green-700/50 pb-2 flex items-center gap-2">
                   <span className="text-xl">🎬</span>
                   片头设置
@@ -1493,7 +1493,7 @@ export default function SkipController({
                   />
                   <button
                     onClick={markCurrentAsOpeningEnd}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
+                    className="w-full px-4 py-2 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
                     title="标记当前播放时间为片头结束时间"
                   >
                       📍 标记当前时间
@@ -1503,7 +1503,7 @@ export default function SkipController({
               </div>
 
               {/* 片尾设置 */}
-              <div className="space-y-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border border-purple-100/50 dark:border-purple-800/50 backdrop-blur-sm">
+              <div className="space-y-4 bg-linear-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border border-purple-100/50 dark:border-purple-800/50 backdrop-blur-sm">
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-purple-200/50 dark:border-purple-700/50 pb-2 flex items-center gap-2">
                   <span className="text-xl">🎭</span>
                   片尾设置
@@ -1559,7 +1559,7 @@ export default function SkipController({
                   />
                   <button
                     onClick={markCurrentAsEndingStart}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
+                    className="w-full px-4 py-2 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
                     title="标记当前播放时间为片尾开始时间"
                   >
                     📍 标记当前时间
@@ -1588,7 +1588,7 @@ export default function SkipController({
               </div>
             </div>
 
-            <div className="mt-6 p-5 bg-gradient-to-br from-gray-50/80 to-slate-50/80 dark:from-gray-700/80 dark:to-slate-700/80 rounded-xl border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm shadow-inner">
+            <div className="mt-6 p-5 bg-linear-to-br from-gray-50/80 to-slate-50/80 dark:from-gray-700/80 dark:to-slate-700/80 rounded-xl border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm shadow-inner">
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <p><strong>当前播放时间:</strong> {secondsToTime(currentTime)}</p>
                 {duration > 0 && (
@@ -1610,13 +1610,13 @@ export default function SkipController({
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={handleSaveBatchSettings}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
+                className="flex-1 px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
               >
                 💾 保存智能配置
               </button>
               <button
                 onClick={handleCloseDialog}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
+                className="flex-1 px-6 py-3 bg-linear-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
               >
                 ❌ 取消
               </button>

@@ -164,7 +164,7 @@ export default function HomeCarousel() {
   // 加载状态
   if (loading) {
     return (
-      <div className={`${containerClass} bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 animate-pulse flex items-center justify-center`}>
+      <div className={`${containerClass} bg-linear-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 animate-pulse flex items-center justify-center`}>
         <div className="text-gray-500 dark:text-gray-400 text-lg">正在加载精彩内容...</div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function HomeCarousel() {
   // 无数据或错误处理
   if (error || items.length === 0) {
     return (
-      <div className={`${containerClass} bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-6`}>
+      <div className={`${containerClass} bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-6`}>
         <div className="text-center">
           <div className="text-6xl mb-4">🎬</div>
           <div className="text-gray-600 dark:text-gray-300 text-lg font-medium mb-2">
@@ -217,8 +217,8 @@ export default function HomeCarousel() {
           }}
         />
       ))}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-[2]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-[2]" />
+      <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/50 to-transparent z-2" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent z-2" />
 
       {/* 内容区域 - 底部留出空间给缩略图导航 */}
       <div className="relative z-10 h-full flex flex-col justify-end px-6 sm:px-8 md:px-12 pt-6 sm:pt-8 md:pt-12 pb-32 sm:pb-36">
@@ -293,7 +293,7 @@ export default function HomeCarousel() {
                           setCurrentIndex(index);
                           pauseAutoPlayTemporarily();
                         }}
-                        className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
+                        className={`shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${isActive
                           ? 'ring-2 ring-white shadow-2xl scale-105'
                           : 'ring-1 ring-white/50'
                           }`}
@@ -326,12 +326,12 @@ export default function HomeCarousel() {
                     );
                   })}
                   {/* 占位元素，为最后一个缩略图的边框和放大效果留出空间 */}
-                  <div className="flex-shrink-0 w-2" aria-hidden="true" />
+                  <div className="shrink-0 w-2" aria-hidden="true" />
                 </div>
               </div>
 
               {/* 右侧：圆形播放按钮 - 固定在右下角 */}
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <button
                   onClick={() => handlePlay(currentItem)}
                   className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 flex items-center justify-center transition-all duration-300 shadow-2xl"
@@ -365,7 +365,7 @@ export default function HomeCarousel() {
                         setCurrentIndex(index);
                         setIsAutoPlaying(false);
                       }}
-                      className={`flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
+                      className={`shrink-0 transition-all duration-300 rounded-lg overflow-hidden bg-gray-800 ${index === currentIndex
                         ? 'ring-2 ring-white shadow-2xl scale-105'
                         : 'ring-1 ring-white/50'
                         }`}
@@ -403,7 +403,7 @@ export default function HomeCarousel() {
           )}
 
           {/* 右侧：圆形播放按钮 - 模糊背景 */}
-          <div className="flex-shrink-0 ml-4">
+          <div className="shrink-0 ml-4">
             <button
               onClick={() => handlePlay(currentItem)}
               className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-2xl"

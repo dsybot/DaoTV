@@ -263,7 +263,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       {/* 更多菜单弹窗 - 仅移动端 */}
       {showMoreMenu && (
         <div
-          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[700]"
+          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-700"
           onClick={() => setShowMoreMenu(false)}
         >
           <div
@@ -295,7 +295,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                       className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 active:scale-95 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
                     >
                       <div
-                        className={`flex items-center justify-center w-12 h-12 rounded-2xl ${active ? `bg-gradient-to-br ${theme.gradient}` : 'bg-gray-100 dark:bg-gray-800'
+                        className={`flex items-center justify-center w-12 h-12 rounded-2xl ${active ? `bg-linear-to-br ${theme.gradient}` : 'bg-gray-100 dark:bg-gray-800'
                           }`}
                       >
                         <Icon className={`w-6 h-6 ${active ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`} />
@@ -312,7 +312,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       )}
 
       <nav
-        className={`fixed left-0 right-0 z-[600] flex justify-center pointer-events-none ${onLayoutModeChange ? 'bottom-0 md:top-4 md:bottom-auto' : 'bottom-0'
+        className={`fixed left-0 right-0 z-600 flex justify-center pointer-events-none ${onLayoutModeChange ? 'bottom-0 md:top-4 md:bottom-auto' : 'bottom-0'
           }`}
       >
         <div
@@ -332,7 +332,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                 const theme = getColorTheme(item.href);
 
                 return (
-                  <li key={item.href} className="flex-1 flex-shrink-0 md:hidden">
+                  <li key={item.href} className="flex-1 shrink-0 md:hidden">
                     <Link
                       href={item.href}
                       className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
@@ -362,7 +362,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               return (
                 <li
                   key={item.href}
-                  className={`hidden md:flex flex-shrink-0 ${onLayoutModeChange ? 'md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0' : ''
+                  className={`hidden md:flex shrink-0 ${onLayoutModeChange ? 'md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0' : ''
                     }`}
                   style={
                     onLayoutModeChange
@@ -396,7 +396,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             {/* 桌面端更多下拉菜单按钮 */}
             {hasHiddenItems && onLayoutModeChange && (
               <li
-                className="hidden md:flex flex-shrink-0 relative"
+                className="hidden md:flex shrink-0 relative"
                 ref={dropdownRef}
                 style={{ animation: `slideInFromBottom 0.3s ease-out ${visibleItems.length * 0.05}s forwards` }}
               >
@@ -420,7 +420,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
             )}
 
             {/* 更多按钮 - 仅在移动端显示 */}
-            <li className="flex-1 md:hidden flex-shrink-0">
+            <li className="flex-1 md:hidden shrink-0">
               <button
                 onClick={() => setShowMoreMenu(true)}
                 className="flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
@@ -446,14 +446,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   animation: `slideInFromBottom 0.3s ease-out ${(visibleItems.length + (hasHiddenItems ? 1 : 0)) * 0.05}s forwards`,
                 }}
               >
-                <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600"></div>
+                <div className="w-px h-8 bg-linear-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600"></div>
               </li>
             )}
 
             {/* 切换到侧边栏按钮 */}
             {onLayoutModeChange && (
               <li
-                className="hidden md:flex flex-shrink-0"
+                className="hidden md:flex shrink-0"
                 style={{
                   animation: `slideInFromBottom 0.3s ease-out ${(visibleItems.length + (hasHiddenItems ? 2 : 1)) * 0.05}s forwards`,
                 }}

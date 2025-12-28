@@ -16,7 +16,7 @@ interface MobileHeaderProps {
 const MobileHeader = ({ showBackButton = false, showAIButton = false, onAIClick }: MobileHeaderProps) => {
   const { siteName } = useSite();
   return (
-    <header className='md:hidden fixed top-0 left-0 right-0 z-[999] w-full bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm dark:bg-gray-900/70 dark:border-gray-700/50'>
+    <header className='md:hidden fixed top-0 left-0 right-0 z-999 w-full bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm dark:bg-gray-900/70 dark:border-gray-700/50'>
       <div className='h-12 flex items-center justify-between px-4'>
         {/* 左侧：搜索按钮、AI按钮、返回按钮 */}
         <div className='flex items-center gap-2'>
@@ -48,7 +48,7 @@ const MobileHeader = ({ showBackButton = false, showAIButton = false, onAIClick 
               aria-label='AI Recommend'
             >
               {/* 微光背景效果 */}
-              <div className='absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 transition-all duration-300'></div>
+              <div className='absolute inset-0 rounded-full bg-linear-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 transition-all duration-300'></div>
 
               {/* 机器人图标 */}
               <svg className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' viewBox='0 0 1024 1024' fill='currentColor'>

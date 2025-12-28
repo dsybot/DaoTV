@@ -27,72 +27,136 @@ function randomDelay(min = 100, max = 300): Promise<void> {
 export const runtime = 'nodejs';
 
 // ============================================================================
-// 核心爬虫函数（带缓存）
+// 错误类型枚举
 // ============================================================================
 
 /**
- * 爬取豆瓣详情页面（内部函数）
+ * 豆瓣错误类
  */
-async function _scrapeDoubanDetails(id: string, proxyUrl: string) {
+class DoubanError extends Error {
+  constructor(
+    message: string,
+    public code: 'TIMEOUT' | 'RATE_LIMIT' | 'SERVER_ERROR' | 'PARSE_ERROR' | 'NETWORK_ERROR',
+    public status?: number,
+  ) {
+    super(message);
+    this.name = 'DoubanError';
+  }
+}
+
+// ============================================================================
+// 核心爬虫函数（带缓存和重试）
+// ============================================================================
+
+/**
+ * 带重试的爬取函数
+ */
+async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0): Promise<ReturnType<typeof parseDoubanDetails>> {
   const originalUrl = `https://movie.douban.com/subject/${id}/`;
   // 如果配置了代理，使用代理地址
   const target = proxyUrl
     ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
     : originalUrl;
 
-  console.log(`[豆瓣详情] 请求URL: ${target}`);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
 
-  // 请求限流：确保请求间隔（使用代理时间隔更短）
-  const interval = proxyUrl ? MIN_REQUEST_INTERVAL : MIN_REQUEST_INTERVAL_NO_PROXY;
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < interval) {
-    await new Promise(resolve =>
-      setTimeout(resolve, interval - timeSinceLastRequest)
+  try {
+    console.log(`[豆瓣详情] 请求URL: ${target}`);
+
+    // 请求限流：确保请求间隔（使用代理时间隔更短）
+    const interval = proxyUrl ? MIN_REQUEST_INTERVAL : MIN_REQUEST_INTERVAL_NO_PROXY;
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < interval) {
+      await new Promise(resolve =>
+        setTimeout(resolve, interval - timeSinceLastRequest)
+      );
+    }
+    lastRequestTime = Date.now();
+
+    // 添加随机延时（使用代理时延时更短）
+    if (proxyUrl) {
+      await randomDelay(50, 150); // 使用代理：50-150ms
+    } else {
+      await randomDelay(500, 1500); // 无代理：500-1500ms
+    }
+
+    // 增加超时时间至20秒
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+    const fetchOptions = {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Cache-Control': 'max-age=0',
+        // 随机添加Referer
+        ...(Math.random() > 0.5 ? { 'Referer': 'https://www.douban.com/' } : {}),
+      },
+    };
+
+    const response = await fetch(target, fetchOptions);
+    clearTimeout(timeoutId);
+
+    // 处理不同的HTTP状态码
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new DoubanError('请求过于频繁，请稍后再试', 'RATE_LIMIT', 429);
+      } else if (response.status >= 500) {
+        throw new DoubanError(`豆瓣服务器错误: ${response.status}`, 'SERVER_ERROR', response.status);
+      } else if (response.status === 404) {
+        throw new DoubanError(`影片不存在: ${id}`, 'SERVER_ERROR', 404);
+      } else {
+        throw new DoubanError(`HTTP错误: ${response.status}`, 'NETWORK_ERROR', response.status);
+      }
+    }
+
+    const html = await response.text();
+
+    // 解析详细信息
+    return parseDoubanDetails(html, id);
+  } catch (error) {
+    // 超时错误
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new DoubanError('请求超时，豆瓣响应过慢', 'TIMEOUT', 504);
+
+      // 超时重试
+      if (retryCount < MAX_RETRIES) {
+        console.warn(`[Douban] 超时，重试 ${retryCount + 1}/${MAX_RETRIES}...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[retryCount]));
+        return _scrapeDoubanDetails(id, proxyUrl, retryCount + 1);
+      }
+
+      throw timeoutError;
+    }
+
+    // DoubanError 直接抛出
+    if (error instanceof DoubanError) {
+      // 速率限制或服务器错误重试
+      if ((error.code === 'RATE_LIMIT' || error.code === 'SERVER_ERROR') && retryCount < MAX_RETRIES) {
+        console.warn(`[Douban] ${error.message}，重试 ${retryCount + 1}/${MAX_RETRIES}...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[retryCount]));
+        return _scrapeDoubanDetails(id, proxyUrl, retryCount + 1);
+      }
+      throw error;
+    }
+
+    // 其他错误
+    throw new DoubanError(
+      error instanceof Error ? error.message : '未知网络错误',
+      'NETWORK_ERROR',
     );
   }
-  lastRequestTime = Date.now();
-
-  // 添加随机延时（使用代理时延时更短）
-  if (proxyUrl) {
-    await randomDelay(50, 150); // 使用代理：50-150ms
-  } else {
-    await randomDelay(500, 1500); // 无代理：500-1500ms
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-  const fetchOptions = {
-    signal: controller.signal,
-    headers: {
-      'User-Agent': getRandomUserAgent(),
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'DNT': '1',
-      'Connection': 'keep-alive',
-      'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Cache-Control': 'max-age=0',
-      // 随机添加Referer
-      ...(Math.random() > 0.5 ? { 'Referer': 'https://www.douban.com/' } : {}),
-    },
-  };
-
-  const response = await fetch(target, fetchOptions);
-  clearTimeout(timeoutId);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
-  }
-
-  const html = await response.text();
-
-  // 解析详细信息
-  return parseDoubanDetails(html, id);
 }
 
 /**
@@ -115,12 +179,16 @@ export async function GET(request: Request) {
 
   if (!id) {
     return NextResponse.json(
-      { error: '缺少必要参数: id' },
+      {
+        code: 400,
+        message: '缺少必要参数: id',
+        error: 'MISSING_PARAMETER',
+      },
       { status: 400 }
     );
   }
 
-  // 获取代理配置
+  // 获取代理配置（本地特性：支持自定义代理）
   const config = await getConfig();
   const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
 
@@ -138,8 +206,55 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    // 处理 DoubanError
+    if (error instanceof DoubanError) {
+      const statusCode = error.status || (
+        error.code === 'TIMEOUT' ? 504 :
+          error.code === 'RATE_LIMIT' ? 429 :
+            error.code === 'SERVER_ERROR' ? 502 :
+              500
+      );
+
+      return NextResponse.json(
+        {
+          code: statusCode,
+          message: error.message,
+          error: error.code,
+          details: `获取豆瓣详情失败 (ID: ${id})`,
+        },
+        {
+          status: statusCode,
+          headers: {
+            // 对于速率限制和超时，允许客户端缓存错误响应
+            ...(error.code === 'RATE_LIMIT' || error.code === 'TIMEOUT' ? {
+              'Cache-Control': 'public, max-age=60',
+            } : {}),
+          },
+        }
+      );
+    }
+
+    // 解析错误
+    if (error instanceof Error && error.message.includes('解析')) {
+      return NextResponse.json(
+        {
+          code: 500,
+          message: '解析豆瓣数据失败，可能是页面结构已变化',
+          error: 'PARSE_ERROR',
+          details: error.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // 未知错误
     return NextResponse.json(
-      { error: '获取豆瓣详情失败', details: (error as Error).message },
+      {
+        code: 500,
+        message: '获取豆瓣详情失败',
+        error: 'UNKNOWN_ERROR',
+        details: error instanceof Error ? error.message : '未知错误',
+      },
       { status: 500 }
     );
   }
@@ -425,6 +540,9 @@ function parseDoubanDetails(html: string, id: string) {
       }
     };
   } catch (error) {
-    throw new Error(`解析豆瓣详情页面失败: ${(error as Error).message}`);
+    throw new DoubanError(
+      `解析豆瓣详情页面失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      'PARSE_ERROR',
+    );
   }
 }

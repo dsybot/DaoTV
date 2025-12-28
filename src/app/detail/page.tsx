@@ -132,12 +132,12 @@ function SeasonSelector({
                   setIsOpen(false);
                 }}
                 className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${s.seasonNumber === currentSeason
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
-                  : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                  ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
                   }`}
               >
                 <div className="flex items-center gap-2">
-                  {s.seasonNumber === currentSeason && <Check className="w-4 h-4 flex-shrink-0" />}
+                  {s.seasonNumber === currentSeason && <Check className="w-4 h-4 shrink-0" />}
                   <span className={s.seasonNumber === currentSeason ? '' : 'ml-6'}>{s.name}</span>
                 </div>
               </button>
@@ -481,17 +481,17 @@ function DetailPageClient() {
           ) : displayPoster ? (
             <img src={processImageUrl(displayPoster)} alt={title} className="hidden md:block absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110" />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
+            <div className="absolute inset-0 bg-linear-to-br from-gray-700 to-gray-900" />
           )}
           {/* 手机端无海报时的默认背景 */}
           {!displayPoster && (
-            <div className="md:hidden absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
+            <div className="md:hidden absolute inset-0 bg-linear-to-br from-gray-700 to-gray-900" />
           )}
           {/* 渐变遮罩 */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black via-black/20 to-transparent" />
           {/* 底部渐变虚化 - 过渡到下方内容区域 */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-100 dark:from-gray-900 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-gray-100 dark:from-gray-900 to-transparent" />
 
           {/* 返回按钮 */}
           <button
@@ -507,7 +507,7 @@ function DetailPageClient() {
             <div className="max-w-6xl mx-auto">
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end">
                 {/* 左侧：封面卡片和按钮 */}
-                <div className="flex-shrink-0 w-36 sm:w-44 md:w-52 mx-auto md:mx-0">
+                <div className="shrink-0 w-36 sm:w-44 md:w-52 mx-auto md:mx-0">
                   <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10">
                     {!imageLoaded && <ImagePlaceholder aspectRatio="aspect-[2/3]" />}
                     {displayPoster && (
@@ -626,7 +626,7 @@ function DetailPageClient() {
               return (
                 <div>
                   <div className="flex items-center gap-4 mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">剧集列表</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white shrink-0">剧集列表</h2>
                     {/* 分页切换 - 加滚动条 */}
                     <div className="flex-1 overflow-x-auto">
                       <div className="flex items-center gap-1 text-sm whitespace-nowrap">
@@ -670,7 +670,7 @@ function DetailPageClient() {
                         {episodes.slice(episodePage * pageSize, (episodePage + 1) * pageSize).map((ep) => (
                           <div
                             key={ep.episodeNumber}
-                            className="group cursor-pointer flex-shrink-0 w-40 sm:w-44"
+                            className="group cursor-pointer shrink-0 w-40 sm:w-44"
                             onClick={() => {
                               const stypeParam = stype ? `&stype=${stype}` : '';
                               const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
@@ -714,7 +714,7 @@ function DetailPageClient() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
+                                <div className="w-full h-full bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
                                   <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
                                 </div>
                               )}

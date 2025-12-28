@@ -110,12 +110,12 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         <div className='relative min-w-0 flex-1 transition-all duration-300'>
           {/* 桌面端顶部栏 - 仅顶栏模式显示，采用悬浮样式，仅在客户端挂载后显示 */}
           {isMounted && layoutMode === 'top' && (
-            <div className='hidden md:flex fixed top-4 left-0 right-0 z-[999] pointer-events-none'>
+            <div className='hidden md:flex fixed top-4 left-0 right-0 z-999 pointer-events-none'>
               <div className='w-full max-w-[1920px] mx-auto px-6 flex items-center justify-between'>
                 {/* 左侧：网站标题 - 悬浮样式 */}
-                <Link href='/' id='nav-title' className='flex-shrink-0 pointer-events-auto'>
+                <Link href='/' id='nav-title' className='shrink-0 pointer-events-auto'>
                   <div className='bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40 shadow-lg rounded-full px-4 py-2'>
-                    <div className='text-xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200'>
+                    <div className='text-xl font-bold bg-linear-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200'>
                       {siteName}
                     </div>
                   </div>
@@ -164,7 +164,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
                   aria-label='AI Recommend'
                 >
                   {/* 微光背景效果 */}
-                  <div className='absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 dark:group-hover:from-purple-300/20 dark:group-hover:to-pink-500/20 transition-all duration-300'></div>
+                  <div className='absolute inset-0 rounded-full bg-linear-to-br from-purple-400/0 to-pink-600/0 group-hover:from-purple-400/20 group-hover:to-pink-600/20 dark:group-hover:from-purple-300/20 dark:group-hover:to-pink-500/20 transition-all duration-300'></div>
 
                   {/* 机器人图标 */}
                   <svg className='w-6 h-6 relative z-10 group-hover:scale-110 transition-transform duration-300' viewBox='0 0 1024 1024' fill='currentColor'>

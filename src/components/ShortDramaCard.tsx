@@ -190,7 +190,7 @@ function ShortDramaCard({
   };
 
   return (
-    <div className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500] hover:drop-shadow-2xl`}>
+    <div className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-500 hover:drop-shadow-2xl`}>
       <Link
         href={`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`}
         className="block"
@@ -219,7 +219,7 @@ function ShortDramaCard({
           />
 
           {/* 悬浮播放按钮 - 优化：移除模糊效果 */}
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-black shadow-lg transition-transform group-hover:scale-110">
               <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
             </div>
@@ -268,7 +268,7 @@ function ShortDramaCard({
 
         {/* 信息区域 */}
         <div className="mt-2 space-y-1.5">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 dark:group-hover:from-blue-400 dark:group-hover:to-purple-400 transition-all duration-300">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-linear-to-r group-hover:from-blue-600 group-hover:to-purple-600 dark:group-hover:from-blue-400 dark:group-hover:to-purple-400 transition-all duration-300">
             {drama.name}
           </h3>
 

@@ -494,15 +494,15 @@ function HomeClient() {
 
       {/* 右侧滑入的欢迎悬浮窗 */}
       <div
-        className={`fixed top-20 right-4 z-[9999] transition-all duration-500 ease-out ${showWelcomeToast
+        className={`fixed top-20 right-4 z-9999 transition-all duration-500 ease-out ${showWelcomeToast
           ? 'translate-x-0 opacity-100'
           : 'translate-x-[120%] opacity-0 pointer-events-none'
           }`}
       >
-        <div className='relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-2xl'>
+        <div className='relative overflow-hidden rounded-xl bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-2xl'>
           <div className='relative bg-white dark:bg-gray-900 rounded-xl px-5 py-3 backdrop-blur-sm'>
             <div className='flex items-center gap-3'>
-              <div className='flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center'>
+              <div className='shrink-0 w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center'>
                 <span className='text-xl animate-wave origin-bottom-right'>👋</span>
               </div>
               <div className='flex-1 min-w-0'>
@@ -517,7 +517,7 @@ function HomeClient() {
                     {username && '，'}
                   </span>
                   {username && (
-                    <span className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
+                    <span className='text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
                       {username}
                     </span>
                   )}
@@ -528,7 +528,7 @@ function HomeClient() {
               </div>
               <button
                 onClick={() => setShowWelcomeToast(false)}
-                className='flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors'
+                className='shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors'
                 aria-label='关闭'
               >
                 <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
@@ -656,7 +656,7 @@ function HomeClient() {
                     key={key}
                     onClick={() => setFavoriteFilter(key)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${favoriteFilter === key
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
+                      ? 'bg-linear-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                   >
@@ -694,7 +694,7 @@ function HomeClient() {
             {favoriteItems.length === 0 ? (
               <div className='flex flex-col items-center justify-center py-16 px-4'>
                 <div className='mb-6 relative'>
-                  <div className='absolute inset-0 bg-gradient-to-r from-pink-300 to-purple-300 dark:from-pink-600 dark:to-purple-600 opacity-20 rounded-full'></div>
+                  <div className='absolute inset-0 bg-linear-to-r from-pink-300 to-purple-300 dark:from-pink-600 dark:to-purple-600 opacity-20 rounded-full'></div>
                   <svg className='w-32 h-32 relative z-10' viewBox='0 0 200 200' fill='none' xmlns='http://www.w3.org/2000/svg'>
                     <path d='M100 170C100 170 30 130 30 80C30 50 50 30 70 30C85 30 95 40 100 50C105 40 115 30 130 30C150 30 170 50 170 80C170 130 100 170 100 170Z'
                       className='fill-gray-300 dark:fill-gray-600 stroke-gray-400 dark:stroke-gray-500'
@@ -1125,7 +1125,7 @@ function HomeClient() {
             </div>
             <button
               onClick={() => handleCloseAnnouncement(announcement)}
-              className='w-full rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 text-white font-medium shadow-md hover:shadow-lg hover:from-green-700 hover:to-green-800 dark:from-green-600 dark:to-green-700 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 transform hover:-translate-y-0.5'
+              className='w-full rounded-lg bg-linear-to-r from-green-600 to-green-700 px-4 py-3 text-white font-medium shadow-md hover:shadow-lg hover:from-green-700 hover:to-green-800 dark:from-green-600 dark:to-green-700 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 transform hover:-translate-y-0.5'
             >
               我知道了
             </button>

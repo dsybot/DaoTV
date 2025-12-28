@@ -56,7 +56,7 @@ function CustomSelect<T extends string>({
       >
         <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 flex-shrink-0 ${
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill='none'
@@ -80,13 +80,13 @@ function CustomSelect<T extends string>({
                 }}
                 className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
                   option.value === value
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
-                    : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                    ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
                 }`}
               >
                 <div className='flex items-center gap-2'>
                   {option.value === value && (
-                    <svg className='w-4 h-4 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                    <svg className='w-4 h-4 shrink-0' fill='currentColor' viewBox='0 0 20 20'>
                       <path
                         fillRule='evenodd'
                         d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
@@ -949,7 +949,7 @@ export default function SourceTestModule() {
 
       {/* 结果详情弹窗 - 使用 Portal 渲染到 body */}
       {isMounted && showResultsModal && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4'>
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999 p-4'>
           <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
             <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
               <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>

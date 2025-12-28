@@ -109,7 +109,7 @@ function CustomDatePicker({
         title={title}
       >
         <span className='truncate'>{formatDisplayDate(value)}</span>
-        <Calendar className='w-4 h-4 text-gray-500 flex-shrink-0' />
+        <Calendar className='w-4 h-4 text-gray-500 shrink-0' />
       </button>
 
       {isOpen && (
@@ -154,10 +154,10 @@ function CustomDatePicker({
                     onClick={() => handleDateClick(day)}
                     className={`w-full aspect-square rounded text-sm font-medium transition-all duration-150 ${
                       isSelectedDate(day)
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                        ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white shadow-md'
                         : isToday(day)
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
                     }`}
                   >
                     {day}
@@ -239,7 +239,7 @@ function CustomSelect<T extends string>({
       >
         <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 flex-shrink-0 ${
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill='none'
@@ -263,13 +263,13 @@ function CustomSelect<T extends string>({
                 }}
                 className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
                   option.value === value
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
-                    : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                    ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
                 }`}
               >
                 <div className='flex items-center gap-2 min-w-0'>
                   {option.value === value && (
-                    <svg className='w-4 h-4 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                    <svg className='w-4 h-4 shrink-0' fill='currentColor' viewBox='0 0 20 20'>
                       <path
                         fillRule='evenodd'
                         d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
@@ -845,11 +845,11 @@ export default function ReleaseCalendarPage() {
                         {/* 详细信息 */}
                         <div className="space-y-3 text-sm">
                           <div className="flex items-start gap-2">
-                            <span className="font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-shrink-0">导演:</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300 min-w-0 shrink-0">导演:</span>
                             <span className="text-gray-600 dark:text-gray-400 line-clamp-1">{item.director}</span>
                           </div>
                           <div className="flex items-start gap-2">
-                            <span className="font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-shrink-0">主演:</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300 min-w-0 shrink-0">主演:</span>
                             <span className="text-gray-600 dark:text-gray-400 line-clamp-2">{item.actors}</span>
                           </div>
 
@@ -873,11 +873,11 @@ export default function ReleaseCalendarPage() {
                         </div>
 
                         {/* 底部渐变效果 */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
 
                       {/* 悬停效果遮罩 */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                     </div>
                   );
                 })}
@@ -1125,7 +1125,7 @@ export default function ReleaseCalendarPage() {
 
                   if (uniqueTodayItems.length > 0) {
                     return (
-                      <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
+                      <div className="bg-linear-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
                         <div className="flex items-center gap-2 mb-4">
                           <span className="text-2xl">🔥</span>
                           <h3 className="text-lg font-bold text-red-800 dark:text-red-300">
@@ -1158,7 +1158,7 @@ export default function ReleaseCalendarPage() {
             {viewMode === 'timeline' && (
               <div className="relative">
                 {/* 时间线主线 */}
-                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500"></div>
+                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-linear-to-b from-blue-500 via-purple-500 to-pink-500"></div>
 
                 <div className="space-y-8">
                   {Object.entries(
@@ -1206,10 +1206,10 @@ export default function ReleaseCalendarPage() {
                           {/* 日期头部 */}
                           <div className={`px-6 py-4 border-b ${
                             isToday
-                              ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-200 dark:border-red-800'
+                              ? 'bg-linear-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-200 dark:border-red-800'
                               : isPast
                                 ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                                : 'bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800'
+                                : 'bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800'
                           }`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -1293,11 +1293,11 @@ export default function ReleaseCalendarPage() {
                                   {/* 详细信息 */}
                                   <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                                     <div className="flex items-start gap-2">
-                                      <span className="font-medium min-w-0 flex-shrink-0">导演:</span>
+                                      <span className="font-medium min-w-0 shrink-0">导演:</span>
                                       <span className="line-clamp-1">{item.director}</span>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                      <span className="font-medium min-w-0 flex-shrink-0">主演:</span>
+                                      <span className="font-medium min-w-0 shrink-0">主演:</span>
                                       <span className="line-clamp-2">{item.actors}</span>
                                     </div>
 
@@ -1321,7 +1321,7 @@ export default function ReleaseCalendarPage() {
                                   </div>
 
                                   {/* 悬停效果 */}
-                                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg pointer-events-none"></div>
+                                  <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg pointer-events-none"></div>
                                 </div>
                               ))}
                             </div>
