@@ -1831,7 +1831,7 @@ function LivePageClient() {
                     {!searchQuery.trim() ? (
                       // 原有的分组显示模式
                       <>
-                        {/* 分组标签 - 使用 Material UI Tabs */}
+                        {/* 分组标签 - DecoTV 风格布局 + Material UI Tabs */}
                         <div className='mb-4 -mx-6 shrink-0'>
                           {/* 切换状态提示 */}
                           {isSwitchingSource && (
@@ -1841,59 +1841,83 @@ function LivePageClient() {
                             </div>
                           )}
 
-                          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <Tabs
-                              value={selectedGroup}
-                              onChange={(_event, newValue) => handleGroupChange(newValue)}
-                              variant="scrollable"
-                              scrollButtons="auto"
-                              allowScrollButtonsMobile
-                              sx={{
-                                '& .MuiTabs-indicator': {
-                                  backgroundColor: '#22c55e', // green-500
-                                },
-                                '& .MuiTab-root': {
-                                  color: 'rgb(var(--tw-text-gray-700))',
-                                  minWidth: 80,
-                                  fontSize: '0.875rem',
-                                  fontWeight: 500,
-                                  textTransform: 'none',
-                                  '&.Mui-selected': {
-                                    color: '#22c55e', // green-500
-                                  },
-                                  '&.Mui-disabled': {
-                                    color: 'rgb(var(--tw-text-gray-400))',
-                                    opacity: 0.5,
-                                  },
-                                  '@media (prefers-color-scheme: dark)': {
-                                    color: 'rgb(var(--tw-text-gray-300))',
-                                    '&.Mui-selected': {
-                                      color: '#4ade80', // green-400
-                                    },
-                                    '&.Mui-disabled': {
-                                      color: 'rgb(var(--tw-text-gray-600))',
-                                    },
-                                  },
-                                },
-                                '& .MuiTabScrollButton-root': {
-                                  color: 'rgb(var(--tw-text-gray-600))',
-                                  '@media (prefers-color-scheme: dark)': {
-                                    color: 'rgb(var(--tw-text-gray-400))',
-                                  },
-                                },
-                              }}
+                          {/* DecoTV 风格布局：左侧固定按钮 + 右侧滚动标签 */}
+                          <div className='flex items-center gap-3 px-6'>
+                            {/* 全部分类按钮 */}
+                            <button
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all shrink-0 ${
+                                isSwitchingSource
+                                  ? 'opacity-50 cursor-not-allowed border-gray-300 dark:border-gray-600'
+                                  : 'border-green-500 dark:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                              }`}
+                              disabled={isSwitchingSource}
                             >
-                              {Object.keys(groupedChannels).map((group) => (
-                                <Tab
-                                  key={group}
-                                  label={group}
-                                  value={group}
-                                  disabled={isSwitchingSource}
-                                  data-group={group}
-                                />
-                              ))}
-                            </Tabs>
-                          </Box>
+                              <Menu className='w-4 h-4 text-green-600 dark:text-green-400' />
+                              <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                                全部分类
+                              </span>
+                              <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                ({Object.keys(groupedChannels).length})
+                              </span>
+                            </button>
+
+                            {/* Material UI Tabs 滚动容器 */}
+                            <div className='flex-1 min-w-0'>
+                              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <Tabs
+                                  value={selectedGroup}
+                                  onChange={(_event, newValue) => handleGroupChange(newValue)}
+                                  variant="scrollable"
+                                  scrollButtons="auto"
+                                  allowScrollButtonsMobile
+                                  sx={{
+                                    '& .MuiTabs-indicator': {
+                                      backgroundColor: '#22c55e', // green-500
+                                    },
+                                    '& .MuiTab-root': {
+                                      color: 'rgb(var(--tw-text-gray-700))',
+                                      minWidth: 80,
+                                      fontSize: '0.875rem',
+                                      fontWeight: 500,
+                                      textTransform: 'none',
+                                      '&.Mui-selected': {
+                                        color: '#22c55e', // green-500
+                                      },
+                                      '&.Mui-disabled': {
+                                        color: 'rgb(var(--tw-text-gray-400))',
+                                        opacity: 0.5,
+                                      },
+                                      '@media (prefers-color-scheme: dark)': {
+                                        color: 'rgb(var(--tw-text-gray-300))',
+                                        '&.Mui-selected': {
+                                          color: '#4ade80', // green-400
+                                        },
+                                        '&.Mui-disabled': {
+                                          color: 'rgb(var(--tw-text-gray-600))',
+                                        },
+                                      },
+                                    },
+                                    '& .MuiTabScrollButton-root': {
+                                      color: 'rgb(var(--tw-text-gray-600))',
+                                      '@media (prefers-color-scheme: dark)': {
+                                        color: 'rgb(var(--tw-text-gray-400))',
+                                      },
+                                    },
+                                  }}
+                                >
+                                  {Object.keys(groupedChannels).map((group) => (
+                                    <Tab
+                                      key={group}
+                                      label={group}
+                                      value={group}
+                                      disabled={isSwitchingSource}
+                                      data-group={group}
+                                    />
+                                  ))}
+                                </Tabs>
+                              </Box>
+                            </div>
+                          </div>
                         </div>
 
                         {/* 频道列表 */}
