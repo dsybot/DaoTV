@@ -51,7 +51,6 @@ export interface VideoCardProps {
   origin?: 'vod' | 'live' | 'shortdrama';
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
-  episodeBadgeVariant?: 'default' | 'dark';
   priority?: boolean; // 🚀 图片优先加载标记 - 用于首屏图片优化LCP
 }
 
@@ -84,7 +83,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     origin = 'vod',
     remarks,
     releaseDate,
-    episodeBadgeVariant = 'default',
     priority = false,
   }: VideoCardProps,
   ref
@@ -991,15 +989,46 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 集数徽章 - 左上角第二位（如果有类型徽章，则向下偏移）*/}
+          {/* 集数角标 - Netflix/DecoTV 风格 - 右上角 */}
           {/* 即将上映的内容不显示集数徽章（因为是占位符数据）*/}
           {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
           {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
             <div
-              className={`absolute ${from === 'search' && config.showYear ? 'right-2' : 'left-2'} text-white font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 z-30 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
-                } ${episodeBadgeVariant === 'dark'
-                  ? 'text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/30 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm text-white dark:text-gray-900'
-                  : 'text-xs px-3 py-1.5 rounded-full bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-600 ring-2 ring-white/30'
+              className='absolute top-2 right-2 flex items-stretch overflow-hidden rounded-md shadow-lg transition-all duration-300 ease-out group-hover:scale-105 z-30'
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              {currentEpisode ? (
+                <>
+                  {/* 左侧：当前集 - 品牌色背景（红色） */}
+                  <span className='flex items-center bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white'>
+                    EP {String(currentEpisode).padStart(2, '0')}
+                  </span>
+                  {/* 右侧：总集数 - 半透明黑背景 */}
+                  <span className='flex items-center bg-black/70 backdrop-blur-sm px-1.5 py-0.5 text-[10px] font-medium text-white/60'>
+                    / {actualEpisodes}
+                  </span>
+                </>
+              ) : (
+                /* 仅显示总集数 */
+                <span className='flex items-center bg-black/70 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-white/80'>
+                  {actualEpisodes} 集
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
+          {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
+            <div
+              className={`absolute left-2 bg-linear-to-br from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-purple-500/50 group-hover:ring-purple-300/50 ${hasReleaseTag && type ? 'top-[48px]' : 'top-2'
                 }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -1011,59 +1040,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              {episodeBadgeVariant === 'dark' ? (
-                <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
-                  <span className="hidden sm:inline-block text-[10px]">🎬</span>
-                  {currentEpisode
-                    ? `${currentEpisode}/${actualEpisodes}`
-                    : `${actualEpisodes}集`}
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <span className="text-[10px]">🎬</span>
-                  {currentEpisode
-                    ? `${currentEpisode}/${actualEpisodes}`
-                    : `${actualEpisodes}集`}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
-          {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
-            <div
-              className={`absolute left-2 text-white dark:text-gray-900 font-bold shadow-lg transition-transform duration-300 ease-out group-hover:scale-105 ${(() => {
-                // 搜索结果页：年份固定在最上面一行
-                if (from === 'search') {
-                  return 'top-2';
-                }
-
-                let offset = 2; // 默认 top-2
-                // 如果有上映相关的类型徽章
-                if (hasReleaseTag && type) {
-                  offset += 46; // top-[48px]
-                }
-                // 如果有集数徽章
-                if (actualEpisodes && actualEpisodes > 1) {
-                  offset += 46; // 再加 46px
-                }
-                return `top-[${offset}px]`;
-              })()
-                } text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/30 dark:bg-white/20 border border-white/10 dark:border-black/10 backdrop-blur-sm`}
-              style={{
-                WebkitUserSelect: 'none',
-                userSelect: 'none',
-                WebkitTouchCallout: 'none',
-              } as React.CSSProperties}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                return false;
-              }}
-            >
-              <span className="flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1">
-                <span className="hidden sm:inline-block text-[10px]">📅</span>
-                {actualYear}
-              </span>
+              {actualYear}
             </div>
           )}
 
