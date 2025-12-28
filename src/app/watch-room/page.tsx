@@ -292,15 +292,15 @@ export default function WatchRoomPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors relative
+                className={`flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-6 py-3 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap
                   ${activeTab === tab.id
                     ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                   }
                 `}
               >
-                <Icon className="w-4 h-4" />
-                {tab.label}
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span>{tab.label}</span>
                 {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />
                 )}
