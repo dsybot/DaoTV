@@ -253,7 +253,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                 </div>
                 {/* 新集数徽章 - Netflix 统一风格 */}
                 {newEpisodesCount > 0 && (
-                  <div className='absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
+                  <div className='absolute top-0 right-0 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
                     +{newEpisodesCount}
                   </div>
                 )}
