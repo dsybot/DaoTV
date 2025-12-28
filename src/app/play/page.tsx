@@ -834,15 +834,9 @@ function PlayPageClient() {
       const base = query.replace(fullMatch, '').trim();
 
       if (base) {
-        // 优先级1: 基础名+数字（无空格）- 最常见格式，如"一拳超人3"
+        // 只生成最常见的格式：无空格，如"一拳超人3"
+        // 不生成"一拳超人 3"和"一拳超人S3"等变体，避免匹配太多不相关结果
         variants.push(`${base}${arabicNumber}`);
-        // 优先级2: 基础名+空格+数字 - 次常见，如"一拳超人 3"
-        variants.push(`${base} ${arabicNumber}`);
-
-        // 仅对"季"添加S格式（美剧常用）
-        if (suffix === '季') {
-          variants.push(`${base}S${arabicNumber}`);
-        }
       }
     }
 
@@ -854,15 +848,13 @@ function PlayPageClient() {
       const chineseNum = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][parseInt(number)];
 
       if (chineseNum && parseInt(number) <= 10) {
-        // 优先级1: 无空格带"第X季" - 如"牧神记第三季"
+        // 只生成无空格带"第X季"的变体，如"牧神记第三季"
         variants.push(`${base}第${chineseNum}季`);
-        // 优先级2: 带空格 - 如"牧神记 第三季"
-        variants.push(`${base} 第${chineseNum}季`);
       }
     }
 
-    // 限制返回前3个最有可能的变体
-    return variants.slice(0, 3);
+    // 限制返回前1个最有可能的变体
+    return variants.slice(0, 1);
   };
 
   /**

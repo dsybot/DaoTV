@@ -7,6 +7,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { Heart, Radio, RefreshCw, Search, Tv, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Tabs, Tab, Box } from '@mui/material';
 
 import {
   debounce,
@@ -1830,73 +1831,70 @@ function LivePageClient() {
                     {!searchQuery.trim() ? (
                       // 原有的分组显示模式
                       <>
-                        {/* 分组标签 */}
-                        <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 shrink-0'>
-                      {/* 切换状态提示 */}
-                      {isSwitchingSource && (
-                        <div className='flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400'>
-                          <div className='w-2 h-2 bg-amber-500 rounded-full animate-pulse'></div>
-                          切换直播源中...
-                        </div>
-                      )}
+                        {/* 分组标签 - 使用 Material UI Tabs */}
+                        <div className='mb-4 -mx-6 shrink-0'>
+                          {/* 切换状态提示 */}
+                          {isSwitchingSource && (
+                            <div className='flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 px-6 mb-2'>
+                              <div className='w-2 h-2 bg-amber-500 rounded-full animate-pulse'></div>
+                              切换直播源中...
+                            </div>
+                          )}
 
-                      <div
-                        className='flex-1 overflow-x-auto'
-                        ref={groupContainerRef}
-                        onMouseEnter={() => {
-                          // 鼠标进入分组标签区域时，添加滚轮事件监听
-                          const container = groupContainerRef.current;
-                          if (container) {
-                            const handleWheel = (e: WheelEvent) => {
-                              if (container.scrollWidth > container.clientWidth) {
-                                e.preventDefault();
-                                container.scrollLeft += e.deltaY;
-                              }
-                            };
-                            container.addEventListener('wheel', handleWheel, { passive: false });
-                            // 将事件处理器存储在容器上，以便后续移除
-                            (container as any)._wheelHandler = handleWheel;
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          // 鼠标离开分组标签区域时，移除滚轮事件监听
-                          const container = groupContainerRef.current;
-                          if (container && (container as any)._wheelHandler) {
-                            container.removeEventListener('wheel', (container as any)._wheelHandler);
-                            delete (container as any)._wheelHandler;
-                          }
-                        }}
-                      >
-                        <div className='flex gap-4 min-w-max'>
-                          {Object.keys(groupedChannels).map((group, index) => (
-                            <button
-                              key={group}
-                              data-group={group}
-                              ref={(el) => {
-                                groupButtonRefs.current[index] = el;
+                          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Tabs
+                              value={selectedGroup}
+                              onChange={(_event, newValue) => handleGroupChange(newValue)}
+                              variant="scrollable"
+                              scrollButtons="auto"
+                              allowScrollButtonsMobile
+                              sx={{
+                                '& .MuiTabs-indicator': {
+                                  backgroundColor: '#22c55e', // green-500
+                                },
+                                '& .MuiTab-root': {
+                                  color: 'rgb(var(--tw-text-gray-700))',
+                                  minWidth: 80,
+                                  fontSize: '0.875rem',
+                                  fontWeight: 500,
+                                  textTransform: 'none',
+                                  '&.Mui-selected': {
+                                    color: '#22c55e', // green-500
+                                  },
+                                  '&.Mui-disabled': {
+                                    color: 'rgb(var(--tw-text-gray-400))',
+                                    opacity: 0.5,
+                                  },
+                                  '@media (prefers-color-scheme: dark)': {
+                                    color: 'rgb(var(--tw-text-gray-300))',
+                                    '&.Mui-selected': {
+                                      color: '#4ade80', // green-400
+                                    },
+                                    '&.Mui-disabled': {
+                                      color: 'rgb(var(--tw-text-gray-600))',
+                                    },
+                                  },
+                                },
+                                '& .MuiTabScrollButton-root': {
+                                  color: 'rgb(var(--tw-text-gray-600))',
+                                  '@media (prefers-color-scheme: dark)': {
+                                    color: 'rgb(var(--tw-text-gray-400))',
+                                  },
+                                },
                               }}
-                              onClick={() => handleGroupChange(group)}
-                              disabled={isSwitchingSource}
-                              className={`w-20 relative py-2 text-sm font-medium transition-colors shrink-0 text-center overflow-hidden
-                                 ${isSwitchingSource
-                                  ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
-                                  : selectedGroup === group
-                                    ? 'text-green-500 dark:text-green-400'
-                                    : 'text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400'
-                                }
-                               `.trim()}
                             >
-                              <div className='px-1 overflow-hidden whitespace-nowrap' title={group}>
-                                {group}
-                              </div>
-                              {selectedGroup === group && !isSwitchingSource && (
-                                <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 dark:bg-green-400' />
-                              )}
-                            </button>
-                          ))}
+                              {Object.keys(groupedChannels).map((group) => (
+                                <Tab
+                                  key={group}
+                                  label={group}
+                                  value={group}
+                                  disabled={isSwitchingSource}
+                                  data-group={group}
+                                />
+                              ))}
+                            </Tabs>
+                          </Box>
                         </div>
-                      </div>
-                    </div>
 
                         {/* 频道列表 */}
                         <div ref={channelListRef} className='flex-1 overflow-y-auto space-y-2 pb-4'>
