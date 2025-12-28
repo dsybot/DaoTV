@@ -129,26 +129,31 @@ export default function CategoryBar({
 
   /**
    * 将选中的分组滚动到视口中央
+   * 使用 ref 避免依赖 selectedGroup，防止频繁重建
    */
   const scrollToActiveGroup = useCallback(() => {
     // 如果正在手动滚动，不执行自动居中（防止冲突）
     if (isManualScrolling) return;
 
-    if (!selectedGroup) return;
+    const currentGroup = selectedGroup;
+    if (!currentGroup) return;
 
-    const groupIndex = groups.indexOf(selectedGroup);
+    const groupKeys = Object.keys(groupedChannels);
+    const groupIndex = groupKeys.indexOf(currentGroup);
     if (groupIndex === -1) return;
 
     const button = buttonRefs.current[groupIndex];
     if (!button) return;
 
-    // 使用 scrollIntoView 让选中的胶囊自动滚动到可视区域中央
-    button.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    });
-  }, [selectedGroup, groups, isManualScrolling]);
+    // 使用 setTimeout 延迟执行，确保 DOM 已更新
+    setTimeout(() => {
+      button.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }, 0);
+  }, [isManualScrolling, selectedGroup, groupedChannels]);
 
   /**
    * 组件挂载后初始化
@@ -191,12 +196,17 @@ export default function CategoryBar({
     }
   }, [groupedChannels, isMounted, checkScroll]);
 
-  // 当选中分组变化时，滚动到对应位置
+  // 当选中分组变化时，滚动到对应位置（但排除手动滚动时）
   useEffect(() => {
-    if (isMounted) {
-      scrollToActiveGroup();
+    // 只在组件已挂载且不是手动滚动时才自动居中
+    if (isMounted && !isManualScrolling) {
+      // 使用更长的延迟，确保手动滚动标志正确设置
+      const timer = setTimeout(() => {
+        scrollToActiveGroup();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [selectedGroup, isMounted, scrollToActiveGroup]);
+  }, [selectedGroup, isMounted, scrollToActiveGroup, isManualScrolling]);
 
   // 清理定时器
   useEffect(() => {
