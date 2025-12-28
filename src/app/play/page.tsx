@@ -808,83 +808,62 @@ function PlayPageClient() {
   };
 
   /**
-   * 生成搜索查询的多种变体，提高搜索命中率
-   * @param originalQuery 原始查询
-   * @returns 按优先级排序的搜索变体数组
+   * 生成数字变体的搜索变体（处理"第X季" <-> "X"的转换）
+   * 优化：只生成最有可能匹配的前2-3个变体
+   * @param query 原始查询
+   * @returns 数字变体数组（按优先级排序）
    */
-  const generateSearchVariants = (originalQuery: string): string[] => {
+  const generateNumberVariants = (query: string): string[] => {
     const variants: string[] = [];
-    const trimmed = originalQuery.trim();
 
-    // 1. 原始查询（最高优先级）
-    variants.push(trimmed);
+    // 中文数字到阿拉伯数字的映射
+    const chineseNumbers: { [key: string]: string } = {
+      '一': '1', '二': '2', '三': '3', '四': '4', '五': '5',
+      '六': '6', '七': '7', '八': '8', '九': '9', '十': '10',
+    };
 
-    // 2. 处理中文标点符号变体
-    const chinesePunctuationVariants = generateChinesePunctuationVariants(trimmed);
-    chinesePunctuationVariants.forEach(variant => {
-      if (!variants.includes(variant)) {
-        variants.push(variant);
-      }
-    });
+    // 1. 处理"第X季/部/集"格式（最常见的情况）
+    const seasonPattern = /第([一二三四五六七八九十\d]+)(季|部|集|期)/;
+    const match = seasonPattern.exec(query);
 
-    // 3. 移除数字变体处理（优化性能，依赖downstream相关性评分处理数字差异）
+    if (match) {
+      const fullMatch = match[0];
+      const number = match[1];
+      const suffix = match[2];
+      const arabicNumber = chineseNumbers[number] || number;
+      const base = query.replace(fullMatch, '').trim();
 
-    // 如果包含空格，生成额外变体
-    if (trimmed.includes(' ')) {
-      // 4. 去除所有空格
-      const noSpaces = trimmed.replace(/\s+/g, '');
-      if (noSpaces !== trimmed) {
-        variants.push(noSpaces);
-      }
+      if (base) {
+        // 优先级1: 基础名+数字（无空格）- 最常见格式，如"一拳超人3"
+        variants.push(`${base}${arabicNumber}`);
+        // 优先级2: 基础名+空格+数字 - 次常见，如"一拳超人 3"
+        variants.push(`${base} ${arabicNumber}`);
 
-      // 5. 标准化空格（多个空格合并为一个）
-      const normalizedSpaces = trimmed.replace(/\s+/g, ' ');
-      if (normalizedSpaces !== trimmed && !variants.includes(normalizedSpaces)) {
-        variants.push(normalizedSpaces);
-      }
-
-      // 6. 提取关键词组合（针对"中餐厅 第九季"这种情况）
-      const keywords = trimmed.split(/\s+/);
-      if (keywords.length >= 2) {
-        // 主要关键词 + 季/集等后缀
-        const mainKeyword = keywords[0];
-        const lastKeyword = keywords[keywords.length - 1];
-
-        // 如果最后一个词包含"第"、"季"、"集"等，尝试组合
-        if (/第|季|集|部|篇|章/.test(lastKeyword)) {
-          const combined = mainKeyword + lastKeyword;
-          if (!variants.includes(combined)) {
-            variants.push(combined);
-          }
-        }
-
-        // 7. 空格变冒号的变体（重要！针对"死神来了 血脉诅咒" -> "死神来了：血脉诅咒"）
-        const withColon = trimmed.replace(/\s+/g, '：');
-        if (!variants.includes(withColon)) {
-          variants.push(withColon);
-        }
-
-        // 8. 空格变英文冒号的变体
-        const withEnglishColon = trimmed.replace(/\s+/g, ':');
-        if (!variants.includes(withEnglishColon)) {
-          variants.push(withEnglishColon);
-        }
-
-        // 仅使用主关键词搜索（过滤无意义的词）
-        const meaninglessWords = ['the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
-        if (!variants.includes(mainKeyword) &&
-          !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
-          mainKeyword.length > 2) {
-          variants.push(mainKeyword);
+        // 仅对"季"添加S格式（美剧常用）
+        if (suffix === '季') {
+          variants.push(`${base}S${arabicNumber}`);
         }
       }
     }
 
-    // 去重并返回
-    return Array.from(new Set(variants));
-  };
+    // 2. 处理末尾纯数字（如"牧神记3"）
+    const endNumberMatch = query.match(/^(.+?)\s*(\d+)$/);
+    if (endNumberMatch) {
+      const base = endNumberMatch[1].trim();
+      const number = endNumberMatch[2];
+      const chineseNum = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][parseInt(number)];
 
-  // 移除数字变体生成函数（优化性能，依赖相关性评分处理）
+      if (chineseNum && parseInt(number) <= 10) {
+        // 优先级1: 无空格带"第X季" - 如"牧神记第三季"
+        variants.push(`${base}第${chineseNum}季`);
+        // 优先级2: 带空格 - 如"牧神记 第三季"
+        variants.push(`${base} 第${chineseNum}季`);
+      }
+    }
+
+    // 限制返回前3个最有可能的变体
+    return variants.slice(0, 3);
+  };
 
   /**
    * 生成中文标点符号的搜索变体
@@ -958,6 +937,89 @@ function PlayPageClient() {
     }
 
     return variants;
+  };
+
+  /**
+   * 生成搜索查询的多种变体，提高搜索命中率
+   * @param originalQuery 原始查询
+   * @returns 按优先级排序的搜索变体数组
+   */
+  const generateSearchVariants = (originalQuery: string): string[] => {
+    const variants: string[] = [];
+    const trimmed = originalQuery.trim();
+
+    // 1. 原始查询（最高优先级）
+    variants.push(trimmed);
+
+    // 2. 处理中文标点符号变体
+    const chinesePunctuationVariants = generateChinesePunctuationVariants(trimmed);
+    chinesePunctuationVariants.forEach(variant => {
+      if (!variants.includes(variant)) {
+        variants.push(variant);
+      }
+    });
+
+    // 3. 添加数字变体处理（处理"第X季" <-> "X" 的转换）
+    const numberVariants = generateNumberVariants(trimmed);
+    numberVariants.forEach(variant => {
+      if (!variants.includes(variant)) {
+        variants.push(variant);
+      }
+    });
+
+    // 如果包含空格，生成额外变体
+    if (trimmed.includes(' ')) {
+      // 4. 去除所有空格
+      const noSpaces = trimmed.replace(/\s+/g, '');
+      if (noSpaces !== trimmed) {
+        variants.push(noSpaces);
+      }
+
+      // 5. 标准化空格（多个空格合并为一个）
+      const normalizedSpaces = trimmed.replace(/\s+/g, ' ');
+      if (normalizedSpaces !== trimmed && !variants.includes(normalizedSpaces)) {
+        variants.push(normalizedSpaces);
+      }
+
+      // 6. 提取关键词组合（针对"中餐厅 第九季"这种情况）
+      const keywords = trimmed.split(/\s+/);
+      if (keywords.length >= 2) {
+        // 主要关键词 + 季/集等后缀
+        const mainKeyword = keywords[0];
+        const lastKeyword = keywords[keywords.length - 1];
+
+        // 如果最后一个词包含"第"、"季"、"集"等，尝试组合
+        if (/第|季|集|部|篇|章/.test(lastKeyword)) {
+          const combined = mainKeyword + lastKeyword;
+          if (!variants.includes(combined)) {
+            variants.push(combined);
+          }
+        }
+
+        // 7. 空格变冒号的变体（重要！针对"死神来了 血脉诅咒" -> "死神来了：血脉诅咒"）
+        const withColon = trimmed.replace(/\s+/g, '：');
+        if (!variants.includes(withColon)) {
+          variants.push(withColon);
+        }
+
+        // 8. 空格变英文冒号的变体
+        const withEnglishColon = trimmed.replace(/\s+/g, ':');
+        if (!variants.includes(withEnglishColon)) {
+          variants.push(withEnglishColon);
+        }
+
+        // 仅使用主关键词搜索（过滤无意义的词）
+        const meaninglessWords = ['the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
+        if (!variants.includes(mainKeyword) &&
+          !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
+          mainKeyword.length > 2) {
+          variants.push(mainKeyword);
+        }
+      }
+    }
+
+    // 去重并返回
+    return Array.from(new Set(variants));
   };
 
   // 检查是否包含查询中的所有关键词（与downstream评分逻辑保持一致）
