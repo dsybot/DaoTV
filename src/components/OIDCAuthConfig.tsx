@@ -666,16 +666,16 @@ function ProviderEditModal({
   };
 
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4'
-      onClick={(e) => {
-        // 只有直接点击背景时才关闭，避免拖拽选择文本时误关闭
-        if (e.target === e.currentTarget) {
-          onCancel();
-        }
-      }}
-    >
-      <div className='bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-xl shadow-2xl w-full md:w-auto md:min-w-[600px] md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
+    <div className='fixed inset-0 z-50 overflow-y-auto'>
+      <div className='flex items-end md:items-center justify-center min-h-screen md:min-h-full p-0 md:p-4'>
+        {/* 背景遮罩 */}
+        <div
+          className='fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity'
+          onClick={onCancel}
+        />
+
+        {/* 模态框内容 */}
+        <div className='relative bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-xl shadow-2xl w-full md:w-auto md:min-w-[600px] md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
         {/* Header - Fixed */}
         <div className='flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0'>
           <h3 className='text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100'>
@@ -984,6 +984,7 @@ function ProviderEditModal({
             <Save className='w-4 h-4' />
             保存
           </button>
+          </div>
         </div>
       </div>
     </div>
