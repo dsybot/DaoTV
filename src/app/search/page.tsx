@@ -902,7 +902,7 @@ function SearchPageClient() {
           {/* 搜索类型选项卡 - 美化版 */}
           <div className='max-w-2xl mx-auto mb-6'>
             <div className='flex items-center justify-center'>
-              <div className='inline-flex items-center bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-750 dark:to-gray-800 rounded-xl p-1.5 space-x-2 shadow-lg border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm'>
+              <div className='inline-flex items-center bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-xl p-1.5 space-x-2 shadow-lg border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm'>
                 <button
                   type='button'
                   onClick={() => {
