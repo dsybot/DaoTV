@@ -4,6 +4,8 @@ import { AlertCircle, CheckCircle, Download, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import CinematicLoader from './CinematicLoader';
+
 interface ImportResult {
   success: number;
   failed: number;
@@ -426,5 +428,20 @@ export default function ImportExportModal({
 
   // 使用 createPortal 渲染到 body，确保覆盖整个页面
   if (typeof window === 'undefined') return null;
-  return createPortal(modalContent, document.body);
+
+  // 计算导入进度百分比
+  const progressPercent = importProgress.total > 0
+    ? Math.round((importProgress.current / importProgress.total) * 100)
+    : undefined;
+
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      <CinematicLoader
+        visible={isProcessing}
+        message={`Processing ${importProgress.current} of ${importProgress.total}...`}
+        progress={progressPercent}
+      />
+    </>
+  );
 }

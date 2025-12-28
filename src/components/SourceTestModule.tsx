@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 
 import { SearchResult } from '@/lib/types';
 
+import CinematicLoader from '@/components/CinematicLoader';
 import VideoCard from '@/components/VideoCard';
 
 // 自定义优雅的 Select 组件
@@ -994,6 +995,12 @@ export default function SourceTestModule() {
           <p className='text-gray-600 dark:text-gray-400'>正在加载源列表...</p>
         </div>
       )}
+
+      {/* 批量测试加载动画 */}
+      <CinematicLoader
+        visible={isTestingAll}
+        message="Testing All Sources..."
+      />
     </div>
   );
 }

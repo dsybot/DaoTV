@@ -5,6 +5,8 @@ import { AlertCircle, AlertTriangle, CheckCircle, Download, FileCheck, Lock, Upl
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import CinematicLoader from './CinematicLoader';
+
 interface DataMigrationProps {
   onRefreshConfig?: () => Promise<void>;
 }
@@ -497,6 +499,12 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
         onConfirm={alertModal.onConfirm}
         showConfirm={alertModal.showConfirm}
         timer={alertModal.timer}
+      />
+
+      {/* 加载动画 */}
+      <CinematicLoader
+        visible={isExporting || isImporting}
+        message={isExporting ? 'Exporting Data...' : 'Importing Data...'}
       />
     </>
   );
