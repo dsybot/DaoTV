@@ -55,7 +55,7 @@ export function DownloadPanel() {
         />
 
         {/* 模态框内容 */}
-        <div className='relative bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-lg shadow-2xl w-full md:max-w-4xl max-h-[90vh] flex flex-col border-t md:border border-gray-200 dark:border-gray-700'>
+        <div className='relative bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-lg shadow-2xl w-full md:max-w-4xl h-fit max-h-[80vh] md:max-h-[85vh] flex flex-col border-t md:border border-gray-200 dark:border-gray-700 overflow-hidden'>
           {/* 标题栏 */}
           <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0'>
             <h2 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white'>下载任务列表</h2>

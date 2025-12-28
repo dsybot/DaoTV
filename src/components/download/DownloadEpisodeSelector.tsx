@@ -124,7 +124,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
         />
 
         {/* 模态框内容 */}
-        <div className='relative bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border-t md:border border-gray-200 dark:border-gray-700'>
+        <div className='relative bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-4xl h-fit max-h-[80vh] md:max-h-[85vh] flex flex-col overflow-hidden border-t md:border border-gray-200 dark:border-gray-700'>
           {/* 标题栏 */}
           <div className='flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0'>
             <div className='flex-1 min-w-0'>

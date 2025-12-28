@@ -65,8 +65,8 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   // 筛选结果
   const filteredResults = results && filterMode === 'selected' && selectedFilter.length > 0
     ? Object.fromEntries(
-        Object.entries(results).filter(([type]) => selectedFilter.includes(type))
-      )
+      Object.entries(results).filter(([type]) => selectedFilter.includes(type))
+    )
     : results;
 
   // 快速跳转到指定网盘类型
@@ -79,20 +79,20 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
 
   // 切换筛选标签
   const toggleFilterTag = (type: string) => {
-    setSelectedFilter(prev => 
-      prev.includes(type) 
+    setSelectedFilter(prev =>
+      prev.includes(type)
         ? prev.filter(t => t !== type)
         : [...prev, type]
     );
   };
 
   // 获取有结果的网盘类型统计
-  const availableTypes = results 
+  const availableTypes = results
     ? Object.entries(results).map(([type, links]) => ({
-        type,
-        count: links.length,
-        info: CLOUD_TYPES[type as keyof typeof CLOUD_TYPES] || CLOUD_TYPES.others
-      })).sort((a, b) => b.count - a.count) // 按数量降序排列
+      type,
+      count: links.length,
+      info: CLOUD_TYPES[type as keyof typeof CLOUD_TYPES] || CLOUD_TYPES.others
+    })).sort((a, b) => b.count - a.count) // 按数量降序排列
     : [];
 
   if (loading) {
@@ -107,7 +107,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   if (error) {
     // 判断是否为功能未启用的错误
     const isFunctionDisabled = error.includes('未启用') || error.includes('未配置') || error.includes('配置不完整');
-    
+
     return (
       <div className={`${isFunctionDisabled ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'} border rounded-lg p-4 animate-fade-in`}>
         <div className="flex items-start">
@@ -129,21 +129,21 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
             <div className={`mt-2 text-sm ${isFunctionDisabled ? 'text-blue-700 dark:text-blue-300' : 'text-red-700 dark:text-red-300'}`}>
               {error}
             </div>
-            
+
             {/* 用户友好的解决建议 */}
             <div className={`mt-3 p-3 ${isFunctionDisabled ? 'bg-blue-100 dark:bg-blue-800/30' : 'bg-red-100 dark:bg-red-800/30'} rounded-md`}>
               <div className={`text-xs ${isFunctionDisabled ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                 💡 <strong>解决方案：</strong>
                 {isFunctionDisabled ? (
                   <div className="mt-1">
-                    • 联系管理员启用网盘搜索功能<br/>
-                    • 管理员可在后台设置中配置PanSou服务地址<br/>
+                    • 联系管理员启用网盘搜索功能<br />
+                    • 管理员可在后台设置中配置PanSou服务地址<br />
                     • 暂时可以使用影视搜索功能查找内容
                   </div>
                 ) : (
                   <div className="mt-1">
-                    • 检查网络连接是否正常<br/>
-                    • 稍后重试或使用不同关键词搜索<br/>
+                    • 检查网络连接是否正常<br />
+                    • 稍后重试或使用不同关键词搜索<br />
                     • 如问题持续，请联系管理员检查服务状态
                   </div>
                 )}
@@ -170,7 +170,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       {/* 快速筛选和导航栏 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 sticky top-4 z-10">
         <div className="p-4">
@@ -184,8 +184,8 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                 </svg>
                 <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
                   <div className="text-center">
-                    💡 使用技巧：<br/>
-                    • 显示全部：点击标签快速跳转<br/>
+                    💡 使用技巧：<br />
+                    • 显示全部：点击标签快速跳转<br />
                     • 仅显示选中：点击标签筛选显示
                   </div>
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
@@ -203,11 +203,10 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                     setSelectedFilter([]);
                   }
                 }}
-                className={`px-3 py-1.5 sm:py-1 text-xs rounded-full transition-colors relative ${
-                  filterMode === 'selected'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
+                className={`px-3 py-1.5 sm:py-1 text-xs rounded-full transition-colors relative ${filterMode === 'selected'
+                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
                 title={filterMode === 'all' ? '切换到筛选模式' : '切换到跳转模式'}
               >
                 {filterMode === 'all' ? '显示全部' : '仅显示选中'}
@@ -230,11 +229,10 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                     toggleFilterTag(type);
                   }
                 }}
-                className={`inline-flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors ${
-                  filterMode === 'selected' && selectedFilter.includes(type)
-                    ? `${info.color} text-white border-transparent`
-                    : `${info.color} bg-opacity-10 border-gray-300 dark:border-gray-600 hover:bg-opacity-20`
-                } text-xs sm:text-sm font-medium`}
+                className={`inline-flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors ${filterMode === 'selected' && selectedFilter.includes(type)
+                  ? `${info.color} text-white border-transparent`
+                  : `${info.color} bg-opacity-10 border-gray-300 dark:border-gray-600 hover:bg-opacity-20`
+                  } text-xs sm:text-sm font-medium`}
                 title={filterMode === 'all' ? '点击跳转' : '点击筛选'}
               >
                 <span className="text-sm sm:text-lg">{info.icon}</span>
@@ -303,7 +301,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
       {/* 按网盘类型分组展示 */}
       {Object.entries(filteredResults || {}).map(([type, links]) => {
         const cloudType = CLOUD_TYPES[type as keyof typeof CLOUD_TYPES] || CLOUD_TYPES.others;
-        
+
         return (
           <div key={type} id={`cloud-type-${type}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 scroll-mt-20">
             {/* 网盘类型头部 */}
@@ -408,11 +406,10 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                             </div>
                             <button
                               onClick={() => copyToClipboard(link.url, `url-${linkKey}`)}
-                              className={`p-1 transition-colors flex-shrink-0 ${
-                                copiedItems[`url-${linkKey}`]
-                                  ? 'text-green-500'
-                                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                              }`}
+                              className={`p-1 transition-colors flex-shrink-0 ${copiedItems[`url-${linkKey}`]
+                                ? 'text-green-500'
+                                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                }`}
                               title={copiedItems[`url-${linkKey}`] ? "已复制" : "复制链接"}
                             >
                               {copiedItems[`url-${linkKey}`] ? (
@@ -449,11 +446,10 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                                 </button>
                                 <button
                                   onClick={() => copyToClipboard(link.password, `pwd-${linkKey}`)}
-                                  className={`p-1 transition-colors ${
-                                    copiedItems[`pwd-${linkKey}`]
-                                      ? 'text-green-500'
-                                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                                  }`}
+                                  className={`p-1 transition-colors ${copiedItems[`pwd-${linkKey}`]
+                                    ? 'text-green-500'
+                                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                    }`}
                                   title={copiedItems[`pwd-${linkKey}`] ? "已复制" : "复制密码"}
                                 >
                                   {copiedItems[`pwd-${linkKey}`] ? (
