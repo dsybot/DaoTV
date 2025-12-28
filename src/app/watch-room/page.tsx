@@ -18,36 +18,12 @@ export default function WatchRoomPage() {
   const { getRoomList, isConnected, createRoom, joinRoom, leaveRoom, currentRoom, isOwner, members, configLoading } = watchRoom;
   const [activeTab, setActiveTab] = useState<TabType>('create');
 
-  // 本地观影室启用状态（每次进入页面都重新获取）
-  const [localIsEnabled, setLocalIsEnabled] = useState<boolean | null>(null);
-
   // 获取当前登录用户
   const [currentUsername, setCurrentUsername] = useState<string>('游客');
 
   useEffect(() => {
     const authInfo = getAuthInfoFromBrowserCookie();
     setCurrentUsername(authInfo?.username || '游客');
-  }, []);
-
-  // 每次进入页面时重新获取观影室配置
-  useEffect(() => {
-    const fetchWatchRoomConfig = async () => {
-      try {
-        const response = await fetch('/api/watch-room/config', {
-          cache: 'no-store',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setLocalIsEnabled(data.enabled === true);
-        } else {
-          setLocalIsEnabled(false);
-        }
-      } catch (error) {
-        console.error('获取观影室配置失败:', error);
-        setLocalIsEnabled(false);
-      }
-    };
-    fetchWatchRoomConfig();
   }, []);
 
   // 创建房间表单
@@ -205,24 +181,8 @@ export default function WatchRoomPage() {
     );
   }
 
-  // 未启用提示（使用本地状态，确保每次进入页面都是最新配置）
-  if (localIsEnabled === null) {
-    // 配置加载中
-    return (
-      <PageLayout>
-        <div className='flex items-center justify-center min-h-screen'>
-          <div className='text-center max-w-md'>
-            <RefreshCw className='w-16 h-16 mx-auto mb-4 text-indigo-500 animate-spin' />
-            <h2 className='text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2'>
-              正在加载配置...
-            </h2>
-          </div>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (!localIsEnabled) {
+  // 未启用提示
+  if (!watchRoom.isEnabled) {
     return (
       <PageLayout>
         <div className='flex items-center justify-center min-h-screen'>
@@ -261,12 +221,12 @@ export default function WatchRoomPage() {
       <div className="flex flex-col gap-4 py-4 px-5 lg:px-[3rem] 2xl:px-20">
         {/* 页面标题 */}
         <div className="py-1">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Users className="w-6 h-6 text-indigo-500" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500" />
               观影室
               {currentRoom && (
-                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                <span className="text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400">
                   ({isOwner ? '房主' : '房员'})
                 </span>
               )}
@@ -274,33 +234,34 @@ export default function WatchRoomPage() {
             {/* 连接状态指示器 */}
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 {isConnected ? '已连接' : '未连接'}
               </span>
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
             与好友一起看视频，实时同步播放
           </p>
         </div>
 
         {/* 选项卡 */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-6 py-3 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap
-                  ${activeTab === tab.id
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap
+                  ${
+                    activeTab === tab.id
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                   }
                 `}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span>{tab.label}</span>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {tab.label}
                 {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />
                 )}
@@ -336,14 +297,14 @@ export default function WatchRoomPage() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
                         <div className="bg-white/10 backdrop-blur rounded-lg p-3">
                           <p className="text-indigo-100 text-xs mb-1">房间号</p>
-                          <p className="text-xl font-mono font-bold">{currentRoom.id}</p>
+                          <p className="text-lg sm:text-xl font-mono font-bold">{currentRoom.id}</p>
                         </div>
                         <div className="bg-white/10 backdrop-blur rounded-lg p-3">
                           <p className="text-indigo-100 text-xs mb-1">成员数</p>
-                          <p className="text-xl font-bold">{members.length} 人</p>
+                          <p className="text-lg sm:text-xl font-bold">{members.length} 人</p>
                         </div>
                       </div>
                     </div>
@@ -429,77 +390,77 @@ export default function WatchRoomPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleCreateRoom} className="space-y-4">
-                    {/* 显示当前用户 */}
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800">
-                      <p className="text-sm text-indigo-800 dark:text-indigo-200">
-                        <strong>当前用户：</strong>{currentUsername}
-                      </p>
-                    </div>
+                  {/* 显示当前用户 */}
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800">
+                    <p className="text-sm text-indigo-800 dark:text-indigo-200">
+                      <strong>当前用户：</strong>{currentUsername}
+                    </p>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        房间名称 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.roomName}
-                        onChange={(e) => setCreateForm({ ...createForm, roomName: e.target.value })}
-                        placeholder="请输入房间名称"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        maxLength={50}
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      房间名称 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={createForm.roomName}
+                      onChange={(e) => setCreateForm({ ...createForm, roomName: e.target.value })}
+                      placeholder="请输入房间名称"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      maxLength={50}
+                      required
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        房间描述
-                      </label>
-                      <textarea
-                        value={createForm.description}
-                        onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                        placeholder="请输入房间描述（可选）"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                        rows={3}
-                        maxLength={200}
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      房间描述
+                    </label>
+                    <textarea
+                      value={createForm.description}
+                      onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                      placeholder="请输入房间描述（可选）"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                      rows={3}
+                      maxLength={200}
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        房间密码
-                      </label>
-                      <input
-                        type="password"
-                        value={createForm.password}
-                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                        placeholder="留空表示无需密码"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        maxLength={20}
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      房间密码
+                    </label>
+                    <input
+                      type="password"
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                      placeholder="留空表示无需密码"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      maxLength={20}
+                    />
+                  </div>
 
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="isPublic"
-                        checked={createForm.isPublic}
-                        onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
-                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
-                        在房间列表中公开显示
-                      </label>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="isPublic"
+                      checked={createForm.isPublic}
+                      onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
+                      在房间列表中公开显示
+                    </label>
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={createLoading || !createForm.roomName.trim()}
-                      className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
-                    >
-                      {createLoading ? '创建中...' : '创建房间'}
-                    </button>
-                  </form>
+                  <button
+                    type="submit"
+                    disabled={createLoading || !createForm.roomName.trim()}
+                    className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                  >
+                    {createLoading ? '创建中...' : '创建房间'}
+                  </button>
+                </form>
                 )}
               </div>
 
@@ -634,50 +595,50 @@ export default function WatchRoomPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleJoinRoom} className="space-y-4">
-                    {/* 显示当前用户 */}
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                      <p className="text-sm text-green-800 dark:text-green-200">
-                        <strong>当前用户：</strong>{currentUsername}
-                      </p>
-                    </div>
+                  {/* 显示当前用户 */}
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      <strong>当前用户：</strong>{currentUsername}
+                    </p>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        房间号 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={joinForm.roomId}
-                        onChange={(e) => setJoinForm({ ...joinForm, roomId: e.target.value.toUpperCase() })}
-                        placeholder="请输入6位房间号"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-green-500"
-                        maxLength={6}
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      房间号 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={joinForm.roomId}
+                      onChange={(e) => setJoinForm({ ...joinForm, roomId: e.target.value.toUpperCase() })}
+                      placeholder="请输入6位房间号"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-green-500"
+                      maxLength={6}
+                      required
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        房间密码
-                      </label>
-                      <input
-                        type="password"
-                        value={joinForm.password}
-                        onChange={(e) => setJoinForm({ ...joinForm, password: e.target.value })}
-                        placeholder="如果房间有密码，请输入"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        maxLength={20}
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      房间密码
+                    </label>
+                    <input
+                      type="password"
+                      value={joinForm.password}
+                      onChange={(e) => setJoinForm({ ...joinForm, password: e.target.value })}
+                      placeholder="如果房间有密码，请输入"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      maxLength={20}
+                    />
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={joinLoading || !joinForm.roomId.trim()}
-                      className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
-                    >
-                      {joinLoading ? '加入中...' : '加入房间'}
-                    </button>
-                  </form>
+                  <button
+                    type="submit"
+                    disabled={joinLoading || !joinForm.roomId.trim()}
+                    className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                  >
+                    {joinLoading ? '加入中...' : '加入房间'}
+                  </button>
+                </form>
                 )}
               </div>
 
@@ -694,16 +655,16 @@ export default function WatchRoomPage() {
 
           {/* 房间列表 */}
           {activeTab === 'list' && (
-            <div className="py-4">
+            <div className="py-2 sm:py-4">
               {/* 顶部操作栏 */}
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   找到 <span className="font-medium text-gray-900 dark:text-gray-100">{rooms.length}</span> 个公开房间
                 </p>
                 <button
                   onClick={loadRooms}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                   刷新
@@ -735,15 +696,15 @@ export default function WatchRoomPage() {
 
               {/* 房间卡片列表 */}
               {rooms.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {rooms.map((room) => (
                     <div
                       key={room.id}
-                      className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
+                      className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
                     >
                       <div className="flex items-start justify-between mb-2.5">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
+                          <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 truncate">
                             {room.name}
                           </h3>
                           {room.description && (
@@ -753,28 +714,28 @@ export default function WatchRoomPage() {
                           )}
                         </div>
                         {room.password && (
-                          <Lock className="w-4 h-4 text-yellow-500 flex-shrink-0 ml-2" />
+                          <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-500 flex-shrink-0 ml-2" />
                         )}
                       </div>
 
-                      <div className="space-y-1.5 text-sm mb-3">
+                      <div className="space-y-1.5 text-xs sm:text-sm mb-3">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 dark:text-gray-400">房间号</span>
-                          <span className="font-mono text-lg font-bold text-gray-900 dark:text-gray-100">
+                          <span className="font-mono text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
                             {room.id}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <Users className="w-4 h-4" />
+                          <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           <span>{room.memberCount} 人在线</span>
                         </div>
                         <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
                           <span>房主</span>
-                          <span className="font-medium">{room.ownerName}</span>
+                          <span className="font-medium truncate ml-2">{room.ownerName}</span>
                         </div>
                         <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
                           <span>创建时间</span>
-                          <span>{formatTime(room.createdAt)}</span>
+                          <span className="whitespace-nowrap">{formatTime(room.createdAt)}</span>
                         </div>
                       </div>
 
