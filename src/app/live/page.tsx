@@ -26,6 +26,7 @@ import {
 } from '@/lib/db.client';
 import { parseCustomTimeFormat } from '@/lib/time';
 
+import CategoryBar from '@/components/CategoryBar';
 import EpgScrollableRow from '@/components/EpgScrollableRow';
 import PageLayout from '@/components/PageLayout';
 
@@ -257,9 +258,7 @@ function LivePageClient() {
   const artPlayerRef = useRef<any>(null);
   const artRef = useRef<HTMLDivElement | null>(null);
 
-  // 分组标签滚动相关
-  const groupContainerRef = useRef<HTMLDivElement>(null);
-  const groupButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // 频道列表滚动相关
   const channelListRef = useRef<HTMLDivElement>(null);
 
   // -----------------------------------------------------------------------------
@@ -488,19 +487,12 @@ function LivePageClient() {
         targetGroup = Object.keys(grouped)[0] || '';
       }
 
-      // 先设置过滤后的频道列表，但不设置选中的分组
+      // 设置过滤后的频道列表和选中的分组
       setFilteredChannels(targetGroup ? grouped[targetGroup] : channels);
+      setSelectedGroup(targetGroup);
 
-      // 触发模拟点击分组，让模拟点击来设置分组状态和触发滚动
-      if (targetGroup) {
-        // 确保切换到频道tab
-        setActiveTab('channels');
-
-        // 使用更长的延迟，确保状态更新和DOM渲染完成
-        setTimeout(() => {
-          simulateGroupClick(targetGroup);
-        }, 500); // 增加延迟时间，确保状态更新和DOM渲染完成
-      }
+      // 确保切换到频道tab
+      setActiveTab('channels');
 
       setIsVideoLoading(false);
     } catch (err) {
@@ -621,31 +613,6 @@ function LivePageClient() {
         top: Math.max(0, scrollTop),
         behavior: 'smooth'
       });
-    }
-  };
-
-  // 模拟点击分组的函数
-  const simulateGroupClick = (group: string, retryCount = 0) => {
-    if (!groupContainerRef.current) {
-      if (retryCount < 10) {
-        setTimeout(() => {
-          simulateGroupClick(group, retryCount + 1);
-        }, 200);
-        return;
-      } else {
-        return;
-      }
-    }
-
-    // 直接通过 data-group 属性查找目标按钮
-    const targetButton = groupContainerRef.current.querySelector(`[data-group="${group}"]`) as HTMLButtonElement;
-
-    if (targetButton) {
-      // 手动设置分组状态，确保状态一致性
-      setSelectedGroup(group);
-
-      // 触发点击事件
-      (targetButton as HTMLButtonElement).click();
     }
   };
 
@@ -917,25 +884,6 @@ function LivePageClient() {
       localStorage.setItem('live-auto-refresh-interval', autoRefreshInterval.toString());
     }
   }, [autoRefreshInterval]);
-
-  // 当分组切换时，将激活的分组标签滚动到视口中间
-  useEffect(() => {
-    if (!selectedGroup || !groupContainerRef.current) return;
-
-    const groupKeys = Object.keys(groupedChannels);
-    const groupIndex = groupKeys.indexOf(selectedGroup);
-    if (groupIndex === -1) return;
-
-    const btn = groupButtonRefs.current[groupIndex];
-    if (btn) {
-      // 使用原生 scrollIntoView API 自动滚动到视口中央
-      btn.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',  // 水平居中显示选中的分组
-      });
-    }
-  }, [selectedGroup, groupedChannels]);
 
   class CustomHlsJsLoader extends Hls.DefaultConfig.loader {
     constructor(config: any) {
@@ -1830,73 +1778,14 @@ function LivePageClient() {
                     {!searchQuery.trim() ? (
                       // 原有的分组显示模式
                       <>
-                        {/* 分组标签 */}
-                        <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 shrink-0'>
-                          {/* 切换状态提示 */}
-                          {isSwitchingSource && (
-                            <div className='flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400'>
-                              <div className='w-2 h-2 bg-amber-500 rounded-full animate-pulse'></div>
-                              切换直播源中...
-                            </div>
-                          )}
-
-                          <div
-                            className='flex-1 overflow-x-auto'
-                            ref={groupContainerRef}
-                            onMouseEnter={() => {
-                              // 鼠标进入分组标签区域时，添加滚轮事件监听
-                              const container = groupContainerRef.current;
-                              if (container) {
-                                const handleWheel = (e: WheelEvent) => {
-                                  if (container.scrollWidth > container.clientWidth) {
-                                    e.preventDefault();
-                                    container.scrollLeft += e.deltaY;
-                                  }
-                                };
-                                container.addEventListener('wheel', handleWheel, { passive: false });
-                                // 将事件处理器存储在容器上，以便后续移除
-                                (container as any)._wheelHandler = handleWheel;
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              // 鼠标离开分组标签区域时，移除滚轮事件监听
-                              const container = groupContainerRef.current;
-                              if (container && (container as any)._wheelHandler) {
-                                container.removeEventListener('wheel', (container as any)._wheelHandler);
-                                delete (container as any)._wheelHandler;
-                              }
-                            }}
-                          >
-                            <div className='flex gap-4 min-w-max'>
-                              {Object.keys(groupedChannels).map((group, index) => (
-                                <button
-                                  key={group}
-                                  data-group={group}
-                                  ref={(el) => {
-                                    groupButtonRefs.current[index] = el;
-                                  }}
-                                  onClick={() => handleGroupChange(group)}
-                                  disabled={isSwitchingSource}
-                                  className={`w-20 relative py-2 text-sm font-medium transition-colors shrink-0 text-center overflow-hidden
-                                 ${isSwitchingSource
-                                      ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
-                                      : selectedGroup === group
-                                        ? 'text-green-500 dark:text-green-400'
-                                        : 'text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400'
-                                    }
-                               `.trim()}
-                                >
-                                  <div className='px-1 overflow-hidden whitespace-nowrap' title={group}>
-                                    {group}
-                                  </div>
-                                  {selectedGroup === group && !isSwitchingSource && (
-                                    <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 dark:bg-green-400' />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
+                        {/* 工业级分组标签 CategoryBar */}
+                        <CategoryBar
+                          groupedChannels={groupedChannels}
+                          selectedGroup={selectedGroup}
+                          onGroupChange={handleGroupChange}
+                          disabled={isSwitchingSource}
+                          disabledMessage='切换直播源中...'
+                        />
 
                         {/* 频道列表 */}
                         <div ref={channelListRef} className='flex-1 overflow-y-auto space-y-2 pb-4'>
@@ -1985,10 +1874,10 @@ function LivePageClient() {
                                 onClick={() => handleChannelChange(channel)}
                                 disabled={isSwitchingSource}
                                 className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${isSwitchingSource
-                                    ? 'opacity-50 cursor-not-allowed'
-                                    : isActive
-                                      ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
-                                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : isActive
+                                    ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                                   }`}
                               >
                                 <div className='flex items-center gap-3'>
