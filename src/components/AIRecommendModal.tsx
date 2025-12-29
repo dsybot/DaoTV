@@ -412,8 +412,13 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
       clearTimeout(scrollTimerRef.current);
     }
     scrollTimerRef.current = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      // 使用 scrollTop 直接滚动到底部，更可靠
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+      // 备用方案：使用 scrollIntoView
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 50); // 减少延迟到 50ms 提高响应速度
   }, []);
 
   // ⚡ 优化：异步保存到 localStorage
@@ -444,6 +449,14 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
               timestamp: existingTimestamp
             };
             localStorage.setItem('ai-recommend-messages', JSON.stringify(cache));
+
+            // 🔥 手动派发 storage 事件，同步同一页面内的其他组件实例
+            window.dispatchEvent(new StorageEvent('storage', {
+              key: 'ai-recommend-messages',
+              newValue: JSON.stringify(cache),
+              url: window.location.href,
+              storageArea: localStorage,
+            }));
           } catch (error) {
             console.error("Failed to save messages to cache", error);
           }
@@ -469,6 +482,14 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
               timestamp: existingTimestamp
             };
             localStorage.setItem('ai-recommend-messages', JSON.stringify(cache));
+
+            // 🔥 手动派发 storage 事件，同步同一页面内的其他组件实例
+            window.dispatchEvent(new StorageEvent('storage', {
+              key: 'ai-recommend-messages',
+              newValue: JSON.stringify(cache),
+              url: window.location.href,
+              storageArea: localStorage,
+            }));
           } catch (error) {
             console.error("Failed to save messages to cache", error);
           }
@@ -546,6 +567,32 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
       // 发生错误时也清除可能损坏的缓存
       localStorage.removeItem('ai-recommend-messages');
     }
+  }, []);
+
+  // 🔥 监听 storage 事件，同步其他组件实例的更新
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ai-recommend-messages' && e.newValue) {
+        try {
+          const { messages: updatedMessages, timestamp } = JSON.parse(e.newValue);
+          const now = new Date().getTime();
+
+          // 检查缓存是否有效（30分钟内）
+          if (now - timestamp < 30 * 60 * 1000) {
+            console.log('🔄 检测到其他组件实例更新，同步聊天记录');
+            setMessages(updatedMessages.map((msg: ExtendedAIMessage) => ({
+              ...msg,
+              timestamp: msg.timestamp || new Date().toISOString()
+            })));
+          }
+        } catch (error) {
+          console.error('同步聊天记录失败:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // ⚡ 优化：保存对话到localStorage并滚动到底部
