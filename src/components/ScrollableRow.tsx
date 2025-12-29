@@ -174,7 +174,7 @@ function ScrollableRow({
     >
       <div
         ref={containerRef}
-        className='flex space-x-6 overflow-x-auto scrollbar-hide pt-3 pb-12 sm:pt-4 sm:pb-14 px-4 sm:px-6'
+        className='flex space-x-6 overflow-x-auto scrollbar-hide pt-2 pb-4 sm:pt-3 sm:pb-6 px-4 sm:px-6'
         onScroll={checkScroll}
       >
         {enableAnimation ? (

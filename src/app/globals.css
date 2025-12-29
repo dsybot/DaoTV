@@ -314,11 +314,39 @@ html:not(.dark) body {
   }
 }
 
+/* 圆形扩散动画 - 从点击位置向外扩散 */
+@keyframes circle-expand {
+  from {
+    clip-path: circle(0% at var(--theme-toggle-x, 50%) var(--theme-toggle-y, 50%));
+  }
+  to {
+    clip-path: circle(150% at var(--theme-toggle-x, 50%) var(--theme-toggle-y, 50%));
+  }
+}
+
+/* 图标旋转动画 */
+@keyframes spin-once {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.animate-spin-once {
+  animation: spin-once 0.5s ease-in-out;
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.6s; /* 优化：从 0.8s 减少到 0.6s */
+  animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   animation-fill-mode: both;
+  mix-blend-mode: normal;
 }
 
 /*
@@ -327,16 +355,12 @@ html:not(.dark) body {
 */
 ::view-transition-old(root) {
   animation: none;
+  z-index: 1;
 }
 
-/* 从浅色到深色：新内容（深色）从顶部滑入 */
-html.dark::view-transition-new(root) {
-  animation-name: slide-from-top;
-}
-
-/* 从深色到浅色：新内容（浅色）从底部滑入 */
-html:not(.dark)::view-transition-new(root) {
-  animation-name: slide-from-bottom;
+::view-transition-new(root) {
+  animation: circle-expand 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 9999;
 }
 
 /* 强制播放器内部的 video 元素高度为 100%，并保持内容完整显示 */
