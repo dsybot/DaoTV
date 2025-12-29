@@ -173,11 +173,11 @@ export async function POST(request: NextRequest) {
       youtubeSearchStatus = '❌ YouTube搜索功能未启用，无法搜索推荐YouTube视频';
     }
 
-    // 🔥 如果 Orchestrator 启用且有搜索结果，使用增强的 systemPrompt
+    // 🔥 如果 Orchestrator 启用，使用增强的 systemPrompt（包含video context和可选的搜索结果）
     let systemPrompt = '';
 
-    if (orchestrationResult && orchestrationResult.webSearchResults) {
-      // 使用 orchestrator 生成的增强 prompt（包含搜索结果）
+    if (orchestrationResult) {
+      // 使用 orchestrator 生成的 prompt（包含video context和搜索结果）
       systemPrompt = orchestrationResult.systemPrompt;
 
       // 添加 DaoTV 特有的功能说明
@@ -230,15 +230,29 @@ ${youtubeEnabled && youtubeConfig.apiKey ? `### YouTube推荐格式：
 - 每次回复尽量提供一些新的角度或不同的推荐
 - 避免推荐过于小众或难以找到的内容
 
-格式限制：
-- 严禁输出任何Markdown格式。
-- "片名"必须是真实存在的影视作品的官方全名。
-- "年份"必须是4位数字的公元年份。
-- "类型"必须是该影片的主要类型，例如：剧情/悬疑/科幻。
-- "简短描述"是对影片的简要介绍。
-- 每一部推荐的影片都必须独占一行，并以《》开始。
+## 回复格式要求：
+- **使用Markdown格式**：标题用##，列表用-，加粗用**
+- **推荐影片格式**：每部影片独占一行，必须以《片名》开始
+  - 格式：《片名》 (年份) [类型] - 简短描述
+  - 示例：《流浪地球2》 (2023) [科幻] - 讲述人类建造行星发动机的宏大故事
+- 片名规则：
+  - 必须是真实存在的影视作品官方全名
+  - 年份必须是4位数字
+  - 每部推荐独占一行，方便点击搜索
+- 使用emoji增强可读性 🎬📺🎭
 
-请始终保持专业和有用的态度，根据用户输入的内容类型提供相应的服务。`;
+请始终保持专业和有用的态度，使用清晰的Markdown格式让内容易读。`;
+
+      // 🔥 添加video context（即使orchestrator未启用）
+      if (context?.title) {
+        systemPrompt += `\n\n## 【当前视频上下文】\n`;
+        systemPrompt += `用户正在浏览: ${context.title}`;
+        if (context.year) systemPrompt += ` (${context.year})`;
+        if (context.currentEpisode) {
+          systemPrompt += `，当前第 ${context.currentEpisode} 集`;
+        }
+        systemPrompt += '\n';
+      }
     }
 
     // 准备发送给OpenAI的消息
