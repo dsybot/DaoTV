@@ -109,6 +109,55 @@ const MessageItem = memo(({
                       }
                     </p>
                   );
+                },
+                // 自定义列表项渲染，将《片名》转换为可点击链接
+                li: ({node, children, ...props}) => {
+                  const processChildren = (child: any): any => {
+                    if (typeof child === 'string') {
+                      // 匹配《片名》格式并转换为可点击的span
+                      const parts = child.split(/(《[^》]+》)/g);
+                      return parts.map((part, i) => {
+                        const match = part.match(/《([^》]+)》/);
+                        if (match) {
+                          const title = match[1];
+                          return (
+                            <span
+                              key={i}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTitleClick(title);
+                              }}
+                              className="text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline"
+                            >
+                              {part}
+                            </span>
+                          );
+                        }
+                        return part;
+                      });
+                    } else if (child?.props?.children) {
+                      // 递归处理嵌套子元素
+                      return {
+                        ...child,
+                        props: {
+                          ...child.props,
+                          children: Array.isArray(child.props.children)
+                            ? child.props.children.map(processChildren)
+                            : processChildren(child.props.children)
+                        }
+                      };
+                    }
+                    return child;
+                  };
+
+                  return (
+                    <li {...props}>
+                      {Array.isArray(children)
+                        ? children.map(child => processChildren(child))
+                        : processChildren(children)
+                      }
+                    </li>
+                  );
                 }
               }}
             >
@@ -586,19 +635,43 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
         // 从AI回复中提取推荐影片（用于流式响应）
         const extractRecommendations = (content: string): MovieRecommendation[] => {
           const recommendations: MovieRecommendation[] = [];
-          const moviePattern = /《([^》]+)》\s*\((\d{4})\)\s*\[([^\]]+)\]\s*-\s*(.*)/;
           const lines = content.split('\n');
 
-          for (const line of lines) {
+          // 支持多种格式：
+          // 1. 《片名》（2023）或《片名》(2023)
+          // 2. 数字序号开头：1. 《片名》（2023）
+          const titlePattern = /(?:\d+\.\s*)?《([^》]+)》\s*[（(](\d{4})[)）]/;
+
+          for (let i = 0; i < lines.length; i++) {
             if (recommendations.length >= 4) break;
-            const match = line.match(moviePattern);
+
+            const line = lines[i];
+            const match = line.match(titlePattern);
+
             if (match) {
-              const [, title, year, genre, description] = match;
+              const title = match[1].trim();
+              const year = match[2].trim();
+
+              // 尝试提取后续行的类型和推荐理由
+              let genre = '';
+              let description = 'AI推荐影片';
+
+              // 查找后续行的"类型："
+              for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+                const nextLine = lines[j];
+                if (nextLine.includes('类型：') || nextLine.includes('类型:')) {
+                  genre = nextLine.split(/类型[：:]/)[1]?.trim() || '';
+                } else if (nextLine.includes('推荐理由：') || nextLine.includes('推荐理由:')) {
+                  description = nextLine.split(/推荐理由[：:]/)[1]?.trim() || description;
+                  break;
+                }
+              }
+
               recommendations.push({
-                title: title.trim(),
-                year: year.trim(),
-                genre: genre.trim(),
-                description: description.trim() || 'AI推荐影片',
+                title,
+                year,
+                genre,
+                description,
               });
             }
           }

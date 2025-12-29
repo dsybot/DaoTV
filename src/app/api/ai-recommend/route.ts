@@ -255,6 +255,28 @@ ${youtubeEnabled && youtubeConfig.apiKey ? `### YouTube推荐格式：
       }
     }
 
+    // 🎥 如果检测到YouTube链接，先解析视频信息并加入系统提示词
+    if (hasVideoLinks) {
+      try {
+        console.log('🔍 检测到YouTube链接，开始预解析视频信息...');
+        const parsedVideos = await handleVideoLinkParsing(videoLinks);
+
+        if (parsedVideos.length > 0) {
+          systemPrompt += `\n\n## 【用户发送的YouTube视频信息】\n`;
+          parsedVideos.forEach((video, index) => {
+            systemPrompt += `\n视频 ${index + 1}:\n`;
+            systemPrompt += `- 标题: ${video.title}\n`;
+            systemPrompt += `- 频道: ${video.channelName}\n`;
+            systemPrompt += `- 链接: ${video.originalUrl}\n`;
+          });
+          systemPrompt += `\n**重要**: 请根据上述真实的视频标题和频道信息回复用户，不要猜测或编造视频内容。\n`;
+          console.log(`✅ 已将 ${parsedVideos.length} 个视频信息加入系统提示词`);
+        }
+      } catch (error) {
+        console.error('预解析YouTube视频失败:', error);
+      }
+    }
+
     // 准备发送给OpenAI的消息
     const chatMessages: OpenAIMessage[] = [
       { role: 'system', content: systemPrompt },
