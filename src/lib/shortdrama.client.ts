@@ -296,7 +296,8 @@ async function parseWithAlternativeApi(
   alternativeApiUrl: string
 ): Promise<ShortDramaParseResult> {
   try {
-    const alternativeApiBase = alternativeApiUrl;
+    // 规范化 API 基础地址，移除末尾斜杠
+    const alternativeApiBase = alternativeApiUrl.replace(/\/+$/, '');
 
     // 检查是否提供了备用API地址
     if (!alternativeApiBase) {
