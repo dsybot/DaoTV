@@ -638,31 +638,42 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           const lines = content.split('\n');
 
           // 支持多种格式：
-          // 1. 《片名》（2023）或《片名》(2023)
-          // 2. 数字序号开头：1. 《片名》（2023）
-          const titlePattern = /(?:\d+\.\s*)?《([^》]+)》\s*[（(](\d{4})[)）]/;
+          // 1. 《片名》（2023）或《片名》(2023) - 带年份
+          // 2. 《片名》 - 不带年份（综艺、电视剧等）
+          // 3. 数字序号开头：1. 《片名》
+          const titlePatternWithYear = /(?:\d+\.\s*)?《([^》]+)》\s*[（(](\d{4})[)）]/;
+          const titlePatternNoYear = /(?:\d+\.\s*)?《([^》]+)》(?!\s*[（(]\d{4})/;
 
           for (let i = 0; i < lines.length; i++) {
             if (recommendations.length >= 4) break;
 
             const line = lines[i];
-            const match = line.match(titlePattern);
+
+            // 先尝试匹配带年份的格式
+            let match = line.match(titlePatternWithYear);
+            let year = '';
+
+            if (match) {
+              year = match[2].trim();
+            } else {
+              // 如果没有年份，尝试匹配不带年份的格式
+              match = line.match(titlePatternNoYear);
+            }
 
             if (match) {
               const title = match[1].trim();
-              const year = match[2].trim();
 
               // 尝试提取后续行的类型和推荐理由
               let genre = '';
-              let description = 'AI推荐影片';
+              let description = 'AI推荐内容';
 
-              // 查找后续行的"类型："
+              // 查找后续行的"类型："或"理由："
               for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
                 const nextLine = lines[j];
                 if (nextLine.includes('类型：') || nextLine.includes('类型:')) {
                   genre = nextLine.split(/类型[：:]/)[1]?.trim() || '';
-                } else if (nextLine.includes('推荐理由：') || nextLine.includes('推荐理由:')) {
-                  description = nextLine.split(/推荐理由[：:]/)[1]?.trim() || description;
+                } else if (nextLine.includes('推荐理由：') || nextLine.includes('推荐理由:') || nextLine.includes('理由：') || nextLine.includes('理由:')) {
+                  description = nextLine.split(/(?:推荐)?理由[：:]/)[1]?.trim() || description;
                   break;
                 }
               }
