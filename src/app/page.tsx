@@ -814,15 +814,15 @@ function HomeClient() {
                       key={key}
                       onClick={() => setUpcomingFilter(key as 'all' | 'movie' | 'tv')}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${upcomingFilter === key
-                          ? 'bg-orange-500 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        ? 'bg-orange-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                     >
                       {label}
                       {count > 0 && (
                         <span className={`ml-1.5 text-xs ${upcomingFilter === key
-                            ? 'text-white/80'
-                            : 'text-gray-500 dark:text-gray-400'
+                          ? 'text-white/80'
+                          : 'text-gray-500 dark:text-gray-400'
                           }`}>
                           ({count})
                         </span>
@@ -831,7 +831,7 @@ function HomeClient() {
                   ))}
                 </div>
 
-                <ScrollableRow>
+                <ScrollableRow enableVirtualization={true}>
                   {upcomingReleases
                     .filter(release => upcomingFilter === 'all' || release.type === upcomingFilter)
                     .map((release, index) => {
@@ -888,7 +888,7 @@ function HomeClient() {
                   <ChevronRight className='w-4 h-4 ml-1' />
                 </Link>
               </div>
-              <ScrollableRow>
+              <ScrollableRow enableVirtualization={true}>
                 {loading
                   ? // 加载状态显示灰色占位数据
                   Array.from({ length: 8 }).map((_, index) => (
@@ -929,7 +929,7 @@ function HomeClient() {
                   <ChevronRight className='w-4 h-4 ml-1' />
                 </Link>
               </div>
-              <ScrollableRow>
+              <ScrollableRow enableVirtualization={true}>
                 {loading
                   ? // 加载状态显示灰色占位数据
                   Array.from({ length: 8 }).map((_, index) => (
@@ -969,7 +969,7 @@ function HomeClient() {
                   <ChevronRight className='w-4 h-4 ml-1' />
                 </Link>
               </div>
-              <ScrollableRow>
+              <ScrollableRow enableVirtualization={true}>
                 {loading
                   ? // 加载状态显示灰色占位数据
                   Array.from({ length: 8 }).map((_, index) => (
@@ -1038,7 +1038,7 @@ function HomeClient() {
                   <ChevronRight className='w-4 h-4 ml-1' />
                 </Link>
               </div>
-              <ScrollableRow>
+              <ScrollableRow enableVirtualization={true}>
                 {loading
                   ? // 加载状态显示灰色占位数据
                   Array.from({ length: 8 }).map((_, index) => (
@@ -1078,7 +1078,7 @@ function HomeClient() {
                   <ChevronRight className='w-4 h-4 ml-1' />
                 </Link>
               </div>
-              <ScrollableRow>
+              <ScrollableRow enableVirtualization={true}>
                 {loading
                   ? // 加载状态显示灰色占位数据
                   Array.from({ length: 8 }).map((_, index) => (
