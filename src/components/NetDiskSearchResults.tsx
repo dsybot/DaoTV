@@ -170,9 +170,9 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   }
 
   return (
-    <div className="space-y-6 relative">
+    <div className="relative">
       {/* 快速筛选和导航栏 */}
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 sticky top-0 z-10 mb-6">
         <div className="p-4">
           {/* 筛选模式切换 */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
@@ -283,7 +283,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
         </div>
       </div>
       {/* 搜索结果统计 */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
         <div className="flex items-center">
           <svg className="h-5 w-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
@@ -299,48 +299,75 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
       </div>
 
       {/* 按网盘类型分组展示 */}
-      {Object.entries(filteredResults || {}).map(([type, links]) => {
-        const cloudType = CLOUD_TYPES[type as keyof typeof CLOUD_TYPES] || CLOUD_TYPES.others;
+      <div className="space-y-6">
+        {Object.entries(filteredResults || {}).map(([type, links]) => {
+          const cloudType = CLOUD_TYPES[type as keyof typeof CLOUD_TYPES] || CLOUD_TYPES.others;
 
-        return (
-          <div key={type} id={`cloud-type-${type}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 scroll-mt-24">
-            {/* 网盘类型头部 */}
-            <div className={`${cloudType.color} text-white px-4 py-3 rounded-t-lg`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{cloudType.icon}</span>
-                  <h3 className="font-medium">{cloudType.name}</h3>
-                  <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
-                    {links.length} 个链接
-                  </span>
+          return (
+            <div key={type} id={`cloud-type-${type}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 scroll-mt-24">
+              {/* 网盘类型头部 */}
+              <div className={`${cloudType.color} text-white px-4 py-3 rounded-t-lg`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">{cloudType.icon}</span>
+                    <h3 className="font-medium">{cloudType.name}</h3>
+                    <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                      {links.length} 个链接
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 链接列表 */}
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {links.map((link, index) => {
-                const linkKey = `${type}-${index}`;
-                const isPasswordVisible = visiblePasswords[linkKey];
-                const isCopied = copiedItems[linkKey];
-                const isTitleExpanded = expandedTitles[linkKey];
-                const title = link.note || '未命名资源';
-                const shouldShowExpandMobile = title.length > 30;
-                const shouldShowExpandDesktop = title.length > 80;
+              {/* 链接列表 */}
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {links.map((link, index) => {
+                  const linkKey = `${type}-${index}`;
+                  const isPasswordVisible = visiblePasswords[linkKey];
+                  const isCopied = copiedItems[linkKey];
+                  const isTitleExpanded = expandedTitles[linkKey];
+                  const title = link.note || '未命名资源';
+                  const shouldShowExpandMobile = title.length > 30;
+                  const shouldShowExpandDesktop = title.length > 80;
 
-                return (
-                  <div key={index} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
-                      <div className="flex-1 min-w-0">
-                        {/* 资源标题 */}
-                        <div className="mb-2">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 break-words pr-2">
-                            {/* 移动端显示 */}
-                            <span className="block sm:hidden">
-                              {shouldShowExpandMobile ? (
-                                <div className="space-y-2">
-                                  <span>{isTitleExpanded ? title : `${title.substring(0, 30)}...`}</span>
-                                  <div className="flex justify-start">
+                  return (
+                    <div key={index} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
+                        <div className="flex-1 min-w-0">
+                          {/* 资源标题 */}
+                          <div className="mb-2">
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 break-words pr-2">
+                              {/* 移动端显示 */}
+                              <span className="block sm:hidden">
+                                {shouldShowExpandMobile ? (
+                                  <div className="space-y-2">
+                                    <span>{isTitleExpanded ? title : `${title.substring(0, 30)}...`}</span>
+                                    <div className="flex justify-start">
+                                      <button
+                                        onClick={() => toggleTitleExpansion(linkKey)}
+                                        className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-700 transition-all duration-200 ease-in-out"
+                                      >
+                                        <span>{isTitleExpanded ? '收起' : '展开'}</span>
+                                        <svg
+                                          className={`h-3 w-3 transition-transform duration-200 ${isTitleExpanded ? 'rotate-180' : ''}`}
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  title
+                                )}
+                              </span>
+                              {/* 桌面端显示 */}
+                              <span className="hidden sm:block">
+                                {shouldShowExpandDesktop ? (
+                                  <div className="space-y-2">
+                                    <div className={`${isTitleExpanded ? '' : 'line-clamp-2'}`}>
+                                      {title}
+                                    </div>
                                     <button
                                       onClick={() => toggleTitleExpansion(linkKey)}
                                       className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-700 transition-all duration-200 ease-in-out"
@@ -355,142 +382,117 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
                                       </svg>
                                     </button>
                                   </div>
-                                </div>
-                              ) : (
-                                title
-                              )}
-                            </span>
-                            {/* 桌面端显示 */}
-                            <span className="hidden sm:block">
-                              {shouldShowExpandDesktop ? (
-                                <div className="space-y-2">
-                                  <div className={`${isTitleExpanded ? '' : 'line-clamp-2'}`}>
+                                ) : (
+                                  <div className="line-clamp-2">
                                     {title}
                                   </div>
-                                  <button
-                                    onClick={() => toggleTitleExpansion(linkKey)}
-                                    className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-700 transition-all duration-200 ease-in-out"
-                                  >
-                                    <span>{isTitleExpanded ? '收起' : '展开'}</span>
-                                    <svg
-                                      className={`h-3 w-3 transition-transform duration-200 ${isTitleExpanded ? 'rotate-180' : ''}`}
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="line-clamp-2">
-                                  {title}
-                                </div>
-                              )}
-                            </span>
-                          </h4>
-                        </div>
-
-                        {/* 链接和密码 */}
-                        <div className="space-y-2">
-                          <div className="flex items-start space-x-2">
-                            <LinkIcon className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
-                            <div className="flex-1 min-w-0">
-                              <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono break-all block w-full">
-                                <span className="block sm:hidden">
-                                  {link.url.length > 40 ? `${link.url.substring(0, 40)}...` : link.url}
-                                </span>
-                                <span className="hidden sm:block">
-                                  {link.url}
-                                </span>
-                              </code>
-                            </div>
-                            <button
-                              onClick={() => copyToClipboard(link.url, `url-${linkKey}`)}
-                              className={`p-1 transition-colors shrink-0 ${copiedItems[`url-${linkKey}`]
-                                ? 'text-green-500'
-                                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                                }`}
-                              title={copiedItems[`url-${linkKey}`] ? "已复制" : "复制链接"}
-                            >
-                              {copiedItems[`url-${linkKey}`] ? (
-                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              ) : (
-                                <ClipboardIcon className="h-4 w-4" />
-                              )}
-                            </button>
+                                )}
+                              </span>
+                            </h4>
                           </div>
 
-                          {link.password && (
+                          {/* 链接和密码 */}
+                          <div className="space-y-2">
                             <div className="flex items-start space-x-2">
-                              <svg className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                              </svg>
+                              <LinkIcon className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono block">
-                                  {isPasswordVisible ? link.password : '****'}
+                                <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono break-all block w-full">
+                                  <span className="block sm:hidden">
+                                    {link.url.length > 40 ? `${link.url.substring(0, 40)}...` : link.url}
+                                  </span>
+                                  <span className="hidden sm:block">
+                                    {link.url}
+                                  </span>
                                 </code>
                               </div>
-                              <div className="flex items-center space-x-1 shrink-0">
-                                <button
-                                  onClick={() => togglePasswordVisibility(linkKey)}
-                                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                  title={isPasswordVisible ? "隐藏密码" : "显示密码"}
-                                >
-                                  {isPasswordVisible ? (
-                                    <EyeSlashIcon className="h-4 w-4" />
-                                  ) : (
-                                    <EyeIcon className="h-4 w-4" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => copyToClipboard(link.password, `pwd-${linkKey}`)}
-                                  className={`p-1 transition-colors ${copiedItems[`pwd-${linkKey}`]
-                                    ? 'text-green-500'
-                                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                                    }`}
-                                  title={copiedItems[`pwd-${linkKey}`] ? "已复制" : "复制密码"}
-                                >
-                                  {copiedItems[`pwd-${linkKey}`] ? (
-                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    <ClipboardIcon className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => copyToClipboard(link.url, `url-${linkKey}`)}
+                                className={`p-1 transition-colors shrink-0 ${copiedItems[`url-${linkKey}`]
+                                  ? 'text-green-500'
+                                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                  }`}
+                                title={copiedItems[`url-${linkKey}`] ? "已复制" : "复制链接"}
+                              >
+                                {copiedItems[`url-${linkKey}`] ? (
+                                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                ) : (
+                                  <ClipboardIcon className="h-4 w-4" />
+                                )}
+                              </button>
                             </div>
-                          )}
+
+                            {link.password && (
+                              <div className="flex items-start space-x-2">
+                                <svg className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                  <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono block">
+                                    {isPasswordVisible ? link.password : '****'}
+                                  </code>
+                                </div>
+                                <div className="flex items-center space-x-1 shrink-0">
+                                  <button
+                                    onClick={() => togglePasswordVisibility(linkKey)}
+                                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                    title={isPasswordVisible ? "隐藏密码" : "显示密码"}
+                                  >
+                                    {isPasswordVisible ? (
+                                      <EyeSlashIcon className="h-4 w-4" />
+                                    ) : (
+                                      <EyeIcon className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => copyToClipboard(link.password, `pwd-${linkKey}`)}
+                                    className={`p-1 transition-colors ${copiedItems[`pwd-${linkKey}`]
+                                      ? 'text-green-500'
+                                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                      }`}
+                                    title={copiedItems[`pwd-${linkKey}`] ? "已复制" : "复制密码"}
+                                  >
+                                    {copiedItems[`pwd-${linkKey}`] ? (
+                                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    ) : (
+                                      <ClipboardIcon className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 元信息 */}
+                          <div className="mt-3 flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                            <span className="truncate">来源: {link.source}</span>
+                            <span className="truncate">时间: {new Date(link.datetime).toLocaleString('zh-CN')}</span>
+                          </div>
                         </div>
 
-                        {/* 元信息 */}
-                        <div className="mt-3 flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                          <span className="truncate">来源: {link.source}</span>
-                          <span className="truncate">时间: {new Date(link.datetime).toLocaleString('zh-CN')}</span>
+                        {/* 操作按钮 */}
+                        <div className="sm:ml-4 shrink-0">
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-2 sm:py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto justify-center"
+                          >
+                            访问链接
+                          </a>
                         </div>
-                      </div>
-
-                      {/* 操作按钮 */}
-                      <div className="sm:ml-4 shrink-0">
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-2 sm:py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto justify-center"
-                        >
-                          访问链接
-                        </a>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
