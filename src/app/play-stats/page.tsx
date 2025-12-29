@@ -2010,9 +2010,8 @@ const PlayStatsPage: React.FC = () => {
                             progress={0}
                             currentEpisode={series.currentEpisode}
                             episodes={series.totalEpisodes}
-                            source_name={series.source_name}
-                            source={series.source_name}
-                            id={`${series.title}_${series.year}`}
+                            source={series.sourceKey}
+                            id={series.videoId}
                             onDelete={undefined}
                             remarks={series.remarks}
                             douban_id={series.douban_id}
@@ -2045,9 +2044,8 @@ const PlayStatsPage: React.FC = () => {
                             progress={0}
                             currentEpisode={series.currentEpisode}
                             episodes={series.totalEpisodes}
-                            source_name={series.source_name}
-                            source={series.source_name}
-                            id={`${series.title}_${series.year}`}
+                            source={series.sourceKey}
+                            id={series.videoId}
                             onDelete={undefined}
                             remarks={series.remarks}
                             douban_id={series.douban_id}
@@ -2097,9 +2095,8 @@ const PlayStatsPage: React.FC = () => {
                             progress={0}
                             currentEpisode={series.currentEpisode}
                             episodes={series.totalEpisodes}
-                            source_name={series.source_name}
-                            source={series.source_name}
-                            id={`${series.title}_${series.year}`}
+                            source={series.sourceKey}
+                            id={series.videoId}
                             onDelete={undefined}
                             remarks={series.remarks}
                             douban_id={series.douban_id}
@@ -2132,9 +2129,8 @@ const PlayStatsPage: React.FC = () => {
                             progress={0}
                             currentEpisode={series.currentEpisode}
                             episodes={series.totalEpisodes}
-                            source_name={series.source_name}
-                            source={series.source_name}
-                            id={`${series.title}_${series.year}`}
+                            source={series.sourceKey}
+                            id={series.videoId}
                             onDelete={undefined}
                             remarks={series.remarks}
                             douban_id={series.douban_id}
