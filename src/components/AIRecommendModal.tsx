@@ -398,13 +398,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
   const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isSyncingRef = useRef(false); // 🔥 防止循环更新的标志
 
-  // ✨ React 19: useOptimistic for optimistic UI updates
-  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
-    messages,
-    (state, newMessage: ExtendedAIMessage) => [...state, newMessage]
-  );
-
-  // ✨ React 19: useTransition for non-urgent updates
+  // ✨ React 19: useTransition for non-urgent updates (流式聊天不需要useOptimistic)
   const [isPending, startTransition] = useTransition();
 
   // ⚡ 优化：防抖滚动到底部
@@ -646,7 +640,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
     }
   }, []);
 
-  // ✨ Optimized sendMessage with useOptimistic and useTransition
+  // ✨ Optimized sendMessage with useState (不使用useOptimistic，直接更新state以确保流式响应立即显示)
   const sendMessage = async (content: string) => {
     if (!content.trim() || isPending) return;
 
@@ -656,25 +650,23 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
       timestamp: new Date().toISOString(),
     };
 
-    // Optimistically add user message
-    addOptimisticMessage(userMessage);
-    setInputMessage('');
-    setError(null);
-
     // Add a temporary "AI is thinking" message
     const thinkingMessage: ExtendedAIMessage = {
       role: 'assistant',
       content: '思考中...',
       timestamp: new Date().toISOString(),
     };
-    addOptimisticMessage(thinkingMessage);
+
+    setInputMessage('');
+    setError(null);
+
+    // 🔥 立即同步更新state（不使用optimistic，确保用户消息和思考中立即显示）
+    const updatedMessages = [...messages, userMessage];
+    const messagesWithThinking = [...updatedMessages, thinkingMessage];
+    setMessages(messagesWithThinking);
 
     startTransition(async () => {
       try {
-        // Actually add user message to state
-        const updatedMessages = [...messages, userMessage];
-        setMessages(updatedMessages);
-
         // 智能上下文管理：只发送最近8条消息（4轮对话）
         const conversationHistory = updatedMessages.slice(-8);
 
@@ -886,12 +878,12 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           </div>
         </div>
 
-        {/* 消息区域 - 使用 optimisticMessages */}
+        {/* 消息区域 - 直接使用 messages state */}
         <div
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-4 space-y-4 bg-linear-to-b from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-900/50"
         >
-          {optimisticMessages.length <= 1 && optimisticMessages.every(msg => msg.role === 'assistant' && msg.content.includes('AI智能助手')) && (
+          {messages.length <= 1 && messages.every(msg => msg.role === 'assistant' && msg.content.includes('AI智能助手')) && (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-500 to-purple-600 rounded-full mb-4">
                 <Sparkles className="h-8 w-8 text-white" />
@@ -922,7 +914,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           )}
 
           {/* ⚡ 优化：使用记忆化的消息组件 */}
-          {optimisticMessages.map((message, index) => (
+          {messages.map((message, index) => (
             <MessageItem
               key={index}
               message={message}
@@ -937,7 +929,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           ))}
 
           {/* 加载状态 - 使用 isPending */}
-          {isPending && optimisticMessages[optimisticMessages.length - 1]?.content !== '思考中...' && (
+          {isPending && messages[messages.length - 1]?.content !== '思考中...' && (
             <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="bg-white dark:bg-gray-700 p-3 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
                 <div className="flex space-x-1.5">
