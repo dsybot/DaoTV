@@ -170,7 +170,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   }
 
   return (
-    <div className="relative">
+    <div className="relative -mt-4 sm:-mt-6">
       {/* 快速筛选和导航栏 */}
       <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4">
         <div>
