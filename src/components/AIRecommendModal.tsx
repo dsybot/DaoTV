@@ -69,7 +69,49 @@ const MessageItem = memo(({
       >
         {message.role === 'assistant' ? (
           <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100 dark:prose-pre:bg-gray-900 prose-code:text-purple-600 dark:prose-code:text-purple-400 prose-code:bg-purple-50 dark:prose-code:bg-purple-900/20 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-strong:text-gray-900 dark:prose-strong:text-white prose-ul:my-2 prose-ol:my-2 prose-li:my-1">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // 自定义文本渲染，将《片名》转换为可点击链接
+                p: ({node, children, ...props}) => {
+                  const processChildren = (child: any): any => {
+                    if (typeof child === 'string') {
+                      // 匹配《片名》格式并转换为可点击的span
+                      const parts = child.split(/(《[^》]+》)/g);
+                      return parts.map((part, i) => {
+                        const match = part.match(/《([^》]+)》/);
+                        if (match) {
+                          const title = match[1];
+                          return (
+                            <span
+                              key={i}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTitleClick(title);
+                              }}
+                              className="text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline"
+                            >
+                              {part}
+                            </span>
+                          );
+                        }
+                        return part;
+                      });
+                    }
+                    return child;
+                  };
+
+                  return (
+                    <p {...props}>
+                      {Array.isArray(children)
+                        ? children.map(child => processChildren(child))
+                        : processChildren(children)
+                      }
+                    </p>
+                  );
+                }
+              }}
+            >
               {message.content}
             </ReactMarkdown>
           </div>
