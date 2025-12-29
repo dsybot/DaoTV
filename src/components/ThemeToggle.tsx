@@ -5,14 +5,13 @@
 import { Moon, Sun } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const pathname = usePathname();
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isFlipping, setIsFlipping] = useState(false);
 
   const setThemeColor = (theme?: string) => {
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -38,68 +37,42 @@ export function ThemeToggle() {
   }, [mounted, resolvedTheme, pathname]);
 
   if (!mounted) {
-    // 渲染一个占位符以避免布局偏移
     return <div className='w-10 h-10' />;
   }
 
-  const toggleTheme = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (isAnimating) return;
-
+  const toggleTheme = () => {
     const targetTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
-    setThemeColor(targetTheme);
 
-    // 检查是否支持 View Transitions API
-    if (!(document as any).startViewTransition) {
+    // 触发图标翻转动画
+    setIsFlipping(true);
+    setTimeout(() => setIsFlipping(false), 400);
+
+    // 在动画中间点切换主题（200ms 时图标正好翻转到侧面看不见）
+    setTimeout(() => {
+      setThemeColor(targetTheme);
       setTheme(targetTheme);
-      return;
-    }
-
-    // 获取点击位置
-    const x = e.clientX;
-    const y = e.clientY;
-
-    // 计算最大半径（从点击位置到最远角落的距离）
-    const maxRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-
-    setIsAnimating(true);
-
-    // 使用 View Transitions API 实现圆形扩散动画
-    const transition = (document as any).startViewTransition(() => {
-      setTheme(targetTheme);
-    });
-
-    // 设置 CSS 变量用于动画
-    document.documentElement.style.setProperty('--theme-toggle-x', `${x}px`);
-    document.documentElement.style.setProperty('--theme-toggle-y', `${y}px`);
-    document.documentElement.style.setProperty('--theme-toggle-radius', `${maxRadius}px`);
-
-    try {
-      await transition.finished;
-    } finally {
-      setIsAnimating(false);
-    }
+    }, 200);
   };
 
   return (
     <button
-      ref={buttonRef}
       onClick={toggleTheme}
-      disabled={isAnimating}
-      className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-amber-500 dark:text-gray-300 dark:hover:text-amber-400 transition-all duration-200 hover:scale-110 group disabled:opacity-70'
+      className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-amber-500 dark:text-gray-300 dark:hover:text-amber-400 transition-colors duration-200 hover:scale-110 active:scale-95 group'
+      style={{ perspective: '200px' }}
       aria-label='Toggle theme'
     >
-      {/* 微光背景效果 */}
-      <div className='absolute inset-0 rounded-full bg-linear-to-br from-amber-400/0 to-amber-600/0 group-hover:from-amber-400/20 group-hover:to-amber-600/20 dark:group-hover:from-amber-300/20 dark:group-hover:to-amber-500/20 transition-all duration-200'></div>
+      {/* 背景光晕 */}
+      <div className='absolute inset-0 rounded-full bg-amber-400/0 group-hover:bg-amber-400/10 dark:group-hover:bg-amber-300/10 transition-colors duration-200' />
 
-      {/* 图标容器 - 带旋转动画 */}
-      <div className={`relative z-10 w-full h-full ${isAnimating ? 'animate-spin-once' : ''}`}>
+      {/* 图标 - 3D 翻转效果 */}
+      <div
+        className={`relative z-10 w-full h-full ${isFlipping ? 'animate-icon-flip' : ''}`}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
         {resolvedTheme === 'dark' ? (
-          <Sun className='w-full h-full group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-300' />
+          <Sun className='w-full h-full drop-shadow-[0_0_6px_rgba(251,191,36,0.4)]' />
         ) : (
-          <Moon className='w-full h-full group-hover:drop-shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-300' />
+          <Moon className='w-full h-full drop-shadow-[0_0_6px_rgba(99,102,241,0.3)]' />
         )}
       </div>
     </button>
