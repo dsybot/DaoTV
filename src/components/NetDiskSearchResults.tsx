@@ -172,7 +172,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   return (
     <div className="space-y-6 relative">
       {/* 快速筛选和导航栏 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 sticky top-4 z-10">
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="p-4">
           {/* 筛选模式切换 */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
@@ -303,7 +303,7 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
         const cloudType = CLOUD_TYPES[type as keyof typeof CLOUD_TYPES] || CLOUD_TYPES.others;
 
         return (
-          <div key={type} id={`cloud-type-${type}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 scroll-mt-20">
+          <div key={type} id={`cloud-type-${type}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 scroll-mt-24">
             {/* 网盘类型头部 */}
             <div className={`${cloudType.color} text-white px-4 py-3 rounded-t-lg`}>
               <div className="flex items-center justify-between">
