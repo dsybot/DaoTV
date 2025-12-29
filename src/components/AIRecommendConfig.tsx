@@ -477,24 +477,24 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                   <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                     Tavily API Keys（每个账号1000次/月免费）
                   </label>
-                  <textarea
-                    value={aiSettings.tavilyApiKeys.join('\n')}
+                  <input
+                    type='text'
+                    value={aiSettings.tavilyApiKeys.join(', ')}
                     onChange={(e) => {
+                      // 同时支持逗号和换行分隔
                       const keys = e.target.value
-                        .split('\n')
+                        .split(/[,\n]+/)
                         .map(k => k.trim())
                         .filter(k => k.length > 0);
                       setAiSettings(prev => ({ ...prev, tavilyApiKeys: keys }));
                     }}
                     className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-sm'
-                    placeholder='tvly-xxxxxxxxxxxxxx&#x0A;tvly-yyyyyyyyyyyyyy&#x0A;tvly-zzzzzzzzzzzzzz'
-                    rows={4}
-                    style={{ whiteSpace: 'pre-wrap' }}
+                    placeholder='tvly-xxxxxxxxxxxxxx, tvly-yyyyyyyyyyyyyy, tvly-zzzzzzzzzzzzzz'
                   />
                   <div className='mt-2 space-y-2'>
                     <p className='text-xs text-gray-500 dark:text-gray-400'>
                       <span className='text-green-600 dark:text-green-400'>💡 提示：</span>
-                      每行填写一个API Key，系统会自动轮询使用以提高免费额度
+                      多个API Key用<strong>逗号</strong>分隔，系统会自动轮询使用以提高免费额度
                     </p>
                     <div className='text-xs bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg space-y-1'>
                       <p className='font-semibold text-blue-700 dark:text-blue-300'>📊 免费额度说明：</p>
