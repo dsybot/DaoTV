@@ -924,7 +924,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="输入影视推荐类型、YouTube搜索内容或直接粘贴YouTube链接..."
-                className="w-full p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-750 resize-none transition-all duration-200 shadow-sm"
+                className="w-full p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-gray-50 dark:focus:bg-gray-800 resize-none transition-all duration-200 shadow-sm"
                 rows={2}
                 disabled={isPending}
               />
