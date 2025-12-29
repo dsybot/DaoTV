@@ -830,7 +830,13 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
 
     const welcomeMessage: ExtendedAIMessage = {
       role: 'assistant',
-      content: '你好！我是AI智能助手，支持以下功能：\n\n🎬 影视剧推荐 - 推荐电影、电视剧、动漫等\n🔗 视频链接解析 - 解析YouTube链接并播放\n📺 视频内容搜索 - 搜索相关视频内容\n\n💡 直接告诉我你想看什么类型的内容，或发送YouTube链接给我解析！',
+      content: `你好！我是 **AI 智能助手**，支持以下功能：
+
+- 🎬 **影视剧推荐** - 推荐电影、电视剧、动漫等
+- 🔗 **视频链接解析** - 解析 YouTube 链接并播放
+- 📺 **视频内容搜索** - 搜索相关视频内容
+
+💡 **提示**：直接告诉我你想看什么类型的内容，或发送 YouTube 链接给我解析！`,
       timestamp: new Date().toISOString()
     };
     setMessages([welcomeMessage]);
