@@ -889,7 +889,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-4 space-y-4 bg-linear-to-b from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-900/50"
         >
-          {messages.length <= 1 && messages.every(msg => msg.role === 'assistant' && msg.content.includes('AI智能助手')) && (
+          {messages.length <= 1 && messages.every(msg => msg.role === 'assistant' && (msg.content.includes('AI智能助手') || msg.content.includes('AI 智能助手'))) && (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-500 to-purple-600 rounded-full mb-4">
                 <Sparkles className="h-8 w-8 text-white" />
