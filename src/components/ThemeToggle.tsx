@@ -47,11 +47,22 @@ export function ThemeToggle() {
     setIsFlipping(true);
     setTimeout(() => setIsFlipping(false), 400);
 
-    // 在动画中间点切换主题（200ms 时图标正好翻转到侧面看不见）
-    setTimeout(() => {
-      setThemeColor(targetTheme);
-      setTheme(targetTheme);
-    }, 200);
+    // 使用 View Transitions API 实现页面切换动画
+    if ((document as any).startViewTransition) {
+      // 在动画中间点切换主题
+      setTimeout(() => {
+        (document as any).startViewTransition(() => {
+          setThemeColor(targetTheme);
+          setTheme(targetTheme);
+        });
+      }, 150);
+    } else {
+      // 不支持 View Transitions 的浏览器直接切换
+      setTimeout(() => {
+        setThemeColor(targetTheme);
+        setTheme(targetTheme);
+      }, 200);
+    }
   };
 
   return (
