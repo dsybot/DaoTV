@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-console, @typescript-eslint/no-non-null-assertion */
 
+import { unstable_noStore } from 'next/cache';
+
 import { db } from '@/lib/db';
 
 import { AdminConfig } from './admin.types';
@@ -299,6 +301,9 @@ async function getInitConfig(configFile: string, subConfig: {
 }
 
 export async function getConfig(): Promise<AdminConfig> {
+  // 🔥 防止 Next.js 在 Docker 环境下缓存配置（解决站点名称更新问题）
+  unstable_noStore();
+
   const now = Date.now();
 
   // 🔥 修复：添加时间戳检查，避免 Vercel 多实例缓存不一致
