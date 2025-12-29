@@ -593,6 +593,11 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     return configs[from] || configs.search;
   }, [from, isAggregate, douban_id, rate, isUpcoming]);
 
+  // 🎯 智能判断是否有右下角按钮（垃圾桶/收藏，用于AI按钮水平位置调整）
+  const hasRightBottomButtons = useMemo(() => {
+    return (config.showHeart || config.showCheckCircle) && from !== 'favorite';
+  }, [config.showHeart, config.showCheckCircle, from]);
+
   // 移动端操作菜单配置
   const mobileActions = useMemo(() => {
     const actions = [];
@@ -1314,11 +1319,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             );
           })()}
 
-          {/* 🎯 AI问片按钮 - 桌面端hover显示，智能位置（避开底部标签） */}
+          {/* 🎯 AI问片按钮 - 桌面端hover显示，智能位置（避开底部标签和右下角按钮） */}
           {aiEnabled && actualTitle && (
             <div
               className={`
-                hidden md:block absolute left-1/2 -translate-x-1/2
+                hidden md:block absolute
+                ${hasRightBottomButtons ? 'left-1/3 -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}
                 ${hasBottomTags ? 'bottom-14' : 'bottom-4'}
                 opacity-0 translate-y-2
                 group-hover:opacity-100 group-hover:translate-y-0

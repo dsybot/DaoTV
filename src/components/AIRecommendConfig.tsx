@@ -486,6 +486,12 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                         .filter(k => k.length > 0);
                       setAiSettings(prev => ({ ...prev, tavilyApiKeys: keys }));
                     }}
+                    onKeyDown={(e) => {
+                      // 允许 Enter 键换行（阻止事件冒泡到父级）
+                      if (e.key === 'Enter') {
+                        e.stopPropagation();
+                      }
+                    }}
                     className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-sm'
                     placeholder='tvly-xxxxxxxxxxxxxx&#x0A;tvly-yyyyyyyyyyyyyy&#x0A;tvly-zzzzzzzzzzzzzz'
                     rows={4}
