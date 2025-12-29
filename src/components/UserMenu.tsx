@@ -2493,6 +2493,7 @@ export const UserMenu: React.FC = () => {
 
                           // 智能计算即将上映状态
                           let calculatedRemarks = favorite.remarks;
+                          let isNewRelease = false;
 
                           if (favorite.releaseDate) {
                             const today = new Date();
@@ -2504,15 +2505,20 @@ export const UserMenu: React.FC = () => {
                             if (daysDiff < 0) {
                               const daysAgo = Math.abs(daysDiff);
                               calculatedRemarks = `已上映${daysAgo}天`;
+                              // 7天内上映的标记为新上映
+                              if (daysAgo <= 7) {
+                                isNewRelease = true;
+                              }
                             } else if (daysDiff === 0) {
                               calculatedRemarks = '今日上映';
+                              isNewRelease = true;
                             } else {
                               calculatedRemarks = `${daysDiff}天后上映`;
                             }
                           }
 
                           return (
-                            <div key={favorite.key} className='group relative'>
+                            <div key={favorite.key} className='relative'>
                               <VideoCard
                                 id={id}
                                 title={favorite.title}
@@ -2527,6 +2533,13 @@ export const UserMenu: React.FC = () => {
                                 remarks={calculatedRemarks}
                                 releaseDate={favorite.releaseDate}
                               />
+                              {/* 收藏心形图标 - 隐藏，使用VideoCard内部的hover爱心 */}
+                              {/* 新上映高亮标记 - Netflix 统一风格 - 7天内上映的显示 */}
+                              {isNewRelease && (
+                                <div className='absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-md shadow-lg animate-pulse z-40'>
+                                  新上映
+                                </div>
+                              )}
                             </div>
                           );
                         })}
