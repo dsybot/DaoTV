@@ -1671,10 +1671,6 @@ const PlayStatsPage: React.FC = () => {
 
   // 渲染普通用户个人统计页面
   if (!isAdmin && userStats) {
-    console.log('[普通用户渲染] watchingUpdates:', watchingUpdates);
-    console.log('[普通用户渲染] watchingUpdates?.updatedSeries:', watchingUpdates?.updatedSeries);
-    console.log('[普通用户渲染] continueWatchingCount:', watchingUpdates?.continueWatchingCount);
-
     return (
       <PageLayout activePath="/play-stats">
         <div className='max-w-6xl mx-auto px-4 py-8'>
@@ -2021,7 +2017,7 @@ const PlayStatsPage: React.FC = () => {
                             douban_id={series.douban_id}
                           />
                           {/* 新集数提示光环效果 */}
-                          <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-9"></div>
+                          <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
                         </div>
                         {/* 新集数徽章 - Netflix 统一风格 */}
                         <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold">
@@ -2055,7 +2051,7 @@ const PlayStatsPage: React.FC = () => {
                             douban_id={series.douban_id}
                           />
                           {/* 新集数提示光环效果 */}
-                          <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-9"></div>
+                          <div className="absolute inset-0 rounded-lg ring-2 ring-red-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
                         </div>
                         {/* 新集数徽章 - Netflix 统一风格 */}
                         <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold">
@@ -2106,7 +2102,7 @@ const PlayStatsPage: React.FC = () => {
                             douban_id={series.douban_id}
                           />
                           {/* 继续观看提示光环效果 */}
-                          <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9"></div>
+                          <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
                         </div>
                         {/* 继续观看徽章 - Netflix 统一风格 */}
                         <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold">
@@ -2140,7 +2136,7 @@ const PlayStatsPage: React.FC = () => {
                             douban_id={series.douban_id}
                           />
                           {/* 继续观看提示光环效果 */}
-                          <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9"></div>
+                          <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]"></div>
                         </div>
                         {/* 继续观看徽章 - Netflix 统一风格 */}
                         <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold">
