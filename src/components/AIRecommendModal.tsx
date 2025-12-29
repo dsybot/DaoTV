@@ -412,16 +412,23 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
       if (cachedMessages) {
         const { messages: storedMessages, timestamp } = JSON.parse(cachedMessages);
         const now = new Date().getTime();
-        // 30分钟缓存
-        if (now - timestamp < 30 * 60 * 1000) {
+
+        // 检查缓存是否包含旧格式的欢迎消息（不包含Markdown列表标记）
+        const hasOldFormatWelcome = storedMessages.length > 0 &&
+          storedMessages[0].role === 'assistant' &&
+          storedMessages[0].content.includes('🎬 影视剧推荐 - 推荐电影') &&
+          !storedMessages[0].content.includes('- 🎬');
+
+        // 30分钟缓存，但如果是旧格式则强制刷新
+        if (now - timestamp < 30 * 60 * 1000 && !hasOldFormatWelcome) {
           setMessages(storedMessages.map((msg: ExtendedAIMessage) => ({
             ...msg,
             timestamp: msg.timestamp || new Date().toISOString()
           })));
           return; // 有缓存就不显示欢迎消息
         } else {
-          // 🔥 修复Bug #2: 超过30分钟时真正删除localStorage中的过期数据
-          console.log('AI聊天记录已超过30分钟，自动清除缓存');
+          // 超过30分钟或旧格式时删除缓存
+          console.log(hasOldFormatWelcome ? 'AI欢迎消息格式已更新，清除旧缓存' : 'AI聊天记录已超过30分钟，自动清除缓存');
           localStorage.removeItem('ai-recommend-messages');
         }
       }
