@@ -583,11 +583,37 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           }
         );
 
+        // 从AI回复中提取推荐影片（用于流式响应）
+        const extractRecommendations = (content: string): MovieRecommendation[] => {
+          const recommendations: MovieRecommendation[] = [];
+          const moviePattern = /《([^》]+)》\s*\((\d{4})\)\s*\[([^\]]+)\]\s*-\s*(.*)/;
+          const lines = content.split('\n');
+
+          for (const line of lines) {
+            if (recommendations.length >= 4) break;
+            const match = line.match(moviePattern);
+            if (match) {
+              const [, title, year, genre, description] = match;
+              recommendations.push({
+                title: title.trim(),
+                year: year.trim(),
+                genre: genre.trim(),
+                description: description.trim() || 'AI推荐影片',
+              });
+            }
+          }
+          return recommendations;
+        };
+
+        // 使用最终内容（streamingContent优先，因为它包含完整的流式内容）
+        const finalContent = streamingContent || response.choices[0].message.content;
+        const extractedRecommendations = extractRecommendations(finalContent);
+
         const assistantMessage: ExtendedAIMessage = {
           role: 'assistant',
-          content: response.choices[0].message.content,
+          content: finalContent,
           timestamp: new Date().toISOString(),
-          recommendations: response.recommendations || [],
+          recommendations: response.recommendations || extractedRecommendations,
           youtubeVideos: response.youtubeVideos || [],
           videoLinks: response.videoLinks || [],
           type: response.type || 'normal',
