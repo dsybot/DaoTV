@@ -172,8 +172,8 @@ export default function NetDiskSearchResults({ results, loading, error, total }:
   return (
     <div className="relative">
       {/* 快速筛选和导航栏 */}
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 sticky top-0 z-10 mb-6">
-        <div className="p-4">
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4">
+        <div>
           {/* 筛选模式切换 */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-2">
