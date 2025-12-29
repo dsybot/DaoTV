@@ -396,6 +396,7 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isSyncingRef = useRef(false); // 🔥 防止循环更新的标志
 
   // ✨ React 19: useOptimistic for optimistic UI updates
   const [optimisticMessages, addOptimisticMessage] = useOptimistic(
@@ -572,6 +573,9 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
   // 🔥 监听 storage 事件，同步其他组件实例的更新
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
+      // 🚫 防止循环：如果正在同步中，忽略此次事件
+      if (isSyncingRef.current) return;
+
       if (e.key === 'ai-recommend-messages' && e.newValue) {
         try {
           const { messages: updatedMessages, timestamp } = JSON.parse(e.newValue);
@@ -580,13 +584,23 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
           // 检查缓存是否有效（30分钟内）
           if (now - timestamp < 30 * 60 * 1000) {
             console.log('🔄 检测到其他组件实例更新，同步聊天记录');
+
+            // 🔥 设置同步标志，防止触发保存
+            isSyncingRef.current = true;
+
             setMessages(updatedMessages.map((msg: ExtendedAIMessage) => ({
               ...msg,
               timestamp: msg.timestamp || new Date().toISOString()
             })));
+
+            // 🔥 延迟重置标志，确保保存逻辑不会立即触发
+            setTimeout(() => {
+              isSyncingRef.current = false;
+            }, 500);
           }
         } catch (error) {
           console.error('同步聊天记录失败:', error);
+          isSyncingRef.current = false;
         }
       }
     };
@@ -598,6 +612,13 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
   // ⚡ 优化：保存对话到localStorage并滚动到底部
   useEffect(() => {
     scrollToBottom();
+
+    // 🚫 如果正在同步，跳过保存（避免循环）
+    if (isSyncingRef.current) {
+      console.log('⏭️ 跳过保存（正在同步中）');
+      return;
+    }
+
     saveMessagesToStorage(messages);
   }, [messages, scrollToBottom, saveMessagesToStorage]);
 
