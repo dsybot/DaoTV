@@ -35,6 +35,9 @@ export interface AdminConfig {
     CustomAdFilterVersion?: number;
     // 默认用户组
     DefaultUserTags?: string[];
+    // 登录页背景配置
+    LoginBgDesktop?: string;     // 桌面端登录背景图URL
+    LoginBgMobile?: string;      // 移动端登录背景图URL
   };
   UserConfig: {
     AllowRegister?: boolean; // 是否允许用户注册，默认 true

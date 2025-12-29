@@ -74,6 +74,9 @@ function LoginPageClient() {
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
   const [bingWallpaper, setBingWallpaper] = useState<string>('');
+  const [customBgDesktop, setCustomBgDesktop] = useState<string>('');
+  const [customBgMobile, setCustomBgMobile] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
 
   // Telegram Magic Link 状态
   const [telegramLoading, setTelegramLoading] = useState(false);
@@ -94,8 +97,21 @@ function LoginPageClient() {
 
   const { siteName } = useSite();
 
-  // 获取 Bing 每日壁纸（通过代理 API）
+  // 检测是否为移动端
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 获取 Bing 每日壁纸（通过代理 API）- 仅在没有自定义背景时获取
+  useEffect(() => {
+    // 如果已有自定义背景，不需要获取 Bing 壁纸
+    if (customBgDesktop || customBgMobile) return;
+
     const fetchBingWallpaper = async () => {
       try {
         const response = await fetch('/api/bing-wallpaper');
@@ -109,7 +125,7 @@ function LoginPageClient() {
     };
 
     fetchBingWallpaper();
-  }, []);
+  }, [customBgDesktop, customBgMobile]);
 
   // 在客户端挂载后设置配置
   useEffect(() => {
@@ -128,6 +144,15 @@ function LoginPageClient() {
         const data = await response.json();
         console.log('[Login] Server config received:', data);
         console.log('[Login] TelegramAuthConfig:', data.TelegramAuthConfig);
+
+        // 获取登录背景配置
+        if (data.LoginBgDesktop) {
+          setCustomBgDesktop(data.LoginBgDesktop);
+        }
+        if (data.LoginBgMobile) {
+          setCustomBgMobile(data.LoginBgMobile);
+        }
+
         if (data.TelegramAuthConfig?.enabled) {
           console.log('[Login] Telegram is enabled!');
           setTelegramEnabled(true);
@@ -252,13 +277,20 @@ function LoginPageClient() {
 
   return (
     <div className='relative min-h-screen flex items-center justify-center px-3 sm:px-4 py-8 sm:py-0 overflow-hidden'>
-      {/* Bing 每日壁纸背景 */}
-      {bingWallpaper && (
-        <div
-          className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 animate-ken-burns'
-          style={{ backgroundImage: `url(${bingWallpaper})` }}
-        />
-      )}
+      {/* 背景图片：优先使用自定义背景，否则使用 Bing 壁纸 */}
+      {(() => {
+        // 确定要使用的背景图
+        const bgUrl = isMobile
+          ? (customBgMobile || customBgDesktop || bingWallpaper)
+          : (customBgDesktop || bingWallpaper);
+
+        return bgUrl ? (
+          <div
+            className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 animate-ken-burns'
+            style={{ backgroundImage: `url(${bgUrl})` }}
+          />
+        ) : null;
+      })()}
 
       {/* 渐变叠加层 */}
       <div className='absolute inset-0 bg-linear-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />

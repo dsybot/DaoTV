@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
       ReleaseCalendarProxy,
       DanmuApiEndpoint,
       DanmuApiToken,
+      LoginBgDesktop,
+      LoginBgMobile,
     } = body as {
       SiteName: string;
       Announcement: string;
@@ -74,6 +76,8 @@ export async function POST(request: NextRequest) {
       ReleaseCalendarProxy?: string;
       DanmuApiEndpoint?: string;
       DanmuApiToken?: string;
+      LoginBgDesktop?: string;
+      LoginBgMobile?: string;
     };
 
     // 参数校验
@@ -159,6 +163,8 @@ export async function POST(request: NextRequest) {
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
       DanmuApiEndpoint: DanmuApiEndpoint || '',
       DanmuApiToken: DanmuApiToken || '',
+      LoginBgDesktop: LoginBgDesktop || '',
+      LoginBgMobile: LoginBgMobile || '',
     };
 
     console.log('[API] 将要保存到数据库的 TMDB 设置:', {

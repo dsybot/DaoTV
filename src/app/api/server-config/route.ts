@@ -17,6 +17,9 @@ export async function GET(request: NextRequest) {
     SiteName: config.SiteConfig.SiteName,
     StorageType: process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
     Version: CURRENT_VERSION,
+    // 登录页背景配置
+    LoginBgDesktop: config.SiteConfig.LoginBgDesktop || '',
+    LoginBgMobile: config.SiteConfig.LoginBgMobile || '',
   };
 
   // 添加 Telegram 登录配置（仅公开必要信息）

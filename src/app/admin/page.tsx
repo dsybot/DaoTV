@@ -306,6 +306,9 @@ interface SiteConfig {
   // 弹幕API配置
   DanmuApiEndpoint?: string;
   DanmuApiToken?: string;
+  // 登录页背景配置
+  LoginBgDesktop?: string;
+  LoginBgMobile?: string;
 }
 
 // 视频源数据类型
@@ -4317,6 +4320,9 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     // 弹幕API配置
     DanmuApiEndpoint: '',
     DanmuApiToken: '',
+    // 登录页背景配置
+    LoginBgDesktop: '',
+    LoginBgMobile: '',
   });
 
   // 豆瓣数据源相关状态
@@ -4401,6 +4407,9 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         // 弹幕API配置
         DanmuApiEndpoint: config.SiteConfig.DanmuApiEndpoint || '',
         DanmuApiToken: config.SiteConfig.DanmuApiToken || '',
+        // 登录页背景配置
+        LoginBgDesktop: config.SiteConfig.LoginBgDesktop || '',
+        LoginBgMobile: config.SiteConfig.LoginBgMobile || '',
       });
     }
   }, [config]);
@@ -5205,6 +5214,91 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
             <li>• 不配置：使用第三方弹幕API（开箱即用）</li>
             <li>• 自己部署：更稳定，支持更多平台（芒果TV、人人视频等），可自定义过滤规则</li>
             <li>• 智能降级：自建API失败时自动使用第三方API，确保弹幕功能始终可用</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* 登录页背景配置 */}
+      <div className='border-t border-gray-200 dark:border-gray-700 pt-6'>
+        <h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-4'>
+          🖼️ 登录页背景
+        </h3>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mb-4'>
+          自定义登录页面的背景图片，留空则使用 Bing 每日壁纸
+        </p>
+
+        {/* 桌面端背景 */}
+        <div className='mb-6'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            桌面端背景图
+          </label>
+          <input
+            type='text'
+            value={siteSettings.LoginBgDesktop || ''}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({ ...prev, LoginBgDesktop: e.target.value }))
+            }
+            placeholder='请输入图片URL直链，如 https://example.com/bg.jpg'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            建议使用 1920x1080 或更高分辨率的横向图片
+          </p>
+          {siteSettings.LoginBgDesktop && (
+            <div className='mt-2 relative w-48 h-28 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600'>
+              <img
+                src={siteSettings.LoginBgDesktop}
+                alt='桌面端背景预览'
+                className='w-full h-full object-cover'
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 移动端背景 */}
+        <div className='mb-6'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            移动端背景图
+          </label>
+          <input
+            type='text'
+            value={siteSettings.LoginBgMobile || ''}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({ ...prev, LoginBgMobile: e.target.value }))
+            }
+            placeholder='请输入图片URL直链，如 https://example.com/bg-mobile.jpg'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            建议使用 1080x1920 或类似比例的竖向图片，留空则使用桌面端背景
+          </p>
+          {siteSettings.LoginBgMobile && (
+            <div className='mt-2 relative w-20 h-36 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600'>
+              <img
+                src={siteSettings.LoginBgMobile}
+                alt='移动端背景预览'
+                className='w-full h-full object-cover'
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 提示信息 */}
+        <div className='bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4'>
+          <h4 className='text-sm font-medium text-amber-900 dark:text-amber-300 mb-2'>
+            💡 背景图片说明
+          </h4>
+          <ul className='text-xs text-amber-700 dark:text-amber-400 space-y-1'>
+            <li>• 支持 JPG、PNG、WebP 等常见图片格式</li>
+            <li>• 建议使用 CDN 或图床链接以获得更好的加载速度</li>
+            <li>• 移动端背景留空时会自动使用桌面端背景</li>
+            <li>• 两个都留空则使用 Bing 每日壁纸（默认）</li>
           </ul>
         </div>
       </div>
