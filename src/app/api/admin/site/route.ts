@@ -183,11 +183,13 @@ export async function POST(request: NextRequest) {
       console.warn('[API] 页面缓存刷新失败（非阻塞）:', e);
     }
 
+    // 🔥 添加强制no-cache headers，防止Docker环境下Next.js Router Cache问题
+    // 参考：https://github.com/vercel/next.js/issues/62071
     return NextResponse.json(
-      { ok: true },
+      { ok: true, shouldReload: true }, // 添加shouldReload标志通知前端刷新页面
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', // 不缓存结果
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
         },

@@ -4493,13 +4493,17 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           throw new Error(data.error || `保存失败: ${resp.status}`);
         }
 
-        await refreshConfig();
-        showSuccess('保存成功，即将刷新页面...', showAlert);
+        const data = await resp.json();
 
-        // 延迟 1 秒后刷新整个页面，让用户看到成功提示
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        await refreshConfig();
+        showSuccess('保存成功', showAlert);
+
+        // 🔥 如果API返回shouldReload标志，自动刷新页面使配置立即生效（解决Docker缓存问题）
+        if (data.shouldReload) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000); // 1秒后刷新，让用户看到成功提示
+        }
       } catch (err) {
         showError(err instanceof Error ? err.message : '保存失败', showAlert);
         throw err;
