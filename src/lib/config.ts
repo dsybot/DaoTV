@@ -304,13 +304,9 @@ export async function getConfig(): Promise<AdminConfig> {
   // 🔥 防止 Next.js 在 Docker 环境下缓存配置（解决站点名称更新问题）
   unstable_noStore();
 
-  const now = Date.now();
-
-  // 🔥 修复：添加时间戳检查，避免 Vercel 多实例缓存不一致
-  // 缓存仅保留5秒，过期后强制重新从数据库读取
-  if (cachedConfig && (now - cacheTimestamp) < CACHE_DURATION) {
-    return cachedConfig;
-  }
+  // 🔥 完全移除内存缓存检查 - Docker 环境下模块级变量不会被清除
+  // 参考：https://nextjs.org/docs/app/guides/memory-usage
+  // 每次都从数据库读取最新配置，确保动态配置立即生效
 
   // 读 db
   let adminConfig: AdminConfig | null = null;
@@ -325,10 +321,11 @@ export async function getConfig(): Promise<AdminConfig> {
     adminConfig = await getInitConfig("");
   }
   adminConfig = await configSelfCheck(adminConfig);
+
+  // 🔥 仍然更新 cachedConfig 以保持向后兼容，但不再依赖它
   cachedConfig = adminConfig;
-  cacheTimestamp = now; // 更新缓存时间戳
-  db.saveAdminConfig(cachedConfig);
-  return cachedConfig;
+
+  return adminConfig;
 }
 
 // 清除配置缓存，强制重新从数据库读取
