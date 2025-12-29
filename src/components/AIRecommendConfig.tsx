@@ -28,6 +28,9 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
     tavilyApiKeys: [] as string[]
   });
 
+  // Tavily API Keys 原始输入（逗号分隔的字符串）
+  const [tavilyKeysInput, setTavilyKeysInput] = useState('');
+
   // 常用模型参考（建议使用支持联网搜索的模型）
   const MODEL_EXAMPLES = [
     'gpt-5 (OpenAI)',
@@ -48,6 +51,7 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
   // 从config加载设置
   useEffect(() => {
     if (config?.AIRecommendConfig) {
+      const keys = config.AIRecommendConfig.tavilyApiKeys || [];
       setAiSettings({
         enabled: config.AIRecommendConfig.enabled ?? false,
         apiUrl: config.AIRecommendConfig.apiUrl || 'https://api.openai.com/v1',
@@ -57,8 +61,10 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
         maxTokens: config.AIRecommendConfig.maxTokens ?? 3000,
         enableOrchestrator: config.AIRecommendConfig.enableOrchestrator ?? false,
         enableWebSearch: config.AIRecommendConfig.enableWebSearch ?? false,
-        tavilyApiKeys: config.AIRecommendConfig.tavilyApiKeys || []
+        tavilyApiKeys: keys
       });
+      // 设置输入框的显示值
+      setTavilyKeysInput(keys.join(', '));
     }
   }, [config]);
 
@@ -70,31 +76,42 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
 
   // 保存AI推荐配置
   const handleSave = async () => {
+    // 先分割Tavily Keys输入
+    const keys = tavilyKeysInput
+      .split(/[,\n]+/)
+      .map(k => k.trim())
+      .filter(k => k.length > 0);
+
+    const settingsToSave = {
+      ...aiSettings,
+      tavilyApiKeys: keys
+    };
+
     // 基本验证
-    if (aiSettings.enabled) {
-      if (!aiSettings.apiUrl.trim()) {
+    if (settingsToSave.enabled) {
+      if (!settingsToSave.apiUrl.trim()) {
         showMessage('error', '请填写API地址');
         return;
       }
-      if (!aiSettings.apiKey.trim()) {
+      if (!settingsToSave.apiKey.trim()) {
         showMessage('error', '请填写API密钥');
         return;
       }
-      if (!aiSettings.model.trim()) {
+      if (!settingsToSave.model.trim()) {
         showMessage('error', '请选择或填写模型名称');
         return;
       }
-      if (aiSettings.temperature < 0 || aiSettings.temperature > 2) {
+      if (settingsToSave.temperature < 0 || settingsToSave.temperature > 2) {
         showMessage('error', '温度参数应在0-2之间');
         return;
       }
-      if (aiSettings.maxTokens < 1 || aiSettings.maxTokens > 150000) {
+      if (settingsToSave.maxTokens < 1 || settingsToSave.maxTokens > 150000) {
         showMessage('error', '最大Token数应在1-150000之间（GPT-5支持128k，推理模型建议2000+）');
         return;
       }
       // 如果启用了联网搜索，验证Tavily API Keys
-      if (aiSettings.enableOrchestrator && aiSettings.enableWebSearch) {
-        if (!aiSettings.tavilyApiKeys || aiSettings.tavilyApiKeys.length === 0) {
+      if (settingsToSave.enableOrchestrator && settingsToSave.enableWebSearch) {
+        if (!keys || keys.length === 0) {
           showMessage('error', '启用联网搜索需要至少配置一个Tavily API Key');
           return;
         }
@@ -106,7 +123,7 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
       const response = await fetch('/api/admin/ai-recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(aiSettings)
+        body: JSON.stringify(settingsToSave)
       });
 
       if (!response.ok) {
@@ -479,10 +496,14 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                   </label>
                   <input
                     type='text'
-                    value={aiSettings.tavilyApiKeys.join(', ')}
+                    value={tavilyKeysInput}
                     onChange={(e) => {
-                      // 同时支持逗号和换行分隔
-                      const keys = e.target.value
+                      // 直接保存原始输入，不做分割
+                      setTavilyKeysInput(e.target.value);
+                    }}
+                    onBlur={() => {
+                      // 失焦时分割并更新到settings（用于显示数量）
+                      const keys = tavilyKeysInput
                         .split(/[,\n]+/)
                         .map(k => k.trim())
                         .filter(k => k.length > 0);
