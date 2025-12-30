@@ -293,23 +293,23 @@ function LoginPageClient() {
       })()}
 
       {/* 渐变叠加层 */}
-      <div className='absolute inset-0 bg-linear-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
-      <div className='absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-black/30' />
+      <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
+      <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
       <div className='absolute top-3 right-3 sm:top-4 sm:right-4 z-20'>
         <ThemeToggle />
       </div>
       <div className='relative z-10 w-full max-w-md rounded-2xl sm:rounded-3xl bg-white/30 dark:bg-zinc-900/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-6 sm:p-10 border border-white/30 dark:border-white/10 animate-fade-in'>
         {/* 装饰性光效 */}
-        <div className='absolute -top-20 -left-20 w-40 h-40 bg-linear-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse' />
-        <div className='absolute -bottom-20 -right-20 w-40 h-40 bg-linear-to-br from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse' style={{ animationDelay: '1s' }} />
+        <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse' />
+        <div className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse' style={{ animationDelay: '1s' }} />
 
         {/* 标题区域 */}
         <div className='text-center mb-6 sm:mb-8'>
-          <div className='inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-linear-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/50 dark:shadow-green-500/30'>
+          <div className='inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/50 dark:shadow-green-500/30'>
             <Sparkles className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
           </div>
-          <h1 className='text-transparent bg-clip-text bg-linear-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
+          <h1 className='text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
             {siteName}
           </h1>
           <p className='text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-medium'>欢迎回来，请登录您的账户</p>
@@ -373,7 +373,7 @@ function LoginPageClient() {
             }
             className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-green-600/80 hover:bg-green-600/90 backdrop-blur-sm py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-green-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
           >
-            <span className='absolute inset-0 w-full h-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
+            <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
             <Lock className='h-4 w-4 sm:h-5 sm:w-5' />
             {loading ? '登录中...' : '立即登录'}
           </button>
@@ -455,73 +455,76 @@ function LoginPageClient() {
               })()
             )}
           </div>
-        )}
+        )
+        }
 
         {/* Telegram Magic Link 登录 */}
-        {telegramEnabled && (
-          <div className='mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 dark:border-white/10'>
-            <p className='text-center text-gray-700 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4'>
-              或使用 Telegram 登录
-            </p>
-
-            {/* Telegram 用户名输入 */}
-            <div className='mb-3 sm:mb-4'>
-              <label className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'>
-                Telegram 用户名
-              </label>
-              <div className='relative'>
-                <div className='absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none'>
-                  <Send className='h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400' />
-                </div>
-                <input
-                  type='text'
-                  value={telegramUsername}
-                  onChange={(e) => setTelegramUsername(e.target.value)}
-                  placeholder='输入您的 Telegram 用户名'
-                  className='block w-full pl-9 sm:pl-10 pr-2.5 sm:pr-3 py-2.5 sm:py-3 rounded-lg sm:rounded-xl ring-1 ring-white/40 dark:ring-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/70 bg-white/40 dark:bg-white/10 backdrop-blur-sm text-gray-900 dark:text-white text-sm sm:text-base transition-all'
-                  disabled={telegramLoading}
-                />
-              </div>
-              <p className='mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300'>
-                💡 输入您的 Telegram 用户名（不含 @）
+        {
+          telegramEnabled && (
+            <div className='mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 dark:border-white/10'>
+              <p className='text-center text-gray-700 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4'>
+                或使用 Telegram 登录
               </p>
-            </div>
 
-            <button
-              onClick={handleTelegramLogin}
-              disabled={telegramLoading || !telegramUsername.trim()}
-              className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-blue-600/80 hover:bg-blue-600/90 backdrop-blur-sm py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
-            >
-              <span className='absolute inset-0 w-full h-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
-              <Send className='h-4 w-4 sm:h-5 sm:w-5' />
-              {telegramLoading ? '正在打开 Telegram...' : '通过 Telegram 登录'}
-            </button>
-
-            {telegramDeepLink && (
-              <div className='mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-blue-500/20 backdrop-blur-sm border border-blue-400/30'>
-                <p className='text-xs sm:text-sm text-blue-100 mb-1.5 sm:mb-2'>
-                  📱 已在新标签页打开 Telegram
-                </p>
-                <p className='text-[11px] sm:text-xs text-blue-200'>
-                  如果没有自动打开，请点击{' '}
-                  <a
-                    href={telegramDeepLink}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='underline font-semibold'
-                  >
-                    这里
-                  </a>
+              {/* Telegram 用户名输入 */}
+              <div className='mb-3 sm:mb-4'>
+                <label className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'>
+                  Telegram 用户名
+                </label>
+                <div className='relative'>
+                  <div className='absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none'>
+                    <Send className='h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400' />
+                  </div>
+                  <input
+                    type='text'
+                    value={telegramUsername}
+                    onChange={(e) => setTelegramUsername(e.target.value)}
+                    placeholder='输入您的 Telegram 用户名'
+                    className='block w-full pl-9 sm:pl-10 pr-2.5 sm:pr-3 py-2.5 sm:py-3 rounded-lg sm:rounded-xl ring-1 ring-white/40 dark:ring-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/70 bg-white/40 dark:bg-white/10 backdrop-blur-sm text-gray-900 dark:text-white text-sm sm:text-base transition-all'
+                    disabled={telegramLoading}
+                  />
+                </div>
+                <p className='mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300'>
+                  💡 输入您的 Telegram 用户名（不含 @）
                 </p>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+
+              <button
+                onClick={handleTelegramLogin}
+                disabled={telegramLoading || !telegramUsername.trim()}
+                className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-blue-600/80 hover:bg-blue-600/90 backdrop-blur-sm py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
+              >
+                <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
+                <Send className='h-4 w-4 sm:h-5 sm:w-5' />
+                {telegramLoading ? '正在打开 Telegram...' : '通过 Telegram 登录'}
+              </button>
+
+              {telegramDeepLink && (
+                <div className='mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-blue-500/20 backdrop-blur-sm border border-blue-400/30'>
+                  <p className='text-xs sm:text-sm text-blue-100 mb-1.5 sm:mb-2'>
+                    📱 已在新标签页打开 Telegram
+                  </p>
+                  <p className='text-[11px] sm:text-xs text-blue-200'>
+                    如果没有自动打开，请点击{' '}
+                    <a
+                      href={telegramDeepLink}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='underline font-semibold'
+                    >
+                      这里
+                    </a>
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        }
+      </div >
 
       {/* 版本信息显示 */}
-      <VersionDisplay />
-    </div>
+      < VersionDisplay />
+    </div >
   );
 }
 
