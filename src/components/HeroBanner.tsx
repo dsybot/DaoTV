@@ -252,9 +252,9 @@ export default function HeroBanner({
             )}
           </div>
 
-          {/* 描述 - 限制2-3行，手机端隐藏 */}
+          {/* 描述 - 平板2行，桌面3行 */}
           {currentItem.description && (
-            <p className="hidden sm:block text-sm sm:text-base md:text-lg lg:text-xl text-white/90 line-clamp-2 sm:line-clamp-3 drop-shadow-lg leading-relaxed max-w-xl">
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 line-clamp-2 md:line-clamp-3 drop-shadow-lg leading-relaxed max-w-xl">
               {currentItem.description}
             </p>
           )}
