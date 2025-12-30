@@ -146,7 +146,7 @@ export function useWatchRoomSync({
       }, 1000);  // 给播放器足够时间加载新集数
 
     } else {
-      // 不同的剧或不同的源，使用 router.push 跳转（客户端路由，不刷新页面）
+      // 不同的剧或不同的源，使用完整页面跳转（强制刷新）
       const params = new URLSearchParams();
       params.set('id', state.videoId);
       params.set('source', state.source);
@@ -164,10 +164,12 @@ export function useWatchRoomSync({
         params.set('stitle', state.searchTitle);
       }
       const url = `/play?${params.toString()}`;
-      console.log('[PlaySync] Different show or source, routing to:', url);
-      router.push(url);
+      console.log('[PlaySync] Different show or source, redirecting to:', url);
+
+      // 使用 window.location.href 强制刷新页面（切换源需要重新加载）
+      window.location.href = url;
     }
-  }, [videoTitle, videoYear, currentSource, episodeIndex, setCurrentEpisodeIndex, artPlayerRef, router]);
+  }, [videoTitle, videoYear, currentSource, episodeIndex, setCurrentEpisodeIndex, artPlayerRef]);
 
   // 确认切换源
   const handleConfirmSourceSwitch = useCallback(() => {
