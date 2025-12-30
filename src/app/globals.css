@@ -370,6 +370,20 @@ div[data-media-provider] video {
   object-fit: contain;
 }
 
+/* Netflix风格进度条闪烁动画 */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
 .art-poster {
   background-size: contain !important; /* 使图片完整展示 */
   background-position: center center !important; /* 居中显示 */

@@ -1267,26 +1267,32 @@ function PlayPageClient() {
 
   // 完整测速（桌面设备）
   const fullSpeedTest = async (sources: SearchResult[]): Promise<SearchResult> => {
+    // 限制最大测试数量为20个源（平衡速度和覆盖率）
+    const maxTestCount = 20;
+    const sourcesToTest = sources.slice(0, maxTestCount);
+
+    console.log(`开始测速: 共${sources.length}个源，将测试前${sourcesToTest.length}个`);
+
     // 初始化测速进度
     setSpeedTestProgress({
       current: 0,
-      total: sources.length,
+      total: sourcesToTest.length,
       currentSourceName: '',
       results: [],
     });
 
     // 桌面设备使用小批量并发，避免创建过多实例
-    const concurrency = 2;
+    const concurrency = 3;
     const allResults: Array<{
       source: SearchResult;
       testResult: { quality: string; loadSpeed: string; pingTime: number };
     } | null> = [];
 
-    let completedCount = 0;
+    let shouldStop = false; // 早停标志
 
-    for (let i = 0; i < sources.length; i += concurrency) {
-      const batch = sources.slice(i, i + concurrency);
-      console.log(`测速批次 ${Math.floor(i / concurrency) + 1}/${Math.ceil(sources.length / concurrency)}: ${batch.length} 个源`);
+    for (let i = 0; i < sourcesToTest.length && !shouldStop; i += concurrency) {
+      const batch = sourcesToTest.slice(i, i + concurrency);
+      console.log(`测速批次 ${Math.floor(i / concurrency) + 1}/${Math.ceil(sourcesToTest.length / concurrency)}: ${batch.length} 个源`);
 
       const batchResults = await Promise.all(
         batch.map(async (source, batchIndex) => {
@@ -1363,11 +1369,32 @@ function PlayPageClient() {
       );
 
       allResults.push(...batchResults);
-      completedCount += batch.length;
 
-      // 批次间延迟，让资源有时间清理
-      if (i + concurrency < sources.length) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // 🎯 保守策略早停判断：找到高质量源
+      const successfulInBatch = batchResults.filter(Boolean) as Array<{
+        source: SearchResult;
+        testResult: { quality: string; loadSpeed: string; pingTime: number };
+      }>;
+
+      for (const result of successfulInBatch) {
+        const { quality, loadSpeed } = result.testResult;
+        const speedMatch = loadSpeed.match(/^([\d.]+)\s*MB\/s$/);
+        const speedMBps = speedMatch ? parseFloat(speedMatch[1]) : 0;
+
+        // 🛑 保守策略：只有非常优质的源才早停
+        const is4KHighSpeed = quality === '4K' && speedMBps >= 8;
+        const is2KHighSpeed = quality === '2K' && speedMBps >= 6;
+
+        if (is4KHighSpeed || is2KHighSpeed) {
+          console.log(`✓ 找到顶级优质源: ${result.source.source_name} (${quality}, ${loadSpeed})，停止测速`);
+          shouldStop = true;
+          break;
+        }
+      }
+
+      // 批次间延迟，让资源有时间清理（减少延迟时间）
+      if (i + concurrency < sourcesToTest.length && !shouldStop) {
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
 
@@ -5510,7 +5537,7 @@ function PlayPageClient() {
                 {loadingMessage}
               </p>
 
-              {/* 实时测速进度 */}
+              {/* Netflix风格实时测速进度 */}
               {loadingStage === 'preferring' && speedTestProgress.total > 0 && (
                 <div className='mt-6 w-full max-w-xl mx-auto space-y-4 pb-20'>
                   {/* 当前测速源和进度 */}
@@ -5519,25 +5546,32 @@ function PlayPageClient() {
                       <span className='text-sm font-medium text-gray-600 dark:text-gray-400'>
                         测速进度
                       </span>
-                      <span className='text-sm font-bold text-green-600 dark:text-green-400'>
+                      <span className='text-sm font-bold text-red-600 dark:text-red-400'>
                         {speedTestProgress.current} / {speedTestProgress.total}
                       </span>
                     </div>
 
-                    {/* 进度条 */}
-                    <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden mb-3'>
+                    {/* Netflix风格进度条 */}
+                    <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden mb-3'>
                       <div
-                        className='h-full bg-linear-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-300'
+                        className='h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-300 ease-out relative overflow-hidden'
                         style={{
                           width: `${(speedTestProgress.current / speedTestProgress.total) * 100}%`,
                         }}
-                      ></div>
+                      >
+                        {/* 闪烁效果 */}
+                        <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer'></div>
+                      </div>
                     </div>
 
                     {/* 当前测速源 */}
                     {speedTestProgress.currentSourceName && (
                       <div className='flex items-center space-x-2'>
-                        <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                        {/* 脉动指示器 */}
+                        <div className='relative'>
+                          <div className='w-2 h-2 bg-red-500 rounded-full animate-pulse'></div>
+                          <div className='absolute inset-0 w-2 h-2 bg-red-500 rounded-full animate-ping'></div>
+                        </div>
                         <span className='text-sm text-gray-700 dark:text-gray-300'>
                           正在测速: <span className='font-semibold'>{speedTestProgress.currentSourceName}</span>
                         </span>
