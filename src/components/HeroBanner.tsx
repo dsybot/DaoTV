@@ -144,7 +144,7 @@ export default function HeroBanner({
 
   return (
     <div
-      className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh] overflow-hidden group rounded-2xl sm:rounded-3xl"
+      className="relative w-full aspect-[21/9] sm:aspect-[21/9] md:aspect-[21/9] overflow-hidden group rounded-2xl sm:rounded-3xl"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...swipeHandlers}
@@ -171,7 +171,7 @@ export default function HeroBanner({
                 src={getProxiedImageUrl(item.backdrop || item.poster)}
                 alt={item.title}
                 fill
-                className="object-contain object-center"
+                className="object-cover object-center"
                 priority={index === 0}
                 quality={100}
                 sizes="100vw"
@@ -182,7 +182,7 @@ export default function HeroBanner({
               {enableVideo && item.trailerUrl && index === currentIndex && (
                 <video
                   ref={videoRef}
-                  className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
                   autoPlay
                   muted={isMuted}
