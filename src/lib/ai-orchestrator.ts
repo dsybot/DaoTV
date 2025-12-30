@@ -271,7 +271,7 @@ async function fetchDoubanData(doubanId: number): Promise<any | null> {
     // 直接导入并调用豆瓣scraper函数（避免HTTP请求，支持Vercel/Docker）
     const { scrapeDoubanDetails } = await import('@/app/api/douban/details/route');
 
-    const result = await scrapeDoubanDetails(doubanId.toString());
+    const result = await scrapeDoubanDetails(doubanId.toString(), '');
 
     if (result.code === 200 && result.data) {
       console.log(`✅ 豆瓣数据: ${result.data.title} (${result.data.rate}分)`);
