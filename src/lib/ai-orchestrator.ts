@@ -260,6 +260,33 @@ export function formatTavilyResults(results: TavilySearchResult): string {
 }
 
 /**
+ * 获取豆瓣详情数据（直接调用scraper函数，支持所有部署环境）
+ */
+async function fetchDoubanData(doubanId: number): Promise<any | null> {
+  if (!doubanId || doubanId <= 0) {
+    return null;
+  }
+
+  try {
+    // 直接导入并调用豆瓣scraper函数（避免HTTP请求，支持Vercel/Docker）
+    const { scrapeDoubanDetails } = await import('@/app/api/douban/details/route');
+
+    const result = await scrapeDoubanDetails(doubanId.toString());
+
+    if (result.code === 200 && result.data) {
+      console.log(`✅ 豆瓣数据: ${result.data.title} (${result.data.rate}分)`);
+      return result.data;
+    }
+
+    console.warn(`⚠️ 豆瓣数据获取失败 (ID: ${doubanId}): ${result.message}`);
+    return null;
+  } catch (error) {
+    console.error(`❌ 获取豆瓣详情失败 (ID: ${doubanId}):`, error);
+    return null;
+  }
+}
+
+/**
  * 主协调函数（简化版）
  */
 export async function orchestrateDataSources(
@@ -322,7 +349,7 @@ ${config?.enableWebSearch && intent.needWebSearch ? '- 搜索最新影视资讯�
     }
   }
 
-  // 4. 添加视频上下文（如果有）
+  // 4. 添加视频上下文（如果有）+ 豆瓣详情数据增强
   if (context?.title) {
     systemPrompt += `\n## 【当前视频上下文】\n`;
     systemPrompt += `用户正在浏览: ${context.title}`;
@@ -331,6 +358,58 @@ ${config?.enableWebSearch && intent.needWebSearch ? '- 搜索最新影视资讯�
       systemPrompt += `，当前第 ${context.currentEpisode} 集`;
     }
     systemPrompt += '\n';
+
+    // 🔥 如果有豆瓣ID，获取详细信息增强AI上下文
+    if (context.douban_id) {
+      console.log(`🎬 开始获取豆瓣详情 (ID: ${context.douban_id})...`);
+      const doubanData = await fetchDoubanData(context.douban_id);
+
+      if (doubanData) {
+        systemPrompt += `\n## 【豆瓣影片详情】（真实数据，优先参考）\n`;
+        systemPrompt += `片名: ${doubanData.title}`;
+        if (doubanData.year) systemPrompt += ` (${doubanData.year})`;
+        systemPrompt += `\n`;
+
+        if (doubanData.rate) {
+          systemPrompt += `豆瓣评分: ${doubanData.rate}/10\n`;
+        }
+
+        if (doubanData.directors && doubanData.directors.length > 0) {
+          systemPrompt += `导演: ${doubanData.directors.join('、')}\n`;
+        }
+
+        if (doubanData.cast && doubanData.cast.length > 0) {
+          const mainCast = doubanData.cast.slice(0, 5).join('、');
+          systemPrompt += `主演: ${mainCast}\n`;
+        }
+
+        if (doubanData.genres && doubanData.genres.length > 0) {
+          systemPrompt += `类型: ${doubanData.genres.join('、')}\n`;
+        }
+
+        if (doubanData.countries && doubanData.countries.length > 0) {
+          systemPrompt += `制片地区: ${doubanData.countries.join('、')}\n`;
+        }
+
+        if (doubanData.plot_summary) {
+          // 限制简介长度，避免token过多
+          const summary = doubanData.plot_summary.length > 300
+            ? doubanData.plot_summary.substring(0, 300) + '...'
+            : doubanData.plot_summary;
+          systemPrompt += `剧情简介: ${summary}\n`;
+        }
+
+        if (doubanData.episodes) {
+          systemPrompt += `总集数: ${doubanData.episodes}集\n`;
+        }
+
+        systemPrompt += `\n**重要提示**: 以上是来自豆瓣的真实数据，请优先参考这些信息回答用户问题，不要凭记忆臆测。\n`;
+
+        console.log(`✅ 豆瓣详情已注入AI上下文`);
+      } else {
+        console.log(`⚠️ 豆瓣详情获取失败，继续使用基础上下文`);
+      }
+    }
   }
 
   console.log('📝 生成的系统提示词长度:', systemPrompt.length);
