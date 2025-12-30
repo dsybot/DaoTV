@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { messages, model, temperature, max_tokens, max_completion_tokens, context, stream } = body as ChatRequest & { context?: any };
 
+    console.log('🔍 请求参数:', { stream, hasAIModel, hasTavilySearch });
+
     // 验证请求格式
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
@@ -331,7 +333,30 @@ ${youtubeEnabled && youtubeConfig.apiKey ? `### YouTube推荐格式：
         formattedContent += `抱歉，没有找到相关信息。请尝试其他关键词。`;
       }
 
-      // 构建响应
+      // 🔥 如果是流式请求，返回SSE流
+      if (stream) {
+        console.log('📡 返回SSE流式搜索结果');
+        const encoder = new TextEncoder();
+        const readableStream = new ReadableStream({
+          start(controller) {
+            // 发送完整内容
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: formattedContent })}\n\n`));
+            // 发送结束标记
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        });
+
+        return new NextResponse(readableStream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        });
+      }
+
+      // 非流式请求，返回普通JSON
       const response = {
         id: `search-${Date.now()}`,
         object: 'chat.completion',
@@ -357,6 +382,8 @@ ${youtubeEnabled && youtubeConfig.apiKey ? `### YouTube推荐格式：
 
     // 🔥 如果没有AI模型且没有搜索结果，返回友好提示
     if (!hasAIModel) {
+      console.log('💡 返回友好使用提示（纯搜索模式）');
+
       // 构建友好的提示内容
       const friendlyMessage = `> 💡 **提示**：当前系统仅支持**实时搜索功能**（未配置AI对话模型）
 
@@ -399,7 +426,30 @@ ${context?.title ? `**关于当前影片（${context.title}）：**
 2. 或询问**特定演员/导演**的作品
 3. 如需更多功能，请联系管理员配置AI对话模型`;
 
-      // 返回格式化的友好提示（模拟AI响应格式）
+      // 🔥 如果是流式请求，返回SSE流
+      if (stream) {
+        console.log('📡 返回SSE流式友好提示');
+        const encoder = new TextEncoder();
+        const readableStream = new ReadableStream({
+          start(controller) {
+            // 发送完整内容
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: friendlyMessage })}\n\n`));
+            // 发送结束标记
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        });
+
+        return new NextResponse(readableStream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        });
+      }
+
+      // 非流式请求，返回普通JSON
       return NextResponse.json({
         id: `search-hint-${Date.now()}`,
         object: 'chat.completion',
