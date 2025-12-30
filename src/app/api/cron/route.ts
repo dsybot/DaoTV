@@ -7,8 +7,6 @@ import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
-import { generateCarouselData } from '@/lib/carousel-generator';
-import { setCachedCarousel, getCarouselCacheStatus } from '@/lib/carousel-cache';
 
 export const runtime = 'nodejs';
 
@@ -89,14 +87,6 @@ async function cronJob() {
     console.log('✅ 播放记录和收藏刷新完成');
   } catch (err) {
     console.error('❌ 播放记录和收藏刷新失败:', err);
-  }
-
-  try {
-    console.log('🎬 刷新首页轮播图...');
-    await refreshCarousel();
-    console.log('✅ 首页轮播图刷新完成');
-  } catch (err) {
-    console.error('❌ 首页轮播图刷新失败:', err);
   }
 
   console.log('🎉 定时任务执行完成');
@@ -557,51 +547,3 @@ async function optimizeActiveUserLevels() {
   }
 }
 
-/**
- * 刷新轮播图缓存
- * 
- * 新策略：
- * 1. 直接调用生成器生成数据
- * 2. 将结果缓存到服务器
- * 3. 用户访问时直接读缓存（极快）
- */
-async function refreshCarousel() {
-  try {
-    console.log('🎬 开始刷新轮播图缓存...');
-
-    // 查看当前缓存状态
-    const beforeStatus = await getCarouselCacheStatus();
-    if (beforeStatus.exists) {
-      console.log(`📊 当前缓存: ${beforeStatus.itemCount}项，${beforeStatus.ageMinutes}分钟前生成`);
-    } else {
-      console.log('📊 当前无缓存');
-    }
-
-    // 生成新数据
-    const startTime = Date.now();
-    const carouselList = await generateCarouselData();
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-
-    if (carouselList.length === 0) {
-      console.error('❌ 生成失败，未获取到数据');
-      return;
-    }
-
-    console.log(`✅ 数据生成成功，共 ${carouselList.length} 项（耗时 ${duration}秒）`);
-
-    // 保存到缓存
-    await setCachedCarousel(carouselList);
-
-    // 输出示例
-    if (carouselList.length > 0) {
-      const sampleTitles = carouselList.slice(0, 3).map((item: any) => item.title).join(', ');
-      console.log(`📝 示例内容: ${sampleTitles}...`);
-    }
-
-    console.log('🎉 轮播图缓存刷新完成');
-
-  } catch (error) {
-    console.error('❌ 刷新轮播图失败:', error);
-    throw error;
-  }
-}

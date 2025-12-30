@@ -299,7 +299,6 @@ interface SiteConfig {
   TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
-  EnableTMDBCarousel?: boolean;
   EnableDetailPage?: boolean;
   // 上映日程代理配置
   ReleaseCalendarProxy?: string;
@@ -4313,7 +4312,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBApiKeys: [],
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
-    EnableTMDBCarousel: false,
     EnableDetailPage: false,
     // 上映日程代理配置
     ReleaseCalendarProxy: '',
@@ -4378,7 +4376,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     if (config?.SiteConfig) {
       console.log('[SiteConfig] 从配置加载 TMDB 设置:', {
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch,
-        EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel,
       });
 
       setSiteSettings({
@@ -4400,7 +4397,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         TMDBApiKeys: config.SiteConfig.TMDBApiKeys || [],
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
-        EnableTMDBCarousel: config.SiteConfig.EnableTMDBCarousel ?? false,
         EnableDetailPage: config.SiteConfig.EnableDetailPage ?? false,
         // 上映日程代理配置
         ReleaseCalendarProxy: config.SiteConfig.ReleaseCalendarProxy || '',
@@ -4471,7 +4467,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
       try {
         console.log('[SiteConfig] 保存前 TMDB 设置:', {
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch,
-          EnableTMDBCarousel: siteSettings.EnableTMDBCarousel,
           EnableDetailPage: siteSettings.EnableDetailPage,
         });
 
@@ -4481,13 +4476,11 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           DisableYellowFilter: siteSettings.DisableYellowFilter ?? false,
           FluidSearch: siteSettings.FluidSearch ?? true,
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch ?? false,
-          EnableTMDBCarousel: siteSettings.EnableTMDBCarousel ?? false,
           EnableDetailPage: siteSettings.EnableDetailPage ?? false,
         };
 
         console.log('[SiteConfig] 将要保存 TMDB 设置:', {
           EnableTMDBActorSearch: dataToSave.EnableTMDBActorSearch,
-          EnableTMDBCarousel: dataToSave.EnableTMDBCarousel,
           EnableDetailPage: dataToSave.EnableDetailPage,
         });
 
@@ -5092,36 +5085,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableTMDBActorSearch ? 'translate-x-6' : 'translate-x-1'
-                }`}
-            />
-          </button>
-        </div>
-
-        {/* 启用TMDB轮播图 */}
-        <div className='flex items-center justify-between mb-6'>
-          <div>
-            <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-              启用 TMDB 轮播图
-            </label>
-            <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-              启用后首页将显示基于豆瓣热门和TMDB数据的轮播图
-            </p>
-          </div>
-          <button
-            type='button'
-            onClick={() =>
-              setSiteSettings((prev) => ({
-                ...prev,
-                EnableTMDBCarousel: !prev.EnableTMDBCarousel,
-              }))
-            }
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${siteSettings.EnableTMDBCarousel
-              ? 'bg-green-600'
-              : 'bg-gray-200 dark:bg-gray-700'
-              }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableTMDBCarousel ? 'translate-x-6' : 'translate-x-1'
                 }`}
             />
           </button>

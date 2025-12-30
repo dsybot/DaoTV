@@ -132,11 +132,11 @@ export async function isTMDBEnabled(): Promise<boolean> {
 }
 
 /**
- * 检查轮播图是否启用
+ * 检查轮播图是否启用（轮播图现在基于豆瓣数据，始终启用）
+ * @deprecated 轮播图不再依赖TMDB，此函数保留仅为兼容性
  */
 export async function isCarouselEnabled(): Promise<boolean> {
-  const config = await getConfig();
-  return !!(config.SiteConfig.EnableTMDBCarousel && hasTMDBApiKey(config));
+  return true;
 }
 
 // TMDB API Key 轮询索引（内存中维护）

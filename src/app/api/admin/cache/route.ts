@@ -3,7 +3,6 @@ import { getAuthInfoFromCookie } from '@/lib/auth';
 import { ClientCache } from '@/lib/client-cache';
 import { db } from '@/lib/db';
 import { DatabaseCacheManager } from '@/lib/database-cache';
-import { clearCarouselCache } from '@/lib/carousel-cache';
 
 export const runtime = 'nodejs';
 
@@ -23,22 +22,7 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get('action');
   const cacheType = searchParams.get('type');
 
-  // 如果有action=clear参数，执行清除操作
-  if (action === 'clear' && cacheType === 'carousel') {
-    try {
-      await clearCarouselCache();
-      return NextResponse.json({
-        success: true,
-        message: '轮播图缓存已清除，请刷新页面查看新数据'
-      });
-    } catch (error) {
-      console.error('清除轮播图缓存失败:', error);
-      return NextResponse.json({
-        success: false,
-        error: '清除缓存失败'
-      }, { status: 500 });
-    }
-  }
+  // 如果有action=clear参数，执行清除操作（已移除轮播图缓存清理功能）
 
   try {
     // 添加调试信息
@@ -142,12 +126,6 @@ export async function DELETE(request: NextRequest) {
       case 'youtube':
         clearedCount = await clearYouTubeCache();
         message = `已清理 ${clearedCount} 个YouTube搜索缓存项`;
-        break;
-
-      case 'carousel':
-        await clearCarouselCache();
-        clearedCount = 1;
-        message = '轮播图缓存已清除';
         break;
 
       case 'search':

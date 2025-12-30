@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys,
       TMDBLanguage,
       EnableTMDBActorSearch,
-      EnableTMDBCarousel,
       EnableDetailPage,
       ReleaseCalendarProxy,
       DanmuApiEndpoint,
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys?: string[];
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
-      EnableTMDBCarousel?: boolean;
       EnableDetailPage?: boolean;
       ReleaseCalendarProxy?: string;
       DanmuApiEndpoint?: string;
@@ -111,23 +109,8 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] 接收到的 TMDB 设置:', {
       EnableTMDBActorSearch,
-      EnableTMDBCarousel,
       EnableDetailPage,
     });
-
-    // 处理轮播图设置：如果是 undefined（新字段），使用数据库中的值或默认 false
-    // 如果明确传了 true/false，则使用传入的值
-    let finalEnableTMDBCarousel: boolean;
-    if (EnableTMDBCarousel !== undefined) {
-      // 前端明确传了值（true 或 false）
-      finalEnableTMDBCarousel = EnableTMDBCarousel;
-    } else if (adminConfig.SiteConfig.EnableTMDBCarousel !== undefined) {
-      // 数据库中有值，保持原值
-      finalEnableTMDBCarousel = adminConfig.SiteConfig.EnableTMDBCarousel;
-    } else {
-      // 首次添加此字段，默认关闭
-      finalEnableTMDBCarousel = false;
-    }
 
     // 处理详情页设置
     let finalEnableDetailPage: boolean;
@@ -158,7 +141,6 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys: (TMDBApiKeys || []).filter((k: string) => k && k.trim()),  // 过滤空值
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
-      EnableTMDBCarousel: finalEnableTMDBCarousel,
       EnableDetailPage: finalEnableDetailPage,
       ReleaseCalendarProxy: ReleaseCalendarProxy || '',
       DanmuApiEndpoint: DanmuApiEndpoint || '',
@@ -169,7 +151,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] 将要保存到数据库的 TMDB 设置:', {
       EnableTMDBActorSearch: adminConfig.SiteConfig.EnableTMDBActorSearch,
-      EnableTMDBCarousel: adminConfig.SiteConfig.EnableTMDBCarousel,
       EnableDetailPage: adminConfig.SiteConfig.EnableDetailPage,
     });
 

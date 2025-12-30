@@ -20,13 +20,13 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanCategories } from '@/lib/douban.client';
+import { getDoubanCategories, getDoubanDetails } from '@/lib/douban.client';
 import { DoubanItem } from '@/lib/types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
-import HomeCarousel from '@/components/HomeCarousel';
+import HeroBanner from '@/components/HeroBanner';
 import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
@@ -42,13 +42,14 @@ function HomeClient() {
   const [hotMovies, setHotMovies] = useState<DoubanItem[]>([]);
   const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
   const [hotVarietyShows, setHotVarietyShows] = useState<DoubanItem[]>([]);
+  const [hotAnime, setHotAnime] = useState<DoubanItem[]>([]);
   const [hotShortDramas, setHotShortDramas] = useState<ShortDramaItem[]>([]);
   const [bangumiCalendarData, setBangumiCalendarData] = useState<
     BangumiCalendarData[]
   >([]);
   const [upcomingReleases, setUpcomingReleases] = useState<ReleaseCalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { announcement, enableTMDBCarousel } = useSite();
+  const { announcement } = useSite();
   const [username, setUsername] = useState<string>('');
   const [layoutMode, setLayoutMode] = useState<'sidebar' | 'top'>('top');
 
@@ -175,8 +176,8 @@ function HomeClient() {
       try {
         setLoading(true);
 
-        // 并行获取热门电影、热门剧集、热门综艺、热门短剧和即将上映
-        const [moviesData, tvShowsData, varietyShowsData, shortDramasData, bangumiCalendarData, upcomingReleasesData] =
+        // 并行获取热门电影、热门剧集、热门综艺、热门动漫、热门短剧和即将上映
+        const [moviesData, tvShowsData, varietyShowsData, animeData, shortDramasData, bangumiCalendarData, upcomingReleasesData] =
           await Promise.allSettled([
             getDoubanCategories({
               kind: 'movie',
@@ -185,6 +186,7 @@ function HomeClient() {
             }),
             getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
             getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
+            getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv_animation' }),
             getRecommendedShortDramas(undefined, 8),
             GetBangumiCalendarData(),
             fetch('/api/release-calendar?limit=100').then(res => {
@@ -198,23 +200,180 @@ function HomeClient() {
 
         // 处理电影数据
         if (moviesData.status === 'fulfilled' && moviesData.value?.code === 200) {
-          setHotMovies(moviesData.value.list);
+          const movies = moviesData.value.list;
+          setHotMovies(movies);
+
+          // 性能优化：使用 requestIdleCallback 延迟加载详情，不阻塞初始渲染
+          const loadMovieDetails = () => {
+            Promise.all(
+              movies.slice(0, 2).map(async (movie) => {
+                try {
+                  const detailsRes = await getDoubanDetails(movie.id);
+                  if (detailsRes.code === 200 && detailsRes.data) {
+                    console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
+                    console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
+                    return {
+                      id: movie.id,
+                      plot_summary: detailsRes.data.plot_summary,
+                      backdrop: detailsRes.data.backdrop,
+                      trailerUrl: detailsRes.data.trailerUrl,
+                    };
+                  }
+                } catch (error) {
+                  console.warn(`获取电影 ${movie.id} 详情失败:`, error);
+                }
+                return null;
+              })
+            ).then((results) => {
+              setHotMovies(prev =>
+                prev.map(m => {
+                  const detail = results.find(r => r?.id === m.id);
+                  return detail ? {
+                    ...m,
+                    plot_summary: detail.plot_summary,
+                    backdrop: detail.backdrop,
+                    trailerUrl: detail.trailerUrl,
+                  } : m;
+                })
+              );
+            });
+          };
+
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(loadMovieDetails, { timeout: 2000 });
+          } else {
+            setTimeout(loadMovieDetails, 1000);
+          }
         } else {
           console.warn('获取热门电影失败:', moviesData.status === 'rejected' ? moviesData.reason : '数据格式错误');
         }
 
         // 处理剧集数据
         if (tvShowsData.status === 'fulfilled' && tvShowsData.value?.code === 200) {
-          setHotTvShows(tvShowsData.value.list);
+          const tvShows = tvShowsData.value.list;
+          setHotTvShows(tvShows);
+
+          // 性能优化：使用 requestIdleCallback 延迟加载详情
+          const loadTvDetails = () => {
+            Promise.all(
+              tvShows.slice(0, 2).map(async (show) => {
+                try {
+                  const detailsRes = await getDoubanDetails(show.id);
+                  if (detailsRes.code === 200 && detailsRes.data) {
+                    return {
+                      id: show.id,
+                      plot_summary: detailsRes.data.plot_summary,
+                      backdrop: detailsRes.data.backdrop,
+                      trailerUrl: detailsRes.data.trailerUrl,
+                    };
+                  }
+                } catch (error) {
+                  console.warn(`获取剧集 ${show.id} 详情失败:`, error);
+                }
+                return null;
+              })
+            ).then((results) => {
+              setHotTvShows(prev =>
+                prev.map(s => {
+                  const detail = results.find(r => r?.id === s.id);
+                  return detail ? {
+                    ...s,
+                    plot_summary: detail.plot_summary,
+                    backdrop: detail.backdrop,
+                    trailerUrl: detail.trailerUrl,
+                  } : s;
+                })
+              );
+            });
+          };
+
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(loadTvDetails, { timeout: 2000 });
+          } else {
+            setTimeout(loadTvDetails, 1000);
+          }
         } else {
           console.warn('获取热门剧集失败:', tvShowsData.status === 'rejected' ? tvShowsData.reason : '数据格式错误');
         }
 
         // 处理综艺数据
         if (varietyShowsData.status === 'fulfilled' && varietyShowsData.value?.code === 200) {
-          setHotVarietyShows(varietyShowsData.value.list);
+          const varietyShows = varietyShowsData.value.list;
+          setHotVarietyShows(varietyShows);
+
+          // 性能优化：使用 requestIdleCallback 延迟加载详情
+          if (varietyShows.length > 0) {
+            const loadVarietyDetails = () => {
+              const show = varietyShows[0];
+              getDoubanDetails(show.id)
+                .then((detailsRes) => {
+                  if (detailsRes.code === 200 && detailsRes.data) {
+                    setHotVarietyShows(prev =>
+                      prev.map(s => s.id === show.id
+                        ? {
+                          ...s,
+                          plot_summary: detailsRes.data!.plot_summary,
+                          backdrop: detailsRes.data!.backdrop,
+                          trailerUrl: detailsRes.data!.trailerUrl,
+                        }
+                        : s
+                      )
+                    );
+                  }
+                })
+                .catch((error) => {
+                  console.warn(`获取综艺 ${show.id} 详情失败:`, error);
+                });
+            };
+
+            if ('requestIdleCallback' in window) {
+              requestIdleCallback(loadVarietyDetails, { timeout: 2000 });
+            } else {
+              setTimeout(loadVarietyDetails, 1000);
+            }
+          }
         } else {
           console.warn('获取热门综艺失败:', varietyShowsData.status === 'rejected' ? varietyShowsData.reason : '数据格式错误');
+        }
+
+        // 处理动漫数据
+        if (animeData.status === 'fulfilled' && animeData.value?.code === 200) {
+          const animes = animeData.value.list;
+          setHotAnime(animes);
+
+          // 性能优化：使用 requestIdleCallback 延迟加载详情
+          if (animes.length > 0) {
+            const loadAnimeDetails = () => {
+              const anime = animes[0];
+              getDoubanDetails(anime.id)
+                .then((detailsRes) => {
+                  if (detailsRes.code === 200 && detailsRes.data) {
+                    setHotAnime(prev =>
+                      prev.map(a => a.id === anime.id
+                        ? {
+                          ...a,
+                          plot_summary: detailsRes.data!.plot_summary,
+                          backdrop: detailsRes.data!.backdrop,
+                          trailerUrl: detailsRes.data!.trailerUrl,
+                        }
+                        : a
+                      )
+                    );
+                  }
+                })
+                .catch((error) => {
+                  console.warn(`获取动漫 ${anime.id} 详情失败:`, error);
+                });
+            };
+
+            if ('requestIdleCallback' in window) {
+              requestIdleCallback(loadAnimeDetails, { timeout: 2000 });
+            } else {
+              setTimeout(loadAnimeDetails, 1000);
+            }
+          }
+        } else {
+          console.warn('获取热门动漫失败:', animeData.status === 'rejected' ? animeData.reason : '数据格式错误');
         }
 
         // 处理短剧数据
@@ -560,10 +719,69 @@ function HomeClient() {
 
       <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
 
-        {/* 轮播图 - 在所有tab显示（根据配置） */}
-        {enableTMDBCarousel && (
+        {/* 轮播图 - 在所有tab显示 */}
+        {!loading && (hotMovies.length > 0 || hotTvShows.length > 0 || hotVarietyShows.length > 0 || hotShortDramas.length > 0) && (
           <div className={`mt-8 sm:mt-12 mb-8 ${layoutMode === 'top' ? 'md:-mt-4' : ''}`}>
-            <HomeCarousel />
+            <HeroBanner
+              items={[
+                // 豆瓣电影
+                ...hotMovies.slice(0, 2).map((movie) => ({
+                  id: movie.id,
+                  title: movie.title,
+                  poster: movie.poster,
+                  backdrop: movie.backdrop,
+                  trailerUrl: movie.trailerUrl,
+                  description: movie.plot_summary,
+                  year: movie.year,
+                  rate: movie.rate,
+                  douban_id: Number(movie.id),
+                  type: 'movie' as const,
+                })),
+                // 豆瓣电视剧
+                ...hotTvShows.slice(0, 2).map((show) => ({
+                  id: show.id,
+                  title: show.title,
+                  poster: show.poster,
+                  backdrop: show.backdrop,
+                  trailerUrl: show.trailerUrl,
+                  description: show.plot_summary,
+                  year: show.year,
+                  rate: show.rate,
+                  douban_id: Number(show.id),
+                  type: 'tv' as const,
+                })),
+                // 豆瓣综艺
+                ...hotVarietyShows.slice(0, 1).map((show) => ({
+                  id: show.id,
+                  title: show.title,
+                  poster: show.poster,
+                  backdrop: show.backdrop,
+                  trailerUrl: show.trailerUrl,
+                  description: show.plot_summary,
+                  year: show.year,
+                  rate: show.rate,
+                  douban_id: Number(show.id),
+                  type: 'variety' as const,
+                })),
+                // 豆瓣动漫
+                ...hotAnime.slice(0, 1).map((anime) => ({
+                  id: anime.id,
+                  title: anime.title,
+                  poster: anime.poster,
+                  backdrop: anime.backdrop,
+                  trailerUrl: anime.trailerUrl,
+                  description: anime.plot_summary,
+                  year: anime.year,
+                  rate: anime.rate,
+                  douban_id: Number(anime.id),
+                  type: 'anime' as const,
+                })),
+              ]}
+              autoPlayInterval={8000}
+              showControls={true}
+              showIndicators={true}
+              enableVideo={true}
+            />
           </div>
         )}
 
@@ -606,21 +824,47 @@ function HomeClient() {
 
             {/* 统计信息 */}
             {favoriteItems.length > 0 && (() => {
-              // 统计（兼容旧数据：没有origin字段的默认为vod）
               const stats = {
                 total: favoriteItems.length,
                 movie: favoriteItems.filter(item => {
-                  const origin = item.origin || 'vod';
-                  return origin === 'vod' && item.episodes === 1 && item.type !== 'variety';
+                  // 优先用 type 字段判断
+                  if (item.type) return item.type === 'movie';
+                  // 向后兼容：没有 type 时用 episodes 判断
+                  if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+                  if (item.source === 'bangumi') return false; // 排除动漫
+                  if (item.origin === 'live') return false; // 排除直播
+                  // vod 来源：按集数判断
+                  return item.episodes === 1;
                 }).length,
                 tv: favoriteItems.filter(item => {
-                  const origin = item.origin || 'vod';
-                  return origin === 'vod' && item.episodes > 1 && item.type !== 'variety' && item.type !== 'anime';
+                  // 优先用 type 字段判断
+                  if (item.type) return item.type === 'tv';
+                  // 向后兼容：没有 type 时用 episodes 判断
+                  if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+                  if (item.source === 'bangumi') return false; // 排除动漫
+                  if (item.origin === 'live') return false; // 排除直播
+                  // vod 来源：按集数判断
+                  return item.episodes > 1;
                 }).length,
-                anime: favoriteItems.filter(item => item.type === 'anime').length,
-                shortdrama: favoriteItems.filter(item => item.origin === 'shortdrama' || item.source === 'shortdrama').length,
+                anime: favoriteItems.filter(item => {
+                  // 优先用 type 字段判断
+                  if (item.type) return item.type === 'anime';
+                  // 向后兼容：用 source 判断
+                  return item.source === 'bangumi';
+                }).length,
+                shortdrama: favoriteItems.filter(item => {
+                  // 优先用 type 字段判断
+                  if (item.type) return item.type === 'shortdrama';
+                  // 向后兼容：用 source 判断
+                  return item.source === 'shortdrama' || item.source_name === '短剧';
+                }).length,
                 live: favoriteItems.filter(item => item.origin === 'live').length,
-                variety: favoriteItems.filter(item => item.type === 'variety').length,
+                variety: favoriteItems.filter(item => {
+                  // 优先用 type 字段判断
+                  if (item.type) return item.type === 'variety';
+                  // 向后兼容：暂无 fallback
+                  return false;
+                }).length,
               };
               return (
                 <div className='mb-4 flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400'>
@@ -638,12 +882,12 @@ function HomeClient() {
                     </span>
                   )}
                   {stats.anime > 0 && (
-                    <span className='px-3 py-1 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 rounded-full'>
+                    <span className='px-3 py-1 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 rounded-full'>
                       动漫 {stats.anime}
                     </span>
                   )}
                   {stats.shortdrama > 0 && (
-                    <span className='px-3 py-1 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 rounded-full'>
+                    <span className='px-3 py-1 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 rounded-full'>
                       短剧 {stats.shortdrama}
                     </span>
                   )}
@@ -740,26 +984,53 @@ function HomeClient() {
             ) : (
               <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
                 {(() => {
-                  // 筛选（兼容旧数据：没有origin字段的默认为vod）
+                  // 筛选
                   let filtered = favoriteItems;
                   if (favoriteFilter === 'movie') {
                     filtered = favoriteItems.filter(item => {
-                      const origin = item.origin || 'vod'; // 旧数据默认为vod
-                      return origin === 'vod' && item.episodes === 1 && item.type !== 'variety';
+                      // 优先用 type 字段判断
+                      if (item.type) return item.type === 'movie';
+                      // 向后兼容：没有 type 时用 episodes 判断
+                      if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+                      if (item.source === 'bangumi') return false; // 排除动漫
+                      if (item.origin === 'live') return false; // 排除直播
+                      // vod 来源：按集数判断
+                      return item.episodes === 1;
                     });
                   } else if (favoriteFilter === 'tv') {
                     filtered = favoriteItems.filter(item => {
-                      const origin = item.origin || 'vod';
-                      return origin === 'vod' && item.episodes > 1 && item.type !== 'variety' && item.type !== 'anime';
+                      // 优先用 type 字段判断
+                      if (item.type) return item.type === 'tv';
+                      // 向后兼容：没有 type 时用 episodes 判断
+                      if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+                      if (item.source === 'bangumi') return false; // 排除动漫
+                      if (item.origin === 'live') return false; // 排除直播
+                      // vod 来源：按集数判断
+                      return item.episodes > 1;
                     });
                   } else if (favoriteFilter === 'anime') {
-                    filtered = favoriteItems.filter(item => item.type === 'anime');
+                    filtered = favoriteItems.filter(item => {
+                      // 优先用 type 字段判断
+                      if (item.type) return item.type === 'anime';
+                      // 向后兼容：用 source 判断
+                      return item.source === 'bangumi';
+                    });
                   } else if (favoriteFilter === 'shortdrama') {
-                    filtered = favoriteItems.filter(item => item.origin === 'shortdrama' || item.source === 'shortdrama');
+                    filtered = favoriteItems.filter(item => {
+                      // 优先用 type 字段判断
+                      if (item.type) return item.type === 'shortdrama';
+                      // 向后兼容：用 source 判断
+                      return item.source === 'shortdrama' || item.source_name === '短剧';
+                    });
                   } else if (favoriteFilter === 'live') {
                     filtered = favoriteItems.filter(item => item.origin === 'live');
                   } else if (favoriteFilter === 'variety') {
-                    filtered = favoriteItems.filter(item => item.type === 'variety');
+                    filtered = favoriteItems.filter(item => {
+                      // 优先用 type 字段判断
+                      if (item.type) return item.type === 'variety';
+                      // 向后兼容：暂无 fallback
+                      return false;
+                    });
                   }
 
                   // 排序
@@ -985,6 +1256,7 @@ function HomeClient() {
                         douban_id={Number(show.id)}
                         rate={show.rate}
                         year={show.year}
+                        type='tv'
                       />
                     </div>
                   ))}
@@ -1094,6 +1366,7 @@ function HomeClient() {
                         douban_id={Number(show.id)}
                         rate={show.rate}
                         year={show.year}
+                        type='variety'
                       />
                     </div>
                   ))}

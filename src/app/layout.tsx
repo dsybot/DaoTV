@@ -70,7 +70,6 @@ export default async function RootLayout({
   let disableYellowFilter =
     process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true';
   let fluidSearch = process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false';
-  let enableTMDBCarousel = process.env.NEXT_PUBLIC_ENABLE_TMDB_CAROUSEL === 'true';
   let enableDetailPage = false;
   let customCategories = [] as {
     name: string;
@@ -95,7 +94,6 @@ export default async function RootLayout({
       query: category.query,
     }));
     fluidSearch = config.SiteConfig.FluidSearch;
-    enableTMDBCarousel = config.SiteConfig.EnableTMDBCarousel ?? false;
     enableDetailPage = config.SiteConfig.EnableDetailPage ?? false;
   }
 
@@ -142,7 +140,7 @@ export default async function RootLayout({
         >
           <DownloadProvider>
             <WatchRoomProvider>
-              <SiteProvider siteName={siteName} announcement={announcement} enableTMDBCarousel={enableTMDBCarousel} enableDetailPage={enableDetailPage}>
+              <SiteProvider siteName={siteName} announcement={announcement} enableDetailPage={enableDetailPage}>
                 <SessionTracker />
                 {children}
                 <GlobalErrorIndicator />

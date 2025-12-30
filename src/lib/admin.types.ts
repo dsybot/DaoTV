@@ -23,7 +23,6 @@ export interface AdminConfig {
     TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
-    EnableTMDBCarousel?: boolean;
     EnableDetailPage?: boolean; // 是否启用详情页
     // 上映日程代理配置
     ReleaseCalendarProxy?: string;

@@ -3,6 +3,24 @@
 import { ClientCache } from './client-cache';
 import { DoubanItem, DoubanResult, DoubanCommentsResult } from './types';
 
+// 🔍 调试工具：在浏览器控制台使用
+if (typeof window !== 'undefined') {
+  (window as any).enableDoubanDebug = () => {
+    localStorage.setItem('DOUBAN_DEBUG', '1');
+    console.log('✅ 豆瓣调试模式已启用！页面将跳过缓存，直接获取最新数据。');
+    console.log('💡 刷新页面后生效。使用 disableDoubanDebug() 关闭。');
+  };
+  (window as any).disableDoubanDebug = () => {
+    localStorage.removeItem('DOUBAN_DEBUG');
+    console.log('❌ 豆瓣调试模式已关闭，恢复缓存功能。');
+  };
+  (window as any).checkDoubanDebug = () => {
+    const enabled = localStorage.getItem('DOUBAN_DEBUG') === '1';
+    console.log(`🔍 豆瓣调试模式: ${enabled ? '✅ 已启用' : '❌ 已关闭'}`);
+    return enabled;
+  };
+}
+
 // 豆瓣数据缓存配置（秒）
 const DOUBAN_CACHE_EXPIRE = {
   details: 4 * 60 * 60,    // 详情4小时（变化较少）
@@ -643,25 +661,35 @@ export async function getDoubanDetails(id: string): Promise<{
     first_aired?: string;
     plot_summary?: string;
     imdb_id?: string;
+    backdrop?: string;      // 剧照/背景图
+    trailerUrl?: string;    // 预告片URL
   };
 }> {
-  // 检查缓存 - 如果缓存中没有plot_summary或缺少movie_duration/episodes字段则重新获取
-  const cacheKey = getCacheKey('details', { id });
-  const cached = await getCache(cacheKey);
-  // 检查缓存是否完整（需要有简介，且有movie_duration或episodes字段之一来判断类型）
-  const isCacheComplete = cached?.data?.plot_summary &&
-    (cached.data.movie_duration !== undefined || cached.data.episodes !== undefined);
-  if (cached && isCacheComplete) {
-    console.log(`豆瓣详情缓存命中(完整): ${id}`);
-    return cached;
-  }
-  if (cached && !isCacheComplete) {
-    console.log(`豆瓣详情缓存无效(缺少必要字段): ${id}，重新获取`);
-    // 缓存无效，继续执行下面的逻辑重新获取
+  // 🔍 调试模式：检查localStorage标志
+  const isDebugMode = typeof window !== 'undefined' && localStorage.getItem('DOUBAN_DEBUG') === '1';
+
+  if (isDebugMode) {
+    console.log(`[Debug Mode] 跳过缓存，直接请求: ${id}`);
+  } else {
+    // 检查缓存 - 如果缓存中没有plot_summary或缺少movie_duration/episodes字段则重新获取
+    const cacheKey = getCacheKey('details', { id });
+    const cached = await getCache(cacheKey);
+    // 检查缓存是否完整（需要有简介，且有movie_duration或episodes字段之一来判断类型）
+    const isCacheComplete = cached?.data?.plot_summary &&
+      (cached.data.movie_duration !== undefined || cached.data.episodes !== undefined);
+    if (cached && isCacheComplete) {
+      console.log(`豆瓣详情缓存命中(完整): ${id}`);
+      return cached;
+    }
+    if (cached && !isCacheComplete) {
+      console.log(`豆瓣详情缓存无效(缺少必要字段): ${id}，重新获取`);
+      // 缓存无效，继续执行下面的逻辑重新获取
+    }
   }
 
   try {
-    const response = await fetch(`/api/douban/details?id=${id}`);
+    const noCacheParam = isDebugMode ? '&nocache=1' : '';
+    const response = await fetch(`/api/douban/details?id=${id}${noCacheParam}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -669,8 +697,9 @@ export async function getDoubanDetails(id: string): Promise<{
 
     const result = await response.json();
 
-    // 保存到缓存
-    if (result.code === 200) {
+    // 保存到缓存（调试模式下不缓存）
+    if (result.code === 200 && !isDebugMode) {
+      const cacheKey = getCacheKey('details', { id });
       await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.details);
       console.log(`豆瓣详情已缓存: ${id}`);
     }
