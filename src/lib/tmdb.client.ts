@@ -166,15 +166,15 @@ function getNextTMDBApiKey(config: any): string {
 }
 
 /**
- * 通过标题搜索电影
+ * 通过标题搜索电影（返回单个最佳匹配结果）
  */
-export async function searchTMDBMovie(
+export async function searchTMDBMovieByTitle(
   title: string,
   year?: string
 ): Promise<{ id: number; title: string; release_date: string; vote_average: number } | null> {
   try {
     // 检查缓存
-    const cacheKey = getCacheKey('movie_search', { title: title.trim(), year: year || '' });
+    const cacheKey = getCacheKey('movie_search_by_title', { title: title.trim(), year: year || '' });
     const cached = await getCache(cacheKey);
     if (cached) {
       console.log(`TMDB电影搜索缓存命中: ${title}`);
@@ -215,15 +215,15 @@ export async function searchTMDBMovie(
 }
 
 /**
- * 通过标题搜索电视剧
+ * 通过标题搜索电视剧（返回单个最佳匹配结果）
  */
-export async function searchTMDBTV(
+export async function searchTMDBTVByTitle(
   title: string,
   year?: string
 ): Promise<{ id: number; name: string; first_air_date: string; vote_average: number } | null> {
   try {
     // 检查缓存
-    const cacheKey = getCacheKey('tv_search', { title: title.trim(), year: year || '' });
+    const cacheKey = getCacheKey('tv_search_by_title', { title: title.trim(), year: year || '' });
     const cached = await getCache(cacheKey);
     if (cached) {
       console.log(`TMDB电视剧搜索缓存命中: ${title}`);

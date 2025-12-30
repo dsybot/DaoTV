@@ -304,11 +304,11 @@ async function fetchTMDBData(
   if (!actualTmdbId && title) {
     try {
       console.log(`🔍 没有TMDB ID，尝试搜索: ${title} (${year || '无年份'})`);
-      const { searchTMDBMovie, searchTMDBTV } = await import('@/lib/tmdb.client');
+      const { searchTMDBMovieByTitle, searchTMDBTVByTitle } = await import('@/lib/tmdb.client');
 
       const searchResult = type === 'movie'
-        ? await searchTMDBMovie(title, year)
-        : await searchTMDBTV(title, year);
+        ? await searchTMDBMovieByTitle(title, year)
+        : await searchTMDBTVByTitle(title, year);
 
       if (searchResult) {
         actualTmdbId = searchResult.id;
