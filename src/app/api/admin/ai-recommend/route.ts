@@ -135,15 +135,11 @@ export async function POST(request: NextRequest) {
     
     // 更新AI推荐配置
     // 🔥 注意：Tavily纯搜索模式下，AI字段应该完全为空，不要有默认值
-    const apiUrlValue = aiRecommendConfig.apiUrl?.trim() || '';
-    const apiKeyValue = aiRecommendConfig.apiKey?.trim() || '';
-    const modelValue = aiRecommendConfig.model?.trim() || '';
-
     adminConfig.AIRecommendConfig = {
       enabled: aiRecommendConfig.enabled,
-      apiUrl: apiUrlValue || 'https://api.openai.com/v1',  // 仅在有值时保留，否则用默认占位
-      apiKey: apiKeyValue,  // 完全为空时就是空字符串，不给默认值
-      model: modelValue || 'gpt-3.5-turbo',  // 仅在有值时保留，否则用默认占位
+      apiUrl: aiRecommendConfig.apiUrl?.trim() || '',  // 空字符串，不给默认值
+      apiKey: aiRecommendConfig.apiKey?.trim() || '',  // 空字符串，不给默认值
+      model: aiRecommendConfig.model?.trim() || '',  // 空字符串，不给默认值
       temperature: aiRecommendConfig.temperature ?? 0.7,
       maxTokens: aiRecommendConfig.maxTokens ?? 2000,
       enableOrchestrator: aiRecommendConfig.enableOrchestrator ?? false,
