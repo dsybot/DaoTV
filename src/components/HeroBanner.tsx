@@ -144,13 +144,13 @@ export default function HeroBanner({
 
   return (
     <div
-      className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh] overflow-hidden group"
+      className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh] overflow-hidden group rounded-2xl sm:rounded-3xl"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...swipeHandlers}
     >
       {/* 背景图片/视频层 */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 bg-black">
         {/* 只渲染当前、前一张、后一张（性能优化） */}
         {items.map((item, index) => {
           // 计算是否应该渲染此项
@@ -171,7 +171,7 @@ export default function HeroBanner({
                 src={getProxiedImageUrl(item.backdrop || item.poster)}
                 alt={item.title}
                 fill
-                className="object-cover object-center"
+                className="object-contain object-center"
                 priority={index === 0}
                 quality={100}
                 sizes="100vw"
@@ -182,7 +182,7 @@ export default function HeroBanner({
               {enableVideo && item.trailerUrl && index === currentIndex && (
                 <video
                   ref={videoRef}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
+                  className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
                   autoPlay
                   muted={isMuted}
