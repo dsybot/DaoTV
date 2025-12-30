@@ -49,7 +49,8 @@ export function analyzeIntent(
     '最新', '今年', '2024', '2025', '2026', '即将', '上映', '新出',
     '什么时候', '何时', '几时', '播出', '更新', '下一季',
     '第二季', '第三季', '续集', '下季', '下部', '最近',
-    '新番', '新剧', '新片', '刚出', '刚上映'
+    '新番', '新剧', '新片', '刚出', '刚上映', '有片源', '已上映',
+    '可以看', '在哪看', '能看', '已播', '正在热映', '热播'
   ];
 
   // 推荐类关键词
@@ -104,11 +105,13 @@ export function analyzeIntent(
   // 2. 演员/导演作品查询
   // 3. 新闻资讯
   // 4. 推荐类问题（获取最新热门）
+  // 5. 🆕 有视频上下文的detail查询（可能问新片信息）
   const needWebSearch =
     hasTimeKeyword ||
     hasPersonKeyword ||
     hasNewsKeyword ||
-    (hasRecommendKeyword && (hasTimeKeyword || message.includes('热门')));
+    (hasRecommendKeyword && (hasTimeKeyword || message.includes('热门'))) ||
+    (context?.title && type === 'detail' && context.year && parseInt(context.year) >= 2024);
 
   // 提取关键词
   const matchedKeywords = [
@@ -287,6 +290,39 @@ async function fetchDoubanData(doubanId: number): Promise<any | null> {
 }
 
 /**
+ * 获取TMDB详情数据（keywords和similar）
+ */
+async function fetchTMDBData(
+  tmdbId: number,
+  type: 'movie' | 'tv'
+): Promise<any | null> {
+  if (!tmdbId || tmdbId <= 0) {
+    return null;
+  }
+
+  try {
+    // 直接导入TMDB客户端函数
+    const { getTMDBMovieDetails, getTMDBTVDetails } = await import('@/lib/tmdb.client');
+
+    const result = type === 'movie'
+      ? await getTMDBMovieDetails(tmdbId)
+      : await getTMDBTVDetails(tmdbId);
+
+    if (result) {
+      const title = (result as any).title || (result as any).name || '';
+      console.log(`✅ TMDB数据: ${title} (keywords: ${result.keywords?.length || 0}, similar: ${result.similar?.length || 0})`);
+      return result;
+    }
+
+    console.warn(`⚠️ TMDB数据获取失败 (ID: ${tmdbId}, type: ${type})`);
+    return null;
+  } catch (error) {
+    console.error(`❌ 获取TMDB详情失败 (ID: ${tmdbId}, type: ${type}):`, error);
+    return null;
+  }
+}
+
+/**
  * 主协调函数（简化版）
  */
 export async function orchestrateDataSources(
@@ -403,11 +439,56 @@ ${config?.enableWebSearch && intent.needWebSearch ? '- 搜索最新影视资讯�
           systemPrompt += `总集数: ${doubanData.episodes}集\n`;
         }
 
-        systemPrompt += `\n**重要提示**: 以上是来自豆瓣的真实数据，请优先参考这些信息回答用户问题，不要凭记忆臆测。\n`;
+        systemPrompt += `\n**关键要求**: \n`;
+        systemPrompt += `1. 以上豆瓣数据是真实的，必须优先使用这些信息\n`;
+        systemPrompt += `2. 如果豆瓣评分存在（${doubanData.rate ? doubanData.rate + '/10' : '暂无'}），回答时必须引用真实评分，不要说"系列前两作"或类似推测\n`;
+        systemPrompt += `3. 导演、演员、类型等信息都必须使用上述真实数据，不要凭记忆修改\n`;
+        systemPrompt += `4. 如果某项数据不存在（如暂无评分），可以说"暂无评分"，但不要编造或推测\n`;
 
         console.log(`✅ 豆瓣详情已注入AI上下文`);
       } else {
         console.log(`⚠️ 豆瓣详情获取失败，继续使用基础上下文`);
+      }
+    }
+
+    // 🔥 如果有TMDB ID，获取keywords和similar增强推荐
+    if (context.tmdb_id && context.type) {
+      console.log(`🎬 开始获取TMDB详情 (ID: ${context.tmdb_id}, type: ${context.type})...`);
+      const tmdbData = await fetchTMDBData(context.tmdb_id, context.type);
+
+      if (tmdbData) {
+        systemPrompt += `\n## 【TMDB数据】（国际化数据和相似推荐）\n`;
+
+        // Keywords - 帮助AI理解影片主题
+        if (tmdbData.keywords && tmdbData.keywords.length > 0) {
+          const keywordNames = tmdbData.keywords.map((k: any) => k.name).join(', ');
+          systemPrompt += `关键词标签: ${keywordNames}\n`;
+        }
+
+        // Similar movies/shows - 真实相似推荐
+        if (tmdbData.similar && tmdbData.similar.length > 0) {
+          systemPrompt += `\n相似${context.type === 'movie' ? '影片' : '剧集'}推荐（基于TMDB算法）:\n`;
+          tmdbData.similar.forEach((item: any, index: number) => {
+            const title = item.title || item.name;
+            const date = item.release_date || item.first_air_date || '';
+            const year = date ? new Date(date).getFullYear() : '';
+            const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
+
+            systemPrompt += `${index + 1}. ${title}`;
+            if (year) systemPrompt += ` (${year})`;
+            if (rating) systemPrompt += ` - 评分: ${rating}/10`;
+            systemPrompt += `\n`;
+          });
+        }
+
+        systemPrompt += `\n**关键要求**: \n`;
+        systemPrompt += `1. 如果用户询问"相似推荐"或"类似的片子"，必须优先使用上述TMDB推荐列表\n`;
+        systemPrompt += `2. 推荐时必须说明是"基于TMDB算法的推荐"，不要说"我推荐"或凭记忆推荐\n`;
+        systemPrompt += `3. 如果TMDB相似列表为空，可以说"暂无TMDB相似推荐数据"，不要编造\n`;
+
+        console.log(`✅ TMDB详情已注入AI上下文 (keywords: ${tmdbData.keywords?.length || 0}, similar: ${tmdbData.similar?.length || 0})`);
+      } else {
+        console.log(`⚠️ TMDB详情获取失败，继续使用基础上下文`);
       }
     }
   }
