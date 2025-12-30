@@ -283,22 +283,37 @@ function PlayPageClient() {
     }
   }, [searchParams]);
 
+  // 重新加载触发器（用于触发 initAll 重新执行）
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+  const reloadFlagRef = useRef<string | null>(null);
+
   // 监听 URL source/id 参数变化（观影室切换源同步）
   useEffect(() => {
     const newSource = searchParams.get('source') || '';
     const newId = searchParams.get('id') || '';
+    const newIndex = parseInt(searchParams.get('index') || '0');
+    const newTime = parseInt(searchParams.get('t') || '0');
     const reloadFlag = searchParams.get('_reload');
 
-    // 如果 source 或 id 变化，且有 _reload 标记，说明需要重新加载数据
-    if (reloadFlag && (newSource !== currentSource || newId !== currentId)) {
-      console.log('[PlayPage] URL source/id changed, reloading data:', { newSource, newId, currentSource, currentId });
+    // 如果 source 或 id 变化，且有 _reload 标记，且不是已经处理过的reload
+    if (reloadFlag && reloadFlag !== reloadFlagRef.current && (newSource !== currentSource || newId !== currentId)) {
+      console.log('[PlayPage] URL source/id changed with reload flag, reloading:', { newSource, newId, newIndex, newTime });
 
-      // 更新状态，触发重新搜索
+      // 标记此reload已处理
+      reloadFlagRef.current = reloadFlag;
+
+      // 重置所有相关状态
       setCurrentSource(newSource);
       setCurrentId(newId);
-      setDetail(null); // 清空旧数据
-      setLoading(true); // 显示加载状态
-      setNeedPrefer(false); // 不需要优选，直接使用指定源
+      setCurrentEpisodeIndex(newIndex);
+      setDetail(null);
+      setError(null);
+      setLoading(true);
+      setNeedPrefer(false);
+      setPlayerReady(false);
+
+      // 触发重新加载（通过更新 reloadTrigger 来触发 initAll 重新执行）
+      setReloadTrigger(prev => prev + 1);
     }
   }, [searchParams, currentSource, currentId]);
 
@@ -2853,7 +2868,7 @@ function PlayPageClient() {
     };
 
     initAll();
-  }, []);
+  }, [reloadTrigger]); // 添加 reloadTrigger 作为依赖，当它变化时重新执行 initAll
 
   // 播放记录处理
   useEffect(() => {
