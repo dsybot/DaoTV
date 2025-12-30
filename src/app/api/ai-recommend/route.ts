@@ -67,8 +67,26 @@ export async function POST(request: NextRequest) {
     }
 
     // 🔥 检查配置模式：AI模式 or 纯搜索模式
-    const hasAIModel = !!(aiConfig.apiKey && aiConfig.apiUrl);
-    const hasTavilySearch = !!(aiConfig.enableWebSearch && aiConfig.tavilyApiKeys);
+    // 确保trim后再判断，避免空字符串或纯空格被当成有效配置
+    const hasAIModel = !!(
+      aiConfig.apiKey?.trim() &&
+      aiConfig.apiUrl?.trim() &&
+      aiConfig.model?.trim()
+    );
+    const hasTavilySearch = !!(
+      aiConfig.enableWebSearch &&
+      aiConfig.tavilyApiKeys &&
+      aiConfig.tavilyApiKeys.length > 0
+    );
+
+    console.log('🔍 配置模式检测:', {
+      hasAIModel,
+      hasTavilySearch,
+      apiKeyLength: aiConfig.apiKey?.length || 0,
+      apiUrlLength: aiConfig.apiUrl?.length || 0,
+      modelLength: aiConfig.model?.length || 0,
+      tavilyKeysCount: aiConfig.tavilyApiKeys?.length || 0
+    });
 
     // 至少需要一种模式可用
     if (!hasAIModel && !hasTavilySearch) {
