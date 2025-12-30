@@ -230,14 +230,14 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
 
 /**
  * 使用 unstable_cache 包裹爬虫函数
- * - 24小时缓存
+ * - 4小时缓存
  * - 自动重新验证
  */
 export const scrapeDoubanDetails = unstable_cache(
   _scrapeDoubanDetails,
   ['douban-details'],
   {
-    revalidate: 86400, // 24小时缓存
+    revalidate: 14400, // 4小时缓存
     tags: ['douban'],
   }
 );
