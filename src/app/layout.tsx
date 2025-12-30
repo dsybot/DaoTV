@@ -4,8 +4,8 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 
-// CSS 将根据浏览器版本动态加载（见 <head> 部分）
-// import './globals.css';
+// Modern浏览器使用Next.js自动处理的CSS，Legacy浏览器使用单独构建的CSS
+import './globals.css';
 
 import { getConfig } from '@/lib/config';
 
@@ -119,11 +119,10 @@ export default async function RootLayout({
           content='width=device-width, initial-scale=1.0, viewport-fit=cover'
         />
         <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
-        {/* 根据浏览器版本动态加载CSS：modern (v4) 或 legacy (v3) */}
-        <link
-          rel='stylesheet'
-          href={cssVersion === 'modern' ? '/styles-modern.css' : '/styles-legacy.css'}
-        />
+        {/* Legacy浏览器（iOS < 16.4）加载兼容CSS，覆盖默认样式 */}
+        {cssVersion === 'legacy' && (
+          <link rel='stylesheet' href='/styles-legacy.css' />
+        )}
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script
