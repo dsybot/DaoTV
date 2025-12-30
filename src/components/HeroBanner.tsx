@@ -59,7 +59,6 @@ export default function HeroBanner({
     return url;
   };
 
-
   // 导航函数
   const handleNext = useCallback(() => {
     if (isTransitioning) return;
@@ -126,6 +125,24 @@ export default function HeroBanner({
     });
   }, [items, currentIndex]);
 
+  // 视频自动播放（延迟3秒，Netflix风格）
+  useEffect(() => {
+    if (!enableVideo) return;
+
+    const timer = setTimeout(() => {
+      // 在 setTimeout 内部检查 videoRef，而不是在 useEffect 开头
+      // 这样即使初始时 video 元素还没渲染，3秒后也能播放
+      if (videoRef.current) {
+        videoRef.current.play().catch((error) => {
+          // 自动播放失败时静默处理
+          console.log('[HeroBanner] Video autoplay blocked:', error);
+        });
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, enableVideo]);
+
   if (!items || items.length === 0) {
     return null;
   }
@@ -158,6 +175,7 @@ export default function HeroBanner({
           const prevIndex = (currentIndex - 1 + items.length) % items.length;
           const nextIndex = (currentIndex + 1) % items.length;
           const shouldRender = index === currentIndex || index === prevIndex || index === nextIndex;
+
           if (!shouldRender) return null;
 
           return (
@@ -184,7 +202,6 @@ export default function HeroBanner({
                   ref={videoRef}
                   className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
-                  autoPlay
                   muted={isMuted}
                   loop
                   playsInline
@@ -196,14 +213,9 @@ export default function HeroBanner({
                       error: e,
                     });
                   }}
-                  onLoadedData={(e) => {
+                  onLoadedData={() => {
                     console.log('[HeroBanner] 视频加载成功:', item.title);
                     setVideoLoaded(true); // 视频加载完成，淡入显示
-                    // 确保视频开始播放
-                    const video = e.currentTarget;
-                    video.play().catch((error) => {
-                      console.error('[HeroBanner] 视频自动播放失败:', error);
-                    });
                   }}
                 >
                   <source src={getProxiedVideoUrl(item.trailerUrl)} type="video/mp4" />
@@ -332,8 +344,8 @@ export default function HeroBanner({
               key={index}
               onClick={() => handleIndicatorClick(index)}
               className={`h-1 rounded-full transition-all duration-300 ${index === currentIndex
-                  ? 'w-8 sm:w-10 bg-white shadow-lg'
-                  : 'w-2 bg-white/50 hover:bg-white/75'
+                ? 'w-8 sm:w-10 bg-white shadow-lg'
+                : 'w-2 bg-white/50 hover:bg-white/75'
                 }`}
               aria-label={`跳转到第 ${index + 1} 张`}
             />
