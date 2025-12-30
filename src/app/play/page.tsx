@@ -283,6 +283,25 @@ function PlayPageClient() {
     }
   }, [searchParams]);
 
+  // 监听 URL source/id 参数变化（观影室切换源同步）
+  useEffect(() => {
+    const newSource = searchParams.get('source') || '';
+    const newId = searchParams.get('id') || '';
+    const reloadFlag = searchParams.get('_reload');
+
+    // 如果 source 或 id 变化，且有 _reload 标记，说明需要重新加载数据
+    if (reloadFlag && (newSource !== currentSource || newId !== currentId)) {
+      console.log('[PlayPage] URL source/id changed, reloading data:', { newSource, newId, currentSource, currentId });
+
+      // 更新状态，触发重新搜索
+      setCurrentSource(newSource);
+      setCurrentId(newId);
+      setDetail(null); // 清空旧数据
+      setLoading(true); // 显示加载状态
+      setNeedPrefer(false); // 不需要优选，直接使用指定源
+    }
+  }, [searchParams, currentSource, currentId]);
+
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
   const availableSourcesRef = useRef<SearchResult[]>([]);
