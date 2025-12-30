@@ -293,7 +293,7 @@ export default function HeroBanner({
       {enableVideo && currentItem.trailerUrl && (
         <button
           onClick={toggleMute}
-          className="absolute bottom-16 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50"
+          className="absolute bottom-10 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50"
           aria-label={isMuted ? '取消静音' : '静音'}
         >
           {isMuted ? (
