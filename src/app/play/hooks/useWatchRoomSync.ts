@@ -193,6 +193,15 @@ export function useWatchRoomSync({
     watchRoom.updatePlayState(state);
   }, [socket, watchRoom, artPlayerRef, isInRoom, detail, episodeIndex, videoId, currentSource, videoTitle, videoYear]);
 
+  // === -1. 当 videoId 或 currentSource 变化时，重置初始同步标记 ===
+  useEffect(() => {
+    // 只有成员需要重置，房主不需要
+    if (!isOwner && isInRoom) {
+      console.log('[PlaySync] Video/Source changed, resetting initial sync flag', { videoId, currentSource });
+      initialSyncDoneRef.current = false;
+    }
+  }, [videoId, currentSource, isOwner, isInRoom]);
+
   // === 0. 成员加入房间时，检查房主状态并跳转 ===
   useEffect(() => {
     // 只有成员需要处理，房主不需要
@@ -201,8 +210,13 @@ export function useWatchRoomSync({
       return;
     }
 
+    // 当 videoId 或 currentSource 变化时，重置初始同步标记（允许重新检测）
+    // 这样当成员切换源或视频时，可以重新触发检测逻辑
+    // （注意：不能放在这里直接重置，因为会导致每次 render 都重置）
+
     // 已经处理过初始同步，跳过
     if (initialSyncDoneRef.current) {
+      console.log('[PlaySync] Initial sync already done, skipping');
       return;
     }
 
