@@ -337,11 +337,70 @@ ${youtubeEnabled && youtubeConfig.apiKey ? `### YouTube推荐格式：
       return NextResponse.json(response);
     }
 
-    // 🔥 如果没有AI模型且没有搜索结果，返回错误
+    // 🔥 如果没有AI模型且没有搜索结果，返回友好提示
     if (!hasAIModel) {
+      // 构建友好的提示内容
+      const friendlyMessage = `> 💡 **提示**：当前系统仅支持**实时搜索功能**（未配置AI对话模型）
+
+## 您可以这样提问：
+
+### ✅ 支持的问题类型（会触发联网搜索）：
+
+**时效性问题：**
+- "2025年最新上映的科幻电影有哪些？"
+- "今年有什么好看的电视剧？"
+- "最近上映的电影推荐"
+
+**演员/导演查询：**
+- "诺兰最新的电影是什么？"
+- "周星驰有什么新作品？"
+- "张艺谋的最新电影"
+
+**影视资讯：**
+- "《流浪地球3》什么时候上映？"
+- "最新的漫威电影"
+- "即将上映的动画片"
+
+${context?.title ? `**关于当前影片（${context.title}）：**
+- "这部电影什么时候上映的？"
+- "有续集吗？"
+- "演员阵容如何？"` : ''}
+
+---
+
+### ❌ 暂不支持的问题类型（需要AI对话模型）：
+
+- 通用推荐（如"推荐几部科幻电影"）
+- 剧情分析和总结
+- 上下文对话和追问
+
+---
+
+💬 **建议**：
+1. 在问题中加入**时间关键词**（最新、今年、2025、上映等）
+2. 或询问**特定演员/导演**的作品
+3. 如需更多功能，请联系管理员配置AI对话模型`;
+
+      // 返回格式化的友好提示（模拟AI响应格式）
       return NextResponse.json({
-        error: '当前问题不需要联网搜索，但未配置AI模型。请配置AI API或询问需要联网搜索的问题。'
-      }, { status: 400 });
+        id: `search-hint-${Date.now()}`,
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model: 'tavily-search-only',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: friendlyMessage
+          },
+          finish_reason: 'stop'
+        }],
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
+        }
+      });
     }
 
     // 准备发送给OpenAI的消息
