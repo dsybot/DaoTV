@@ -293,10 +293,37 @@ async function fetchDoubanData(doubanId: number): Promise<any | null> {
  * 获取TMDB详情数据（keywords和similar）
  */
 async function fetchTMDBData(
-  tmdbId: number,
-  type: 'movie' | 'tv'
+  tmdbId: number | undefined,
+  type: 'movie' | 'tv',
+  title?: string,
+  year?: string
 ): Promise<any | null> {
-  if (!tmdbId || tmdbId <= 0) {
+  let actualTmdbId = tmdbId;
+
+  // 🔥 如果没有TMDB ID，尝试通过标题和年份搜索
+  if (!actualTmdbId && title) {
+    try {
+      console.log(`🔍 没有TMDB ID，尝试搜索: ${title} (${year || '无年份'})`);
+      const { searchTMDBMovie, searchTMDBTV } = await import('@/lib/tmdb.client');
+
+      const searchResult = type === 'movie'
+        ? await searchTMDBMovie(title, year)
+        : await searchTMDBTV(title, year);
+
+      if (searchResult) {
+        actualTmdbId = searchResult.id;
+        console.log(`✅ 通过标题搜索到TMDB ID: ${actualTmdbId}`);
+      } else {
+        console.log(`⚠️ 未能通过标题搜索到TMDB ID`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`搜索TMDB ID失败:`, error);
+      return null;
+    }
+  }
+
+  if (!actualTmdbId || actualTmdbId <= 0) {
     return null;
   }
 
@@ -305,8 +332,8 @@ async function fetchTMDBData(
     const { getTMDBMovieDetails, getTMDBTVDetails } = await import('@/lib/tmdb.client');
 
     const result = type === 'movie'
-      ? await getTMDBMovieDetails(tmdbId)
-      : await getTMDBTVDetails(tmdbId);
+      ? await getTMDBMovieDetails(actualTmdbId)
+      : await getTMDBTVDetails(actualTmdbId);
 
     if (result) {
       const title = (result as any).title || (result as any).name || '';
@@ -314,10 +341,10 @@ async function fetchTMDBData(
       return result;
     }
 
-    console.warn(`⚠️ TMDB数据获取失败 (ID: ${tmdbId}, type: ${type})`);
+    console.warn(`⚠️ TMDB数据获取失败 (ID: ${actualTmdbId}, type: ${type})`);
     return null;
   } catch (error) {
-    console.error(`❌ 获取TMDB详情失败 (ID: ${tmdbId}, type: ${type}):`, error);
+    console.error(`❌ 获取TMDB详情失败 (ID: ${actualTmdbId}, type: ${type}):`, error);
     return null;
   }
 }
@@ -451,10 +478,16 @@ ${config?.enableWebSearch && intent.needWebSearch ? '- 搜索最新影视资讯�
       }
     }
 
-    // 🔥 如果有TMDB ID，获取keywords和similar增强推荐
-    if (context.tmdb_id && context.type) {
-      console.log(`🎬 开始获取TMDB详情 (ID: ${context.tmdb_id}, type: ${context.type})...`);
-      const tmdbData = await fetchTMDBData(context.tmdb_id, context.type);
+    // 🔥 如果有video context且有type，尝试获取TMDB数据
+    // 优先使用tmdb_id，如果没有则通过标题搜索
+    if (context.title && context.type) {
+      console.log(`🎬 开始获取TMDB详情 (title: ${context.title}, type: ${context.type})...`);
+      const tmdbData = await fetchTMDBData(
+        context.tmdb_id,
+        context.type,
+        context.title,
+        context.year
+      );
 
       if (tmdbData) {
         systemPrompt += `\n## 【TMDB数据】（国际化数据和相似推荐）\n`;
