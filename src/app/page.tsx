@@ -206,7 +206,7 @@ function HomeClient() {
           // 性能优化：使用 requestIdleCallback 延迟加载详情，不阻塞初始渲染
           const loadMovieDetails = () => {
             Promise.all(
-              movies.slice(0, 2).map(async (movie) => {
+              movies.slice(0, 3).map(async (movie) => {
                 try {
                   const detailsRes = await getDoubanDetails(movie.id);
                   if (detailsRes.code === 200 && detailsRes.data) {
@@ -256,7 +256,7 @@ function HomeClient() {
           // 性能优化：使用 requestIdleCallback 延迟加载详情
           const loadTvDetails = () => {
             Promise.all(
-              tvShows.slice(0, 2).map(async (show) => {
+              tvShows.slice(0, 4).map(async (show) => {
                 try {
                   const detailsRes = await getDoubanDetails(show.id);
                   if (detailsRes.code === 200 && detailsRes.data) {
@@ -304,26 +304,36 @@ function HomeClient() {
           // 性能优化：使用 requestIdleCallback 延迟加载详情
           if (varietyShows.length > 0) {
             const loadVarietyDetails = () => {
-              const show = varietyShows[0];
-              getDoubanDetails(show.id)
-                .then((detailsRes) => {
-                  if (detailsRes.code === 200 && detailsRes.data) {
-                    setHotVarietyShows(prev =>
-                      prev.map(s => s.id === show.id
-                        ? {
-                          ...s,
-                          plot_summary: detailsRes.data!.plot_summary,
-                          backdrop: detailsRes.data!.backdrop,
-                          trailerUrl: detailsRes.data!.trailerUrl,
-                        }
-                        : s
-                      )
-                    );
+              Promise.all(
+                varietyShows.slice(0, 2).map(async (show) => {
+                  try {
+                    const detailsRes = await getDoubanDetails(show.id);
+                    if (detailsRes.code === 200 && detailsRes.data) {
+                      return {
+                        id: show.id,
+                        plot_summary: detailsRes.data.plot_summary,
+                        backdrop: detailsRes.data.backdrop,
+                        trailerUrl: detailsRes.data.trailerUrl,
+                      };
+                    }
+                  } catch (error) {
+                    console.warn(`获取综艺 ${show.id} 详情失败:`, error);
                   }
+                  return null;
                 })
-                .catch((error) => {
-                  console.warn(`获取综艺 ${show.id} 详情失败:`, error);
-                });
+              ).then((results) => {
+                setHotVarietyShows(prev =>
+                  prev.map(s => {
+                    const detail = results.find(r => r?.id === s.id);
+                    return detail ? {
+                      ...s,
+                      plot_summary: detail.plot_summary,
+                      backdrop: detail.backdrop,
+                      trailerUrl: detail.trailerUrl,
+                    } : s;
+                  })
+                );
+              });
             };
 
             if ('requestIdleCallback' in window) {
@@ -725,7 +735,7 @@ function HomeClient() {
             <HeroBanner
               items={[
                 // 豆瓣电影
-                ...hotMovies.slice(0, 2).map((movie) => ({
+                ...hotMovies.slice(0, 3).map((movie) => ({
                   id: movie.id,
                   title: movie.title,
                   poster: movie.poster,
@@ -738,7 +748,7 @@ function HomeClient() {
                   type: 'movie' as const,
                 })),
                 // 豆瓣电视剧
-                ...hotTvShows.slice(0, 2).map((show) => ({
+                ...hotTvShows.slice(0, 4).map((show) => ({
                   id: show.id,
                   title: show.title,
                   poster: show.poster,
@@ -751,7 +761,7 @@ function HomeClient() {
                   type: 'tv' as const,
                 })),
                 // 豆瓣综艺
-                ...hotVarietyShows.slice(0, 1).map((show) => ({
+                ...hotVarietyShows.slice(0, 2).map((show) => ({
                   id: show.id,
                   title: show.title,
                   poster: show.poster,
