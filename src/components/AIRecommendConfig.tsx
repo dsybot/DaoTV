@@ -15,7 +15,7 @@ interface AIRecommendConfigProps {
 const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
+
   const [aiSettings, setAiSettings] = useState({
     enabled: false,
     apiUrl: '',  // 🔥 不给默认值
@@ -30,6 +30,25 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
 
   // Tavily API Keys 原始输入（逗号分隔的字符串）
   const [tavilyKeysInput, setTavilyKeysInput] = useState('');
+
+  // Tavily API 用量状态
+  const [tavilyUsage, setTavilyUsage] = useState<{
+    loading: boolean;
+    data: Array<{
+      key: string;
+      keyUsage: number;
+      keyLimit: number;
+      planUsage: number;
+      planLimit: number;
+      currentPlan: string;
+      error?: string;
+    }> | null;
+    lastUpdated: string | null;
+  }>({
+    loading: false,
+    data: null,
+    lastUpdated: null
+  });
 
   // 常用模型参考（建议使用支持联网搜索的模型）
   const MODEL_EXAMPLES = [
@@ -193,6 +212,67 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
       showMessage('error', errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 获取 Tavily API 用量
+  const fetchTavilyUsage = async () => {
+    const keys = aiSettings.tavilyApiKeys.filter(k => k.trim().length > 0);
+    if (keys.length === 0) {
+      showMessage('error', '没有可用的 Tavily API Key');
+      return;
+    }
+
+    setTavilyUsage(prev => ({ ...prev, loading: true }));
+
+    try {
+      const results = await Promise.all(
+        keys.map(async (key) => {
+          try {
+            const response = await fetch('https://api.tavily.com/usage', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${key}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            return {
+              key: key.substring(0, 12) + '...',
+              keyUsage: data.key?.usage || 0,
+              keyLimit: data.key?.limit || 1000,
+              planUsage: data.account?.plan_usage || 0,
+              planLimit: data.account?.plan_limit || 1000,
+              currentPlan: data.account?.current_plan || 'Free'
+            };
+          } catch (err) {
+            return {
+              key: key.substring(0, 12) + '...',
+              keyUsage: 0,
+              keyLimit: 0,
+              planUsage: 0,
+              planLimit: 0,
+              currentPlan: 'Error',
+              error: err instanceof Error ? err.message : '获取失败'
+            };
+          }
+        })
+      );
+
+      setTavilyUsage({
+        loading: false,
+        data: results,
+        lastUpdated: new Date().toLocaleString('zh-CN')
+      });
+    } catch (err) {
+      console.error('获取 Tavily 用量失败:', err);
+      showMessage('error', '获取用量失败，请稍后重试');
+      setTavilyUsage(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -566,6 +646,119 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                       </p>
                     )}
                   </div>
+
+                  {/* Tavily API 用量查询 */}
+                  {aiSettings.tavilyApiKeys.length > 0 && (
+                    <div className='mt-4 space-y-3'>
+                      <div className='flex items-center justify-between'>
+                        <h4 className='text-sm font-semibold text-gray-900 dark:text-gray-100'>
+                          📊 API 用量统计
+                        </h4>
+                        <button
+                          onClick={fetchTavilyUsage}
+                          disabled={tavilyUsage.loading}
+                          className='px-3 py-1.5 text-xs font-medium bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors flex items-center gap-1.5'
+                        >
+                          <svg className={`h-3.5 w-3.5 ${tavilyUsage.loading ? 'animate-spin' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                          </svg>
+                          {tavilyUsage.loading ? '查询中...' : '查询用量'}
+                        </button>
+                      </div>
+
+                      {tavilyUsage.lastUpdated && (
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          最后更新: {tavilyUsage.lastUpdated}
+                        </p>
+                      )}
+
+                      {tavilyUsage.data && (
+                        <div className='space-y-2'>
+                          {tavilyUsage.data.map((usage, index) => (
+                            <div
+                              key={index}
+                              className='bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-3'
+                            >
+                              <div className='flex items-center justify-between mb-2'>
+                                <span className='text-xs font-mono text-gray-600 dark:text-gray-400'>
+                                  {usage.key}
+                                </span>
+                                <span className='text-xs font-semibold text-purple-700 dark:text-purple-300'>
+                                  {usage.currentPlan}
+                                </span>
+                              </div>
+
+                              {usage.error ? (
+                                <div className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
+                                  <svg className='h-3.5 w-3.5' fill='currentColor' viewBox='0 0 20 20'>
+                                    <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
+                                  </svg>
+                                  {usage.error}
+                                </div>
+                              ) : (
+                                <div className='space-y-2'>
+                                  {/* Key 用量 */}
+                                  <div>
+                                    <div className='flex justify-between items-center mb-1'>
+                                      <span className='text-xs text-gray-600 dark:text-gray-400'>Key 用量</span>
+                                      <span className='text-xs font-semibold text-gray-900 dark:text-gray-100'>
+                                        {usage.keyUsage} / {usage.keyLimit}
+                                        <span className='text-gray-500 dark:text-gray-400 ml-1'>
+                                          ({((usage.keyUsage / usage.keyLimit) * 100).toFixed(1)}%)
+                                        </span>
+                                      </span>
+                                    </div>
+                                    <div className='h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                                      <div
+                                        className={`h-full rounded-full transition-all ${
+                                          (usage.keyUsage / usage.keyLimit) > 0.9
+                                            ? 'bg-red-500'
+                                            : (usage.keyUsage / usage.keyLimit) > 0.7
+                                            ? 'bg-yellow-500'
+                                            : 'bg-green-500'
+                                        }`}
+                                        style={{ width: `${Math.min((usage.keyUsage / usage.keyLimit) * 100, 100)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Plan 用量 */}
+                                  <div>
+                                    <div className='flex justify-between items-center mb-1'>
+                                      <span className='text-xs text-gray-600 dark:text-gray-400'>Plan 用量</span>
+                                      <span className='text-xs font-semibold text-gray-900 dark:text-gray-100'>
+                                        {usage.planUsage} / {usage.planLimit}
+                                        <span className='text-gray-500 dark:text-gray-400 ml-1'>
+                                          ({((usage.planUsage / usage.planLimit) * 100).toFixed(1)}%)
+                                        </span>
+                                      </span>
+                                    </div>
+                                    <div className='h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                                      <div
+                                        className={`h-full rounded-full transition-all ${
+                                          (usage.planUsage / usage.planLimit) > 0.9
+                                            ? 'bg-red-500'
+                                            : (usage.planUsage / usage.planLimit) > 0.7
+                                            ? 'bg-yellow-500'
+                                            : 'bg-purple-500'
+                                        }`}
+                                        style={{ width: `${Math.min((usage.planUsage / usage.planLimit) * 100, 100)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* 剩余额度提示 */}
+                                  <div className='text-xs text-gray-600 dark:text-gray-400 pt-1'>
+                                    剩余: {usage.keyLimit - usage.keyUsage} 次
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
