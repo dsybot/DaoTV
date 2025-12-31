@@ -11,6 +11,7 @@ import { getCacheTime, getConfig } from '@/lib/config';
  * 从移动端API获取预告片和高清图片（内部函数）
  * @param id 豆瓣影片ID
  * @param proxyUrl 代理地址（使用 DoubanDetailProxy 配置）
+ * 2024-2025 最佳实践：使用最新 User-Agent 和完整请求头
  */
 async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
   trailerUrl?: string;
@@ -23,14 +24,27 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
       ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
       : originalUrl;
 
+    // 创建 AbortController 用于超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+
     const response = await fetch(targetUrl, {
+      signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        'Referer': 'https://m.douban.com/',
-        'Accept': 'application/json',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
+        // 2024-2025 最新 User-Agent（桌面版更不容易被限制）
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        'Referer': 'https://movie.douban.com/explore',  // 更具体的 Referer
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Origin': 'https://movie.douban.com',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
       },
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.warn(`[移动端API] 请求失败: ${response.status}`);
@@ -61,7 +75,11 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
 
     return { trailerUrl, backdrop };
   } catch (error) {
-    console.warn(`[移动端API] 获取失败: ${(error as Error).message}`);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`[移动端API] 请求超时`);
+    } else {
+      console.warn(`[移动端API] 获取失败: ${(error as Error).message}`);
+    }
     return null;
   }
 }
