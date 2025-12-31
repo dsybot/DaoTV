@@ -704,18 +704,6 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                               查询全部
                             </button>
                           )}
-                          {aiSettings.tavilyApiKeys.length === 1 && (
-                            <button
-                              onClick={() => fetchTavilyUsage(0)}
-                              disabled={tavilyUsage.loading}
-                              className='px-3 py-1.5 text-xs font-medium bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors flex items-center gap-1.5'
-                            >
-                              <svg className={`h-3.5 w-3.5 ${tavilyUsage.loading ? 'animate-spin' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
-                              </svg>
-                              {tavilyUsage.loading ? '查询中...' : '查询用量'}
-                            </button>
-                          )}
                         </div>
                       </div>
 
@@ -724,7 +712,7 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                           <svg className='h-4 w-4 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
                             <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clipRule='evenodd' />
                           </svg>
-                          <span>💡 提示：可以单独查询某个Key，也可以查询全部（轮询模式建议单独查询以节省额度）</span>
+                          <span>💡 提示：点击下方每个Key卡片的"查询"按钮可单独查询，或点击上方"查询全部"一次性查询所有Key</span>
                         </div>
                       )}
 
@@ -734,35 +722,46 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                         </p>
                       )}
 
-                      {tavilyUsage.data && (
-                        <div className='space-y-2'>
-                          {tavilyUsage.data.map((usage, index) => (
+                      {/* 显示所有配置的 Key（即使未查询） */}
+                      <div className='space-y-2'>
+                        {aiSettings.tavilyApiKeys.map((key, index) => {
+                          // 查找该 Key 的用量数据
+                          const usage = tavilyUsage.data?.find(d => d.index === index);
+
+                          return (
                             <div
                               key={index}
                               className='bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-3'
                             >
                               <div className='flex items-center justify-between mb-2'>
                                 <span className='text-xs font-mono text-gray-600 dark:text-gray-400'>
-                                  Key #{usage.index + 1}: {usage.key}
+                                  Key #{index + 1}: {key.substring(0, 12)}...
                                 </span>
                                 <div className='flex items-center gap-2'>
-                                  <span className='text-xs font-semibold text-purple-700 dark:text-purple-300'>
-                                    {usage.currentPlan}
-                                  </span>
-                                  {aiSettings.tavilyApiKeys.length > 1 && (
-                                    <button
-                                      onClick={() => fetchTavilyUsage(usage.index)}
-                                      disabled={tavilyUsage.loading}
-                                      className='px-2 py-0.5 text-xs bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded transition-colors'
-                                      title='单独查询此Key'
-                                    >
-                                      刷新
-                                    </button>
+                                  {usage && (
+                                    <span className='text-xs font-semibold text-purple-700 dark:text-purple-300'>
+                                      {usage.currentPlan}
+                                    </span>
                                   )}
+                                  <button
+                                    onClick={() => fetchTavilyUsage(index)}
+                                    disabled={tavilyUsage.loading}
+                                    className='px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded transition-colors'
+                                    title='查询此Key的用量'
+                                  >
+                                    {usage ? '刷新' : '查询'}
+                                  </button>
                                 </div>
                               </div>
 
-                              {usage.error ? (
+                              {!usage ? (
+                                <div className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 py-2'>
+                                  <svg className='h-3.5 w-3.5' fill='currentColor' viewBox='0 0 20 20'>
+                                    <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clipRule='evenodd' />
+                                  </svg>
+                                  点击"查询"按钮获取用量信息
+                                </div>
+                              ) : usage.error ? (
                                 <div className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
                                   <svg className='h-3.5 w-3.5' fill='currentColor' viewBox='0 0 20 20'>
                                     <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
@@ -828,9 +827,9 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                                 </div>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
