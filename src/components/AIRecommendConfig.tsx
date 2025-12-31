@@ -36,6 +36,8 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
     loading: boolean;
     data: Array<{
       key: string;
+      fullKey: string;
+      index: number;
       keyUsage: number;
       keyLimit: number;
       planUsage: number;
@@ -216,9 +218,18 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
   };
 
   // 获取 Tavily API 用量
-  const fetchTavilyUsage = async () => {
-    const keys = aiSettings.tavilyApiKeys.filter(k => k.trim().length > 0);
-    if (keys.length === 0) {
+  const fetchTavilyUsage = async (singleKeyIndex?: number) => {
+    let keysToCheck: string[];
+
+    if (singleKeyIndex !== undefined) {
+      // 查询单个 Key
+      keysToCheck = [aiSettings.tavilyApiKeys[singleKeyIndex]];
+    } else {
+      // 查询所有 Key
+      keysToCheck = aiSettings.tavilyApiKeys.filter(k => k.trim().length > 0);
+    }
+
+    if (keysToCheck.length === 0) {
       showMessage('error', '没有可用的 Tavily API Key');
       return;
     }
@@ -227,7 +238,7 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
 
     try {
       const results = await Promise.all(
-        keys.map(async (key) => {
+        keysToCheck.map(async (key, idx) => {
           try {
             const response = await fetch('https://api.tavily.com/usage', {
               method: 'GET',
@@ -244,6 +255,8 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
             const data = await response.json();
             return {
               key: key.substring(0, 12) + '...',
+              fullKey: key,
+              index: singleKeyIndex !== undefined ? singleKeyIndex : idx,
               keyUsage: data.key?.usage || 0,
               keyLimit: data.key?.limit || 1000,
               planUsage: data.account?.plan_usage || 0,
@@ -253,6 +266,8 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
           } catch (err) {
             return {
               key: key.substring(0, 12) + '...',
+              fullKey: key,
+              index: singleKeyIndex !== undefined ? singleKeyIndex : idx,
               keyUsage: 0,
               keyLimit: 0,
               planUsage: 0,
@@ -264,11 +279,33 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
         })
       );
 
-      setTavilyUsage({
-        loading: false,
-        data: results,
-        lastUpdated: new Date().toLocaleString('zh-CN')
-      });
+      if (singleKeyIndex !== undefined) {
+        // 单个查询：更新或添加该 Key 的数据
+        setTavilyUsage(prev => {
+          const existingData = prev.data || [];
+          const newData = [...existingData];
+          const existingIndex = newData.findIndex(d => d.index === singleKeyIndex);
+
+          if (existingIndex >= 0) {
+            newData[existingIndex] = results[0];
+          } else {
+            newData.push(results[0]);
+          }
+
+          return {
+            loading: false,
+            data: newData.sort((a, b) => a.index - b.index),
+            lastUpdated: new Date().toLocaleString('zh-CN')
+          };
+        });
+      } else {
+        // 全部查询：替换所有数据
+        setTavilyUsage({
+          loading: false,
+          data: results,
+          lastUpdated: new Date().toLocaleString('zh-CN')
+        });
+      }
     } catch (err) {
       console.error('获取 Tavily 用量失败:', err);
       showMessage('error', '获取用量失败，请稍后重试');
@@ -654,17 +691,42 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                         <h4 className='text-sm font-semibold text-gray-900 dark:text-gray-100'>
                           📊 API 用量统计
                         </h4>
-                        <button
-                          onClick={fetchTavilyUsage}
-                          disabled={tavilyUsage.loading}
-                          className='px-3 py-1.5 text-xs font-medium bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors flex items-center gap-1.5'
-                        >
-                          <svg className={`h-3.5 w-3.5 ${tavilyUsage.loading ? 'animate-spin' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
-                          </svg>
-                          {tavilyUsage.loading ? '查询中...' : '查询用量'}
-                        </button>
+                        <div className='flex gap-2'>
+                          {aiSettings.tavilyApiKeys.length > 1 && (
+                            <button
+                              onClick={() => fetchTavilyUsage()}
+                              disabled={tavilyUsage.loading}
+                              className='px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors flex items-center gap-1.5'
+                            >
+                              <svg className={`h-3.5 w-3.5 ${tavilyUsage.loading ? 'animate-spin' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                              </svg>
+                              查询全部
+                            </button>
+                          )}
+                          {aiSettings.tavilyApiKeys.length === 1 && (
+                            <button
+                              onClick={() => fetchTavilyUsage(0)}
+                              disabled={tavilyUsage.loading}
+                              className='px-3 py-1.5 text-xs font-medium bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors flex items-center gap-1.5'
+                            >
+                              <svg className={`h-3.5 w-3.5 ${tavilyUsage.loading ? 'animate-spin' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                              </svg>
+                              {tavilyUsage.loading ? '查询中...' : '查询用量'}
+                            </button>
+                          )}
+                        </div>
                       </div>
+
+                      {aiSettings.tavilyApiKeys.length > 1 && (
+                        <div className='text-xs bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 rounded-lg text-yellow-700 dark:text-yellow-300 flex items-center gap-2'>
+                          <svg className='h-4 w-4 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                            <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clipRule='evenodd' />
+                          </svg>
+                          <span>💡 提示：可以单独查询某个Key，也可以查询全部（轮询模式建议单独查询以节省额度）</span>
+                        </div>
+                      )}
 
                       {tavilyUsage.lastUpdated && (
                         <p className='text-xs text-gray-500 dark:text-gray-400'>
@@ -681,11 +743,23 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
                             >
                               <div className='flex items-center justify-between mb-2'>
                                 <span className='text-xs font-mono text-gray-600 dark:text-gray-400'>
-                                  {usage.key}
+                                  Key #{usage.index + 1}: {usage.key}
                                 </span>
-                                <span className='text-xs font-semibold text-purple-700 dark:text-purple-300'>
-                                  {usage.currentPlan}
-                                </span>
+                                <div className='flex items-center gap-2'>
+                                  <span className='text-xs font-semibold text-purple-700 dark:text-purple-300'>
+                                    {usage.currentPlan}
+                                  </span>
+                                  {aiSettings.tavilyApiKeys.length > 1 && (
+                                    <button
+                                      onClick={() => fetchTavilyUsage(usage.index)}
+                                      disabled={tavilyUsage.loading}
+                                      className='px-2 py-0.5 text-xs bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded transition-colors'
+                                      title='单独查询此Key'
+                                    >
+                                      刷新
+                                    </button>
+                                  )}
+                                </div>
                               </div>
 
                               {usage.error ? (
