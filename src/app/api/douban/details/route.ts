@@ -266,6 +266,9 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
 
     const html = await response.text();
 
+    // 🔍 调试：检查HTML内容是否正确
+    console.log(`[豆瓣详情] HTML长度: ${html.length}, 包含v:summary: ${html.includes('v:summary')}, 包含all hidden: ${html.includes('all hidden')}`);
+
     // 解析详细信息
     return parseDoubanDetails(html, id);
   } catch (error) {
@@ -547,6 +550,9 @@ function parseDoubanDetails(html: string, id: string) {
         .trim()
         .replace(/\n{3,}/g, '\n\n');     // 将多个换行合并为最多两个
     }
+
+    // 🔍 调试：输出解析结果
+    console.log(`[豆瓣详情解析] ID: ${id}, 标题: ${title}, 简介长度: ${plot_summary.length}, 评分: ${rate}`);
 
     // 提取IMDb ID：<span class="pl">IMDb:</span> tt36758770
     const imdbMatch = html.match(/<span class="pl">IMDb:<\/span>\s*(tt\d+)/i);
