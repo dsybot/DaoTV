@@ -10,19 +10,18 @@ import { getCacheTime, getConfig } from '@/lib/config';
 /**
  * 从移动端API获取预告片和高清图片（内部函数）
  * @param id 豆瓣影片ID
- * 
- * 注意：移动端API不使用DoubanDetailProxy代理，因为：
- * 1. 该API返回JSON数据，普通HTML代理可能无法正确处理
- * 2. 该API有自己的防护机制，需要特定的请求头
+ * @param proxyUrl 代理地址（使用 DoubanDetailProxy 配置）
  */
-async function _fetchMobileApiData(id: string): Promise<{
+async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
   trailerUrl?: string;
   backdrop?: string;
 } | null> {
   try {
-    const targetUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
-
-    console.log(`[移动端API] 请求URL: ${targetUrl}`);
+    const originalUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
+    // 如果配置了代理，使用代理地址
+    const targetUrl = proxyUrl
+      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+      : originalUrl;
 
     const response = await fetch(targetUrl, {
       headers: {
@@ -60,7 +59,6 @@ async function _fetchMobileApiData(id: string): Promise<{
         .replace('/m_ratio_poster/', '/l_ratio_poster/');
     }
 
-    console.log(`[移动端API] 成功获取: trailerUrl=${!!trailerUrl}, backdrop=${!!backdrop}`);
     return { trailerUrl, backdrop };
   } catch (error) {
     console.warn(`[移动端API] 获取失败: ${(error as Error).message}`);
@@ -198,8 +196,6 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
   const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
 
   try {
-    console.log(`[豆瓣详情] 请求URL: ${target}, 使用代理: ${!!proxyUrl}`);
-
     // 请求限流：确保请求间隔（使用代理时间隔更短）
     const interval = proxyUrl ? MIN_REQUEST_INTERVAL : MIN_REQUEST_INTERVAL_NO_PROXY;
     const now = Date.now();
@@ -211,10 +207,8 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     }
     lastRequestTime = Date.now();
 
-    // 添加随机延时（使用代理时延时更短）
-    if (proxyUrl) {
-      await randomDelay(50, 150); // 使用代理：50-150ms
-    } else {
+    // 添加随机延时（仅无代理时需要，避免被封）
+    if (!proxyUrl) {
       await randomDelay(500, 1500); // 无代理：500-1500ms
     }
 
@@ -266,9 +260,6 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
 
     const html = await response.text();
 
-    // 🔍 调试：检查HTML内容是否正确
-    console.log(`[豆瓣详情] HTML长度: ${html.length}, 包含v:summary: ${html.includes('v:summary')}, 包含all hidden: ${html.includes('all hidden')}`);
-
     // 解析详细信息
     const result = parseDoubanDetails(html, id);
 
@@ -277,8 +268,7 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
       const hasTitle = !!result.data.title;
       const hasSummary = !!result.data.plot_summary;
       if (!hasTitle || !hasSummary) {
-        console.warn(`[豆瓣详情] 代理返回数据不完整 (标题: ${hasTitle}, 简介: ${hasSummary})，尝试直接请求...`);
-        // 递归调用，但不使用代理
+        console.warn(`[豆瓣详情] 代理返回数据不完整，尝试直接请求...`);
         return _scrapeDoubanDetails(id, '', retryCount);
       }
     }
@@ -353,11 +343,10 @@ export async function GET(request: Request) {
   const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
 
   try {
-    // 并行获取详情和移动端API数据
-    // 注意：移动端API不使用代理，因为它返回JSON数据
+    // 并行获取详情和移动端API数据（都使用代理）
     const [details, mobileData] = await Promise.all([
       scrapeDoubanDetails(id, proxyUrl),
-      fetchMobileApiData(id),
+      fetchMobileApiData(id, proxyUrl),
     ]);
 
     // 合并数据：混合使用爬虫和移动端API的优势
@@ -563,9 +552,6 @@ function parseDoubanDetails(html: string, id: string) {
         .trim()
         .replace(/\n{3,}/g, '\n\n');     // 将多个换行合并为最多两个
     }
-
-    // 🔍 调试：输出解析结果
-    console.log(`[豆瓣详情解析] ID: ${id}, 标题: ${title}, 简介长度: ${plot_summary.length}, 评分: ${rate}`);
 
     // 提取IMDb ID：<span class="pl">IMDb:</span> tt36758770
     const imdbMatch = html.match(/<span class="pl">IMDb:<\/span>\s*(tt\d+)/i);

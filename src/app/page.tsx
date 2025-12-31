@@ -203,51 +203,37 @@ function HomeClient() {
           const movies = moviesData.value.list;
           setHotMovies(movies);
 
-          // 性能优化：使用 requestIdleCallback 延迟加载详情，不阻塞初始渲染
-          const loadMovieDetails = () => {
-            Promise.all(
-              movies.slice(0, 3).map(async (movie) => {
-                try {
-                  console.log(`[HeroBanner] 开始获取电影详情: ${movie.id} - ${movie.title}`);
-                  const detailsRes = await getDoubanDetails(movie.id);
-                  console.log(`[HeroBanner] 电影 ${movie.title} API响应:`, detailsRes.code, detailsRes.data ? '有数据' : '无数据');
-                  if (detailsRes.code === 200 && detailsRes.data) {
-                    console.log(`[HeroBanner] 电影 ${movie.title} - plot_summary长度:`, detailsRes.data.plot_summary?.length || 0);
-                    console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
-                    console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
-                    return {
-                      id: movie.id,
-                      plot_summary: detailsRes.data.plot_summary,
-                      backdrop: detailsRes.data.backdrop,
-                      trailerUrl: detailsRes.data.trailerUrl,
-                    };
-                  }
-                } catch (error) {
-                  console.warn(`获取电影 ${movie.id} 详情失败:`, error);
+          // 立即加载详情，不延迟
+          Promise.all(
+            movies.slice(0, 3).map(async (movie) => {
+              try {
+                const detailsRes = await getDoubanDetails(movie.id);
+                if (detailsRes.code === 200 && detailsRes.data) {
+                  return {
+                    id: movie.id,
+                    plot_summary: detailsRes.data.plot_summary,
+                    backdrop: detailsRes.data.backdrop,
+                    trailerUrl: detailsRes.data.trailerUrl,
+                  };
                 }
-                return null;
+              } catch (error) {
+                console.warn(`获取电影 ${movie.id} 详情失败:`, error);
+              }
+              return null;
+            })
+          ).then((results) => {
+            setHotMovies(prev =>
+              prev.map(m => {
+                const detail = results.find(r => r?.id === m.id);
+                return detail ? {
+                  ...m,
+                  plot_summary: detail.plot_summary,
+                  backdrop: detail.backdrop,
+                  trailerUrl: detail.trailerUrl,
+                } : m;
               })
-            ).then((results) => {
-              console.log(`[HeroBanner] 详情加载完成，结果数量:`, results.filter(r => r !== null).length);
-              setHotMovies(prev =>
-                prev.map(m => {
-                  const detail = results.find(r => r?.id === m.id);
-                  return detail ? {
-                    ...m,
-                    plot_summary: detail.plot_summary,
-                    backdrop: detail.backdrop,
-                    trailerUrl: detail.trailerUrl,
-                  } : m;
-                })
-              );
-            });
-          };
-
-          if ('requestIdleCallback' in window) {
-            requestIdleCallback(loadMovieDetails, { timeout: 2000 });
-          } else {
-            setTimeout(loadMovieDetails, 1000);
-          }
+            );
+          });
         } else {
           console.warn('获取热门电影失败:', moviesData.status === 'rejected' ? moviesData.reason : '数据格式错误');
         }
