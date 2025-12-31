@@ -9,23 +9,33 @@ import { getCacheTime, getConfig } from '@/lib/config';
 
 /**
  * 从移动端API获取预告片和高清图片（内部函数）
+ * @param id 豆瓣影片ID
+ * @param proxyUrl 代理地址（可选，使用 DoubanDetailProxy 配置）
  */
-async function _fetchMobileApiData(id: string): Promise<{
+async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
   trailerUrl?: string;
   backdrop?: string;
 } | null> {
   try {
-    const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
-    const response = await fetch(mobileApiUrl, {
+    const originalUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
+    // 如果配置了代理，使用代理地址
+    const targetUrl = proxyUrl
+      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+      : originalUrl;
+
+    console.log(`[移动端API] 请求URL: ${targetUrl}`);
+
+    const response = await fetch(targetUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/537.36',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
         'Referer': 'https://m.douban.com/',
         'Accept': 'application/json',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
       },
     });
 
     if (!response.ok) {
-      console.warn(`移动端API请求失败: ${response.status}`);
+      console.warn(`[移动端API] 请求失败: ${response.status}`);
       return null;
     }
 
@@ -51,23 +61,24 @@ async function _fetchMobileApiData(id: string): Promise<{
         .replace('/m_ratio_poster/', '/l_ratio_poster/');
     }
 
+    console.log(`[移动端API] 成功获取: trailerUrl=${!!trailerUrl}, backdrop=${!!backdrop}`);
     return { trailerUrl, backdrop };
   } catch (error) {
-    console.warn(`获取移动端API数据失败: ${(error as Error).message}`);
+    console.warn(`[移动端API] 获取失败: ${(error as Error).message}`);
     return null;
   }
 }
 
 /**
  * 使用 unstable_cache 包裹移动端API请求
- * - 7天缓存（预告片和高清图片很少变化）
+ * - 30分钟缓存（预告片URL有时效性，需要较短缓存）
  * - 与详情页缓存分开管理
  */
 const fetchMobileApiData = unstable_cache(
   _fetchMobileApiData,
   ['douban-mobile-api'],
   {
-    revalidate: 604800, // 7天缓存
+    revalidate: 1800, // 30分钟缓存（预告片URL有时效性）
     tags: ['douban-mobile'],
   }
 );
@@ -327,10 +338,10 @@ export async function GET(request: Request) {
   const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
 
   try {
-    // 并行获取详情和移动端API数据
+    // 并行获取详情和移动端API数据（都使用代理）
     const [details, mobileData] = await Promise.all([
       scrapeDoubanDetails(id, proxyUrl),
-      fetchMobileApiData(id),
+      fetchMobileApiData(id, proxyUrl),
     ]);
 
     // 合并数据：混合使用爬虫和移动端API的优势
