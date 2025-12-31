@@ -198,7 +198,7 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
   const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
 
   try {
-    console.log(`[豆瓣详情] 请求URL: ${target}`);
+    console.log(`[豆瓣详情] 请求URL: ${target}, 使用代理: ${!!proxyUrl}`);
 
     // 请求限流：确保请求间隔（使用代理时间隔更短）
     const interval = proxyUrl ? MIN_REQUEST_INTERVAL : MIN_REQUEST_INTERVAL_NO_PROXY;
@@ -270,7 +270,20 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     console.log(`[豆瓣详情] HTML长度: ${html.length}, 包含v:summary: ${html.includes('v:summary')}, 包含all hidden: ${html.includes('all hidden')}`);
 
     // 解析详细信息
-    return parseDoubanDetails(html, id);
+    const result = parseDoubanDetails(html, id);
+
+    // 🔄 回退机制：如果使用代理但解析结果不完整，尝试直接请求
+    if (proxyUrl && result.code === 200 && result.data) {
+      const hasTitle = !!result.data.title;
+      const hasSummary = !!result.data.plot_summary;
+      if (!hasTitle || !hasSummary) {
+        console.warn(`[豆瓣详情] 代理返回数据不完整 (标题: ${hasTitle}, 简介: ${hasSummary})，尝试直接请求...`);
+        // 递归调用，但不使用代理
+        return _scrapeDoubanDetails(id, '', retryCount);
+      }
+    }
+
+    return result;
   } catch (error) {
     // 超时错误
     if (error instanceof Error && error.name === 'AbortError') {

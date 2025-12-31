@@ -208,8 +208,11 @@ function HomeClient() {
             Promise.all(
               movies.slice(0, 3).map(async (movie) => {
                 try {
+                  console.log(`[HeroBanner] 开始获取电影详情: ${movie.id} - ${movie.title}`);
                   const detailsRes = await getDoubanDetails(movie.id);
+                  console.log(`[HeroBanner] 电影 ${movie.title} API响应:`, detailsRes.code, detailsRes.data ? '有数据' : '无数据');
                   if (detailsRes.code === 200 && detailsRes.data) {
+                    console.log(`[HeroBanner] 电影 ${movie.title} - plot_summary长度:`, detailsRes.data.plot_summary?.length || 0);
                     console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
                     console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
                     return {
@@ -225,6 +228,7 @@ function HomeClient() {
                 return null;
               })
             ).then((results) => {
+              console.log(`[HeroBanner] 详情加载完成，结果数量:`, results.filter(r => r !== null).length);
               setHotMovies(prev =>
                 prev.map(m => {
                   const detail = results.find(r => r?.id === m.id);
