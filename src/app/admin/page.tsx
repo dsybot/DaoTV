@@ -300,8 +300,6 @@ interface SiteConfig {
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
   EnableDetailPage?: boolean;
-  // 上映日程代理配置
-  ReleaseCalendarProxy?: string;
   // 弹幕API配置
   DanmuApiEndpoint?: string;
   DanmuApiToken?: string;
@@ -4313,8 +4311,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
     EnableDetailPage: false,
-    // 上映日程代理配置
-    ReleaseCalendarProxy: '',
     // 弹幕API配置
     DanmuApiEndpoint: '',
     DanmuApiToken: '',
@@ -4398,8 +4394,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
         EnableDetailPage: config.SiteConfig.EnableDetailPage ?? false,
-        // 上映日程代理配置
-        ReleaseCalendarProxy: config.SiteConfig.ReleaseCalendarProxy || '',
         // 弹幕API配置
         DanmuApiEndpoint: config.SiteConfig.DanmuApiEndpoint || '',
         DanmuApiToken: config.SiteConfig.DanmuApiToken || '',
@@ -4807,33 +4801,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         </p>
         <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
           代理格式：https://proxy.com/?url=（会自动拼接目标URL）
-        </p>
-      </div>
-
-      {/* 上映日程代理配置 */}
-      <div>
-        <label
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-        >
-          上映日程代理地址（可选）
-        </label>
-        <input
-          type='text'
-          placeholder='例如: https://cors-proxy.example.com'
-          value={siteSettings.ReleaseCalendarProxy || ''}
-          onChange={(e) =>
-            setSiteSettings((prev) => ({
-              ...prev,
-              ReleaseCalendarProxy: e.target.value,
-            }))
-          }
-          className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:border-gray-400 dark:hover:border-gray-500"
-        />
-        <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-          如服务器IP被限制访问上映日程，可配置CORS代理。留空则直连。代理格式：https://proxy.com/?url=目标地址
-        </p>
-        <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
-          公共代理示例：https://cors-anywhere.herokuapp.com（需激活）或使用 Cloudflare Workers 自建
         </p>
       </div>
 

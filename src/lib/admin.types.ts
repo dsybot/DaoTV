@@ -24,8 +24,6 @@ export interface AdminConfig {
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
     EnableDetailPage?: boolean; // 是否启用详情页
-    // 上映日程代理配置
-    ReleaseCalendarProxy?: string;
     // 弹幕API配置
     DanmuApiEndpoint?: string;  // 自建弹幕API地址（如：https://your-danmu-api.vercel.app）
     DanmuApiToken?: string;      // 弹幕API访问Token

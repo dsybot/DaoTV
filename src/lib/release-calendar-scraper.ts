@@ -2,7 +2,6 @@
 'use server';
 
 import { ReleaseCalendarItem } from './types';
-import { getConfig } from './config';
 
 const baseUrl = 'https://g.manmankan.com/dy2013';
 
@@ -72,6 +71,14 @@ function getSecChUaHeaders(browser: 'chrome' | 'firefox' | 'safari' | 'edge', pl
   }
   // Firefox 和 Safari 不发送 Sec-CH-UA
   return {};
+}
+
+/**
+ * 随机延迟（模拟真实用户行为）
+ */
+function randomDelay(min = 1000, max = 3000): Promise<void> {
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise(resolve => setTimeout(resolve, delay));
 }
 
 /**
@@ -289,12 +296,10 @@ export async function scrapeMovieReleases(retryCount = 0): Promise<ReleaseCalend
   const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
 
   try {
-    const config = await getConfig();
-    const proxyUrl = config.SiteConfig?.ReleaseCalendarProxy || '';
+    // 添加随机延迟（模拟真实用户）
+    await randomDelay(500, 1500);
 
-    const targetUrl = `${baseUrl}/dianying/shijianbiao/`;
-    // 如果配置了代理，使用代理；否则直连
-    const url = proxyUrl ? `${proxyUrl}?url=${encodeURIComponent(targetUrl)}` : targetUrl;
+    const url = `${baseUrl}/dianying/shijianbiao/`;
 
     // 获取随机浏览器指纹
     const { ua, browser, platform } = getRandomUserAgent();
@@ -317,7 +322,7 @@ export async function scrapeMovieReleases(retryCount = 0): Promise<ReleaseCalend
         'User-Agent': ua,
         'Referer': baseUrl + '/',
       },
-      signal: AbortSignal.timeout(20000), // 20秒超时
+      signal: AbortSignal.timeout(20000), // 20秒超时（增加到20秒）
     });
 
     if (!response.ok) {
@@ -352,12 +357,10 @@ export async function scrapeTVReleases(retryCount = 0): Promise<ReleaseCalendarI
   const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
 
   try {
-    const config = await getConfig();
-    const proxyUrl = config.SiteConfig?.ReleaseCalendarProxy || '';
+    // 添加随机延迟（模拟真实用户）
+    await randomDelay(500, 1500);
 
-    const targetUrl = `${baseUrl}/dianshiju/shijianbiao/`;
-    // 如果配置了代理，使用代理；否则直连
-    const url = proxyUrl ? `${proxyUrl}?url=${encodeURIComponent(targetUrl)}` : targetUrl;
+    const url = `${baseUrl}/dianshiju/shijianbiao/`;
 
     // 获取随机浏览器指纹
     const { ua, browser, platform } = getRandomUserAgent();
@@ -380,7 +383,7 @@ export async function scrapeTVReleases(retryCount = 0): Promise<ReleaseCalendarI
         'User-Agent': ua,
         'Referer': baseUrl + '/',
       },
-      signal: AbortSignal.timeout(20000), // 20秒超时
+      signal: AbortSignal.timeout(20000), // 20秒超时（增加到20秒）
     });
 
     if (!response.ok) {

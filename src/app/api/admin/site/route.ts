@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage,
       EnableTMDBActorSearch,
       EnableDetailPage,
-      ReleaseCalendarProxy,
       DanmuApiEndpoint,
       DanmuApiToken,
       LoginBgDesktop,
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
       EnableDetailPage?: boolean;
-      ReleaseCalendarProxy?: string;
       DanmuApiEndpoint?: string;
       DanmuApiToken?: string;
       LoginBgDesktop?: string;
@@ -142,7 +140,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
       EnableDetailPage: finalEnableDetailPage,
-      ReleaseCalendarProxy: ReleaseCalendarProxy || '',
       DanmuApiEndpoint: DanmuApiEndpoint || '',
       DanmuApiToken: DanmuApiToken || '',
       LoginBgDesktop: LoginBgDesktop || '',
