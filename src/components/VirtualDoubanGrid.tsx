@@ -39,6 +39,10 @@ interface VirtualDoubanGridProps {
 
   // 是否来自番组计划
   isBangumi?: boolean;
+
+  // AI功能状态（从父组件传递）
+  aiEnabled?: boolean;
+  aiCheckComplete?: boolean;
 }
 
 // 渐进式加载配置
@@ -55,6 +59,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
   loading,
   primarySelection,
   isBangumi = false,
+  aiEnabled = false,
+  aiCheckComplete = false,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<any>(null); // Grid ref for imperative scroll
@@ -194,6 +200,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     isBangumi: cellIsBangumi,
     columnCount: cellColumnCount,
     displayItemCount: cellDisplayItemCount,
+    aiEnabled: cellAiEnabled,
+    aiCheckComplete: cellAiCheckComplete,
   }: any) => {
     const index = rowIndex * cellColumnCount + columnIndex;
 
@@ -226,6 +234,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
           type={cellType === 'movie' ? 'movie' : cellType === 'show' ? 'variety' : cellType === 'tv' ? 'tv' : cellType === 'anime' ? 'anime' : ''}
           isBangumi={cellIsBangumi}
           priority={isPriorityImage}
+          aiEnabled={cellAiEnabled}
+          aiCheckComplete={cellAiCheckComplete}
         />
       </div>
     );
@@ -297,6 +307,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
             isBangumi,
             columnCount,
             displayItemCount,
+            aiEnabled,
+            aiCheckComplete,
           }}
           columnCount={columnCount}
           columnWidth={itemWidth + 16}

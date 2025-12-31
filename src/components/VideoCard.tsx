@@ -52,7 +52,9 @@ export interface VideoCardProps {
   origin?: 'vod' | 'live' | 'shortdrama';
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
-  priority?: boolean; // 🚀 图片优先加载标记 - 用于首屏图片优化LCP
+  priority?: boolean; // 图片加载优先级（用于首屏可见图片）
+  aiEnabled?: boolean; // AI功能是否启用（从父组件传递）
+  aiCheckComplete?: boolean; // AI权限检测是否完成（从父组件传递）
 }
 
 export type VideoCardHandle = {
@@ -85,6 +87,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     remarks,
     releaseDate,
     priority = false,
+    aiEnabled: aiEnabledProp,
+    aiCheckComplete: aiCheckCompleteProp,
   }: VideoCardProps,
   ref
 ) {
@@ -96,7 +100,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [searchFavorited, setSearchFavorited] = useState<boolean | null>(null); // 搜索结果的收藏状态
   const [showAIChat, setShowAIChat] = useState(false); // AI问片弹窗
-  const [aiEnabled, setAiEnabled] = useState(false); // AI功能是否启用
+
+  // AI功能状态：优先使用父组件传递的值，否则自己检测
+  const [aiEnabledLocal, setAiEnabledLocal] = useState(false);
+  const [aiCheckCompleteLocal, setAiCheckCompleteLocal] = useState(false);
+
+  // 实际使用的AI状态（优先父组件prop）
+  const aiEnabled = aiEnabledProp !== undefined ? aiEnabledProp : aiEnabledLocal;
+  const aiCheckComplete = aiCheckCompleteProp !== undefined ? aiCheckCompleteProp : aiCheckCompleteLocal;
 
   // 🚀 React 19 useOptimistic - 乐观更新收藏状态，提供即时UI反馈
   const [optimisticFavorited, setOptimisticFavorited] = useOptimistic(
@@ -189,8 +200,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     return unsubscribe;
   }, [from, actualSource, actualId, isUpcoming]);
 
-  // 检查AI功能是否启用
+  // 检查AI功能是否启用 - 只在没有父组件传递时才执行
   useEffect(() => {
+    // 如果父组件已传递aiEnabled，跳过本地检测
+    if (aiEnabledProp !== undefined || aiCheckCompleteProp !== undefined) {
+      return;
+    }
+
     let cancelled = false;
 
     (async () => {
@@ -203,11 +219,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           }),
         });
         if (!cancelled) {
-          setAiEnabled(response.status !== 403);
+          setAiEnabledLocal(response.status !== 403);
+          setAiCheckCompleteLocal(true);
         }
       } catch (error) {
         if (!cancelled) {
-          setAiEnabled(false);
+          setAiEnabledLocal(false);
+          setAiCheckCompleteLocal(true);
         }
       }
     })();
@@ -215,7 +233,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [aiEnabledProp, aiCheckCompleteProp]); // 依赖父组件传递的props
 
   // 🚀 使用 useOptimistic 优化收藏功能 - React 19 新特性
   const handleToggleFavorite = useCallback(
