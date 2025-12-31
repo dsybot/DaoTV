@@ -72,11 +72,19 @@ const fetchMobileApiData = unstable_cache(
   }
 );
 
-// 用户代理池
+// 用户代理池 - 2025 最新版本（多浏览器策略）
 const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  // Chrome 133 (2025最新)
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  // Firefox 133 (2025最新)
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
+  // Safari 18 (2025最新)
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
+  // Edge 133 (2025最新)
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 Edg/133.0.0.0',
 ];
 
 // 请求限制器 - 使用代理时可以更快
@@ -84,11 +92,60 @@ let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 500; // 降低到0.5秒（使用代理时风险较低）
 const MIN_REQUEST_INTERVAL_NO_PROXY = 2000; // 无代理时保持2秒
 
-function getRandomUserAgent(): string {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+/**
+ * 获取随机 User-Agent 及对应的浏览器指纹
+ */
+function getRandomUserAgent(): {
+  ua: string;
+  browser: 'chrome' | 'firefox' | 'safari' | 'edge';
+  platform: string;
+} {
+  const index = Math.floor(Math.random() * USER_AGENTS.length);
+  const ua = USER_AGENTS[index];
+
+  // 识别浏览器类型和平台
+  let browser: 'chrome' | 'firefox' | 'safari' | 'edge' = 'chrome';
+  let platform = 'Windows';
+
+  if (ua.includes('Firefox')) {
+    browser = 'firefox';
+  } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+    browser = 'safari';
+  } else if (ua.includes('Edg/')) {
+    browser = 'edge';
+  }
+
+  if (ua.includes('Macintosh')) {
+    platform = 'macOS';
+  } else if (ua.includes('Linux')) {
+    platform = 'Linux';
+  }
+
+  return { ua, browser, platform };
 }
 
-function randomDelay(min = 100, max = 300): Promise<void> {
+/**
+ * 生成 Sec-CH-UA 客户端提示（Chrome/Edge）
+ */
+function getSecChUaHeaders(browser: 'chrome' | 'firefox' | 'safari' | 'edge', platform: string): Record<string, string> {
+  if (browser === 'chrome') {
+    return {
+      'Sec-CH-UA': '"Google Chrome";v="133", "Chromium";v="133", "Not?A_Brand";v="24"',
+      'Sec-CH-UA-Mobile': '?0',
+      'Sec-CH-UA-Platform': `"${platform}"`,
+    };
+  } else if (browser === 'edge') {
+    return {
+      'Sec-CH-UA': '"Microsoft Edge";v="133", "Chromium";v="133", "Not?A_Brand";v="24"',
+      'Sec-CH-UA-Mobile': '?0',
+      'Sec-CH-UA-Platform': `"${platform}"`,
+    };
+  }
+  // Firefox 和 Safari 不发送 Sec-CH-UA
+  return {};
+}
+
+function randomDelay(min = 500, max = 1500): Promise<void> {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
   return new Promise(resolve => setTimeout(resolve, delay));
 }
@@ -155,21 +212,28 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
+    // 获取随机浏览器指纹
+    const { ua, browser, platform } = getRandomUserAgent();
+    const secChHeaders = getSecChUaHeaders(browser, platform);
+
+    // 🎯 2025 最佳实践：按照真实浏览器的头部顺序发送
     const fetchOptions = {
       signal: controller.signal,
       headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        // 基础头部（所有浏览器通用）
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Cache-Control': 'max-age=0',
         'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
+        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
-        'Cache-Control': 'max-age=0',
-        // 随机添加Referer
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': ua,
+        // 随机添加 Referer（50% 概率）
         ...(Math.random() > 0.5 ? { 'Referer': 'https://www.douban.com/' } : {}),
       },
     };

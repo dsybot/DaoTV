@@ -6,6 +6,74 @@ import { getConfig } from './config';
 
 const baseUrl = 'https://g.manmankan.com/dy2013';
 
+// 用户代理池 - 2025 最新版本（多浏览器策略）
+const USER_AGENTS = [
+  // Chrome 133 (2025最新)
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  // Firefox 133 (2025最新)
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
+  // Safari 18 (2025最新)
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
+  // Edge 133 (2025最新)
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 Edg/133.0.0.0',
+];
+
+/**
+ * 获取随机 User-Agent 及对应的浏览器指纹
+ */
+function getRandomUserAgent(): {
+  ua: string;
+  browser: 'chrome' | 'firefox' | 'safari' | 'edge';
+  platform: string;
+} {
+  const index = Math.floor(Math.random() * USER_AGENTS.length);
+  const ua = USER_AGENTS[index];
+
+  // 识别浏览器类型和平台
+  let browser: 'chrome' | 'firefox' | 'safari' | 'edge' = 'chrome';
+  let platform = 'Windows';
+
+  if (ua.includes('Firefox')) {
+    browser = 'firefox';
+  } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+    browser = 'safari';
+  } else if (ua.includes('Edg/')) {
+    browser = 'edge';
+  }
+
+  if (ua.includes('Macintosh')) {
+    platform = 'macOS';
+  } else if (ua.includes('Linux')) {
+    platform = 'Linux';
+  }
+
+  return { ua, browser, platform };
+}
+
+/**
+ * 生成 Sec-CH-UA 客户端提示（Chrome/Edge）
+ */
+function getSecChUaHeaders(browser: 'chrome' | 'firefox' | 'safari' | 'edge', platform: string): Record<string, string> {
+  if (browser === 'chrome') {
+    return {
+      'Sec-CH-UA': '"Google Chrome";v="133", "Chromium";v="133", "Not?A_Brand";v="24"',
+      'Sec-CH-UA-Mobile': '?0',
+      'Sec-CH-UA-Platform': `"${platform}"`,
+    };
+  } else if (browser === 'edge') {
+    return {
+      'Sec-CH-UA': '"Microsoft Edge";v="133", "Chromium";v="133", "Not?A_Brand";v="24"',
+      'Sec-CH-UA-Mobile': '?0',
+      'Sec-CH-UA-Platform': `"${platform}"`,
+    };
+  }
+  // Firefox 和 Safari 不发送 Sec-CH-UA
+  return {};
+}
+
 /**
  * 生成唯一ID
  */
@@ -214,9 +282,12 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
 }
 
 /**
- * 抓取电影发布时间表
+ * 抓取电影发布时间表（带重试机制）
  */
-export async function scrapeMovieReleases(): Promise<ReleaseCalendarItem[]> {
+export async function scrapeMovieReleases(retryCount = 0): Promise<ReleaseCalendarItem[]> {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
+
   try {
     const config = await getConfig();
     const proxyUrl = config.SiteConfig?.ReleaseCalendarProxy || '';
@@ -225,11 +296,28 @@ export async function scrapeMovieReleases(): Promise<ReleaseCalendarItem[]> {
     // 如果配置了代理，使用代理；否则直连
     const url = proxyUrl ? `${proxyUrl}?url=${encodeURIComponent(targetUrl)}` : targetUrl;
 
+    // 获取随机浏览器指纹
+    const { ua, browser, platform } = getRandomUserAgent();
+    const secChHeaders = getSecChUaHeaders(browser, platform);
+
+    // 🎯 2025 最佳实践：完整的请求头
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Cache-Control': 'max-age=0',
+        'DNT': '1',
+        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': ua,
+        'Referer': baseUrl + '/',
       },
-      signal: AbortSignal.timeout(15000), // 15秒超时
+      signal: AbortSignal.timeout(20000), // 20秒超时
     });
 
     if (!response.ok) {
@@ -237,17 +325,32 @@ export async function scrapeMovieReleases(): Promise<ReleaseCalendarItem[]> {
     }
 
     const html = await response.text();
-    return parseMovieHTML(html);
+    const items = parseMovieHTML(html);
+
+    console.log(`✅ 电影数据抓取成功: ${items.length} 部`);
+    return items;
   } catch (error) {
-    console.error('抓取电影数据失败:', error);
+    console.error(`抓取电影数据失败 (重试 ${retryCount}/${MAX_RETRIES}):`, error);
+
+    // 重试机制
+    if (retryCount < MAX_RETRIES) {
+      console.warn(`等待 ${RETRY_DELAYS[retryCount]}ms 后重试...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[retryCount]));
+      return scrapeMovieReleases(retryCount + 1);
+    }
+
+    console.error('电影数据抓取失败，已达到最大重试次数');
     return [];
   }
 }
 
 /**
- * 抓取电视剧发布时间表
+ * 抓取电视剧发布时间表（带重试机制）
  */
-export async function scrapeTVReleases(): Promise<ReleaseCalendarItem[]> {
+export async function scrapeTVReleases(retryCount = 0): Promise<ReleaseCalendarItem[]> {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
+
   try {
     const config = await getConfig();
     const proxyUrl = config.SiteConfig?.ReleaseCalendarProxy || '';
@@ -256,11 +359,28 @@ export async function scrapeTVReleases(): Promise<ReleaseCalendarItem[]> {
     // 如果配置了代理，使用代理；否则直连
     const url = proxyUrl ? `${proxyUrl}?url=${encodeURIComponent(targetUrl)}` : targetUrl;
 
+    // 获取随机浏览器指纹
+    const { ua, browser, platform } = getRandomUserAgent();
+    const secChHeaders = getSecChUaHeaders(browser, platform);
+
+    // 🎯 2025 最佳实践：完整的请求头
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Cache-Control': 'max-age=0',
+        'DNT': '1',
+        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': ua,
+        'Referer': baseUrl + '/',
       },
-      signal: AbortSignal.timeout(15000), // 15秒超时
+      signal: AbortSignal.timeout(20000), // 20秒超时
     });
 
     if (!response.ok) {
@@ -268,38 +388,53 @@ export async function scrapeTVReleases(): Promise<ReleaseCalendarItem[]> {
     }
 
     const html = await response.text();
-    return parseTVHTML(html);
+    const items = parseTVHTML(html);
+
+    console.log(`✅ 电视剧数据抓取成功: ${items.length} 部`);
+    return items;
   } catch (error) {
-    console.error('抓取电视剧数据失败:', error);
+    console.error(`抓取电视剧数据失败 (重试 ${retryCount}/${MAX_RETRIES}):`, error);
+
+    // 重试机制
+    if (retryCount < MAX_RETRIES) {
+      console.warn(`等待 ${RETRY_DELAYS[retryCount]}ms 后重试...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[retryCount]));
+      return scrapeTVReleases(retryCount + 1);
+    }
+
+    console.error('电视剧数据抓取失败，已达到最大重试次数');
     return [];
   }
 }
 
 /**
- * 抓取所有数据
+ * 抓取所有数据（顺序执行，避免并发失败）
  */
 export async function scrapeAllReleases(): Promise<ReleaseCalendarItem[]> {
   try {
-    console.log('开始抓取发布日历数据...');
+    console.log('📅 开始抓取发布日历数据...');
 
-    // 避免并发请求导致的失败，改为顺序执行
-    console.log('抓取电影数据...');
+    // 抓取电影数据
+    console.log('🎬 抓取电影数据...');
     const movies = await scrapeMovieReleases();
-    console.log(`电影数据抓取完成: ${movies.length} 部`);
+    console.log(`✅ 电影数据抓取完成: ${movies.length} 部`);
 
-    // 添加延迟避免请求过于频繁
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 添加随机延迟避免请求过于频繁（2-4秒）
+    const delay = Math.floor(Math.random() * 2000) + 2000;
+    console.log(`⏳ 等待 ${delay}ms 后继续抓取电视剧数据...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
 
-    console.log('抓取电视剧数据...');
+    // 抓取电视剧数据
+    console.log('📺 抓取电视剧数据...');
     const tvShows = await scrapeTVReleases();
-    console.log(`电视剧数据抓取完成: ${tvShows.length} 部`);
+    console.log(`✅ 电视剧数据抓取完成: ${tvShows.length} 部`);
 
     const allItems = [...movies, ...tvShows];
-    console.log(`总共抓取到 ${allItems.length} 条发布数据`);
+    console.log(`🎉 总共抓取到 ${allItems.length} 条发布数据`);
 
     return allItems;
   } catch (error) {
-    console.error('抓取发布日历数据失败:', error);
+    console.error('❌ 抓取发布日历数据失败:', error);
     return [];
   }
 }
