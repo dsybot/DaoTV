@@ -10,18 +10,17 @@ import { getCacheTime, getConfig } from '@/lib/config';
 /**
  * 从移动端API获取预告片和高清图片（内部函数）
  * @param id 豆瓣影片ID
- * @param proxyUrl 代理地址（可选，使用 DoubanDetailProxy 配置）
+ * 
+ * 注意：移动端API不使用DoubanDetailProxy代理，因为：
+ * 1. 该API返回JSON数据，普通HTML代理可能无法正确处理
+ * 2. 该API有自己的防护机制，需要特定的请求头
  */
-async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
+async function _fetchMobileApiData(id: string): Promise<{
   trailerUrl?: string;
   backdrop?: string;
 } | null> {
   try {
-    const originalUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
-    // 如果配置了代理，使用代理地址
-    const targetUrl = proxyUrl
-      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
-      : originalUrl;
+    const targetUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
     console.log(`[移动端API] 请求URL: ${targetUrl}`);
 
@@ -338,10 +337,11 @@ export async function GET(request: Request) {
   const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
 
   try {
-    // 并行获取详情和移动端API数据（都使用代理）
+    // 并行获取详情和移动端API数据
+    // 注意：移动端API不使用代理，因为它返回JSON数据
     const [details, mobileData] = await Promise.all([
       scrapeDoubanDetails(id, proxyUrl),
-      fetchMobileApiData(id, proxyUrl),
+      fetchMobileApiData(id),
     ]);
 
     // 合并数据：混合使用爬虫和移动端API的优势
