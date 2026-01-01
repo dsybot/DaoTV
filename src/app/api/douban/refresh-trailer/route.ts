@@ -5,36 +5,30 @@ import { getConfig } from '@/lib/config';
  * 刷新过期的 Douban trailer URL
  * 不使用任何缓存，直接调用豆瓣移动端API获取最新URL
  * 支持通过代理获取（如果配置了DoubanDetailProxy）
+ * 
+ * 注意：豆瓣移动端API对电影和电视剧使用不同的路径
+ * - 电影: /movie/{id}
+ * - 电视剧: /tv/{id}
  */
 
-// 带重试的获取函数
-async function fetchTrailerWithRetry(id: string, proxyUrl?: string, retryCount = 0): Promise<string | null> {
-  const MAX_RETRIES = 2;
-  const TIMEOUT = 20000; // 20秒超时
-  const RETRY_DELAY = 2000; // 2秒后重试
-
-  const startTime = Date.now();
+// 获取单个类型的trailer
+async function fetchTrailerByType(id: string, type: 'movie' | 'tv', proxyUrl?: string): Promise<string | null> {
+  const TIMEOUT = 15000; // 15秒超时
 
   try {
-    const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
+    const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/${type}/${id}`;
 
-    console.log(`[refresh-trailer] 开始请求影片 ${id}${retryCount > 0 ? ` (重试 ${retryCount}/${MAX_RETRIES})` : ''}`);
+    console.log(`[refresh-trailer] 尝试 ${type} 类型, ID: ${id}`);
 
-    // 创建 AbortController 用于超时控制
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
     let response: Response;
 
-    // 如果配置了代理，使用代理获取
     if (proxyUrl) {
       const targetUrl = `${proxyUrl}${encodeURIComponent(mobileApiUrl)}`;
-      console.log(`[refresh-trailer] 使用代理: ${proxyUrl}`);
-      response = await fetch(targetUrl, {
-        signal: controller.signal,
-      });
+      response = await fetch(targetUrl, { signal: controller.signal });
     } else {
-      // 直接请求豆瓣API
       response = await fetch(mobileApiUrl, {
         signal: controller.signal,
         headers: {
@@ -42,56 +36,48 @@ async function fetchTrailerWithRetry(id: string, proxyUrl?: string, retryCount =
           'Referer': 'https://movie.douban.com/explore',
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'Accept-Encoding': 'gzip, deflate, br',
           'Origin': 'https://movie.douban.com',
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'same-site',
         },
       });
     }
 
     clearTimeout(timeoutId);
 
-    const fetchTime = Date.now() - startTime;
-    console.log(`[refresh-trailer] 影片 ${id} 请求完成，耗时: ${fetchTime}ms, 状态: ${response.status}`);
-
     if (!response.ok) {
-      throw new Error(`豆瓣API返回错误: ${response.status}`);
+      console.warn(`[refresh-trailer] ${type} 请求失败: ${response.status}`);
+      return null;
     }
 
     const data = await response.json();
     const trailerUrl = data.trailers?.[0]?.video_url;
 
-    if (!trailerUrl) {
-      console.warn(`[refresh-trailer] 影片 ${id} 没有预告片数据`);
-      throw new Error('该影片没有预告片');
+    if (trailerUrl) {
+      console.log(`[refresh-trailer] 成功从 ${type} API 获取trailer URL`);
     }
 
-    const totalTime = Date.now() - startTime;
-    console.log(`[refresh-trailer] 影片 ${id} 成功获取trailer URL，总耗时: ${totalTime}ms`);
-
-    return trailerUrl;
+    return trailerUrl || null;
   } catch (error) {
-    const failTime = Date.now() - startTime;
-
-    // 超时或网络错误，尝试重试
-    if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
-      console.error(`[refresh-trailer] 影片 ${id} 请求失败 (耗时: ${failTime}ms): ${error.name === 'AbortError' ? '超时' : error.message}`);
-
-      if (retryCount < MAX_RETRIES) {
-        console.warn(`[refresh-trailer] ${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})...`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-        return fetchTrailerWithRetry(id, proxyUrl, retryCount + 1);
-      } else {
-        console.error(`[refresh-trailer] 影片 ${id} 重试次数已达上限，放弃请求`);
-      }
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`[refresh-trailer] ${type} 请求超时`);
     } else {
-      console.error(`[refresh-trailer] 影片 ${id} 发生错误 (耗时: ${failTime}ms):`, error);
+      console.warn(`[refresh-trailer] ${type} 获取失败: ${(error as Error).message}`);
     }
-
-    throw error;
+    return null;
   }
+}
+
+// 带回退的获取函数：先尝试movie，失败后尝试tv
+async function fetchTrailerWithFallback(id: string, proxyUrl?: string): Promise<string | null> {
+  // 先尝试 movie 类型
+  let trailerUrl = await fetchTrailerByType(id, 'movie', proxyUrl);
+
+  // 如果 movie 失败，尝试 tv 类型
+  if (!trailerUrl) {
+    console.log(`[refresh-trailer] movie 类型失败，尝试 tv 类型...`);
+    trailerUrl = await fetchTrailerByType(id, 'tv', proxyUrl);
+  }
+
+  return trailerUrl;
 }
 
 export async function GET(request: Request) {
@@ -114,7 +100,25 @@ export async function GET(request: Request) {
     const config = await getConfig();
     const proxyUrl = config.SiteConfig.DoubanDetailProxy || undefined;
 
-    const trailerUrl = await fetchTrailerWithRetry(id, proxyUrl);
+    console.log(`[refresh-trailer] ID: ${id}, 代理: ${proxyUrl ? proxyUrl.substring(0, 30) + '...' : '(无)'}`);
+
+    const trailerUrl = await fetchTrailerWithFallback(id, proxyUrl);
+
+    if (!trailerUrl) {
+      return NextResponse.json(
+        {
+          code: 404,
+          message: '未能获取预告片URL（movie和tv类型都尝试过）',
+          error: 'NO_TRAILER',
+        },
+        {
+          status: 404,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        }
+      );
+    }
 
     return NextResponse.json(
       {
@@ -126,7 +130,6 @@ export async function GET(request: Request) {
       },
       {
         headers: {
-          // 不缓存这个 API 的响应
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
@@ -134,48 +137,14 @@ export async function GET(request: Request) {
       }
     );
   } catch (error) {
-    if (error instanceof Error) {
-      // 超时错误
-      if (error.name === 'AbortError') {
-        return NextResponse.json(
-          {
-            code: 504,
-            message: '请求超时，豆瓣响应过慢',
-            error: 'TIMEOUT',
-          },
-          { status: 504 }
-        );
-      }
-
-      // 没有预告片
-      if (error.message.includes('没有预告片')) {
-        return NextResponse.json(
-          {
-            code: 404,
-            message: error.message,
-            error: 'NO_TRAILER',
-          },
-          { status: 404 }
-        );
-      }
-
-      // 其他错误
-      return NextResponse.json(
-        {
-          code: 500,
-          message: '刷新 trailer URL 失败',
-          error: 'FETCH_ERROR',
-          details: error.message,
-        },
-        { status: 500 }
-      );
-    }
+    console.error(`[refresh-trailer] 异常:`, error);
 
     return NextResponse.json(
       {
         code: 500,
         message: '刷新 trailer URL 失败',
         error: 'UNKNOWN_ERROR',
+        details: error instanceof Error ? error.message : '未知错误',
       },
       { status: 500 }
     );

@@ -12,76 +12,105 @@ import { getCacheTime, getConfig } from '@/lib/config';
  * @param id 豆瓣影片ID
  * @param proxyUrl 代理地址（使用 DoubanDetailProxy 配置）
  * 2024-2025 最佳实践：使用最新 User-Agent 和完整请求头
+ * 
+ * 注意：豆瓣移动端API对电影和电视剧使用不同的路径
+ * - 电影: /movie/{id}
+ * - 电视剧: /tv/{id}
+ * 此函数会先尝试movie，失败后尝试tv
  */
 async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
   trailerUrl?: string;
   backdrop?: string;
 } | null> {
-  try {
-    const originalUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
-    // 如果配置了代理，使用代理地址
-    const targetUrl = proxyUrl
-      ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
-      : originalUrl;
+  // 尝试获取数据的内部函数
+  async function tryFetch(type: 'movie' | 'tv'): Promise<{
+    trailerUrl?: string;
+    backdrop?: string;
+  } | null> {
+    try {
+      const originalUrl = `https://m.douban.com/rexxar/api/v2/${type}/${id}`;
+      // 如果配置了代理，使用代理地址
+      const targetUrl = proxyUrl
+        ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
+        : originalUrl;
 
-    // 创建 AbortController 用于超时控制
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+      // 创建 AbortController 用于超时控制
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
 
-    const response = await fetch(targetUrl, {
-      signal: controller.signal,
-      headers: {
-        // 2024-2025 最新 User-Agent（桌面版更不容易被限制）
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-        'Referer': 'https://movie.douban.com/explore',  // 更具体的 Referer
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Origin': 'https://movie.douban.com',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-    });
+      const response = await fetch(targetUrl, {
+        signal: controller.signal,
+        headers: {
+          // 2024-2025 最新 User-Agent（桌面版更不容易被限制）
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+          'Referer': 'https://movie.douban.com/explore',  // 更具体的 Referer
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Origin': 'https://movie.douban.com',
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-site',
+        },
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      console.warn(`[移动端API] 请求失败: ${response.status}`);
+      if (!response.ok) {
+        console.warn(`[移动端API] ${type} 请求失败: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json();
+
+      // 提取预告片URL（取第一个预告片）
+      const trailerUrl = data.trailers?.[0]?.video_url || undefined;
+
+      // 提取高清图片：优先使用raw原图，转换URL到最高清晰度
+      let backdrop = data.cover?.image?.raw?.url ||
+        data.cover?.image?.large?.url ||
+        data.cover?.image?.normal?.url ||
+        data.pic?.large ||
+        undefined;
+
+      // 将图片URL转换为高清版本（使用l而不是raw，避免重定向）
+      if (backdrop) {
+        backdrop = backdrop
+          .replace('/view/photo/s/', '/view/photo/l/')
+          .replace('/view/photo/m/', '/view/photo/l/')
+          .replace('/view/photo/sqxs/', '/view/photo/l/')
+          .replace('/s_ratio_poster/', '/l_ratio_poster/')
+          .replace('/m_ratio_poster/', '/l_ratio_poster/');
+      }
+
+      return { trailerUrl, backdrop };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn(`[移动端API] ${type} 请求超时`);
+      } else {
+        console.warn(`[移动端API] ${type} 获取失败: ${(error as Error).message}`);
+      }
       return null;
     }
-
-    const data = await response.json();
-
-    // 提取预告片URL（取第一个预告片）
-    const trailerUrl = data.trailers?.[0]?.video_url || undefined;
-
-    // 提取高清图片：优先使用raw原图，转换URL到最高清晰度
-    let backdrop = data.cover?.image?.raw?.url ||
-      data.cover?.image?.large?.url ||
-      data.cover?.image?.normal?.url ||
-      data.pic?.large ||
-      undefined;
-
-    // 将图片URL转换为高清版本（使用l而不是raw，避免重定向）
-    if (backdrop) {
-      backdrop = backdrop
-        .replace('/view/photo/s/', '/view/photo/l/')
-        .replace('/view/photo/m/', '/view/photo/l/')
-        .replace('/view/photo/sqxs/', '/view/photo/l/')
-        .replace('/s_ratio_poster/', '/l_ratio_poster/')
-        .replace('/m_ratio_poster/', '/l_ratio_poster/');
-    }
-
-    return { trailerUrl, backdrop };
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.warn(`[移动端API] 请求超时`);
-    } else {
-      console.warn(`[移动端API] 获取失败: ${(error as Error).message}`);
-    }
-    return null;
   }
+
+  // 先尝试 movie 类型
+  let result = await tryFetch('movie');
+
+  // 如果 movie 失败或没有trailer，尝试 tv 类型
+  if (!result || !result.trailerUrl) {
+    const tvResult = await tryFetch('tv');
+    if (tvResult) {
+      // 如果tv有trailer，使用tv的结果；否则合并两个结果
+      if (tvResult.trailerUrl) {
+        result = tvResult;
+      } else if (result && tvResult.backdrop && !result.backdrop) {
+        result.backdrop = tvResult.backdrop;
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
