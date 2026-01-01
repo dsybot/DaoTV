@@ -157,20 +157,7 @@ export async function POST(req: NextRequest) {
         await db.registerUser(username, password);
       }
 
-      // 重新获取配置来添加用户（此时会调用 configSelfCheck 从数据库获取最新用户列表）
-      config = await getConfig();
-      const newUser = {
-        username: username,
-        role: 'user' as const,
-        createdAt: Date.now(),
-      };
-
-      config.UserConfig.Users.push(newUser);
-
-      // 保存更新后的配置
-      await db.saveAdminConfig(config);
-
-      // 再次清除缓存（确保其他API读取到最新配置）
+      // 清除缓存，让 configSelfCheck 从数据库同步最新用户列表（包括 tags）
       clearConfigCache();
 
       // 注册成功后自动登录
