@@ -1053,12 +1053,15 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         type="checkbox"
                         checked={config.SiteConfig.DefaultUserTags?.includes(tag.name) || false}
                         onChange={async (e) => {
+                          const isChecked = e.target.checked;
+                          const tagName = tag.name;
+
                           await withLoading('toggleDefaultTag', async () => {
                             try {
                               const currentTags = config.SiteConfig.DefaultUserTags || [];
-                              const newTags = e.target.checked
-                                ? [...currentTags, tag.name]
-                                : currentTags.filter(t => t !== tag.name);
+                              const newTags = isChecked
+                                ? [...currentTags, tagName]
+                                : currentTags.filter(t => t !== tagName);
 
                               const response = await fetch('/api/admin/config', {
                                 method: 'POST',
@@ -1077,9 +1080,9 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                                 showAlert({
                                   type: 'success',
                                   title: '设置已更新',
-                                  message: e.target.checked
-                                    ? `已添加默认分组：${tag.name}`
-                                    : `已移除默认分组：${tag.name}`,
+                                  message: isChecked
+                                    ? `已添加默认分组：${tagName}`
+                                    : `已移除默认分组：${tagName}`,
                                   timer: 2000
                                 });
                               } else {
