@@ -161,9 +161,13 @@ export async function POST(req: NextRequest) {
       clearConfigCache();
 
       // 验证用户是否成功创建并包含tags（调试用）
-      console.log('=== 调试：验证用户创建 ===');
-      const verifyUser = await db.getUserInfoV2(username);
-      console.log('数据库中的用户信息:', verifyUser);
+      try {
+        console.log('=== 调试：验证用户创建 ===');
+        const verifyUser = await db.getUserInfoV2(username);
+        console.log('数据库中的用户信息:', verifyUser);
+      } catch (debugErr) {
+        console.error('调试日志失败:', debugErr);
+      }
 
       // 注册成功后自动登录
       const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
