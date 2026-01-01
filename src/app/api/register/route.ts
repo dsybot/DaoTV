@@ -80,10 +80,11 @@ export async function POST(req: NextRequest) {
     const { username, password, confirmPassword } = await req.json();
 
     // 先检查配置中是否允许注册（在验证输入之前）
+    let config: any;
     try {
-      const config = await getConfig();
+      config = await getConfig();
       const allowRegister = config.UserConfig?.AllowRegister !== false; // 默认允许注册
-      
+
       if (!allowRegister) {
         return NextResponse.json(
           { error: '管理员已关闭用户注册功能' },
@@ -135,11 +136,29 @@ export async function POST(req: NextRequest) {
       // 清除缓存（在注册前清除，避免读到旧缓存）
       clearConfigCache();
 
-      // 注册用户（V1）
-      await db.registerUser(username, password);
+      // 获取默认用户组
+      const defaultTags = config.SiteConfig.DefaultUserTags && config.SiteConfig.DefaultUserTags.length > 0
+        ? config.SiteConfig.DefaultUserTags
+        : undefined;
+
+      // 如果有默认用户组，使用 V2 注册；否则使用 V1 注册（保持兼容性）
+      if (defaultTags) {
+        // V2 注册（支持 tags）
+        await db.createUserV2(
+          username,
+          password,
+          'user',
+          defaultTags,  // 默认分组
+          undefined,    // oidcSub
+          undefined     // enabledApis
+        );
+      } else {
+        // V1 注册（无 tags，保持现有行为）
+        await db.registerUser(username, password);
+      }
 
       // 重新获取配置来添加用户（此时会调用 configSelfCheck 从数据库获取最新用户列表）
-      const config = await getConfig();
+      config = await getConfig();
       const newUser = {
         username: username,
         role: 'user' as const,
