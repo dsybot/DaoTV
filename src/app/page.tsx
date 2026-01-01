@@ -176,17 +176,46 @@ function HomeClient() {
       try {
         setLoading(true);
 
+        // 🚀 优先尝试从服务端缓存获取轮播图数据
+        let usedCache = false;
+        try {
+          const cacheRes = await fetch('/api/carousel-cache');
+          if (cacheRes.ok) {
+            const cacheData = await cacheRes.json();
+            if (cacheData.code === 200 && cacheData.meta?.cacheValid) {
+              console.log('[首页] 使用服务端轮播图缓存');
+              // 使用缓存数据
+              if (cacheData.data.movies?.length > 0) {
+                setHotMovies(cacheData.data.movies);
+              }
+              if (cacheData.data.tvShows?.length > 0) {
+                setHotTvShows(cacheData.data.tvShows);
+              }
+              if (cacheData.data.variety?.length > 0) {
+                setHotVarietyShows(cacheData.data.variety);
+              }
+              if (cacheData.data.anime?.length > 0) {
+                setHotAnime(cacheData.data.anime);
+              }
+              usedCache = true;
+            }
+          }
+        } catch (e) {
+          console.warn('[首页] 获取轮播图缓存失败，回退到直接请求:', e);
+        }
+
         // 并行获取热门电影、热门剧集、热门综艺、热门动漫、热门短剧和即将上映
         const [moviesData, tvShowsData, varietyShowsData, animeData, shortDramasData, bangumiCalendarData, upcomingReleasesData] =
           await Promise.allSettled([
-            getDoubanCategories({
+            // 如果已使用缓存，跳过豆瓣列表请求
+            usedCache ? Promise.resolve({ code: -1 }) : getDoubanCategories({
               kind: 'movie',
               category: '热门',
               type: '全部',
             }),
-            getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
-            getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
-            getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv_animation' }),
+            usedCache ? Promise.resolve({ code: -1 }) : getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
+            usedCache ? Promise.resolve({ code: -1 }) : getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
+            usedCache ? Promise.resolve({ code: -1 }) : getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv_animation' }),
             getRecommendedShortDramas(undefined, 8),
             GetBangumiCalendarData(),
             fetch('/api/release-calendar?limit=100').then(res => {
@@ -198,9 +227,9 @@ function HomeClient() {
             }),
           ]);
 
-        // 处理电影数据
-        if (moviesData.status === 'fulfilled' && moviesData.value?.code === 200) {
-          const movies = moviesData.value.list;
+        // 如果没有使用缓存，处理电影数据
+        if (!usedCache && moviesData.status === 'fulfilled' && (moviesData.value as any)?.code === 200) {
+          const movies = (moviesData.value as any).list;
           setHotMovies(movies);
 
           // 立即加载详情，不延迟
@@ -234,13 +263,13 @@ function HomeClient() {
               })
             );
           });
-        } else {
+        } else if (!usedCache) {
           console.warn('获取热门电影失败:', moviesData.status === 'rejected' ? moviesData.reason : '数据格式错误');
         }
 
         // 处理剧集数据
-        if (tvShowsData.status === 'fulfilled' && tvShowsData.value?.code === 200) {
-          const tvShows = tvShowsData.value.list;
+        if (!usedCache && tvShowsData.status === 'fulfilled' && (tvShowsData.value as any)?.code === 200) {
+          const tvShows = (tvShowsData.value as any).list;
           setHotTvShows(tvShows);
 
           // 性能优化：使用 requestIdleCallback 延迟加载详情
@@ -282,13 +311,13 @@ function HomeClient() {
           } else {
             setTimeout(loadTvDetails, 1000);
           }
-        } else {
+        } else if (!usedCache) {
           console.warn('获取热门剧集失败:', tvShowsData.status === 'rejected' ? tvShowsData.reason : '数据格式错误');
         }
 
         // 处理综艺数据
-        if (varietyShowsData.status === 'fulfilled' && varietyShowsData.value?.code === 200) {
-          const varietyShows = varietyShowsData.value.list;
+        if (!usedCache && varietyShowsData.status === 'fulfilled' && (varietyShowsData.value as any)?.code === 200) {
+          const varietyShows = (varietyShowsData.value as any).list;
           setHotVarietyShows(varietyShows);
 
           // 性能优化：使用 requestIdleCallback 延迟加载详情
@@ -332,13 +361,13 @@ function HomeClient() {
               setTimeout(loadVarietyDetails, 1000);
             }
           }
-        } else {
+        } else if (!usedCache) {
           console.warn('获取热门综艺失败:', varietyShowsData.status === 'rejected' ? varietyShowsData.reason : '数据格式错误');
         }
 
         // 处理动漫数据
-        if (animeData.status === 'fulfilled' && animeData.value?.code === 200) {
-          const animes = animeData.value.list;
+        if (!usedCache && animeData.status === 'fulfilled' && (animeData.value as any)?.code === 200) {
+          const animes = (animeData.value as any).list;
           setHotAnime(animes);
 
           // 性能优化：使用 requestIdleCallback 延迟加载详情
@@ -372,7 +401,7 @@ function HomeClient() {
               setTimeout(loadAnimeDetails, 1000);
             }
           }
-        } else {
+        } else if (!usedCache) {
           console.warn('获取热门动漫失败:', animeData.status === 'rejected' ? animeData.reason : '数据格式错误');
         }
 
