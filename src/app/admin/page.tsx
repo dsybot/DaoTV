@@ -632,9 +632,28 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
     role: 'user' | 'admin' | 'owner';
     enabledApis?: string[];
     showAdultContent?: boolean;
+    tags?: string[];
   }) => {
     setSelectedUser(user);
-    setSelectedApis(user.enabledApis || []);
+
+    // 计算用户的所有有效 API（个人 + 用户组）
+    const userApis = user.enabledApis || [];
+    const tagApis: string[] = [];
+
+    // 从用户组获取 API 权限
+    if (user.tags && user.tags.length > 0) {
+      user.tags.forEach(tagName => {
+        const tag = config.UserConfig.Tags?.find(t => t.name === tagName);
+        if (tag && tag.enabledApis) {
+          tagApis.push(...tag.enabledApis);
+        }
+      });
+    }
+
+    // 合并去重
+    const allApis = [...new Set([...userApis, ...tagApis])];
+
+    setSelectedApis(allApis);
     setSelectedShowAdultContent(user.showAdultContent || false);
     setShowConfigureApisModal(true);
   };
