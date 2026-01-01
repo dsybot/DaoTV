@@ -11,26 +11,52 @@ import { getConfig } from '@/lib/config';
  * - 电视剧: /tv/{id}
  */
 
-// 获取单个类型的trailer
-async function fetchTrailerByType(id: string, type: 'movie' | 'tv', proxyUrl?: string): Promise<string | null> {
-  const TIMEOUT = 15000; // 15秒超时
+// 获取trailer的函数（支持重定向检测）
+async function fetchTrailerWithRedirectDetection(id: string, proxyUrl?: string): Promise<string | null> {
+  const TIMEOUT = 15000;
 
   try {
-    const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/${type}/${id}`;
+    // 先尝试 movie 端点
+    let mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
-    console.log(`[refresh-trailer] 尝试 ${type} 类型, ID: ${id}`);
+    console.log(`[refresh-trailer] 开始请求: ${id}`);
+
+    // 如果配置了代理，使用代理地址，并添加 noredirect 参数
+    let targetUrl = proxyUrl
+      ? `${proxyUrl}${encodeURIComponent(mobileApiUrl)}&noredirect=1`
+      : mobileApiUrl;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
-    let response: Response;
+    let response = await fetch(targetUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        'Referer': 'https://movie.douban.com/explore',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Origin': 'https://movie.douban.com',
+      },
+      redirect: proxyUrl ? 'follow' : 'manual', // 无代理时手动处理重定向
+    });
 
-    if (proxyUrl) {
-      const targetUrl = `${proxyUrl}${encodeURIComponent(mobileApiUrl)}`;
-      response = await fetch(targetUrl, { signal: controller.signal });
-    } else {
-      response = await fetch(mobileApiUrl, {
-        signal: controller.signal,
+    clearTimeout(timeoutId);
+
+    // 如果是 3xx 重定向，说明可能是电视剧，尝试 tv 端点
+    if (response.status >= 300 && response.status < 400) {
+      console.log(`[refresh-trailer] 检测到重定向，尝试 TV 端点: ${id}`);
+      mobileApiUrl = `https://m.douban.com/rexxar/api/v2/tv/${id}`;
+
+      targetUrl = proxyUrl
+        ? `${proxyUrl}${encodeURIComponent(mobileApiUrl)}`
+        : mobileApiUrl;
+
+      const tvController = new AbortController();
+      const tvTimeoutId = setTimeout(() => tvController.abort(), TIMEOUT);
+
+      response = await fetch(targetUrl, {
+        signal: tvController.signal,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
           'Referer': 'https://movie.douban.com/explore',
@@ -39,12 +65,14 @@ async function fetchTrailerByType(id: string, type: 'movie' | 'tv', proxyUrl?: s
           'Origin': 'https://movie.douban.com',
         },
       });
+
+      clearTimeout(tvTimeoutId);
     }
 
-    clearTimeout(timeoutId);
+    console.log(`[refresh-trailer] 请求完成，状态: ${response.status}`);
 
     if (!response.ok) {
-      console.warn(`[refresh-trailer] ${type} 请求失败: ${response.status}`);
+      console.warn(`[refresh-trailer] 请求失败: ${response.status}`);
       return null;
     }
 
@@ -52,32 +80,18 @@ async function fetchTrailerByType(id: string, type: 'movie' | 'tv', proxyUrl?: s
     const trailerUrl = data.trailers?.[0]?.video_url;
 
     if (trailerUrl) {
-      console.log(`[refresh-trailer] 成功从 ${type} API 获取trailer URL`);
+      console.log(`[refresh-trailer] 成功获取trailer URL`);
     }
 
     return trailerUrl || null;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.warn(`[refresh-trailer] ${type} 请求超时`);
+      console.warn(`[refresh-trailer] 请求超时`);
     } else {
-      console.warn(`[refresh-trailer] ${type} 获取失败: ${(error as Error).message}`);
+      console.warn(`[refresh-trailer] 获取失败: ${(error as Error).message}`);
     }
     return null;
   }
-}
-
-// 带回退的获取函数：先尝试movie，失败后尝试tv
-async function fetchTrailerWithFallback(id: string, proxyUrl?: string): Promise<string | null> {
-  // 先尝试 movie 类型
-  let trailerUrl = await fetchTrailerByType(id, 'movie', proxyUrl);
-
-  // 如果 movie 失败，尝试 tv 类型
-  if (!trailerUrl) {
-    console.log(`[refresh-trailer] movie 类型失败，尝试 tv 类型...`);
-    trailerUrl = await fetchTrailerByType(id, 'tv', proxyUrl);
-  }
-
-  return trailerUrl;
 }
 
 export async function GET(request: Request) {
@@ -102,7 +116,7 @@ export async function GET(request: Request) {
 
     console.log(`[refresh-trailer] ID: ${id}, 代理: ${proxyUrl ? proxyUrl.substring(0, 30) + '...' : '(无)'}`);
 
-    const trailerUrl = await fetchTrailerWithFallback(id, proxyUrl);
+    const trailerUrl = await fetchTrailerWithRedirectDetection(id, proxyUrl);
 
     if (!trailerUrl) {
       return NextResponse.json(
