@@ -1556,9 +1556,29 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         <td className='px-6 py-4 whitespace-nowrap'>
                           <div className='flex items-center space-x-2'>
                             <span className='text-sm text-gray-900 dark:text-gray-100'>
-                              {user.enabledApis && user.enabledApis.length > 0
-                                ? `${user.enabledApis.length} 个源`
-                                : '无限制'}
+                              {(() => {
+                                // 计算用户的有效 API 权限
+                                const userApis = user.enabledApis || [];
+                                const tagApis: string[] = [];
+
+                                // 从用户组获取 API 权限
+                                if (user.tags && user.tags.length > 0) {
+                                  user.tags.forEach(tagName => {
+                                    const tag = config.UserConfig.Tags?.find(t => t.name === tagName);
+                                    if (tag && tag.enabledApis) {
+                                      tagApis.push(...tag.enabledApis);
+                                    }
+                                  });
+                                }
+
+                                // 合并去重
+                                const allApis = [...new Set([...userApis, ...tagApis])];
+
+                                if (allApis.length > 0) {
+                                  return `${allApis.length} 个源`;
+                                }
+                                return '无限制';
+                              })()}
                             </span>
                             {/* 配置采集源权限按钮 */}
                             {(role === 'owner' ||
