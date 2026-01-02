@@ -252,7 +252,10 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(jsonData, {
           status: 200,
-          headers: getCorsHeaders()
+          headers: {
+            ...getCorsHeaders(),
+            'X-Proxy-Via': 'Cloudflare-Worker', // 🔍 标记请求经过 Worker 代理
+          }
         });
 
       } catch (workerError: any) {
@@ -316,7 +319,10 @@ export async function GET(request: NextRequest) {
       // 返回 JSON 响应
       return NextResponse.json(jsonData, {
         status: 200,
-        headers: getCorsHeaders()
+        headers: {
+          ...getCorsHeaders(),
+          'X-Proxy-Via': 'Local-Server', // 🔍 标记请求经过本地代理
+        }
       });
 
     } catch (fetchError: any) {

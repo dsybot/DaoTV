@@ -2754,6 +2754,14 @@ const VideoSourceConfig = ({
     proxyUrl: 'https://corsapi.smone.workers.dev'
   });
 
+  // 代理状态检测
+  const [proxyStatus, setProxyStatus] = useState<{
+    healthy: boolean;
+    responseTime?: number;
+    error?: string;
+    lastCheck?: string;
+  } | null>(null);
+
   // 批量操作相关状态
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
 
@@ -2931,6 +2939,48 @@ const VideoSourceConfig = ({
         type: 'error',
         title: '保存失败',
         message: error instanceof Error ? error.message : '保存失败'
+      });
+    }
+  };
+
+  // 检测代理状态
+  const handleCheckProxyStatus = async () => {
+    try {
+      await withLoading('checkProxyStatus', async () => {
+        const response = await fetch('/api/proxy-status');
+        if (!response.ok) {
+          throw new Error('检测失败');
+        }
+
+        const data = await response.json();
+        setProxyStatus({
+          healthy: data.videoProxy.health.healthy,
+          responseTime: data.videoProxy.health.responseTime,
+          error: data.videoProxy.health.error,
+          lastCheck: new Date().toLocaleString('zh-CN'),
+        });
+
+        if (data.videoProxy.health.healthy) {
+          showAlert({
+            type: 'success',
+            title: '代理正常',
+            message: `响应时间: ${data.videoProxy.health.responseTime}ms`,
+            timer: 3000
+          });
+        } else {
+          showAlert({
+            type: 'warning',
+            title: '代理异常',
+            message: data.videoProxy.health.error || '无法连接到 Worker',
+            timer: 3000
+          });
+        }
+      });
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: '检测失败',
+        message: error instanceof Error ? error.message : '检测失败'
       });
     }
   };
@@ -3608,7 +3658,35 @@ const VideoSourceConfig = ({
               </ul>
             </div>
 
-            <div className='flex justify-end'>
+            <div className='bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3'>
+              <h4 className='text-sm font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>
+                ⚠️ 自定义部署
+              </h4>
+              <p className='text-xs text-yellow-800 dark:text-yellow-300'>
+                如需自定义部署Worker服务，请参考：
+                <a
+                  href='https://github.com/SzeMeng76/CORSAPI'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='underline hover:text-yellow-600 ml-1'
+                >
+                  CORSAPI项目
+                </a>
+              </p>
+            </div>
+
+            <div className='flex justify-end gap-2'>
+              <button
+                onClick={handleCheckProxyStatus}
+                disabled={!videoProxySettings.enabled || isLoading('checkProxyStatus')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  !videoProxySettings.enabled || isLoading('checkProxyStatus')
+                    ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed text-gray-500'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {isLoading('checkProxyStatus') ? '检测中...' : '🔍 检测代理状态'}
+              </button>
               <button
                 onClick={handleSaveVideoProxy}
                 disabled={isLoading('saveVideoProxy')}
@@ -3621,6 +3699,45 @@ const VideoSourceConfig = ({
                 {isLoading('saveVideoProxy') ? '保存中...' : '保存代理配置'}
               </button>
             </div>
+
+            {/* 代理状态显示 */}
+            {proxyStatus && (
+              <div className={`mt-3 p-3 rounded-lg border ${
+                proxyStatus.healthy
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+              }`}>
+                <div className='flex items-center gap-2'>
+                  {proxyStatus.healthy ? (
+                    <svg className='w-5 h-5 text-green-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 13l4 4L19 7' />
+                    </svg>
+                  ) : (
+                    <svg className='w-5 h-5 text-red-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12' />
+                    </svg>
+                  )}
+                  <div className='flex-1'>
+                    <div className={`text-sm font-semibold ${
+                      proxyStatus.healthy ? 'text-green-900 dark:text-green-300' : 'text-red-900 dark:text-red-300'
+                    }`}>
+                      {proxyStatus.healthy ? '✅ 代理正常工作' : '❌ 代理连接失败'}
+                    </div>
+                    <div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
+                      {proxyStatus.healthy && proxyStatus.responseTime && (
+                        <span>响应时间: {proxyStatus.responseTime}ms</span>
+                      )}
+                      {!proxyStatus.healthy && proxyStatus.error && (
+                        <span>错误: {proxyStatus.error}</span>
+                      )}
+                      {proxyStatus.lastCheck && (
+                        <span className='ml-3'>检测时间: {proxyStatus.lastCheck}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
