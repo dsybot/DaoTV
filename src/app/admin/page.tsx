@@ -2748,6 +2748,12 @@ const VideoSourceConfig = ({
     from: 'config',
   });
 
+  // 🔑 普通视频源代理配置
+  const [videoProxySettings, setVideoProxySettings] = useState({
+    enabled: false,
+    proxyUrl: 'https://corsapi.smone.workers.dev'
+  });
+
   // 批量操作相关状态
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
 
@@ -2827,6 +2833,14 @@ const VideoSourceConfig = ({
       // 重置选择状态
       setSelectedSources(new Set());
     }
+
+    // 加载普通视频源代理配置
+    if (config?.VideoProxyConfig) {
+      setVideoProxySettings({
+        enabled: config.VideoProxyConfig.enabled ?? false,
+        proxyUrl: config.VideoProxyConfig.proxyUrl || 'https://corsapi.smone.workers.dev'
+      });
+    }
   }, [config]);
 
   // 通用 API 请求
@@ -2870,6 +2884,55 @@ const VideoSourceConfig = ({
     withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: 'update_adult', key, is_adult })).catch(() => {
       console.error('操作失败', 'update_adult', key);
     });
+  };
+
+  // 保存普通视频源代理配置
+  const handleSaveVideoProxy = async () => {
+    try {
+      // 验证代理URL
+      if (videoProxySettings.enabled && videoProxySettings.proxyUrl) {
+        try {
+          new URL(videoProxySettings.proxyUrl);
+        } catch {
+          showAlert({
+            type: 'error',
+            title: '配置错误',
+            message: '代理URL格式不正确'
+          });
+          return;
+        }
+      }
+
+      await withLoading('saveVideoProxy', async () => {
+        const response = await fetch('/api/admin/video-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(videoProxySettings),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '保存失败');
+        }
+
+        await refreshConfig();
+      });
+
+      showAlert({
+        type: 'success',
+        title: '保存成功',
+        message: '视频源代理配置已保存',
+        timer: 2000
+      });
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: '保存失败',
+        message: error instanceof Error ? error.message : '保存失败'
+      });
+    }
   };
 
   const handleBatchMarkAdult = async (markAsAdult: boolean) => {
@@ -3490,6 +3553,78 @@ const VideoSourceConfig = ({
 
   return (
     <div className='space-y-6'>
+      {/* Cloudflare Worker 代理配置 */}
+      <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10'>
+        <div className='flex items-center justify-between mb-4'>
+          <div>
+            <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
+              <svg className='w-5 h-5 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M13 10V3L4 14h7v7l9-11h-7z' />
+              </svg>
+              Cloudflare Worker 代理加速
+            </h3>
+            <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
+              为网页播放启用全球CDN加速，提升视频源API访问速度和稳定性
+            </p>
+          </div>
+          <label className='relative inline-flex items-center cursor-pointer'>
+            <input
+              type='checkbox'
+              checked={videoProxySettings.enabled}
+              onChange={(e) => setVideoProxySettings(prev => ({ ...prev, enabled: e.target.checked }))}
+              className='sr-only peer'
+            />
+            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+        {videoProxySettings.enabled && (
+          <div className='space-y-3'>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Cloudflare Worker 地址
+              </label>
+              <input
+                type='text'
+                value={videoProxySettings.proxyUrl}
+                onChange={(e) => setVideoProxySettings(prev => ({ ...prev, proxyUrl: e.target.value }))}
+                placeholder='https://your-worker.workers.dev'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+              />
+              <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                默认地址：https://corsapi.smone.workers.dev（支持自定义部署）
+              </p>
+            </div>
+
+            <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3'>
+              <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2'>
+                💡 功能说明
+              </h4>
+              <ul className='text-xs text-blue-800 dark:text-blue-300 space-y-1'>
+                <li>• 通过Cloudflare全球CDN加速视频源API访问</li>
+                <li>• 自动转发所有API参数（ac=list, ac=detail等）</li>
+                <li>• 为每个源生成唯一路径，提升兼容性</li>
+                <li>• 仅影响网页播放，不影响TVBox配置</li>
+              </ul>
+            </div>
+
+            <div className='flex justify-end'>
+              <button
+                onClick={handleSaveVideoProxy}
+                disabled={isLoading('saveVideoProxy')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isLoading('saveVideoProxy')
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                {isLoading('saveVideoProxy') ? '保存中...' : '保存代理配置'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 添加视频源表单 */}
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
         <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>

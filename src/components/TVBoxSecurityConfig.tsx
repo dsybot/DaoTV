@@ -447,10 +447,10 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
           <div className='flex items-center justify-between mb-4'>
             <div>
               <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
-                Cloudflare Worker 代理
+                Cloudflare Worker 代理（TVBox专用）
               </h3>
               <p className='text-sm text-gray-600 dark:text-gray-400'>
-                为视频源API启用Cloudflare全球CDN加速，提升访问速度和稳定性
+                为TVBox配置启用Cloudflare全球CDN加速，提升访问速度和稳定性
               </p>
             </div>
             <label className='relative inline-flex items-center cursor-pointer'>
