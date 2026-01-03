@@ -3,8 +3,9 @@
 'use client';
 
 import { Cat, Clover, Film, Globe, Home, Menu, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+import { FastLink } from './FastLink';
 import {
   createContext,
   useCallback,
@@ -30,7 +31,7 @@ export const useSidebar = () => useContext(SidebarContext);
 const Logo = () => {
   const { siteName } = useSite();
   return (
-    <Link
+    <FastLink
       href='/'
       className='flex items-center justify-center h-16 select-none group'
     >
@@ -42,7 +43,7 @@ const Logo = () => {
           {siteName}
         </span>
       </div>
-    </Link>
+    </FastLink>
   );
 };
 
@@ -222,8 +223,9 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
 
             {/* 首页和搜索导航 */}
             <nav className='px-2 mt-4 space-y-1'>
-              <Link
+              <FastLink
                 href='/'
+                useTransitionNav
                 onClick={() => setActive('/')}
                 data-active={active === '/'}
                 className={`group relative flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-linear-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-600 data-[active=true]:bg-linear-to-r data-[active=true]:from-green-500/20 data-[active=true]:to-emerald-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-150 min-h-[40px] dark:text-gray-300 dark:hover:from-green-500/10 dark:hover:to-emerald-500/10 dark:hover:text-green-400 dark:data-[active=true]:from-green-500/15 dark:data-[active=true]:to-emerald-500/15 dark:data-[active=true]:text-green-400 ${isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
@@ -239,9 +241,10 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                 )}
                 {/* 激活状态的左侧边框指示器 */}
                 <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-linear-to-b from-green-500 to-emerald-500 rounded-r-full transition-all duration-200 data-[active=true]:h-8 opacity-0 data-[active=true]:opacity-100' data-active={active === '/'}></div>
-              </Link>
-              <Link
+              </FastLink>
+              <FastLink
                 href='/search'
+                useTransitionNav
                 onClick={(e) => {
                   e.preventDefault();
                   handleSearchClick();
@@ -261,7 +264,7 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                 )}
                 {/* 激活状态的左侧边框指示器 */}
                 <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-linear-to-b from-blue-500 to-cyan-500 rounded-r-full transition-all duration-200 data-[active=true]:h-8 opacity-0 data-[active=true]:opacity-100' data-active={active === '/search'}></div>
-              </Link>
+              </FastLink>
             </nav>
 
             {/* 菜单项 */}
@@ -302,9 +305,10 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                   const theme = colorThemes[index] || colorThemes[7];
 
                   return (
-                    <Link
+                    <FastLink
                       key={item.href}
                       href={item.href}
+                      useTransitionNav
                       onClick={() => setActive(item.href)}
                       data-active={isActive}
                       className={`group relative flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-linear-to-r ${theme.hover} ${theme.active} ${theme.text} transition-colors duration-150 min-h-[40px] dark:text-gray-300 ${isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
@@ -323,7 +327,7 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                       )}
                       {/* 激活状态的左侧边框指示器 */}
                       <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-linear-to-b ${theme.border} rounded-r-full transition-all duration-200 data-[active=true]:h-8 opacity-0 data-[active=true]:opacity-100`} data-active={isActive}></div>
-                    </Link>
+                    </FastLink>
                   );
                 })}
               </div>

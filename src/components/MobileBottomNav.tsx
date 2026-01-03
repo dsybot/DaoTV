@@ -18,9 +18,10 @@ import {
   Tv,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { FastLink } from './FastLink';
 
 interface MobileBottomNavProps {
   activePath?: string;
@@ -288,9 +289,10 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   const Icon = item.icon;
                   const theme = getColorTheme(item.href);
                   return (
-                    <Link
+                    <FastLink
                       key={item.href}
                       href={item.href}
+                      useTransitionNav
                       onClick={() => setShowMoreMenu(false)}
                       className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 active:scale-95 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
                     >
@@ -303,7 +305,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                       <span className={`text-xs font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}>
                         {item.label}
                       </span>
-                    </Link>
+                    </FastLink>
                   );
                 })}
             </div>
@@ -333,8 +335,9 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
                 return (
                   <li key={item.href} className="flex-1 shrink-0 md:hidden">
-                    <Link
+                    <FastLink
                       href={item.href}
+                      useTransitionNav
                       className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
                     >
                       <item.icon
@@ -349,7 +352,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                       >
                         {item.label}
                       </span>
-                    </Link>
+                    </FastLink>
                   </li>
                 );
               })}
@@ -370,8 +373,9 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                       : undefined
                   }
                 >
-                  <Link
+                  <FastLink
                     href={item.href}
+                    useTransitionNav
                     className="group flex flex-col items-center justify-center min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200"
                   >
                     <item.icon
@@ -388,7 +392,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                     >
                       {item.label}
                     </span>
-                  </Link>
+                  </FastLink>
                 </li>
               );
             })}
