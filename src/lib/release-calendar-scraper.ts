@@ -2,11 +2,6 @@
 'use server';
 
 import { ReleaseCalendarItem } from './types';
-import {
-  scrapeWikipediaChineseMovies,
-  scrapeWikipediaChineseTVShows,
-  batchEnrichWithDouban,
-} from './wikipedia-douban-scraper';
 
 const baseUrl = 'https://g.manmankan.com/dy2013';
 
@@ -735,7 +730,6 @@ export async function scrapeAllReleases(): Promise<ReleaseCalendarItem[]> {
   try {
     console.log('📅 开始抓取发布日历数据...');
 
-    // ========== Manmankan 数据源 ==========
     // 抓取电影时间表数据
     console.log('🎬 抓取电影时间表数据...');
     const movies = await scrapeMovieReleases();
@@ -765,59 +759,13 @@ export async function scrapeAllReleases(): Promise<ReleaseCalendarItem[]> {
     const tvHomepage = await scrapeTVHomepage();
     console.log(`✅ 电视剧首页数据抓取完成: ${tvHomepage.length} 部`);
 
-    // ========== Wikipedia 数据源 ==========
-    console.log('📖 开始抓取 Wikipedia 数据...');
-
-    // 添加随机延迟
-    await randomDelay(3000, 5000);
-
-    // 抓取 Wikipedia 中国电影
-    console.log('🎬 抓取 Wikipedia 中国电影数据...');
-    let wikiMovies = await scrapeWikipediaChineseMovies();
-    console.log(`✅ Wikipedia 中国电影数据抓取完成: ${wikiMovies.length} 部`);
-
-    // 添加随机延迟
-    await randomDelay(3000, 5000);
-
-    // 抓取 Wikipedia 中国电视剧
-    console.log('📺 抓取 Wikipedia 中国电视剧数据...');
-    let wikiTVShows = await scrapeWikipediaChineseTVShows();
-    console.log(`✅ Wikipedia 中国电视剧数据抓取完成: ${wikiTVShows.length} 部`);
-
-    // ========== 豆瓣补充数据 ==========
-    console.log('🔍 开始使用豆瓣补充 Wikipedia 数据...');
-
-    // 合并 Wikipedia 数据
-    const allWikiItems = [...wikiMovies, ...wikiTVShows];
-
-    if (allWikiItems.length > 0) {
-      console.log(`📊 共 ${allWikiItems.length} 条 Wikipedia 数据需要补充`);
-      const enrichedWikiItems = await batchEnrichWithDouban(allWikiItems);
-      console.log(`✅ 豆瓣补充完成`);
-
-      // 更新 Wikipedia 数据
-      wikiMovies = enrichedWikiItems.filter(item => item.type === 'movie');
-      wikiTVShows = enrichedWikiItems.filter(item => item.type === 'tv');
-    }
-
-    // ========== 合并所有数据源 ==========
     // 合并所有数据，去重（按title和releaseDate去重）
-    const allItems = [
-      ...movies,
-      ...moviesHomepage,
-      ...tvShows,
-      ...tvHomepage,
-      ...wikiMovies,
-      ...wikiTVShows,
-    ];
-
+    const allItems = [...movies, ...moviesHomepage, ...tvShows, ...tvHomepage];
     const uniqueItems = allItems.filter((item, index, self) =>
       index === self.findIndex(t => t.title === item.title && t.releaseDate === item.releaseDate)
     );
 
     console.log(`🎉 总共抓取到 ${allItems.length} 条发布数据（去重后 ${uniqueItems.length} 条）`);
-    console.log(`   - Manmankan: ${movies.length + moviesHomepage.length + tvShows.length + tvHomepage.length} 条`);
-    console.log(`   - Wikipedia: ${wikiMovies.length + wikiTVShows.length} 条`);
 
     return uniqueItems;
   } catch (error) {
