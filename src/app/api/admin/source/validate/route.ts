@@ -9,13 +9,17 @@ import { API_CONFIG } from '@/lib/config';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
+  console.log('[Source Validate] ========== API Route Called ==========');
+
   const authInfo = getAuthInfoFromCookie(request);
   if (!authInfo || !authInfo.username) {
+    console.log('[Source Validate] Unauthorized - no auth info');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const searchKeyword = searchParams.get('q');
+  console.log(`[Source Validate] Search keyword: ${searchKeyword}`);
 
   if (!searchKeyword) {
     return new Response(
