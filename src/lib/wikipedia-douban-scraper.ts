@@ -44,6 +44,7 @@ export async function scrapeWikipediaChineseMovies(): Promise<ReleaseCalendarIte
       const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
       let rowMatch;
       let isHeaderRow = true;
+      let currentMonth = '';
 
       while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
         if (isHeaderRow) {
@@ -53,37 +54,45 @@ export async function scrapeWikipediaChineseMovies(): Promise<ReleaseCalendarIte
 
         const row = rowMatch[1];
 
-        // 提取单元格
+        // 检查是否有月份列（rowspan 的 th）
+        const monthMatch = row.match(/<th[^>]*rowspan[^>]*>([\s\S]*?)<\/th>/);
+        if (monthMatch) {
+          // 提取月份（例如：一<br />月 → 一月）
+          const monthText = monthMatch[1].replace(/<br[^>]*>/g, '').trim();
+          const monthMap: Record<string, string> = {
+            '一月': '01', '二月': '02', '三月': '03', '四月': '04',
+            '五月': '05', '六月': '06', '七月': '07', '八月': '08',
+            '九月': '09', '十月': '10', '十一月': '11', '十二月': '12'
+          };
+          currentMonth = monthMap[monthText] || '';
+        }
+
+        if (!currentMonth) continue;
+
+        // 提取单元格（td）
         const cells: string[] = [];
-        const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g;
+        const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
         let cellMatch;
 
         while ((cellMatch = cellRegex.exec(row)) !== null) {
           cells.push(cellMatch[1]);
         }
 
-        if (cells.length < 3) continue;
+        if (cells.length < 4) continue;
 
-        // 解析数据：日期、片名、英文名、导演
-        const dateCell = cells[0] || cells[1]; // 有些表格日期可能在不同列
-        const titleCell = cells[1] || cells[2];
-        const englishTitleCell = cells[2] || cells[3];
-        const directorCell = cells[3] || cells[4];
+        // 字段顺序：日期、片名、英文片名、导演、主演
+        const dayCell = cells[0];
+        const titleCell = cells[1];
+        const englishTitleCell = cells[2];
+        const directorCell = cells[3];
+        const actorsCell = cells[4] || '';
 
-        // 提取日期 (1月10日 或 2026-01-10)
-        const dateMatch = dateCell.match(/(\d{1,2})月(\d{1,2})日|(\d{4})-(\d{1,2})-(\d{1,2})/);
-        if (!dateMatch) continue;
+        // 提取日期（只有日，例如：1）
+        const dayMatch = dayCell.match(/(\d{1,2})/);
+        if (!dayMatch) continue;
 
-        let releaseDate: string;
-        if (dateMatch[3]) {
-          // 格式：2026-01-10
-          releaseDate = `${dateMatch[3]}-${dateMatch[4].padStart(2, '0')}-${dateMatch[5].padStart(2, '0')}`;
-        } else {
-          // 格式：1月10日
-          const month = dateMatch[1].padStart(2, '0');
-          const day = dateMatch[2].padStart(2, '0');
-          releaseDate = `2026-${month}-${day}`;
-        }
+        const day = dayMatch[1].padStart(2, '0');
+        const releaseDate = `2026-${currentMonth}-${day}`;
 
         // 只保留今天及以后的数据
         const today = new Date().toISOString().split('T')[0];
