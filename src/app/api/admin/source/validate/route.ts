@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { getConfig, getAvailableApiSites } from '@/lib/config';
 import { API_CONFIG } from '@/lib/config';
 
 export const runtime = 'nodejs';
@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const config = await getConfig();
-  const apiSites = config.SourceConfig;
+  // 🔑 使用 getAvailableApiSites() 来获取源列表，自动应用代理配置
+  const apiSites = await getAvailableApiSites(authInfo.username);
 
   // 共享状态
   let streamClosed = false;
