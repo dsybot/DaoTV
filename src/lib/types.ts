@@ -376,7 +376,9 @@ export interface ReleaseCalendarItem {
   cover?: string; // 封面图片URL
   description?: string; // 简介
   episodes?: number; // 集数（电视剧）
-  source: 'manmankan'; // 数据来源
+  source: 'manmankan' | 'wikipedia'; // 数据来源
+  doubanRating?: string; // 豆瓣评分
+  doubanId?: string; // 豆瓣ID
   createdAt: number; // 记录创建时间戳
   updatedAt: number; // 记录更新时间戳
 }
