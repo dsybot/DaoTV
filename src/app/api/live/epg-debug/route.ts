@@ -4,9 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCachedLiveChannels } from '@/lib/live';
+import { getConfig } from '@/lib/config';
+import { parseEpgWithDebug, parseM3U } from '@/lib/live';
 
 export const runtime = 'nodejs';
+
+const defaultUA = 'AptvPlayer/1.4.10';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,53 +20,74 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '缺少 source 参数，用法: /api/live/epg-debug?source=你的直播源key' }, { status: 400 });
     }
 
-    const channelData = await getCachedLiveChannels(sourceKey);
+    const config = await getConfig();
+    const liveInfo = config.LiveConfig?.find(live => live.key === sourceKey);
 
-    if (!channelData) {
+    if (!liveInfo) {
       return NextResponse.json({
-        error: '未找到直播源数据',
-        solution: '请先在后台管理页面添加并刷新直播源'
+        error: '未找到直播源配置',
+        solution: '请先在后台管理页面添加直播源'
       }, { status: 404 });
     }
 
+    // 获取 M3U 数据
+    const ua = liveInfo.ua || defaultUA;
+    const m3uResponse = await fetch(liveInfo.url, {
+      headers: {
+        'User-Agent': ua,
+      },
+    });
+    const m3uData = await m3uResponse.text();
+    const m3uResult = parseM3U(sourceKey, m3uData);
+
+    // 获取 EPG URL
+    const epgUrl = liveInfo.epg || m3uResult.tvgUrl;
+
+    if (!epgUrl) {
+      return NextResponse.json({
+        error: 'EPG URL 未配置',
+        solution: '在后台管理页面的直播源配置中填写 EPG URL，或确保 M3U 文件中包含 x-tvg-url 或 url-tvg 参数'
+      }, { status: 400 });
+    }
+
+    // 使用调试版本的 parseEpg
+    const { epgs, debug } = await parseEpgWithDebug(
+      epgUrl,
+      ua,
+      m3uResult.channels.map(channel => channel.tvgId).filter(tvgId => tvgId),
+      m3uResult.channels
+    );
+
     // 统计信息
-    const totalChannels = channelData.channels.length;
-    const channelsWithTvgId = channelData.channels.filter(c => c.tvgId).length;
+    const totalChannels = m3uResult.channels.length;
+    const channelsWithTvgId = m3uResult.channels.filter(c => c.tvgId).length;
     const channelsWithoutTvgId = totalChannels - channelsWithTvgId;
-    const epgChannelIds = Object.keys(channelData.epgs);
+    const epgChannelIds = Object.keys(epgs);
     const channelsWithEpg = epgChannelIds.length;
 
     // 前10个频道的详细信息
-    const sampleChannels = channelData.channels.slice(0, 10).map(c => {
-      const hasEpg = !!channelData.epgs[c.tvgId || c.name];
+    const sampleChannels = m3uResult.channels.slice(0, 10).map(c => {
+      const hasEpg = !!epgs[c.tvgId || c.name];
       const epgKey = c.tvgId || c.name;
       return {
         name: c.name,
         tvgId: c.tvgId || '(无 tvg-id)',
         epgKey: epgKey,
         hasEpg: hasEpg,
-        programCount: hasEpg ? channelData.epgs[epgKey].length : 0,
-        firstProgram: hasEpg ? channelData.epgs[epgKey][0] : null
+        programCount: hasEpg ? epgs[epgKey].length : 0,
+        firstProgram: hasEpg ? epgs[epgKey][0] : null
       };
     });
 
     // EPG 前5个频道
     const epgSample = epgChannelIds.slice(0, 5).map(key => ({
       key,
-      programCount: channelData.epgs[key].length,
-      firstProgram: channelData.epgs[key][0]
+      programCount: epgs[key].length,
+      firstProgram: epgs[key][0]
     }));
 
     // 诊断问题
     const issues = [];
-
-    if (!channelData.epgUrl) {
-      issues.push({
-        level: 'error',
-        message: 'EPG URL 未配置',
-        solution: '在后台管理页面的直播源配置中填写 EPG URL'
-      });
-    }
 
     if (channelsWithoutTvgId > 0) {
       issues.push({
@@ -73,11 +97,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (channelData.epgUrl && channelsWithEpg === 0) {
+    if (debug.totalEpgChannels === 0) {
       issues.push({
         level: 'error',
-        message: 'EPG URL 已配置但没有匹配到任何频道',
-        solution: '检查 EPG URL 是否正确，或查看服务器日志了解详情'
+        message: 'EPG XML 中没有找到任何 channel 标签',
+        solution: '检查 EPG URL 是否正确，或 EPG XML 格式是否正确'
+      });
+    }
+
+    if (debug.totalM3uChannelMappings === 0) {
+      issues.push({
+        level: 'error',
+        message: 'M3U 文件中没有解析到任何频道',
+        solution: '检查 M3U URL 是否正确'
+      });
+    }
+
+    if (channelsWithEpg === 0 && debug.totalEpgChannels > 0 && debug.totalM3uChannelMappings > 0) {
+      issues.push({
+        level: 'error',
+        message: 'EPG 和 M3U 都有数据，但没有匹配到任何频道',
+        solution: '频道名称可能差异太大，无法进行模糊匹配。查看下方的采样数据来对比 EPG 和 M3U 的频道名称。'
       });
     }
 
@@ -87,17 +127,27 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         summary: {
-          epgUrl: channelData.epgUrl || '(未配置)',
+          epgUrl: epgUrl,
           totalChannels,
           channelsWithTvgId,
           channelsWithoutTvgId,
           channelsWithEpg,
           matchRate: `${matchRate}%`,
         },
+        parsingDetails: {
+          totalEpgChannels: debug.totalEpgChannels,
+          totalM3uChannelMappings: debug.totalM3uChannelMappings,
+          tvgIdMatchCount: debug.tvgIdMatchCount,
+          nameMatchCount: debug.nameMatchCount,
+          nameMatchDetails: debug.nameMatchDetails,
+        },
+        samples: {
+          m3uChannelNames: debug.nameToTvgIdSample,
+          epgChannelNames: debug.epgNameToChannelIdSample,
+        },
         issues,
         sampleChannels,
         epgSample,
-        tip: '如果匹配率为 0%，请查看服务器控制台日志（运行 pnpm dev 的终端）'
       }
     });
   } catch (error) {
