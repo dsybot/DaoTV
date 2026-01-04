@@ -98,7 +98,7 @@ function LivePageClient() {
 
   // 切换直播源状态
   const [isSwitchingSource, setIsSwitchingSource] = useState(false);
-
+  
   // 刷新相关状态
   const [isRefreshingSource, setIsRefreshingSource] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(() => {
@@ -275,11 +275,11 @@ function LivePageClient() {
   // 刷新直播源
   const refreshLiveSources = async () => {
     if (isRefreshingSource) return;
-
+    
     setIsRefreshingSource(true);
     try {
       console.log('开始刷新直播源...');
-
+      
       // 调用后端刷新API
       const response = await fetch('/api/admin/live/refresh', {
         method: 'POST',
@@ -287,21 +287,21 @@ function LivePageClient() {
           'Content-Type': 'application/json',
         },
       });
-
+      
       if (!response.ok) {
         throw new Error('刷新直播源失败');
       }
-
+      
       const result = await response.json();
       if (!result.success) {
         throw new Error(result.error || '刷新直播源失败');
       }
-
+      
       console.log('直播源刷新成功');
-
+      
       // 重新获取直播源列表
       await fetchLiveSources();
-
+      
     } catch (error) {
       console.error('刷新直播源失败:', error);
       // 这里可以显示错误提示，但不设置全局error状态
@@ -309,7 +309,7 @@ function LivePageClient() {
       setIsRefreshingSource(false);
     }
   };
-
+  
   // 设置自动刷新
   const setupAutoRefresh = () => {
     // 清除现有定时器
@@ -317,14 +317,14 @@ function LivePageClient() {
       clearInterval(autoRefreshTimerRef.current);
       autoRefreshTimerRef.current = null;
     }
-
+    
     if (autoRefreshEnabled) {
       const intervalMs = autoRefreshInterval * 60 * 1000; // 转换为毫秒
       autoRefreshTimerRef.current = setInterval(() => {
         console.log(`自动刷新直播源 (间隔: ${autoRefreshInterval}分钟)`);
         refreshLiveSources();
       }, intervalMs);
-
+      
       console.log(`自动刷新已启用，间隔: ${autoRefreshInterval}分钟`);
     } else {
       console.log('自动刷新已禁用');
@@ -901,7 +901,7 @@ function LivePageClient() {
   // 监听自动刷新设置变化
   useEffect(() => {
     setupAutoRefresh();
-
+    
     // 清理函数
     return () => {
       if (autoRefreshTimerRef.current) {
@@ -1007,44 +1007,44 @@ function LivePageClient() {
     // 基于最新 hls.js 源码和设备性能的智能配置
     const hlsConfig = {
       debug: false,
-
+      
       // Worker 配置 - 根据设备性能和浏览器能力
       enableWorker: !isMobile && !isSafari && devicePerformance !== 'low',
-
+      
       // 低延迟模式 - 仅在高性能非移动设备上启用 (源码默认为true)
       lowLatencyMode: !isMobile && devicePerformance === 'high',
-
+      
       // 缓冲管理优化 - 参考 hls.js 源码默认值进行设备优化
       backBufferLength: devicePerformance === 'low' ? 30 : Infinity, // 源码默认 Infinity
       maxBufferLength: devicePerformance === 'low' ? 20 :
-        devicePerformance === 'medium' ? 30 : 30, // 源码默认 30
+                      devicePerformance === 'medium' ? 30 : 30, // 源码默认 30
       maxBufferSize: devicePerformance === 'low' ? 30 * 1000 * 1000 :
-        devicePerformance === 'medium' ? 60 * 1000 * 1000 : 60 * 1000 * 1000, // 源码默认 60MB
+                    devicePerformance === 'medium' ? 60 * 1000 * 1000 : 60 * 1000 * 1000, // 源码默认 60MB
       maxBufferHole: 0.1, // 源码默认值，允许小的缓冲区空洞
-
+      
       // Gap Controller 配置 - 缓冲区空洞处理 (源码中的默认值)
       nudgeOffset: 0.1,   // 跳过小间隙的偏移量
       nudgeMaxRetry: 3,   // 最大重试次数 (源码默认)
-
+      
       // 自适应比特率优化 - 参考源码默认值
       abrEwmaDefaultEstimate: devicePerformance === 'low' ? 500000 :
-        devicePerformance === 'medium' ? 500000 : 500000, // 源码默认 500k
+                             devicePerformance === 'medium' ? 500000 : 500000, // 源码默认 500k
       abrBandWidthFactor: 0.95, // 源码默认
       abrBandWidthUpFactor: 0.7, // 源码默认
       abrMaxWithRealBitrate: false, // 源码默认
       maxStarvationDelay: 4, // 源码默认
       maxLoadingDelay: 4, // 源码默认
-
+      
       // 直播流特殊配置
       startLevel: undefined, // 源码默认，自动选择起始质量
       capLevelToPlayerSize: false, // 源码默认
-
+      
       // 渐进式加载 (直播流建议关闭)
       progressive: false,
-
+      
       // 浏览器特殊优化
       liveDurationInfinity: false, // 源码默认，Safari兼容
-
+      
       // 移动设备网络优化 - 使用新的LoadPolicy配置
       ...(isMobile && {
         // 使用 fragLoadPolicy 替代旧的配置方式
@@ -1067,7 +1067,7 @@ function LivePageClient() {
           }
         }
       }),
-
+      
       loader: CustomHlsJsLoader,
     };
 
@@ -1083,17 +1083,17 @@ function LivePageClient() {
       // 使用最新版本的错误详情类型
       if (data.details === Hls.ErrorDetails.KEY_LOAD_ERROR) {
         const currentTime = Date.now();
-
+        
         // 重置计数器（如果距离上次错误超过10秒）
         if (currentTime - lastErrorTime > ERROR_TIMEOUT) {
           keyLoadErrorCount = 0;
         }
-
+        
         keyLoadErrorCount++;
         lastErrorTime = currentTime;
-
+        
         console.warn(`KeyLoadError count: ${keyLoadErrorCount}/${MAX_KEY_ERRORS}`);
-
+        
         // 如果短时间内keyLoadError次数过多，认为这个频道不可用
         if (keyLoadErrorCount >= MAX_KEY_ERRORS) {
           console.error('Too many keyLoadErrors, marking channel as unavailable');
@@ -1102,7 +1102,7 @@ function LivePageClient() {
           hls.destroy();
           return;
         }
-
+        
         // 使用指数退避重试策略
         if (keyLoadErrorCount <= 2) {
           setTimeout(() => {
@@ -1130,8 +1130,8 @@ function LivePageClient() {
 
       // v1.6.13 增强：处理直播中的时间戳错误（直播回搜修复）
       if (data.details === Hls.ErrorDetails.BUFFER_APPEND_ERROR &&
-        data.err && data.err.message &&
-        data.err.message.includes('timestamp')) {
+          data.err && data.err.message &&
+          data.err.message.includes('timestamp')) {
         console.log('直播时间戳错误，利用v1.6.13修复重新加载...');
         try {
           // 对于直播，直接重新开始加载最新片段
@@ -1157,7 +1157,7 @@ function LivePageClient() {
         switch (data.type) {
           case Hls.ErrorTypes.NETWORK_ERROR:
             console.log('Network error, attempting to recover...');
-
+            
             // 根据具体的网络错误类型进行处理
             if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR) {
               console.log('Manifest load error, attempting reload...');
@@ -1176,7 +1176,7 @@ function LivePageClient() {
               }
             }
             break;
-
+            
           case Hls.ErrorTypes.MEDIA_ERROR:
             console.log('Media error, attempting to recover...');
             try {
@@ -1194,7 +1194,7 @@ function LivePageClient() {
               }
             }
             break;
-
+            
           default:
             console.log('Fatal error, destroying HLS instance');
             setUnsupportedType('fatal-error');
@@ -1264,7 +1264,7 @@ function LivePageClient() {
 
       // 根据hls.js源码设计，直接让hls.js处理各种媒体类型和错误
       // 不需要预检查，hls.js会在加载时自动检测和处理
-
+      
       // 重置不支持的类型
       setUnsupportedType(null);
 
@@ -1393,10 +1393,10 @@ function LivePageClient() {
     const loadAndInit = async () => {
       try {
         const { default: Artplayer } = await import('artplayer');
-
+        
         // 将导入的模块设置为全局变量供 initPlayer 使用
         (window as any).DynamicArtplayer = Artplayer;
-
+        
         await initPlayer();
       } catch (error) {
         console.error('动态导入 ArtPlayer 失败:', error);
@@ -1691,7 +1691,7 @@ function LivePageClient() {
                         </h3>
                         <div className='bg-orange-500/20 border border-orange-500/30 rounded-lg p-4'>
                           <p className='text-orange-300 font-medium'>
-                            {unsupportedType === 'channel-unavailable'
+                            {unsupportedType === 'channel-unavailable' 
                               ? '频道可能需要特殊访问权限或链接已过期'
                               : `当前频道直播流类型：${unsupportedType.toUpperCase()}`
                             }
@@ -1713,7 +1713,7 @@ function LivePageClient() {
 
                 {/* DVR 回放支持提示 */}
                 {dvrDetected && (
-                  <div className='absolute top-4 left-4 right-4 bg-linear-to-r from-blue-500/90 to-cyan-500/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg z-[550] animate-in fade-in slide-in-from-top-2 duration-300'>
+                  <div className='absolute top-4 left-4 right-4 bg-linear-to-r from-blue-500/90 to-cyan-500/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg z-550 animate-in fade-in slide-in-from-top-2 duration-300'>
                     <div className='flex items-center justify-between'>
                       <div className='flex items-center gap-3 flex-1'>
                         <div className='shrink-0'>
@@ -1926,72 +1926,91 @@ function LivePageClient() {
                           </div>
                         </div>
 
-                        {/* 频道列表 */}
-                        <div ref={channelListRef} className='flex-1 overflow-y-auto space-y-2 pb-4'>
-                          {filteredChannels.length > 0 ? (
-                            filteredChannels.map(channel => {
-                              const isActive = channel.id === currentChannel?.id;
-                              return (
-                                <button
-                                  key={channel.id}
-                                  data-channel-id={channel.id}
-                                  onClick={() => handleChannelChange(channel)}
-                                  disabled={isSwitchingSource}
-                                  className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${isSwitchingSource
-                                    ? 'opacity-50 cursor-not-allowed'
-                                    : isActive
-                                      ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
-                                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }`}
-                                >
-                                  <div className='flex items-center gap-3'>
-                                    <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
-                                      {channel.logo ? (
-                                        <img
-                                          src={`/api/proxy/logo?url=${encodeURIComponent(channel.logo)}&source=${currentSource?.key || ''}`}
-                                          alt={channel.name}
-                                          className='w-full h-full rounded object-contain'
-                                          loading="lazy"
-                                        />
-                                      ) : (
-                                        <Tv className='w-5 h-5 text-gray-500' />
-                                      )}
-                                    </div>
-                                    <div className='flex-1 min-w-0'>
-                                      <div className='text-sm font-medium text-gray-900 dark:text-gray-100 overflow-hidden group/channelName'>
-                                        <span className='inline-block whitespace-nowrap group-hover/channelName:animate-scroll-text'>
-                                          {channel.name}
-                                        </span>
-                                      </div>
-                                      <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 overflow-hidden group/channelGroup'>
-                                        <span className='inline-block whitespace-nowrap group-hover/channelGroup:animate-scroll-text'>
-                                          {channel.group}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })
-                          ) : (
-                            <div className='flex flex-col items-center justify-center py-12 text-center'>
-                              <div className='relative mb-6'>
-                                <div className='w-20 h-20 bg-linear-to-br from-gray-100 to-slate-200 dark:from-gray-700 dark:to-slate-700 rounded-2xl flex items-center justify-center shadow-lg'>
-                                  <Tv className='w-10 h-10 text-gray-400 dark:text-gray-500' />
+                    {/* 频道列表 */}
+                    <div ref={channelListRef} className='flex-1 overflow-y-auto space-y-2 pb-4'>
+                      {filteredChannels.length > 0 ? (
+                        filteredChannels.map(channel => {
+                          const isActive = channel.id === currentChannel?.id;
+                          return (
+                            <button
+                              key={channel.id}
+                              data-channel-id={channel.id}
+                              onClick={() => handleChannelChange(channel)}
+                              disabled={isSwitchingSource}
+                              className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${isSwitchingSource
+                                ? 'opacity-50 cursor-not-allowed'
+                                : isActive
+                                  ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                              <div className='flex items-center gap-3'>
+                                <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
+                                  {channel.logo ? (
+                                    <img
+                                      src={`/api/proxy/logo?url=${encodeURIComponent(channel.logo)}&source=${currentSource?.key || ''}`}
+                                      alt={channel.name}
+                                      className='w-full h-full rounded object-contain'
+                                      loading="lazy"
+                                      onError={(e) => {
+                                        // Logo 加载失败时，显示"直播中"图标（红点）
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent && !parent.querySelector('.fallback-icon')) {
+                                          parent.innerHTML = `
+                                            <div class="fallback-icon relative w-full h-full flex items-center justify-center">
+                                              <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                              </svg>
+                                              <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                              </span>
+                                            </div>
+                                          `;
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <Tv className='w-5 h-5 text-gray-500' />
+                                  )}
                                 </div>
-                                {/* 装饰小点 */}
-                                <div className='absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping'></div>
-                                <div className='absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse'></div>
+                                <div className='flex-1 min-w-0'>
+                                  <div className='text-sm font-medium text-gray-900 dark:text-gray-100 overflow-hidden group/channelName'>
+                                    <span className='inline-block whitespace-nowrap group-hover/channelName:animate-scroll-text'>
+                                      {channel.name}
+                                    </span>
+                                  </div>
+                                  <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 overflow-hidden group/channelGroup'>
+                                    <span className='inline-block whitespace-nowrap group-hover/channelGroup:animate-scroll-text'>
+                                      {channel.group}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <p className='text-base font-semibold text-gray-700 dark:text-gray-300 mb-2'>
-                                暂无可用频道
-                              </p>
-                              <p className='text-sm text-gray-500 dark:text-gray-400'>
-                                请选择其他直播源或稍后再试
-                              </p>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className='flex flex-col items-center justify-center py-12 text-center'>
+                          <div className='relative mb-6'>
+                            <div className='w-20 h-20 bg-linear-to-br from-gray-100 to-slate-200 dark:from-gray-700 dark:to-slate-700 rounded-2xl flex items-center justify-center shadow-lg'>
+                              <Tv className='w-10 h-10 text-gray-400 dark:text-gray-500' />
                             </div>
-                          )}
+                            {/* 装饰小点 */}
+                            <div className='absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping'></div>
+                            <div className='absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse'></div>
+                          </div>
+                          <p className='text-base font-semibold text-gray-700 dark:text-gray-300 mb-2'>
+                            暂无可用频道
+                          </p>
+                          <p className='text-sm text-gray-500 dark:text-gray-400'>
+                            请选择其他直播源或稍后再试
+                          </p>
                         </div>
+                      )}
+                    </div>
                       </>
                     ) : (
                       // 搜索结果显示（仅当前源）
@@ -2003,7 +2022,7 @@ function LivePageClient() {
                             </div>
                           </div>
                         ) : null}
-
+                        
                         {currentSourceSearchResults.length > 0 ? (
                           currentSourceSearchResults.map(channel => {
                             const isActive = channel.id === currentChannel?.id;
@@ -2012,12 +2031,13 @@ function LivePageClient() {
                                 key={channel.id}
                                 onClick={() => handleChannelChange(channel)}
                                 disabled={isSwitchingSource}
-                                className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${isSwitchingSource
-                                  ? 'opacity-50 cursor-not-allowed'
-                                  : isActive
-                                    ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
-                                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                  }`}
+                                className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${
+                                  isSwitchingSource
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : isActive
+                                      ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
                               >
                                 <div className='flex items-center gap-3'>
                                   <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
@@ -2027,6 +2047,25 @@ function LivePageClient() {
                                         alt={channel.name}
                                         className='w-full h-full rounded object-contain'
                                         loading="lazy"
+                                        onError={(e) => {
+                                          // Logo 加载失败时，显示"直播中"图标（红点）
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          const parent = target.parentElement;
+                                          if (parent && !parent.querySelector('.fallback-icon')) {
+                                            parent.innerHTML = `
+                                              <div class="fallback-icon relative w-full h-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                                </svg>
+                                                <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                                </span>
+                                              </div>
+                                            `;
+                                          }
+                                        }}
                                       />
                                     ) : (
                                       <Tv className='w-5 h-5 text-gray-500' />
@@ -2111,7 +2150,7 @@ function LivePageClient() {
                           {isRefreshingSource ? '刷新中...' : '刷新源'}
                         </button>
                       </div>
-
+                      
                       {/* 自动刷新控制 */}
                       <div className='flex items-center gap-3'>
                         <div className='flex items-center gap-2'>
@@ -2126,7 +2165,7 @@ function LivePageClient() {
                             自动刷新
                           </label>
                         </div>
-
+                        
                         {autoRefreshEnabled && (
                           <div className='flex items-center gap-2'>
                             <select
