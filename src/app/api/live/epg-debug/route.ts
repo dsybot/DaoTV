@@ -142,6 +142,8 @@ export async function GET(request: NextRequest) {
           nameMatchDetails: debug.nameMatchDetails,
           unmatchedEpgSample: debug.unmatchedEpgSample,
           epgResultKeys: debug.epgResultKeys,
+          programmeTagsFound: debug.programmeTagsFound,
+          titleTagsFound: debug.titleTagsFound,
         },
         samples: {
           m3uChannelNames: debug.nameToTvgIdSample,

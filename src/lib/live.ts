@@ -113,6 +113,8 @@ export interface EpgDebugInfo {
   nameMatchDetails: Array<{ epgName: string; m3uKey: string }>;
   unmatchedEpgSample: Array<{ channelId: string; normalizedName: string | undefined }>;
   epgResultKeys: string[];
+  titleTagsFound: number;
+  programmeTagsFound: number;
 }
 
 async function parseEpg(
@@ -305,6 +307,8 @@ export async function parseEpgWithDebug(
     nameMatchDetails: [],
     unmatchedEpgSample: [],
     epgResultKeys: [],
+    titleTagsFound: 0,
+    programmeTagsFound: 0,
   };
 
   if (!epgUrl) {
@@ -392,6 +396,7 @@ export async function parseEpgWithDebug(
 
         // 解析 <programme> 标签
         if (trimmedLine.startsWith('<programme')) {
+          debugInfo.programmeTagsFound++;
 
           // 提取 channel ID
           const channelIdMatch = trimmedLine.match(/channel="([^"]*)"/);
@@ -456,6 +461,7 @@ export async function parseEpgWithDebug(
         }
         // 解析 <title> 标签 - 只有在需要解析当前节目时才处理
         else if (trimmedLine.startsWith('<title') && currentProgram && !shouldSkipCurrentProgram) {
+          debugInfo.titleTagsFound++;
           // 处理带有语言属性的title标签，如 <title lang="zh">远方的家2025-60</title>
           const titleMatch = trimmedLine.match(/<title(?:\s+[^>]*)?>(.*?)<\/title>/);
           if (titleMatch && currentProgram) {
