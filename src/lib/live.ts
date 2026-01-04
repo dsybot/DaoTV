@@ -91,16 +91,16 @@ export async function refreshLiveChannels(liveInfo: {
 
 /**
  * 清理频道名称用于匹配
- * 移除常见前缀、后缀、特殊字符等
+ * 移除常见前缀、特殊字符等，但保留 (a) (b) (c) 等版本标识
  */
 function normalizeChannelName(name: string): string {
   return name
     // 移除前缀如 [TW-I]、[HK]、01、02 等
     .replace(/^\[.*?\]\s*/g, '')
     .replace(/^\d+\s+/g, '')
-    // 移除后缀如 (a)、(b)、HD、4K 等
-    .replace(/\s*\([a-z0-9]+\)\s*/gi, '')
-    .replace(/\s*(HD|4K|FHD|UHD)\s*/gi, '')
+    // 移除质量标识如 HD、4K 等（但保留在括号外的）
+    .replace(/\s*(HD|4K|FHD|UHD)\s*$/gi, '')
+    .replace(/\s+(HD|4K|FHD|UHD)\s+/gi, ' ')
     // 移除多余空格
     .replace(/\s+/g, ' ')
     .trim()

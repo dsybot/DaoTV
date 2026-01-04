@@ -147,6 +147,7 @@ function LivePageClient() {
     tvgId: string;
     source: string;
     epgUrl: string;
+    logo?: string;
     programs: Array<{
       start: string;
       end: string;
@@ -2252,9 +2253,12 @@ function LivePageClient() {
               <div className='w-full shrink-0'>
                 <div className='flex items-center gap-4'>
                   <div className='w-20 h-20 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
-                    {currentChannel.logo ? (
+                    {(epgData?.logo || currentChannel.logo) ? (
                       <img
-                        src={`/api/proxy/logo?url=${encodeURIComponent(currentChannel.logo)}&source=${currentSource?.key || ''}`}
+                        src={epgData?.logo
+                          ? `/api/proxy/logo?url=${encodeURIComponent(epgData.logo)}&source=${currentSource?.key || ''}`
+                          : `/api/proxy/logo?url=${encodeURIComponent(currentChannel.logo)}&source=${currentSource?.key || ''}`
+                        }
                         alt={currentChannel.name}
                         className='w-full h-full rounded object-contain'
                         loading="lazy"
