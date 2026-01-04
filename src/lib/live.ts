@@ -23,6 +23,9 @@ export interface LiveChannels {
       title: string;
     }[];
   };
+  epgLogos: {
+    [key: string]: string; // tvgId/name -> logo URL from EPG
+  };
 }
 
 const cachedLiveChannels: { [key: string]: LiveChannels } = {};
@@ -70,7 +73,7 @@ export async function refreshLiveChannels(liveInfo: {
   const data = await response.text();
   const result = parseM3U(liveInfo.key, data);
   const epgUrl = liveInfo.epg || result.tvgUrl;
-  const epgs = await parseEpg(
+  const { epgs, logos } = await parseEpg(
     epgUrl,
     liveInfo.ua || defaultUA,
     result.channels.map(channel => channel.tvgId).filter(tvgId => tvgId),
@@ -81,6 +84,7 @@ export async function refreshLiveChannels(liveInfo: {
     channels: result.channels,
     epgUrl: epgUrl,
     epgs: epgs,
+    epgLogos: logos,
   };
   return result.channels.length;
 }
@@ -123,18 +127,24 @@ async function parseEpg(
   tvgIds: string[],
   channels?: { tvgId: string; name: string }[]
 ): Promise<{
-  [key: string]: {
-    start: string;
-    end: string;
-    title: string;
-  }[]
+  epgs: {
+    [key: string]: {
+      start: string;
+      end: string;
+      title: string;
+    }[]
+  };
+  logos: {
+    [key: string]: string; // tvgId/name -> logo URL
+  };
 }> {
   if (!epgUrl) {
-    return {};
+    return { epgs: {}, logos: {} };
   }
 
   const tvgs = new Set(tvgIds);
   const result: { [key: string]: { start: string; end: string; title: string }[] } = {};
+  const logos: { [key: string]: string } = {};
 
   // 构建频道名称到 tvgId 的映射（用于后备匹配）
   const nameToTvgId = new Map<string, string>();
@@ -154,6 +164,8 @@ async function parseEpg(
   const epgNameToChannelId = new Map<string, string>();
   // 反向映射：EPG channel ID 到标准化名称
   const epgChannelIdToName = new Map<string, string>();
+  // EPG channel ID 到 logo URL 的映射
+  const epgChannelIdToLogo = new Map<string, string>();
 
   try {
     const response = await fetch(epgUrl, {
@@ -162,13 +174,13 @@ async function parseEpg(
       },
     });
     if (!response.ok) {
-      return {};
+      return { epgs: {}, logos: {} };
     }
 
     // 使用 ReadableStream 逐行处理，避免将整个文件加载到内存
     const reader = response.body?.getReader();
     if (!reader) {
-      return {};
+      return { epgs: {}, logos: {} };
     }
 
     const decoder = new TextDecoder();
@@ -205,6 +217,14 @@ async function parseEpg(
             epgNameToChannelId.set(normalizedDisplayName, channelId);
             epgChannelIdToName.set(channelId, normalizedDisplayName); // 反向映射
           }
+
+          // 提取 icon URL
+          const iconMatch = trimmedLine.match(/<icon\s+src="([^"]*)"/);
+          if (channelId && iconMatch) {
+            const iconUrl = iconMatch[1];
+            epgChannelIdToLogo.set(channelId, iconUrl);
+          }
+
           continue; // 处理完 channel 标签后跳过后续逻辑
         }
 
@@ -230,6 +250,11 @@ async function parseEpg(
             if (tvgs.has(epgChannelId)) {
               currentTvgId = epgChannelId;
               shouldSkipCurrentProgram = false;
+              // 保存logo（如果有）
+              const logoUrl = epgChannelIdToLogo.get(epgChannelId);
+              if (logoUrl && !logos[epgChannelId]) {
+                logos[epgChannelId] = logoUrl;
+              }
             } else {
               // 后备方案：使用名称匹配
               // 从反向映射中查找 EPG channel ID 对应的标准化名称
@@ -241,6 +266,11 @@ async function parseEpg(
                   currentTvgId = matchedTvgId;
                   shouldSkipCurrentProgram = false;
                   console.log(`[EPG] 名称匹配成功: "${epgNormalizedName}" -> ${matchedTvgId}`);
+                  // 保存logo（如果有）
+                  const logoUrl = epgChannelIdToLogo.get(epgChannelId);
+                  if (logoUrl && !logos[matchedTvgId]) {
+                    logos[matchedTvgId] = logoUrl;
+                  }
                 } else {
                   shouldSkipCurrentProgram = true;
                 }
@@ -292,7 +322,7 @@ async function parseEpg(
     // ignore
   }
 
-  return result;
+  return { epgs: result, logos };
 }
 
 // 新增诊断版本的 parseEpg，返回详细的调试信息
@@ -354,6 +384,8 @@ export async function parseEpgWithDebug(
   const epgNameToChannelId = new Map<string, string>();
   // 反向映射：EPG channel ID 到标准化名称
   const epgChannelIdToName = new Map<string, string>();
+  // EPG channel ID 到 logo URL 的映射
+  const epgChannelIdToLogo = new Map<string, string>();
 
   try {
     const response = await fetch(epgUrl, {
@@ -405,6 +437,14 @@ export async function parseEpgWithDebug(
             epgNameToChannelId.set(normalizedDisplayName, channelId);
             epgChannelIdToName.set(channelId, normalizedDisplayName); // 反向映射
           }
+
+          // 提取 icon URL
+          const iconMatch = trimmedLine.match(/<icon\s+src="([^"]*)"/);
+          if (channelId && iconMatch) {
+            const iconUrl = iconMatch[1];
+            epgChannelIdToLogo.set(channelId, iconUrl);
+          }
+
           continue; // 处理完 channel 标签后跳过后续逻辑
         }
 
