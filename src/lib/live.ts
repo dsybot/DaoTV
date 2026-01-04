@@ -170,7 +170,6 @@ async function parseEpg(
     let currentTvgId = '';
     let currentProgram: { start: string; end: string; title: string } | null = null;
     let shouldSkipCurrentProgram = false;
-    let isFirstPass = true; // 第一遍：收集 channel 信息
 
     while (true) {
       const { done, value } = await reader.read();
@@ -187,8 +186,8 @@ async function parseEpg(
         const trimmedLine = line.trim();
         if (!trimmedLine) continue;
 
-        // 第一步：解析 <channel> 标签，建立名称映射
-        if (isFirstPass && trimmedLine.startsWith('<channel')) {
+        // 解析 <channel> 标签，建立名称映射（始终收集）
+        if (trimmedLine.startsWith('<channel')) {
           const channelIdMatch = trimmedLine.match(/id="([^"]*)"/);
           const channelId = channelIdMatch ? channelIdMatch[1] : '';
 
@@ -199,11 +198,11 @@ async function parseEpg(
             const normalizedDisplayName = normalizeChannelName(displayName);
             epgNameToChannelId.set(normalizedDisplayName, channelId);
           }
+          continue; // 处理完 channel 标签后跳过后续逻辑
         }
 
         // 解析 <programme> 标签
         if (trimmedLine.startsWith('<programme')) {
-          isFirstPass = false; // 遇到 programme 标签，结束第一遍扫描
 
           // 提取 channel ID
           const channelIdMatch = trimmedLine.match(/channel="([^"]*)"/);
@@ -354,7 +353,6 @@ export async function parseEpgWithDebug(
     let currentTvgId = '';
     let currentProgram: { start: string; end: string; title: string } | null = null;
     let shouldSkipCurrentProgram = false;
-    let isFirstPass = true; // 第一遍：收集 channel 信息
 
     while (true) {
       const { done, value } = await reader.read();
@@ -371,8 +369,8 @@ export async function parseEpgWithDebug(
         const trimmedLine = line.trim();
         if (!trimmedLine) continue;
 
-        // 第一步：解析 <channel> 标签，建立名称映射
-        if (isFirstPass && trimmedLine.startsWith('<channel')) {
+        // 解析 <channel> 标签，建立名称映射（始终收集）
+        if (trimmedLine.startsWith('<channel')) {
           const channelIdMatch = trimmedLine.match(/id="([^"]*)"/);
           const channelId = channelIdMatch ? channelIdMatch[1] : '';
 
@@ -383,11 +381,11 @@ export async function parseEpgWithDebug(
             const normalizedDisplayName = normalizeChannelName(displayName);
             epgNameToChannelId.set(normalizedDisplayName, channelId);
           }
+          continue; // 处理完 channel 标签后跳过后续逻辑
         }
 
         // 解析 <programme> 标签
         if (trimmedLine.startsWith('<programme')) {
-          isFirstPass = false; // 遇到 programme 标签，结束第一遍扫描
 
           // 提取 channel ID
           const channelIdMatch = trimmedLine.match(/channel="([^"]*)"/);
