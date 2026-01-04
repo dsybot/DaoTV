@@ -111,6 +111,8 @@ export interface EpgDebugInfo {
   tvgIdMatchCount: number;
   nameMatchCount: number;
   nameMatchDetails: Array<{ epgName: string; m3uKey: string }>;
+  unmatchedEpgSample: Array<{ channelId: string; normalizedName: string | undefined }>;
+  epgResultKeys: string[];
 }
 
 async function parseEpg(
@@ -301,6 +303,8 @@ export async function parseEpgWithDebug(
     tvgIdMatchCount: 0,
     nameMatchCount: 0,
     nameMatchDetails: [],
+    unmatchedEpgSample: [],
+    epgResultKeys: [],
   };
 
   if (!epgUrl) {
@@ -428,10 +432,24 @@ export async function parseEpgWithDebug(
                     });
                   }
                 } else {
+                  // EPG 有这个名称，但 M3U 中没有匹配
                   shouldSkipCurrentProgram = true;
+                  if (debugInfo.unmatchedEpgSample.length < 10) {
+                    debugInfo.unmatchedEpgSample.push({
+                      channelId: epgChannelId,
+                      normalizedName: epgNormalizedName,
+                    });
+                  }
                 }
               } else {
+                // EPG channel ID 没有对应的 display-name
                 shouldSkipCurrentProgram = true;
+                if (debugInfo.unmatchedEpgSample.length < 10) {
+                  debugInfo.unmatchedEpgSample.push({
+                    channelId: epgChannelId,
+                    normalizedName: undefined,
+                  });
+                }
               }
             }
           }
@@ -466,6 +484,7 @@ export async function parseEpgWithDebug(
     debugInfo.epgNameToChannelIdSample = Array.from(epgNameToChannelId.entries())
       .slice(0, 10)
       .map(([normalizedName, channelId]) => ({ normalizedName, channelId }));
+    debugInfo.epgResultKeys = Object.keys(result).slice(0, 10);
 
   } catch (error) {
     // ignore
