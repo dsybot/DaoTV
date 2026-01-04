@@ -411,30 +411,26 @@ export async function parseEpgWithDebug(
               debugInfo.tvgIdMatchCount++;
             } else {
               // 后备方案：使用名称匹配
-              // 从 epgNameToChannelId 找到 EPG 频道名称
-              let matched = false;
-              for (const [epgNormalizedName, epgChanId] of epgNameToChannelId.entries()) {
-                if (epgChanId === epgChannelId) {
-                  // 在我们的频道列表中查找匹配的名称
-                  const matchedTvgId = nameToTvgId.get(epgNormalizedName);
-                  if (matchedTvgId) {
-                    currentTvgId = matchedTvgId;
-                    shouldSkipCurrentProgram = false;
-                    matched = true;
-                    debugInfo.nameMatchCount++;
-                    // 只记录前 10 个名称匹配详情
-                    if (debugInfo.nameMatchDetails.length < 10) {
-                      debugInfo.nameMatchDetails.push({
-                        epgName: epgNormalizedName,
-                        m3uKey: matchedTvgId,
-                      });
-                    }
-                    break;
+              // 从反向映射中查找 EPG channel ID 对应的标准化名称
+              const epgNormalizedName = epgChannelIdToName.get(epgChannelId);
+              if (epgNormalizedName) {
+                // 在 M3U 频道列表中查找匹配的名称
+                const matchedTvgId = nameToTvgId.get(epgNormalizedName);
+                if (matchedTvgId) {
+                  currentTvgId = matchedTvgId;
+                  shouldSkipCurrentProgram = false;
+                  debugInfo.nameMatchCount++;
+                  // 只记录前 10 个名称匹配详情
+                  if (debugInfo.nameMatchDetails.length < 10) {
+                    debugInfo.nameMatchDetails.push({
+                      epgName: epgNormalizedName,
+                      m3uKey: matchedTvgId,
+                    });
                   }
+                } else {
+                  shouldSkipCurrentProgram = true;
                 }
-              }
-
-              if (!matched) {
+              } else {
                 shouldSkipCurrentProgram = true;
               }
             }
