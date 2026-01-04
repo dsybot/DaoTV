@@ -248,6 +248,20 @@ async function parseEpg(
                 shouldSkipCurrentProgram = true;
               }
             }
+
+            // 检查是否 <title> 在同一行（内联格式）
+            if (!shouldSkipCurrentProgram) {
+              const inlineTitleMatch = trimmedLine.match(/<title(?:\s+[^>]*)?>(.*?)<\/title>/);
+              if (inlineTitleMatch) {
+                currentProgram.title = inlineTitleMatch[1];
+                // 保存节目信息
+                if (!result[currentTvgId]) {
+                  result[currentTvgId] = [];
+                }
+                result[currentTvgId].push({ ...currentProgram });
+                currentProgram = null;
+              }
+            }
           }
         }
         // 解析 <title> 标签 - 只有在需要解析当前节目时才处理
@@ -455,6 +469,21 @@ export async function parseEpgWithDebug(
                     normalizedName: undefined,
                   });
                 }
+              }
+            }
+
+            // 检查是否 <title> 在同一行（内联格式）
+            if (!shouldSkipCurrentProgram) {
+              const inlineTitleMatch = trimmedLine.match(/<title(?:\s+[^>]*)?>(.*?)<\/title>/);
+              if (inlineTitleMatch) {
+                currentProgram.title = inlineTitleMatch[1];
+                // 保存节目信息
+                if (!result[currentTvgId]) {
+                  result[currentTvgId] = [];
+                }
+                result[currentTvgId].push({ ...currentProgram });
+                debugInfo.titleTagsFound++;
+                currentProgram = null;
               }
             }
           }
