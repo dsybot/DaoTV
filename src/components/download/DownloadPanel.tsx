@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useDownload } from '@/contexts/DownloadContext';
-import { M3U8DownloadTask } from '@/lib/download/m3u8-downloader';
+import { M3U8DownloadTask } from '@/lib/download';
 
 export function DownloadPanel() {
   const { tasks, showDownloadPanel, setShowDownloadPanel, startTask, pauseTask, cancelTask, retryFailedSegments, getProgress } = useDownload();
