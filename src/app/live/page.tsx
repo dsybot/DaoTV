@@ -129,6 +129,21 @@ function LivePageClient() {
   const corsSupportRef = useRef<Map<string, boolean>>(new Map());
   const [playbackMode, setPlaybackMode] = useState<'direct' | 'proxy'>('proxy');
 
+  // 📊 CORS 检测统计（管理员用）
+  const [corsStats, setCorsStats] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('live-cors-stats');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return { directCount: 0, proxyCount: 0, totalChecked: 0 };
+        }
+      }
+    }
+    return { directCount: 0, proxyCount: 0, totalChecked: 0 };
+  });
+
   // 分组相关
   const [groupedChannels, setGroupedChannels] = useState<{ [key: string]: LiveChannel[] }>({});
   const [selectedGroup, setSelectedGroup] = useState<string>('');
@@ -567,15 +582,38 @@ function LivePageClient() {
     }
   };
 
-  // 🚀 CORS 智能检测函数
+  // 🚀 CORS 智能检测函数（带持久化和统计）
   const testCORSSupport = async (url: string): Promise<boolean> => {
-    // 检查缓存
+    // 1. 检查内存缓存
     if (corsSupportRef.current.has(url)) {
       return corsSupportRef.current.get(url)!;
     }
 
+    // 2. 检查 localStorage 持久化缓存（7天有效期）
+    if (typeof window !== 'undefined') {
+      try {
+        const cacheKey = `cors-cache-${btoa(url).substring(0, 50)}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { supports, timestamp } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7天
+
+          if (age < MAX_AGE) {
+            // 缓存有效，直接使用
+            corsSupportRef.current.set(url, supports);
+            setCorsSupport(new Map(corsSupportRef.current));
+            console.log(`💾 CORS缓存命中: ${url.substring(0, 50)}... => ${supports ? '✅ 直连' : '❌ 代理'} (${Math.floor(age / 86400000)}天前检测)`);
+            return supports;
+          }
+        }
+      } catch (error) {
+        // 缓存读取失败，继续检测
+      }
+    }
+
+    // 3. 执行实际检测
     try {
-      // 使用 HEAD 请求测试 CORS（更快，不下载内容）
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3秒超时
 
@@ -589,17 +627,74 @@ function LivePageClient() {
 
       const supports = response.ok;
 
-      // 缓存结果
+      // 4. 保存到内存缓存
       corsSupportRef.current.set(url, supports);
       setCorsSupport(new Map(corsSupportRef.current));
+
+      // 5. 保存到 localStorage（7天有效）
+      if (typeof window !== 'undefined') {
+        try {
+          const cacheKey = `cors-cache-${btoa(url).substring(0, 50)}`;
+          localStorage.setItem(cacheKey, JSON.stringify({
+            supports,
+            timestamp: Date.now(),
+            url: url.substring(0, 100), // 保存URL前缀便于调试
+          }));
+        } catch (error) {
+          // localStorage 满了或其他错误，忽略
+        }
+      }
+
+      // 6. 更新统计数据
+      setCorsStats(prev => {
+        const newStats = {
+          directCount: prev.directCount + (supports ? 1 : 0),
+          proxyCount: prev.proxyCount + (supports ? 0 : 1),
+          totalChecked: prev.totalChecked + 1,
+        };
+        // 保存统计到 localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('live-cors-stats', JSON.stringify(newStats));
+        }
+        return newStats;
+      });
 
       console.log(`🔍 CORS检测: ${url.substring(0, 50)}... => ${supports ? '✅ 支持直连' : '❌ 需要代理'}`);
 
       return supports;
     } catch (error) {
       // CORS 错误或超时，标记为不支持
-      corsSupportRef.current.set(url, false);
+      const supports = false;
+
+      corsSupportRef.current.set(url, supports);
       setCorsSupport(new Map(corsSupportRef.current));
+
+      // 保存到 localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const cacheKey = `cors-cache-${btoa(url).substring(0, 50)}`;
+          localStorage.setItem(cacheKey, JSON.stringify({
+            supports,
+            timestamp: Date.now(),
+            url: url.substring(0, 100),
+          }));
+        } catch {
+          // 忽略错误
+        }
+      }
+
+      // 更新统计数据
+      setCorsStats(prev => {
+        const newStats = {
+          directCount: prev.directCount,
+          proxyCount: prev.proxyCount + 1,
+          totalChecked: prev.totalChecked + 1,
+        };
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('live-cors-stats', JSON.stringify(newStats));
+        }
+        return newStats;
+      });
 
       console.log(`🔍 CORS检测: ${url.substring(0, 50)}... => ❌ 不支持 (${error instanceof Error ? error.message : '网络错误'})`);
 
