@@ -190,6 +190,9 @@ function LivePageClient() {
   const favoritedRef = useRef(false);
   const currentChannelRef = useRef<LiveChannel | null>(null);
 
+  // 频道名展开状态
+  const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
+
   // DVR 回放检测状态
   const [dvrDetected, setDvrDetected] = useState(false);
   const [dvrSeekableRange, setDvrSeekableRange] = useState(0);
@@ -991,6 +994,19 @@ function LivePageClient() {
   const handleSourceSearchChange = (query: string) => {
     setSourceSearchQuery(query);
     debouncedSourceSearch(query);
+  };
+
+  // 切换频道名展开状态
+  const toggleChannelNameExpanded = (channelId: string) => {
+    setExpandedChannels(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(channelId)) {
+        newSet.delete(channelId);
+      } else {
+        newSet.add(channelId);
+      }
+      return newSet;
+    });
   };
 
   // 切换收藏
@@ -1800,9 +1816,12 @@ function LivePageClient() {
           <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
             <Radio className='w-5 h-5 text-blue-500 shrink-0' />
             <div className='min-w-0 flex-1 flex items-center gap-2'>
-              {/* 频道名称 - 使用 line-clamp 确保移动端完整显示 */}
-              <div className='min-w-0 flex-1'>
-                <div className='line-clamp-1 md:line-clamp-2'>
+              {/* 频道名称 - 点击展开/收起 */}
+              <div
+                className='min-w-0 flex-1 cursor-pointer select-none'
+                onClick={() => currentChannel && toggleChannelNameExpanded('page-title')}
+              >
+                <div className={expandedChannels.has('page-title') ? '' : 'line-clamp-1 md:line-clamp-2'}>
                   <span className='text-gray-900 dark:text-gray-100'>
                     {currentSource?.name}
                   </span>
@@ -1817,6 +1836,12 @@ function LivePageClient() {
                     </span>
                   )}
                 </div>
+                {/* 展开/收起指示器 */}
+                {currentChannel && currentChannel.name.length > 15 && (
+                  <span className='text-xs text-blue-500 dark:text-blue-400 ml-1'>
+                    {expandedChannels.has('page-title') ? '收起' : '展开'}
+                  </span>
+                )}
               </div>
               {/* 播放模式指示器 - 移动端始终可见 */}
               {currentChannel && (
@@ -2193,9 +2218,23 @@ function LivePageClient() {
                                   )}
                                 </div>
                                 <div className='flex-1 min-w-0'>
-                                  {/* 频道名 - 移动端单行截断，桌面端显示2行 */}
-                                  <div className='text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1 md:line-clamp-2' title={channel.name}>
-                                    {channel.name}
+                                  {/* 频道名 - 点击展开/收起 */}
+                                  <div
+                                    className='text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none'
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleChannelNameExpanded(channel.id);
+                                    }}
+                                  >
+                                    <div className={expandedChannels.has(channel.id) ? '' : 'line-clamp-1 md:line-clamp-2'}>
+                                      {channel.name}
+                                    </div>
+                                    {/* 展开/收起指示器 */}
+                                    {channel.name.length > 20 && (
+                                      <span className='text-xs text-blue-500 dark:text-blue-400 ml-1'>
+                                        {expandedChannels.has(channel.id) ? '收起' : '展开'}
+                                      </span>
+                                    )}
                                   </div>
                                   {/* 分组名 - 始终单行截断 */}
                                   <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 truncate' title={channel.group}>
@@ -2286,17 +2325,31 @@ function LivePageClient() {
                                     )}
                                   </div>
                                   <div className='flex-1 min-w-0'>
-                                    {/* 搜索结果频道名 - 移动端单行截断，桌面端2行 */}
-                                    <div className='text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1 md:line-clamp-2' title={channel.name}>
-                                      <span
-                                        dangerouslySetInnerHTML={{
-                                          __html: searchQuery ?
-                                            channel.name.replace(
-                                              new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-                                              '<mark class="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">$1</mark>'
-                                            ) : channel.name
-                                        }}
-                                      />
+                                    {/* 搜索结果频道名 - 点击展开/收起 */}
+                                    <div
+                                      className='text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none'
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleChannelNameExpanded(channel.id);
+                                      }}
+                                    >
+                                      <div className={expandedChannels.has(channel.id) ? '' : 'line-clamp-1 md:line-clamp-2'}>
+                                        <span
+                                          dangerouslySetInnerHTML={{
+                                            __html: searchQuery ?
+                                              channel.name.replace(
+                                                new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                                '<mark class="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">$1</mark>'
+                                              ) : channel.name
+                                          }}
+                                        />
+                                      </div>
+                                      {/* 展开/收起指示器 */}
+                                      {channel.name.length > 20 && (
+                                        <span className='text-xs text-blue-500 dark:text-blue-400 ml-1'>
+                                          {expandedChannels.has(channel.id) ? '收起' : '展开'}
+                                        </span>
+                                      )}
                                     </div>
                                     {/* 搜索结果分组名 - 始终单行截断 */}
                                     <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 truncate' title={channel.group}>
@@ -2563,8 +2616,20 @@ function LivePageClient() {
                   </div>
                   <div className='flex-1 min-w-0'>
                     <div className='flex items-center gap-3'>
-                      <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100 truncate'>
-                        {currentChannel.name}
+                      {/* 当前频道名 - 点击展开/收起 */}
+                      <h3
+                        className='text-lg font-semibold text-gray-900 dark:text-gray-100 cursor-pointer select-none'
+                        onClick={() => toggleChannelNameExpanded('current-channel-info')}
+                      >
+                        <div className={expandedChannels.has('current-channel-info') ? '' : 'truncate'}>
+                          {currentChannel.name}
+                        </div>
+                        {/* 展开/收起指示器 */}
+                        {currentChannel.name.length > 15 && (
+                          <span className='text-xs text-blue-500 dark:text-blue-400 ml-1 font-normal'>
+                            {expandedChannels.has('current-channel-info') ? '收起' : '展开'}
+                          </span>
+                        )}
                       </h3>
                       <button
                         onClick={(e) => {
