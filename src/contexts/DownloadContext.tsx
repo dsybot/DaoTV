@@ -1,13 +1,24 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { M3U8DownloadTask, parseM3U8, downloadM3U8Video, PauseResumeController } from '@/lib/download';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { M3U8DownloadTask, parseM3U8, downloadM3U8Video, PauseResumeController, StreamSaverMode } from '@/lib/download';
 import type { DownloadProgress } from '@/lib/download';
+import { getBestStreamMode, detectStreamModeSupport, type StreamModeSupport } from '@/lib/download/stream-mode-detector';
+
+export interface DownloadSettings {
+  concurrency: number; // 并发线程数
+  maxRetries: number; // 最大重试次数
+  streamMode: StreamSaverMode; // 下载模式
+  defaultType: 'TS' | 'MP4'; // 默认格式
+}
 
 interface DownloadContextType {
   tasks: M3U8DownloadTask[];
   showDownloadPanel: boolean;
   setShowDownloadPanel: (show: boolean) => void;
+  settings: DownloadSettings;
+  setSettings: (settings: DownloadSettings) => void;
+  streamModeSupport: StreamModeSupport;
   createTask: (url: string, title: string, type?: 'TS' | 'MP4') => Promise<void>;
   startTask: (taskId: string) => Promise<void>;
   pauseTask: (taskId: string) => void;
@@ -23,6 +34,41 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<M3U8DownloadTask[]>([]);
   const [showDownloadPanel, setShowDownloadPanel] = useState(false);
   const [isEnabled, setIsEnabled] = useState<boolean | null>(null); // null 表示加载中
+  const [streamModeSupport, setStreamModeSupport] = useState<StreamModeSupport>({
+    fileSystem: false,
+    serviceWorker: false,
+    blob: true,
+  });
+
+  // 下载设置（从 localStorage 恢复或使用默认值）
+  const [settings, setSettings] = useState<DownloadSettings>(() => {
+    if (typeof window === 'undefined') {
+      return {
+        concurrency: 6,
+        maxRetries: 3,
+        streamMode: 'disabled' as StreamSaverMode,
+        defaultType: 'TS' as 'TS' | 'MP4',
+      };
+    }
+
+    const savedSettings = localStorage.getItem('downloadSettings');
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings);
+      } catch {
+        // 解析失败，使用默认值
+      }
+    }
+
+    // 自动检测最佳模式
+    const bestMode = getBestStreamMode();
+    return {
+      concurrency: 6,
+      maxRetries: 3,
+      streamMode: bestMode,
+      defaultType: 'TS' as 'TS' | 'MP4',
+    };
+  });
 
   // 获取下载配置
   useEffect(() => {
@@ -46,6 +92,21 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
     };
     fetchConfig();
   }, []);
+
+  // 检测浏览器支持情况
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const support = detectStreamModeSupport();
+      setStreamModeSupport(support);
+    }
+  }, []);
+
+  // 保存设置到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('downloadSettings', JSON.stringify(settings));
+    }
+  }, [settings]);
 
   // 存储每个任务的控制器和 AbortController
   const taskControllers = useRef<Map<string, {
@@ -104,7 +165,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
       updateTask(taskId, { status: 'downloading' });
 
       try {
-        // 开始下载
+        // 开始下载（使用用户设置）
         await downloadM3U8Video(
           task,
           (progress: DownloadProgress) => {
@@ -116,9 +177,9 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           },
           abortController.signal,
           pauseController,
-          6, // 并发数
-          'disabled', // 暂时禁用流式保存
-          3 // 重试次数
+          settings.concurrency, // 使用设置的并发数
+          settings.streamMode, // 使用设置的下载模式
+          settings.maxRetries // 使用设置的重试次数
         );
 
         // 下载完成
@@ -138,7 +199,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         taskControllers.current.delete(taskId);
       }
     },
-    [tasks, updateTask]
+    [tasks, updateTask, settings]
   );
 
   const pauseTask = useCallback(
@@ -196,6 +257,9 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         tasks,
         showDownloadPanel,
         setShowDownloadPanel,
+        settings,
+        setSettings,
+        streamModeSupport,
         createTask,
         startTask,
         pauseTask,

@@ -18,6 +18,16 @@ export {
   applyURL,
 } from './m3u8-downloader';
 
+// 从检测器导出
+export type { StreamModeSupport } from './stream-mode-detector';
+export {
+  getBestStreamMode,
+  detectStreamModeSupport,
+  getStreamModeName,
+  getStreamModeIcon,
+  getStreamModeDescription,
+} from './stream-mode-detector';
+
 // 从新的下载器导入基础类型
 import type { M3U8Task as M3U8TaskBase } from './m3u8-downloader';
 
