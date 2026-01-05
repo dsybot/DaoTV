@@ -6026,8 +6026,9 @@ const LiveSourceConfig = ({
       </div>
 
       {/* 📊 CORS 检测统计面板 */}
-      {corsStats.totalChecked > 0 && (
-        <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3'>
+      <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3'>
+        {corsStats.totalChecked > 0 ? (
+          <>
           <div className='flex items-center justify-between'>
             <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-100'>
               📊 直连模式统计
@@ -6075,8 +6076,19 @@ const LiveSourceConfig = ({
           <div className='text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-blue-200 dark:border-blue-800'>
             💡 提示: 直连模式通过客户端直接访问流媒体源来节省服务器带宽，但需要流媒体源支持跨域访问（CORS）。检测结果缓存有效期7天。
           </div>
-        </div>
-      )}
+          </>
+        ) : (
+          <div className='text-center py-8'>
+            <div className='text-4xl mb-3'>📊</div>
+            <p className='text-gray-600 dark:text-gray-400 text-sm'>
+              暂无检测数据
+            </p>
+            <p className='text-xs text-gray-500 dark:text-gray-500 mt-2'>
+              当用户播放直播频道时，系统会自动检测CORS支持情况并在此显示统计
+            </p>
+          </div>
+        )}
+      </div>
 
       {showAddForm && (
         <div className='p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4'>

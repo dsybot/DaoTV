@@ -584,6 +584,15 @@ function LivePageClient() {
 
   // 🚀 CORS 智能检测函数（带持久化和统计）
   const testCORSSupport = async (url: string): Promise<boolean> => {
+    // 0. 🔐 Mixed Content 检测：HTTPS页面不能加载HTTP资源
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http:')) {
+      console.log(`🔐 Mixed Content: ${url.substring(0, 50)}... => ❌ 需要代理 (HTTPS页面不能加载HTTP资源)`);
+      // 直接返回false，不浪费时间检测，也不计入统计
+      corsSupportRef.current.set(url, false);
+      setCorsSupport(new Map(corsSupportRef.current));
+      return false;
+    }
+
     // 1. 检查内存缓存
     if (corsSupportRef.current.has(url)) {
       return corsSupportRef.current.get(url)!;
@@ -663,7 +672,7 @@ function LivePageClient() {
 
       return supports;
     } catch (error) {
-      // CORS 错误或超时，标记为不支持
+      // CORS 错误、Mixed Content 或超时，标记为不支持
       const supports = false;
 
       corsSupportRef.current.set(url, supports);
@@ -696,7 +705,19 @@ function LivePageClient() {
         return newStats;
       });
 
-      console.log(`🔍 CORS检测: ${url.substring(0, 50)}... => ❌ 不支持 (${error instanceof Error ? error.message : '网络错误'})`);
+      // 优化错误信息显示
+      let errorMsg = '网络错误';
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMsg = 'CORS限制';
+        } else if (error.name === 'AbortError') {
+          errorMsg = '超时';
+        } else {
+          errorMsg = error.message;
+        }
+      }
+
+      console.log(`🔍 CORS检测: ${url.substring(0, 50)}... => ❌ 需要代理 (${errorMsg})`);
 
       return false;
     }
@@ -1779,16 +1800,34 @@ function LivePageClient() {
           <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 max-w-[80%]'>
             <Radio className='w-5 h-5 text-blue-500 shrink-0' />
             <div className='min-w-0 flex-1'>
-              <div className='truncate'>
-                {currentSource?.name}
-                {currentSource && currentChannel && (
-                  <span className='text-gray-500 dark:text-gray-400'>
-                    {` > ${currentChannel.name}`}
-                  </span>
-                )}
-                {currentSource && !currentChannel && (
-                  <span className='text-gray-500 dark:text-gray-400'>
-                    {` > ${currentSource.name}`}
+              <div className='truncate flex items-center gap-2'>
+                <span className='truncate'>
+                  {currentSource?.name}
+                  {currentSource && currentChannel && (
+                    <span className='text-gray-500 dark:text-gray-400'>
+                      {` > ${currentChannel.name}`}
+                    </span>
+                  )}
+                  {currentSource && !currentChannel && (
+                    <span className='text-gray-500 dark:text-gray-400'>
+                      {` > ${currentSource.name}`}
+                    </span>
+                  )}
+                </span>
+                {/* 播放模式指示器 */}
+                {currentChannel && (
+                  <span className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40 border border-blue-200 dark:border-blue-700'>
+                    {playbackMode === 'direct' ? (
+                      <>
+                        <span className='text-green-600 dark:text-green-400'>⚡</span>
+                        <span className='text-green-700 dark:text-green-300'>直连</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className='text-orange-600 dark:text-orange-400'>🔄</span>
+                        <span className='text-orange-700 dark:text-orange-300'>代理</span>
+                      </>
+                    )}
                   </span>
                 )}
               </div>
@@ -2378,13 +2417,6 @@ function LivePageClient() {
                             <span className='text-xs text-gray-500 dark:text-gray-400'>(智能检测CORS)</span>
                           </label>
                         </div>
-
-                        {/* 当前播放模式指示器 */}
-                        {currentChannel && (
-                          <div className='text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700'>
-                            {playbackMode === 'direct' ? '⚡ 直连' : '🔄 代理'}
-                          </div>
-                        )}
                       </div>
                     </div>
 
