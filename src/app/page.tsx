@@ -386,7 +386,53 @@ function HomeClient() {
 
         // 处理bangumi数据，防止接口失败导致页面崩溃
         if (bangumiCalendarData.status === 'fulfilled' && Array.isArray(bangumiCalendarData.value)) {
-          setBangumiCalendarData(bangumiCalendarData.value);
+          const bangumiData = bangumiCalendarData.value;
+          setBangumiCalendarData(bangumiData);
+
+          // 性能优化：使用 requestIdleCallback 延迟加载详情
+          const loadBangumiDetails = async () => {
+            const today = new Date();
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const currentWeekday = weekdays[today.getDay()];
+            const todayAnimes = bangumiData.find(
+              (item) => item.weekday.en === currentWeekday
+            )?.items || [];
+
+            if (todayAnimes.length > 0 && !todayAnimes[0].summary) {
+              const anime = todayAnimes[0];
+              try {
+                const response = await fetch(`/api/proxy/bangumi?path=v0/subjects/${anime.id}`);
+                if (response.ok) {
+                  const detailData = await response.json();
+                  if (detailData.summary) {
+                    setBangumiCalendarData(prev =>
+                      prev.map(dayData => {
+                        if (dayData.weekday.en === currentWeekday) {
+                          return {
+                            ...dayData,
+                            items: dayData.items.map(item =>
+                              item.id === anime.id
+                                ? { ...item, summary: detailData.summary }
+                                : item
+                            )
+                          };
+                        }
+                        return dayData;
+                      })
+                    );
+                  }
+                }
+              } catch (error) {
+                console.warn(`获取番剧 ${anime.id} 详情失败:`, error);
+              }
+            }
+          };
+
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(loadBangumiDetails, { timeout: 2000 });
+          } else {
+            setTimeout(loadBangumiDetails, 1000);
+          }
         } else {
           console.warn('Bangumi接口失败或返回数据格式错误:',
             bangumiCalendarData.status === 'rejected' ? bangumiCalendarData.reason : '数据格式错误');
