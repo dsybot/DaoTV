@@ -117,6 +117,18 @@ function LivePageClient() {
   });
   const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 🚀 直连模式相关状态
+  const [directPlaybackEnabled, setDirectPlaybackEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('live-direct-playback-enabled');
+      return saved ? JSON.parse(saved) : false; // 默认关闭，使用代理
+    }
+    return false;
+  });
+  const [corsSupport, setCorsSupport] = useState<Map<string, boolean>>(new Map());
+  const corsSupportRef = useRef<Map<string, boolean>>(new Map());
+  const [playbackMode, setPlaybackMode] = useState<'direct' | 'proxy'>('proxy');
+
   // 分组相关
   const [groupedChannels, setGroupedChannels] = useState<{ [key: string]: LiveChannel[] }>({});
   const [selectedGroup, setSelectedGroup] = useState<string>('');
@@ -552,6 +564,66 @@ function LivePageClient() {
       setIsSwitchingSource(false);
       // 自动切换到频道 tab
       setActiveTab('channels');
+    }
+  };
+
+  // 🚀 CORS 智能检测函数
+  const testCORSSupport = async (url: string): Promise<boolean> => {
+    // 检查缓存
+    if (corsSupportRef.current.has(url)) {
+      return corsSupportRef.current.get(url)!;
+    }
+
+    try {
+      // 使用 HEAD 请求测试 CORS（更快，不下载内容）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3秒超时
+
+      const response = await fetch(url, {
+        method: 'HEAD',
+        signal: controller.signal,
+        cache: 'no-cache',
+      });
+
+      clearTimeout(timeoutId);
+
+      const supports = response.ok;
+
+      // 缓存结果
+      corsSupportRef.current.set(url, supports);
+      setCorsSupport(new Map(corsSupportRef.current));
+
+      console.log(`🔍 CORS检测: ${url.substring(0, 50)}... => ${supports ? '✅ 支持直连' : '❌ 需要代理'}`);
+
+      return supports;
+    } catch (error) {
+      // CORS 错误或超时，标记为不支持
+      corsSupportRef.current.set(url, false);
+      setCorsSupport(new Map(corsSupportRef.current));
+
+      console.log(`🔍 CORS检测: ${url.substring(0, 50)}... => ❌ 不支持 (${error instanceof Error ? error.message : '网络错误'})`);
+
+      return false;
+    }
+  };
+
+  // 🚀 决定是否使用直连播放
+  const shouldUseDirectPlayback = async (url: string): Promise<boolean> => {
+    // 如果用户未启用直连模式，始终使用代理
+    if (!directPlaybackEnabled) {
+      setPlaybackMode('proxy');
+      return false;
+    }
+
+    // 智能检测 CORS 支持
+    const supportsCORS = await testCORSSupport(url);
+
+    if (supportsCORS) {
+      setPlaybackMode('direct');
+      return true;
+    } else {
+      setPlaybackMode('proxy');
+      return false;
     }
   };
 
@@ -1264,12 +1336,19 @@ function LivePageClient() {
 
       // 根据hls.js源码设计，直接让hls.js处理各种媒体类型和错误
       // 不需要预检查，hls.js会在加载时自动检测和处理
-      
+
       // 重置不支持的类型
       setUnsupportedType(null);
 
+      // 🚀 智能选择直连或代理模式
+      const useDirect = await shouldUseDirectPlayback(videoUrl);
+      const targetUrl = useDirect
+        ? videoUrl  // 直连模式：直接使用原始 URL
+        : `/api/proxy/m3u8?url=${encodeURIComponent(videoUrl)}&moontv-source=${currentSourceRef.current?.key || ''}`;  // 代理模式
+
+      console.log(`🎬 播放模式: ${useDirect ? '⚡ 直连' : '🔄 代理'} | URL: ${targetUrl.substring(0, 100)}...`);
+
       const customType = { m3u8: m3u8Loader };
-      const targetUrl = `/api/proxy/m3u8?url=${encodeURIComponent(videoUrl)}&moontv-source=${currentSourceRef.current?.key || ''}`;
       try {
         // 使用动态导入的 Artplayer
         const Artplayer = (window as any).DynamicArtplayer;
@@ -2165,7 +2244,7 @@ function LivePageClient() {
                             自动刷新
                           </label>
                         </div>
-                        
+
                         {autoRefreshEnabled && (
                           <div className='flex items-center gap-2'>
                             <select
@@ -2179,6 +2258,36 @@ function LivePageClient() {
                               <option value={60}>1小时</option>
                               <option value={120}>2小时</option>
                             </select>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 🚀 直连模式控制 */}
+                      <div className='flex items-center gap-3 pt-2'>
+                        <div className='flex items-center gap-2'>
+                          <input
+                            type='checkbox'
+                            id='directPlayback'
+                            checked={directPlaybackEnabled}
+                            onChange={(e) => {
+                              const enabled = e.target.checked;
+                              setDirectPlaybackEnabled(enabled);
+                              if (typeof window !== 'undefined') {
+                                localStorage.setItem('live-direct-playback-enabled', JSON.stringify(enabled));
+                              }
+                            }}
+                            className='rounded text-green-500 focus:ring-green-500'
+                          />
+                          <label htmlFor='directPlayback' className='text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1'>
+                            ⚡ 直连模式
+                            <span className='text-xs text-gray-500 dark:text-gray-400'>(智能检测CORS)</span>
+                          </label>
+                        </div>
+
+                        {/* 当前播放模式指示器 */}
+                        {currentChannel && (
+                          <div className='text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700'>
+                            {playbackMode === 'direct' ? '⚡ 直连' : '🔄 代理'}
                           </div>
                         )}
                       </div>
