@@ -71,26 +71,37 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
 
   // 合并文件中的源信息
   const apiSitesFromFile = Object.entries(fileConfig.api_site || []);
+  const apiSitesFromFileKeys = new Set(apiSitesFromFile.map(([key]) => key));
 
-  // 只保留 from='custom' 的源（用户手动添加的），删除旧的 from='config' 的源
-  const currentApiSites = new Map(
-    (adminConfig.SourceConfig || [])
-      .filter((s) => s.from === 'custom')
-      .map((s) => [s.key, s])
+  // 🔥 修复：保留所有现有源的顺序和属性，只更新/添加订阅源
+  // 创建现有源的 Map（用于快速查找）
+  const existingSourcesMap = new Map(
+    (adminConfig.SourceConfig || []).map((s) => [s.key, s])
   );
 
-  // 添加新订阅中的所有源
+  // 保留现有源的顺序，同时更新订阅源的信息
+  const updatedSources = (adminConfig.SourceConfig || []).map((source) => {
+    if (source.from === 'config' && apiSitesFromFileKeys.has(source.key)) {
+      // 订阅源：更新 name/api/detail，但保留 disabled/is_adult 等用户设置
+      const fileSource = apiSitesFromFile.find(([key]) => key === source.key)?.[1];
+      if (fileSource) {
+        return {
+          ...source,
+          name: fileSource.name,
+          api: fileSource.api,
+          detail: fileSource.detail,
+          // 保留用户设置的属性：disabled, is_adult
+        };
+      }
+    }
+    // custom 源或未在订阅中的源：完全保留
+    return source;
+  });
+
+  // 添加订阅中新增的源（不在现有配置中的）
   apiSitesFromFile.forEach(([key, site]) => {
-    const existingSource = currentApiSites.get(key);
-    if (existingSource) {
-      // 如果 custom 源的 key 和订阅源冲突，保留 custom 源，但更新其信息
-      existingSource.name = site.name;
-      existingSource.api = site.api;
-      existingSource.detail = site.detail;
-      // 保持 from='custom'，因为用户手动添加过
-    } else {
-      // 添加新的订阅源
-      currentApiSites.set(key, {
+    if (!existingSourcesMap.has(key)) {
+      updatedSources.push({
         key,
         name: site.name,
         api: site.api,
@@ -101,32 +112,45 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 将 Map 转换回数组
-  adminConfig.SourceConfig = Array.from(currentApiSites.values());
+  // 移除订阅中已删除的 from='config' 源（但保留 custom 源）
+  adminConfig.SourceConfig = updatedSources.filter((source) => {
+    if (source.from === 'custom') return true; // 保留所有 custom 源
+    return apiSitesFromFileKeys.has(source.key); // 只保留订阅中存在的 config 源
+  });
 
   // 覆盖 CustomCategories
   const customCategoriesFromFile = fileConfig.custom_category || [];
-
-  // 只保留 from='custom' 的自定义分类，删除旧的 from='config' 的分类
-  const currentCustomCategories = new Map(
-    (adminConfig.CustomCategories || [])
-      .filter((c) => c.from === 'custom')
-      .map((c) => [c.query + c.type, c])
+  const customCategoriesFromFileKeys = new Set(
+    customCategoriesFromFile.map((c) => c.query + c.type)
   );
 
-  // 添加新订阅中的所有自定义分类
+  // 🔥 修复：保留现有分类的顺序和属性
+  const existingCategoriesMap = new Map(
+    (adminConfig.CustomCategories || []).map((c) => [c.query + c.type, c])
+  );
+
+  const updatedCategories = (adminConfig.CustomCategories || []).map((category) => {
+    if (category.from === 'config') {
+      const key = category.query + category.type;
+      const fileCategory = customCategoriesFromFile.find((c) => c.query + c.type === key);
+      if (fileCategory) {
+        return {
+          ...category,
+          name: fileCategory.name,
+          query: fileCategory.query,
+          type: fileCategory.type,
+          // 保留 disabled 等用户设置
+        };
+      }
+    }
+    return category;
+  });
+
+  // 添加订阅中新增的分类
   customCategoriesFromFile.forEach((category) => {
     const key = category.query + category.type;
-    const existedCategory = currentCustomCategories.get(key);
-    if (existedCategory) {
-      // 如果 custom 分类和订阅分类冲突，保留 custom，但更新信息
-      existedCategory.name = category.name;
-      existedCategory.query = category.query;
-      existedCategory.type = category.type;
-      // 保持 from='custom'
-    } else {
-      // 添加新的订阅分类
-      currentCustomCategories.set(key, {
+    if (!existingCategoriesMap.has(key)) {
+      updatedCategories.push({
         name: category.name,
         type: category.type,
         query: category.query,
@@ -136,31 +160,41 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 将 Map 转换回数组
-  adminConfig.CustomCategories = Array.from(currentCustomCategories.values());
+  // 移除订阅中已删除的 from='config' 分类
+  adminConfig.CustomCategories = updatedCategories.filter((category) => {
+    if (category.from === 'custom') return true;
+    return customCategoriesFromFileKeys.has(category.query + category.type);
+  });
 
+  // 🔥 修复：直播源也保留顺序和属性
   const livesFromFile = Object.entries(fileConfig.lives || []);
+  const livesFromFileKeys = new Set(livesFromFile.map(([key]) => key));
 
-  // 只保留 from='custom' 的直播源，删除旧的 from='config' 的直播源
-  const currentLives = new Map(
-    (adminConfig.LiveConfig || [])
-      .filter((l) => l.from === 'custom')
-      .map((l) => [l.key, l])
+  const existingLivesMap = new Map(
+    (adminConfig.LiveConfig || []).map((l) => [l.key, l])
   );
 
-  // 添加新订阅中的所有直播源
+  const updatedLives = (adminConfig.LiveConfig || []).map((live) => {
+    if (live.from === 'config' && livesFromFileKeys.has(live.key)) {
+      const fileLive = livesFromFile.find(([key]) => key === live.key)?.[1];
+      if (fileLive) {
+        return {
+          ...live,
+          name: fileLive.name,
+          url: fileLive.url,
+          ua: fileLive.ua,
+          epg: fileLive.epg,
+          // 保留 disabled, channelNumber 等用户设置
+        };
+      }
+    }
+    return live;
+  });
+
+  // 添加订阅中新增的直播源
   livesFromFile.forEach(([key, site]) => {
-    const existingLive = currentLives.get(key);
-    if (existingLive) {
-      // 如果 custom 直播源和订阅直播源冲突，保留 custom，但更新信息
-      existingLive.name = site.name;
-      existingLive.url = site.url;
-      existingLive.ua = site.ua;
-      existingLive.epg = site.epg;
-      // 保持 from='custom'
-    } else {
-      // 添加新的订阅直播源
-      currentLives.set(key, {
+    if (!existingLivesMap.has(key)) {
+      updatedLives.push({
         key,
         name: site.name,
         url: site.url,
@@ -173,8 +207,11 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 将 Map 转换回数组
-  adminConfig.LiveConfig = Array.from(currentLives.values());
+  // 移除订阅中已删除的 from='config' 直播源
+  adminConfig.LiveConfig = updatedLives.filter((live) => {
+    if (live.from === 'custom') return true;
+    return livesFromFileKeys.has(live.key);
+  });
 
   return adminConfig;
 }
