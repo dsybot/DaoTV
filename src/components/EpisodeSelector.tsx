@@ -30,6 +30,141 @@ export interface TMDBEpisodeInfo {
   runtime?: number;
 }
 
+// 集数按钮组件（带 fixed tooltip）
+interface EpisodeButtonProps {
+  episodeNumber: number;
+  isActive: boolean;
+  title?: string;
+  tmdbEpisodeName?: string;
+  onClick: () => void;
+}
+
+const EpisodeButton: React.FC<EpisodeButtonProps> = ({
+  episodeNumber,
+  isActive,
+  title,
+  tmdbEpisodeName,
+  onClick,
+}) => {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
+  const [showAbove, setShowAbove] = useState(true);
+
+  const updateTooltipPosition = useCallback(() => {
+    if (!buttonRef.current || !tmdbEpisodeName) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const tooltipWidth = Math.min(window.innerWidth * 0.9, 200);
+    const tooltipHeight = 50; // 估算高度
+
+    // 判断上方是否有足够空间
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const shouldShowAbove = spaceAbove > tooltipHeight + 10 || spaceAbove > spaceBelow;
+    setShowAbove(shouldShowAbove);
+
+    // 计算水平位置，确保不超出屏幕
+    let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+    if (left < 8) left = 8;
+    if (left + tooltipWidth > window.innerWidth - 8) {
+      left = window.innerWidth - tooltipWidth - 8;
+    }
+
+    // 计算箭头位置
+    const arrowLeft = rect.left + rect.width / 2 - left - 6;
+
+    if (shouldShowAbove) {
+      setTooltipStyle({
+        position: 'fixed',
+        left: `${left}px`,
+        top: `${rect.top - 8}px`,
+        transform: 'translateY(-100%)',
+        width: `${tooltipWidth}px`,
+      });
+      setArrowStyle({
+        left: `${arrowLeft}px`,
+      });
+    } else {
+      setTooltipStyle({
+        position: 'fixed',
+        left: `${left}px`,
+        top: `${rect.bottom + 8}px`,
+        width: `${tooltipWidth}px`,
+      });
+      setArrowStyle({
+        left: `${arrowLeft}px`,
+      });
+    }
+  }, [tmdbEpisodeName]);
+
+  const handleMouseEnter = () => {
+    if (tmdbEpisodeName) {
+      updateTooltipPosition();
+      setShowTooltip(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
+  // 显示的文字
+  const displayText = (() => {
+    if (!title) return episodeNumber;
+    const match = title.match(/(?:第)?(\d+)(?:集|话)/);
+    if (match) return match[1];
+    return title;
+  })();
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={onClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] px-2 sm:px-3 py-2 flex items-center justify-center text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap font-mono relative overflow-hidden active:scale-95
+          ${isActive
+            ? 'bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20 scale-105'
+            : 'bg-linear-to-r from-gray-200 to-gray-100 text-gray-700 hover:from-gray-300 hover:to-gray-200 hover:scale-105 hover:shadow-md dark:from-white/10 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/20 dark:hover:to-white/15'
+          }`.trim()}
+      >
+        {isActive && (
+          <div className='absolute inset-0 bg-linear-to-r from-green-400 via-emerald-400 to-teal-400 opacity-30 blur'></div>
+        )}
+        {!isActive && (
+          <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent hover:via-white/20 dark:hover:via-white/10 transition-all duration-300'></div>
+        )}
+        <span className='relative z-10'>{displayText}</span>
+      </button>
+
+      {/* Fixed Tooltip */}
+      {tmdbEpisodeName && showTooltip && (
+        <div
+          className='fixed z-[9999] px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 pointer-events-none backdrop-blur-sm'
+          style={{
+            ...tooltipStyle,
+            maxWidth: 'min(90vw, 200px)',
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+          }}
+        >
+          <span className='font-medium leading-relaxed block text-center' style={{ textWrap: 'balance' } as React.CSSProperties}>
+            {tmdbEpisodeName}
+          </span>
+          {/* 箭头 */}
+          <div
+            className={`absolute w-0 h-0 border-l-[6px] border-r-[6px] border-transparent ${showAbove ? 'top-full border-t-[6px] border-t-gray-800' : 'bottom-full border-b-[6px] border-b-gray-800'}`}
+            style={arrowStyle}
+          ></div>
+        </div>
+      )}
+    </>
+  );
+};
+
 interface EpisodeSelectorProps {
   /** 总集数 */
   totalEpisodes: number;
@@ -502,56 +637,14 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               const hasTooltip = tmdbEpisode?.name && tmdbEpisode.name !== `第 ${episodeNumber} 集` && tmdbEpisode.name !== `Episode ${episodeNumber}`;
 
               return (
-                <div key={episodeNumber} className='relative group/ep'>
-                  <button
-                    onClick={() => handleEpisodeClick(episodeNumber)}
-                    className={`peer min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] px-2 sm:px-3 py-2 flex items-center justify-center text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap font-mono relative overflow-hidden active:scale-95
-                      ${isActive
-                        ? 'bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20 scale-105'
-                        : 'bg-linear-to-r from-gray-200 to-gray-100 text-gray-700 hover:from-gray-300 hover:to-gray-200 hover:scale-105 hover:shadow-md dark:from-white/10 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/20 dark:hover:to-white/15'
-                      }`.trim()}
-                  >
-                    {/* 激活态光晕效果 */}
-                    {isActive && (
-                      <div className='absolute inset-0 bg-linear-to-r from-green-400 via-emerald-400 to-teal-400 opacity-30 blur'></div>
-                    )}
-                    {/* 悬浮态闪光效果 */}
-                    {!isActive && (
-                      <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent group-hover/ep:via-white/20 dark:group-hover/ep:via-white/10 transition-all duration-300'></div>
-                    )}
-                    <span className='relative z-10'>
-                      {(() => {
-                        const title = episodes_titles?.[episodeNumber - 1];
-                        if (!title) {
-                          return episodeNumber;
-                        }
-                        // 如果匹配"第X集"、"第X话"、"X集"、"X话"格式，提取中间的数字
-                        const match = title.match(/(?:第)?(\d+)(?:集|话)/);
-                        if (match) {
-                          return match[1];
-                        }
-                        return title;
-                      })()}
-                    </span>
-                  </button>
-                  {/* TMDB 分集标题 Tooltip */}
-                  {hasTooltip && (
-                    <div
-                      className='absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 pointer-events-none z-50 backdrop-blur-sm'
-                      style={{
-                        width: 'max-content',
-                        maxWidth: 'min(90vw, 16em)',
-                        whiteSpace: 'normal',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      <span className='font-medium leading-relaxed block text-center' style={{ textWrap: 'balance' } as React.CSSProperties}>
-                        {tmdbEpisode.name}
-                      </span>
-                      <div className='absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-800'></div>
-                    </div>
-                  )}
-                </div>
+                <EpisodeButton
+                  key={episodeNumber}
+                  episodeNumber={episodeNumber}
+                  isActive={isActive}
+                  title={episodes_titles?.[episodeNumber - 1]}
+                  tmdbEpisodeName={hasTooltip ? tmdbEpisode?.name : undefined}
+                  onClick={() => handleEpisodeClick(episodeNumber)}
+                />
               );
             })}
           </div>
