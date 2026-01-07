@@ -38,6 +38,7 @@ interface EpisodeButtonProps {
   title?: string;
   tmdbEpisodeName?: string;
   onClick: () => void;
+  portalContainer?: HTMLElement | null;
 }
 
 const EpisodeButton: React.FC<EpisodeButtonProps> = ({
@@ -46,6 +47,7 @@ const EpisodeButton: React.FC<EpisodeButtonProps> = ({
   title,
   tmdbEpisodeName,
   onClick,
+  portalContainer,
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -170,8 +172,8 @@ const EpisodeButton: React.FC<EpisodeButtonProps> = ({
         <span className='relative z-10'>{displayText}</span>
       </button>
 
-      {/* 使用 Portal 将 Tooltip 渲染到 body，避免被父容器的 transform 影响 */}
-      {mounted && tooltipContent && createPortal(tooltipContent, document.body)}
+      {/* 使用 Portal 将 Tooltip 渲染到指定容器，避免被父容器的 transform 影响 */}
+      {mounted && tooltipContent && createPortal(tooltipContent, portalContainer || document.body)}
     </>
   );
 };
@@ -204,6 +206,8 @@ interface EpisodeSelectorProps {
   inModal?: boolean;
   /** TMDB 分集信息（用于显示分集标题 tooltip） */
   tmdbEpisodes?: TMDBEpisodeInfo[];
+  /** Portal 容器（用于 tooltip 渲染，全屏时需要传入全屏元素） */
+  portalContainer?: HTMLElement | null;
 }
 
 /**
@@ -226,6 +230,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   onRefreshSources,
   inModal = false,
   tmdbEpisodes = [],
+  portalContainer,
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -655,6 +660,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                   title={episodes_titles?.[episodeNumber - 1]}
                   tmdbEpisodeName={hasTooltip ? tmdbEpisode?.name : undefined}
                   onClick={() => handleEpisodeClick(episodeNumber)}
+                  portalContainer={portalContainer}
                 />
               );
             })}

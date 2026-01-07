@@ -6044,6 +6044,7 @@ function PlayPageClient() {
                   precomputedVideoInfo={precomputedVideoInfo}
                   onRefreshSources={refreshSources}
                   tmdbEpisodes={searchType === 'tv' ? tmdbEpisodes : []}
+                  portalContainer={portalContainer}
                 />
               </div>
             </div>
@@ -6746,6 +6747,7 @@ function PlayPageClient() {
                   onRefreshSources={refreshSources}
                   inModal={true}
                   tmdbEpisodes={searchType === 'tv' ? tmdbEpisodes : []}
+                  portalContainer={portalContainer}
                 />
               </div>
             </div>
