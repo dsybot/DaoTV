@@ -419,16 +419,20 @@ function generateSearchVariants(originalQuery: string): string[] {
   // 去重
   const uniqueVariants = Array.from(new Set(variants));
 
-  // 最后：对所有变体进行繁体转简体处理
-  // 直接转换，无需 detect（避免额外性能开销）
+  // 最后：只对前几个优先级高的变体进行繁体转简体处理
+  // 避免对所有变体（可能有10+个）都进行转换导致性能下降
   const finalVariants: string[] = [];
-  uniqueVariants.forEach(variant => {
+  const MAX_VARIANTS_TO_CONVERT = 3; // 只转换前3个变体
+
+  uniqueVariants.forEach((variant, index) => {
     finalVariants.push(variant);
-    // 直接尝试转换，如果结果不同则添加
-    const simplifiedVariant = converter.simplized(variant);
-    if (simplifiedVariant !== variant && !finalVariants.includes(simplifiedVariant)) {
-      finalVariants.push(simplifiedVariant);
-      console.log(`[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`);
+    // 只对前几个变体进行繁转简
+    if (index < MAX_VARIANTS_TO_CONVERT) {
+      const simplifiedVariant = converter.simplized(variant);
+      if (simplifiedVariant !== variant && !finalVariants.includes(simplifiedVariant)) {
+        finalVariants.push(simplifiedVariant);
+        console.log(`[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`);
+      }
     }
   });
 
