@@ -128,9 +128,10 @@ const EpisodeButton: React.FC<EpisodeButtonProps> = ({
   // Tooltip 内容
   const tooltipContent = tmdbEpisodeName && showTooltip && mounted ? (
     <div
-      className='fixed z-[9999] px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 pointer-events-none backdrop-blur-sm'
+      className='fixed px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 pointer-events-none backdrop-blur-sm'
       style={{
         ...tooltipStyle,
+        zIndex: 2147483647,
         maxWidth: 'min(90vw, 200px)',
         whiteSpace: 'normal',
         wordBreak: 'break-word',
