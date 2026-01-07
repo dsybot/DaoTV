@@ -132,6 +132,8 @@ function PlayPageClient() {
   const [tmdbCastEnabled, setTmdbCastEnabled] = useState(false);
   // TMDB演员数据
   const [tmdbCast, setTmdbCast] = useState<Array<{ id: number; name: string; photo: string | null }>>([]);
+  // TMDB分集信息（用于显示分集标题tooltip）
+  const [tmdbEpisodes, setTmdbEpisodes] = useState<Array<{ episodeNumber: number; name: string; overview?: string; stillPath?: string | null; airDate?: string; runtime?: number }>>([]);
 
   // SkipController 相关状态
   const [isSkipSettingOpen, setIsSkipSettingOpen] = useState(false);
@@ -495,25 +497,33 @@ function PlayPageClient() {
     loadComments();
   }, [videoDoubanId, loadingComments, movieComments.length, detail?.source]);
 
-  // 获取TMDB演员数据
+  // 获取TMDB演员数据和分集信息
   useEffect(() => {
-    const fetchTmdbCast = async () => {
-      if (!videoTitle || tmdbCast.length > 0) return;
+    const fetchTmdbData = async () => {
+      if (!videoTitle) return;
+      // 如果演员数据已获取，且不是电视剧或分集信息已获取，则跳过
+      if (tmdbCast.length > 0 && (searchType !== 'tv' || tmdbEpisodes.length > 0)) return;
+
       try {
         const type = searchType === 'movie' ? 'movie' : 'tv';
         const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&details=true`);
         if (response.ok) {
           const data = await response.json();
-          if (data.cast && data.cast.length > 0) {
+          // 获取演员数据
+          if (data.cast && data.cast.length > 0 && tmdbCast.length === 0) {
             setTmdbCast(data.cast);
+          }
+          // 获取分集信息（仅电视剧）
+          if (searchType === 'tv' && data.episodes && data.episodes.length > 0 && tmdbEpisodes.length === 0) {
+            setTmdbEpisodes(data.episodes);
           }
         }
       } catch (error) {
-        console.error('获取TMDB演员数据失败:', error);
+        console.error('获取TMDB数据失败:', error);
       }
     };
-    fetchTmdbCast();
-  }, [videoTitle, videoYear, searchType, tmdbCast.length]);
+    fetchTmdbData();
+  }, [videoTitle, videoYear, searchType, tmdbCast.length, tmdbEpisodes.length]);
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {
@@ -6033,6 +6043,7 @@ function PlayPageClient() {
                   sourceSearchError={sourceSearchError}
                   precomputedVideoInfo={precomputedVideoInfo}
                   onRefreshSources={refreshSources}
+                  tmdbEpisodes={searchType === 'tv' ? tmdbEpisodes : []}
                 />
               </div>
             </div>
@@ -6734,6 +6745,7 @@ function PlayPageClient() {
                   precomputedVideoInfo={precomputedVideoInfo}
                   onRefreshSources={refreshSources}
                   inModal={true}
+                  tmdbEpisodes={searchType === 'tv' ? tmdbEpisodes : []}
                 />
               </div>
             </div>

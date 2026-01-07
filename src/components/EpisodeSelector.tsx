@@ -20,6 +20,16 @@ interface VideoInfo {
   hasError?: boolean; // 添加错误状态标识
 }
 
+// TMDB 分集信息类型
+export interface TMDBEpisodeInfo {
+  episodeNumber: number;
+  name: string;
+  overview?: string;
+  stillPath?: string | null;
+  airDate?: string;
+  runtime?: number;
+}
+
 interface EpisodeSelectorProps {
   /** 总集数 */
   totalEpisodes: number;
@@ -46,6 +56,8 @@ interface EpisodeSelectorProps {
   onRefreshSources?: () => void;
   /** 是否在弹窗模式中使用（用于调整overflow和padding避免hover裁切） */
   inModal?: boolean;
+  /** TMDB 分集信息（用于显示分集标题 tooltip） */
+  tmdbEpisodes?: TMDBEpisodeInfo[];
 }
 
 /**
@@ -67,6 +79,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   precomputedVideoInfo,
   onRefreshSources,
   inModal = false,
+  tmdbEpisodes = [],
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -484,39 +497,61 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               return episodes;
             })().map((episodeNumber) => {
               const isActive = episodeNumber === value;
+              // 获取 TMDB 分集信息
+              const tmdbEpisode = tmdbEpisodes?.find(ep => ep.episodeNumber === episodeNumber);
+              const hasTooltip = tmdbEpisode?.name && tmdbEpisode.name !== `第 ${episodeNumber} 集` && tmdbEpisode.name !== `Episode ${episodeNumber}`;
+
               return (
-                <button
-                  key={episodeNumber}
-                  onClick={() => handleEpisodeClick(episodeNumber)}
-                  className={`group min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] px-2 sm:px-3 py-2 flex items-center justify-center text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap font-mono relative overflow-hidden active:scale-95
-                    ${isActive
-                      ? 'bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20 scale-105'
-                      : 'bg-linear-to-r from-gray-200 to-gray-100 text-gray-700 hover:from-gray-300 hover:to-gray-200 hover:scale-105 hover:shadow-md dark:from-white/10 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/20 dark:hover:to-white/15'
-                    }`.trim()}
-                >
-                  {/* 激活态光晕效果 */}
-                  {isActive && (
-                    <div className='absolute inset-0 bg-linear-to-r from-green-400 via-emerald-400 to-teal-400 opacity-30 blur'></div>
+                <div key={episodeNumber} className='relative group/ep'>
+                  <button
+                    onClick={() => handleEpisodeClick(episodeNumber)}
+                    className={`peer min-h-[40px] sm:min-h-[44px] min-w-[40px] sm:min-w-[44px] px-2 sm:px-3 py-2 flex items-center justify-center text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap font-mono relative overflow-hidden active:scale-95
+                      ${isActive
+                        ? 'bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20 scale-105'
+                        : 'bg-linear-to-r from-gray-200 to-gray-100 text-gray-700 hover:from-gray-300 hover:to-gray-200 hover:scale-105 hover:shadow-md dark:from-white/10 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/20 dark:hover:to-white/15'
+                      }`.trim()}
+                  >
+                    {/* 激活态光晕效果 */}
+                    {isActive && (
+                      <div className='absolute inset-0 bg-linear-to-r from-green-400 via-emerald-400 to-teal-400 opacity-30 blur'></div>
+                    )}
+                    {/* 悬浮态闪光效果 */}
+                    {!isActive && (
+                      <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent group-hover/ep:via-white/20 dark:group-hover/ep:via-white/10 transition-all duration-300'></div>
+                    )}
+                    <span className='relative z-10'>
+                      {(() => {
+                        const title = episodes_titles?.[episodeNumber - 1];
+                        if (!title) {
+                          return episodeNumber;
+                        }
+                        // 如果匹配"第X集"、"第X话"、"X集"、"X话"格式，提取中间的数字
+                        const match = title.match(/(?:第)?(\d+)(?:集|话)/);
+                        if (match) {
+                          return match[1];
+                        }
+                        return title;
+                      })()}
+                    </span>
+                  </button>
+                  {/* TMDB 分集标题 Tooltip */}
+                  {hasTooltip && (
+                    <div
+                      className='absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 pointer-events-none z-50 backdrop-blur-sm'
+                      style={{
+                        width: 'max-content',
+                        maxWidth: 'min(90vw, 16em)',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      <span className='font-medium leading-relaxed block text-center' style={{ textWrap: 'balance' } as React.CSSProperties}>
+                        {tmdbEpisode.name}
+                      </span>
+                      <div className='absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-800'></div>
+                    </div>
                   )}
-                  {/* 悬浮态闪光效果 */}
-                  {!isActive && (
-                    <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent group-hover:via-white/20 dark:group-hover:via-white/10 transition-all duration-300'></div>
-                  )}
-                  <span className='relative z-10'>
-                    {(() => {
-                      const title = episodes_titles?.[episodeNumber - 1];
-                      if (!title) {
-                        return episodeNumber;
-                      }
-                      // 如果匹配"第X集"、"第X话"、"X集"、"X话"格式，提取中间的数字
-                      const match = title.match(/(?:第)?(\d+)(?:集|话)/);
-                      if (match) {
-                        return match[1];
-                      }
-                      return title;
-                    })()}
-                  </span>
-                </button>
+                </div>
               );
             })}
           </div>
