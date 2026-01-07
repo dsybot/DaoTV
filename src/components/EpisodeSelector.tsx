@@ -8,6 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -51,6 +52,12 @@ const EpisodeButton: React.FC<EpisodeButtonProps> = ({
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const [showAbove, setShowAbove] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // 确保在客户端渲染
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const updateTooltipPosition = useCallback(() => {
     if (!buttonRef.current || !tmdbEpisodeName) return;
@@ -118,6 +125,28 @@ const EpisodeButton: React.FC<EpisodeButtonProps> = ({
     return title;
   })();
 
+  // Tooltip 内容
+  const tooltipContent = tmdbEpisodeName && showTooltip && mounted ? (
+    <div
+      className='fixed z-[9999] px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 pointer-events-none backdrop-blur-sm'
+      style={{
+        ...tooltipStyle,
+        maxWidth: 'min(90vw, 200px)',
+        whiteSpace: 'normal',
+        wordBreak: 'break-word',
+      }}
+    >
+      <span className='font-medium leading-relaxed block text-center' style={{ textWrap: 'balance' } as React.CSSProperties}>
+        {tmdbEpisodeName}
+      </span>
+      {/* 箭头 */}
+      <div
+        className={`absolute w-0 h-0 border-l-[6px] border-r-[6px] border-transparent ${showAbove ? 'top-full border-t-[6px] border-t-gray-800' : 'bottom-full border-b-[6px] border-b-gray-800'}`}
+        style={arrowStyle}
+      ></div>
+    </div>
+  ) : null;
+
   return (
     <>
       <button
@@ -140,27 +169,8 @@ const EpisodeButton: React.FC<EpisodeButtonProps> = ({
         <span className='relative z-10'>{displayText}</span>
       </button>
 
-      {/* Fixed Tooltip */}
-      {tmdbEpisodeName && showTooltip && (
-        <div
-          className='fixed z-[9999] px-3 py-2 bg-linear-to-br from-gray-800 to-gray-900 text-white text-xs rounded-lg shadow-xl border border-white/10 pointer-events-none backdrop-blur-sm'
-          style={{
-            ...tooltipStyle,
-            maxWidth: 'min(90vw, 200px)',
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-          }}
-        >
-          <span className='font-medium leading-relaxed block text-center' style={{ textWrap: 'balance' } as React.CSSProperties}>
-            {tmdbEpisodeName}
-          </span>
-          {/* 箭头 */}
-          <div
-            className={`absolute w-0 h-0 border-l-[6px] border-r-[6px] border-transparent ${showAbove ? 'top-full border-t-[6px] border-t-gray-800' : 'bottom-full border-b-[6px] border-b-gray-800'}`}
-            style={arrowStyle}
-          ></div>
-        </div>
-      )}
+      {/* 使用 Portal 将 Tooltip 渲染到 body，避免被父容器的 transform 影响 */}
+      {mounted && tooltipContent && createPortal(tooltipContent, document.body)}
     </>
   );
 };
