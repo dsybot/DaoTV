@@ -5,7 +5,7 @@
 import Hls from 'hls.js';
 import { Heart, ChevronUp, Download, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useDownload } from '@/contexts/DownloadContext';
@@ -497,6 +497,48 @@ function PlayPageClient() {
     loadComments();
   }, [videoDoubanId, loadingComments, movieComments.length, detail?.source]);
 
+  // 从标题中解析季数（复用详情页逻辑）
+  const parseSeasonFromTitle = useCallback((t: string): number => {
+    // 解析中文数字
+    const parseChineseNumber = (str: string): number => {
+      const digits: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+      const units: Record<string, number> = { '十': 10, '百': 100 };
+      let result = 0;
+      let temp = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (digits[char] !== undefined) {
+          temp = digits[char];
+        } else if (units[char] !== undefined) {
+          if (temp === 0 && char === '十') temp = 1;
+          result += temp * units[char];
+          temp = 0;
+        }
+      }
+      result += temp;
+      return result || 1;
+    };
+
+    // 匹配"第X季"
+    const seasonMatch = t.match(/第([零一二三四五六七八九十百]+|\d+)季/);
+    if (seasonMatch) {
+      const seasonStr = seasonMatch[1];
+      return /^\d+$/.test(seasonStr) ? parseInt(seasonStr) : parseChineseNumber(seasonStr);
+    }
+    // 匹配"第X部分"
+    const partMatch = t.match(/第([零一二三四五六七八九十百]+|\d+)部分?$/);
+    if (partMatch) {
+      const partStr = partMatch[1];
+      return /^\d+$/.test(partStr) ? parseInt(partStr) : parseChineseNumber(partStr);
+    }
+    // 匹配数字后缀（如"喜人奇妙夜2"）
+    const numberMatch = t.match(/(\d+)$/);
+    if (numberMatch) {
+      return parseInt(numberMatch[1]) || 1;
+    }
+    return 1;
+  }, []);
+
   // 获取TMDB演员数据和分集信息
   useEffect(() => {
     const fetchTmdbData = async () => {
@@ -506,7 +548,9 @@ function PlayPageClient() {
 
       try {
         const type = searchType === 'movie' ? 'movie' : 'tv';
-        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&details=true`);
+        // 从标题解析季数
+        const detectedSeason = parseSeasonFromTitle(videoTitle);
+        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true`);
         if (response.ok) {
           const data = await response.json();
           // 获取演员数据
@@ -515,7 +559,71 @@ function PlayPageClient() {
           }
           // 获取分集信息（仅电视剧）
           if (searchType === 'tv' && data.episodes && data.episodes.length > 0 && tmdbEpisodes.length === 0) {
-            setTmdbEpisodes(data.episodes);
+            // 如果标题中有特殊季名变体，尝试匹配对应的季
+            let finalEpisodes = data.episodes;
+            if (data.seasons && data.seasons.length > 0 && detectedSeason === 1) {
+              let seasonKeyword = '';
+              let detectedSeasonNumber = 0;
+
+              // 提取"第X部分"格式
+              const partMatch = videoTitle.match(/第([零一二三四五六七八九十百]+|\d+)部分?$/);
+              if (partMatch) {
+                const partStr = partMatch[1];
+                detectedSeasonNumber = /^\d+$/.test(partStr) ? parseInt(partStr) : parseSeasonFromTitle(`第${partStr}季`);
+              }
+
+              // 提取季名后缀（如"花儿与少年 同心季" -> "同心季"）
+              if (!detectedSeasonNumber) {
+                const seasonNameMatch = videoTitle.match(/\s+([^\s]+季)$/);
+                if (seasonNameMatch) {
+                  seasonKeyword = seasonNameMatch[1];
+                }
+              }
+
+              // 提取"之XXX"格式的后缀
+              if (!seasonKeyword && !detectedSeasonNumber) {
+                const zhiMatch = videoTitle.match(/之([^之]+)$/);
+                if (zhiMatch) {
+                  seasonKeyword = zhiMatch[1];
+                }
+              }
+
+              // 提取冒号后的内容
+              if (!seasonKeyword && !detectedSeasonNumber) {
+                const colonMatch = videoTitle.match(/[：:]([^：:]+)$/);
+                if (colonMatch) {
+                  seasonKeyword = colonMatch[1];
+                }
+              }
+
+              // 如果检测到了季数，重新获取对应季的分集
+              if (detectedSeasonNumber > 0 && detectedSeasonNumber <= data.seasons.length) {
+                console.log(`[Play] 根据"第X部分"格式匹配到第 ${detectedSeasonNumber} 季`);
+                const seasonResponse = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeasonNumber}&details=true`);
+                if (seasonResponse.ok) {
+                  const seasonData = await seasonResponse.json();
+                  if (seasonData.episodes && seasonData.episodes.length > 0) {
+                    finalEpisodes = seasonData.episodes;
+                  }
+                }
+              } else if (seasonKeyword) {
+                // 在季数列表中查找匹配的季名
+                const matchedSeason = data.seasons.find((s: { seasonNumber: number; name: string }) =>
+                  s.name && s.name.includes(seasonKeyword)
+                );
+                if (matchedSeason) {
+                  console.log(`[Play] 根据关键词 "${seasonKeyword}" 匹配到第 ${matchedSeason.seasonNumber} 季: ${matchedSeason.name}`);
+                  const seasonResponse = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${matchedSeason.seasonNumber}&details=true`);
+                  if (seasonResponse.ok) {
+                    const seasonData = await seasonResponse.json();
+                    if (seasonData.episodes && seasonData.episodes.length > 0) {
+                      finalEpisodes = seasonData.episodes;
+                    }
+                  }
+                }
+              }
+            }
+            setTmdbEpisodes(finalEpisodes);
           }
         }
       } catch (error) {
@@ -523,7 +631,7 @@ function PlayPageClient() {
       }
     };
     fetchTmdbData();
-  }, [videoTitle, videoYear, searchType, tmdbCast.length, tmdbEpisodes.length]);
+  }, [videoTitle, videoYear, searchType, tmdbCast.length, tmdbEpisodes.length, parseSeasonFromTitle]);
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {
@@ -563,6 +671,15 @@ function PlayPageClient() {
 
   // 总集数
   const totalEpisodes = detail?.episodes?.length || 0;
+
+  // 判断是否是综艺类型（综艺不显示TMDB分集标题）
+  const isVarietyShow = useMemo(() => {
+    if (!movieDetails?.genres) return false;
+    const varietyKeywords = ['综艺', '真人秀', '脱口秀', '选秀', '访谈'];
+    return movieDetails.genres.some((g: string) =>
+      varietyKeywords.some(keyword => g.includes(keyword))
+    );
+  }, [movieDetails?.genres]);
 
   // 用于记录是否需要在播放器 ready 后跳转到指定进度
   const resumeTimeRef = useRef<number | null>(null);
@@ -6043,7 +6160,7 @@ function PlayPageClient() {
                   sourceSearchError={sourceSearchError}
                   precomputedVideoInfo={precomputedVideoInfo}
                   onRefreshSources={refreshSources}
-                  tmdbEpisodes={searchType === 'tv' ? tmdbEpisodes : []}
+                  tmdbEpisodes={searchType === 'tv' && !isVarietyShow ? tmdbEpisodes : []}
                   portalContainer={portalContainer}
                 />
               </div>
@@ -6746,7 +6863,7 @@ function PlayPageClient() {
                   precomputedVideoInfo={precomputedVideoInfo}
                   onRefreshSources={refreshSources}
                   inModal={true}
-                  tmdbEpisodes={searchType === 'tv' ? tmdbEpisodes : []}
+                  tmdbEpisodes={searchType === 'tv' && !isVarietyShow ? tmdbEpisodes : []}
                   portalContainer={portalContainer}
                 />
               </div>
