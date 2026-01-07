@@ -5,7 +5,7 @@ import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
 // 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
-import stcasc, { ChineseType } from 'switch-chinese';
+import stcasc from 'switch-chinese';
 
 // 创建模块级别的繁简转换器实例
 const converter = stcasc();
@@ -419,17 +419,16 @@ function generateSearchVariants(originalQuery: string): string[] {
   // 去重
   const uniqueVariants = Array.from(new Set(variants));
 
-  // 最后：对所有变体进行繁体转简体处理（如果检测到包含繁体）
+  // 最后：对所有变体进行繁体转简体处理
+  // 直接转换，无需 detect（避免额外性能开销）
   const finalVariants: string[] = [];
   uniqueVariants.forEach(variant => {
     finalVariants.push(variant);
-    // 如果变体不是纯简体中文，尝试转换
-    if (converter.detect(variant) !== ChineseType.SIMPLIFIED) {
-      const simplifiedVariant = converter.simplized(variant);
-      if (simplifiedVariant !== variant && !finalVariants.includes(simplifiedVariant)) {
-        finalVariants.push(simplifiedVariant);
-        console.log(`[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`);
-      }
+    // 直接尝试转换，如果结果不同则添加
+    const simplifiedVariant = converter.simplized(variant);
+    if (simplifiedVariant !== variant && !finalVariants.includes(simplifiedVariant)) {
+      finalVariants.push(simplifiedVariant);
+      console.log(`[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`);
     }
   });
 
