@@ -4,12 +4,11 @@ import { API_CONFIG, ApiSite, getConfig } from '@/lib/config';
 import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
-// 使用 tree-shakeable 的精简版 opencc-js，减小打包体积
-import * as OpenCC from 'opencc-js/core';
-import * as Locale from 'opencc-js/preset';
+// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
+import stcasc from 'switch-chinese';
 
-// 创建模块级别的繁简转换器实例（使用 ConverterFactory 以支持 tree shaking）
-const tw2cnConverter = OpenCC.ConverterFactory(Locale.from.tw, Locale.to.cn);
+// 创建模块级别的繁简转换器实例
+const converter = stcasc();
 
 /**
  * 快速检测文本是否包含繁体中文字符
@@ -364,7 +363,7 @@ function generateSearchVariants(originalQuery: string): string[] {
   // 2. 繁体转简体变体（用于搜索简体数据源）
   // 先快速检测是否包含繁体字，避免对简体输入进行不必要的转换
   if (hasTraditionalChinese(trimmed)) {
-    const simplifiedVariant = tw2cnConverter(trimmed);
+    const simplifiedVariant = converter.simplized(trimmed);
     if (simplifiedVariant !== trimmed && !variants.includes(simplifiedVariant)) {
       variants.push(simplifiedVariant);
       console.log(`[DEBUG] 添加繁转简变体: "${trimmed}" -> "${simplifiedVariant}"`);
