@@ -113,10 +113,10 @@ export async function refreshLiveChannels(liveInfo: {
 
     // 尝试从内容判断是否为 TVBox
     if (!isTvBox) {
-        // 检查 JSON 结构
+        // 检查 JSON 结构 (即使包含注释，通常也以 { 开头)
         if (content.trim().startsWith('{')) {
             try {
-                const json = JSON.parse(content);
+                const json = tryParseJson(content);
                 if (json.lives && Array.isArray(json.lives)) {
                     isTvBox = true;
                     console.log(`[Live] Content detected as TVBox JSON Config`);
@@ -203,7 +203,7 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
   try {
     const trimmed = content.trim();
     if (trimmed.startsWith('{')) {
-        const json = JSON.parse(trimmed);
+        const json = tryParseJson(trimmed);
         if (json.lives && Array.isArray(json.lives)) {
             config = json;
         }
@@ -315,6 +315,29 @@ function parseTvBoxLiveTxt(content: string, sourceKey: string): {
 // ----------------------------------------------------------------------
 // Existing Helper Functions
 // ----------------------------------------------------------------------
+
+/**
+ * 尝试解析 JSON，支持简单的注释去除
+ * TVBox 配置文件常包含 // 开头的注释，导致 JSON.parse 失败
+ */
+function tryParseJson(content: string): any {
+  try {
+    // 1. 尝试直接解析
+    return JSON.parse(content);
+  } catch (e) {
+    try {
+      // 2. 去除整行注释 (以 // 开头的行)
+      const cleanedLines = content.replace(/^\s*\/\/.*$/gm, '');
+      return JSON.parse(cleanedLines);
+    } catch (e2) {
+      // 3. 如果还失败，尝试更激进的清洗（注意：可能会破坏包含 // 的 URL，需谨慎）
+      // 这里暂不实施激进清洗，以免破坏 http:// 链接
+      // 可以考虑使用更复杂的正则来避开字符串内的 //
+      console.warn('[Live] JSON parse failed even after simple comment stripping');
+      throw e;
+    }
+  }
+}
 
 function normalizeChannelName(name: string): string {
   return name
