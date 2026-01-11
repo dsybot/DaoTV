@@ -146,18 +146,25 @@ export async function refreshLiveChannels(liveInfo: {
 
     let result: {
         tvgUrl: string;
-        channels: any[];
+        channels: {
+            id: string;
+            tvgId: string;
+            name: string;
+            logo: string;
+            group: string;
+            url: string;
+        }[];
     };
-    
+
     if (isTvBox) {
         console.log(`[Live] Processing as TVBox source...`);
-        // 使用 TVBox 处理器
-        const tvBoxResult = await processTvBoxContent(content, liveInfo.key);
+        // 使用 TVBox 处理器 - 传递已解密的内容
+        const tvBoxResult = await processTvBoxContent(effectiveContent, liveInfo.key);
         console.log(`[Live] TVBox processing result type: ${tvBoxResult.type}`);
-        
+
         if (tvBoxResult.type === 'txt') {
             result = {
-                tvgUrl: '', 
+                tvgUrl: '',
                 channels: tvBoxResult.data.channels
             };
         } else if (tvBoxResult.type === 'm3u') {
@@ -165,11 +172,11 @@ export async function refreshLiveChannels(liveInfo: {
              result = parseM3U(liveInfo.key, tvBoxResult.content);
         } else {
              // 无法识别或出错，尝试作为普通 M3U 解析
-             result = parseM3U(liveInfo.key, content);
+             result = parseM3U(liveInfo.key, effectiveContent);
         }
     } else {
         // 标准 M3U 解析
-        result = parseM3U(liveInfo.key, content);
+        result = parseM3U(liveInfo.key, effectiveContent);
     }
 
     const epgUrl = liveInfo.epg || result.tvgUrl;
@@ -233,13 +240,12 @@ function tryDecrypt(content: string): string {
 
 async function processTvBoxContent(content: string, sourceKey: string): Promise<any> {
   let config: TvBoxConfig | null = null;
-  
-  // 0. 尝试解密
-  const decryptedContent = tryDecrypt(content);
-  
+
+  // 注意: content 已经在 refreshLiveChannels 中解密过了，无需再次解密
+
   // 1. 尝试解析为 JSON 配置
   try {
-    const trimmed = decryptedContent.trim();
+    const trimmed = content.trim();
     if (trimmed.startsWith('{')) {
         const json = tryParseJson(trimmed);
         if (json.lives && Array.isArray(json.lives)) {
@@ -255,7 +261,7 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
     if (config.lives && config.lives.length > 0) {
       const firstLive = config.lives[0];
       const liveUa = firstLive.ua || TVBOX_UA;
-      
+
       try {
         const response = await fetch(firstLive.url, {
           headers: {
@@ -263,16 +269,16 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
           }
         });
         if (!response.ok) return { type: 'error', error: 'Fetch failed' };
-        
+
         const liveContent = await response.text();
-        
+
         if (liveContent.includes('#EXTM3U')) {
           return { type: 'm3u', content: liveContent, ua: liveUa };
         } else {
-          return { 
-            type: 'txt', 
+          return {
+            type: 'txt',
             data: parseTvBoxLiveTxt(liveContent, sourceKey),
-            ua: liveUa 
+            ua: liveUa
           };
         }
       } catch (error) {
@@ -284,16 +290,16 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
   }
 
   // 3. 优先检查 M3U
-  if (decryptedContent.includes('#EXTM3U')) {
-      return { type: 'm3u', content: decryptedContent, ua: TVBOX_UA };
+  if (content.includes('#EXTM3U')) {
+      return { type: 'm3u', content: content, ua: TVBOX_UA };
   }
 
   // 4. 检查 TXT
-  if (decryptedContent.includes(',#genre#') || (decryptedContent.includes(',') && !decryptedContent.trim().startsWith('<'))) {
-     return { 
-       type: 'txt', 
-       data: parseTvBoxLiveTxt(decryptedContent, sourceKey),
-       ua: TVBOX_UA 
+  if (content.includes(',#genre#') || (content.includes(',') && !content.trim().startsWith('<'))) {
+     return {
+       type: 'txt',
+       data: parseTvBoxLiveTxt(content, sourceKey),
+       ua: TVBOX_UA
      };
   }
 
@@ -311,7 +317,14 @@ function parseTvBoxLiveTxt(content: string, sourceKey: string): {
   }[];
 } {
   const lines = content.split('\n');
-  const channels: any[] = [];
+  const channels: {
+    id: string;
+    tvgId: string;
+    name: string;
+    logo: string;
+    group: string;
+    url: string;
+  }[] = [];
   
   let currentGroup = '默认分组';
   let channelIndex = 0;
@@ -571,7 +584,14 @@ export function parseM3U(sourceKey: string, m3uContent: string): {
     url: string;
   }[];
 } {
-  const channels: any[] = [];
+  const channels: {
+    id: string;
+    tvgId: string;
+    name: string;
+    logo: string;
+    group: string;
+    url: string;
+  }[] = [];
   const lines = m3uContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   let tvgUrl = '';
   let channelIndex = 0;

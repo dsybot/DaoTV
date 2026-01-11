@@ -317,17 +317,17 @@ async function getInitConfig(configFile: string, subConfig: {
     if (!adminConfig.LiveConfig) {
       adminConfig.LiveConfig = [];
     }
-      adminConfig.LiveConfig.push({
-        key,
-        name: live.name,
-        url: live.url,
-        ua: live.ua,
-        epg: live.epg,
-        isTvBox: live.isTvBox,
-        channelNumber: 0,
-        from: 'config',
-        disabled: false,
-      });
+    adminConfig.LiveConfig.push({
+      key,
+      name: live.name,
+      url: live.url,
+      ua: live.ua,
+      epg: live.epg,
+      isTvBox: live.isTvBox,
+      channelNumber: 0,
+      from: 'config',
+      disabled: false,
+    });
   });
 
   return adminConfig;
