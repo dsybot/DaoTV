@@ -1853,9 +1853,27 @@ function LivePageClient() {
                   </div>
                 )}
               </div>
-              {/* 播放模式指示器 - 移动端始终可见 */}
+              {/* 播放模式切换按钮 - 可点击切换直连/代理 */}
               {currentChannel && (
-                <span className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40 border border-blue-200 dark:border-blue-700 whitespace-nowrap'>
+                <button
+                  onClick={() => {
+                    const newValue = !directPlaybackEnabled;
+                    setDirectPlaybackEnabled(newValue);
+                    // 保存到 localStorage
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('live-direct-playback-enabled', JSON.stringify(newValue));
+                    }
+                    // 重新加载当前频道以应用新模式
+                    if (currentChannel) {
+                      const currentUrl = currentChannel.url;
+                      cleanupPlayer();
+                      setVideoUrl('');
+                      setTimeout(() => setVideoUrl(currentUrl), 100);
+                    }
+                  }}
+                  className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40 border border-blue-200 dark:border-blue-700 whitespace-nowrap cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150'
+                  title={`点击切换到${directPlaybackEnabled ? '代理' : '直连'}模式`}
+                >
                   {playbackMode === 'direct' ? (
                     <>
                       <span className='text-green-600 dark:text-green-400'>⚡</span>
@@ -1867,7 +1885,7 @@ function LivePageClient() {
                       <span className='text-orange-700 dark:text-orange-300'>代理</span>
                     </>
                   )}
-                </span>
+                </button>
               )}
             </div>
           </h1>
