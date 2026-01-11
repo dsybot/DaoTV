@@ -75,12 +75,14 @@ export async function refreshLiveChannels(liveInfo: {
   channelNumber?: number;
   disabled?: boolean;
 }): Promise<number> {
+  console.log(`[Live] Starting refresh for source: ${liveInfo.name} (${liveInfo.url})`);
+
   if (cachedLiveChannels[liveInfo.key]) {
     delete cachedLiveChannels[liveInfo.key];
   }
   
   if (!liveInfo.url) {
-    console.error('refreshLiveChannels: URL is missing');
+    console.error('[Live] refreshLiveChannels: URL is missing');
     return 0;
   }
 
@@ -88,10 +90,13 @@ export async function refreshLiveChannels(liveInfo: {
   
   // 尝试检测是否为 TVBox 格式 (JSON 配置 或 TXT 直播源)
   let isTvBox = liveInfo.url.toLowerCase().endsWith('.json');
+  console.log(`[Live] Initial detection for ${liveInfo.url}: isTvBox=${isTvBox}`);
+
   let content = '';
   
   try {
     // 第一次 Fetch
+    console.log(`[Live] Fetching URL: ${liveInfo.url} with UA: ${isTvBox ? TVBOX_UA : ua}`);
     const response = await fetch(liveInfo.url, {
       headers: {
         'User-Agent': isTvBox ? TVBOX_UA : ua,
@@ -99,11 +104,12 @@ export async function refreshLiveChannels(liveInfo: {
     });
     
     if (!response.ok) {
-        console.error(`Failed to fetch live source: ${response.status} ${response.statusText}`);
+        console.error(`[Live] Failed to fetch live source: ${response.status} ${response.statusText}`);
         return 0;
     }
 
     content = await response.text();
+    console.log(`[Live] Content received. Length: ${content.length}. Start: ${content.substring(0, 50)}...`);
 
     // 尝试从内容判断是否为 TVBox
     if (!isTvBox) {
@@ -113,6 +119,7 @@ export async function refreshLiveChannels(liveInfo: {
                 const json = JSON.parse(content);
                 if (json.lives && Array.isArray(json.lives)) {
                     isTvBox = true;
+                    console.log(`[Live] Content detected as TVBox JSON Config`);
                 }
             } catch (e) {
                 // Ignore JSON parse error
@@ -123,6 +130,7 @@ export async function refreshLiveChannels(liveInfo: {
         if (!isTvBox && !content.includes('#EXTM3U')) {
             if (content.includes(',#genre#') || (content.includes(',') && !content.trim().startsWith('<'))) {
                 isTvBox = true;
+                console.log(`[Live] Content detected as TVBox TXT`);
             }
         }
     }
@@ -133,8 +141,10 @@ export async function refreshLiveChannels(liveInfo: {
     };
     
     if (isTvBox) {
+        console.log(`[Live] Processing as TVBox source...`);
         // 使用 TVBox 处理器
         const tvBoxResult = await processTvBoxContent(content, liveInfo.key);
+        console.log(`[Live] TVBox processing result type: ${tvBoxResult.type}`);
         
         if (tvBoxResult.type === 'txt') {
             result = {
