@@ -326,6 +326,7 @@ interface LiveDataSource {
   url: string;
   ua?: string;
   epg?: string;
+  isTvBox?: boolean;
   channelNumber?: number;
   disabled?: boolean;
   from: 'config' | 'custom';
@@ -5696,6 +5697,7 @@ const LiveSourceConfig = ({
     url: '',
     ua: '',
     epg: '',
+    isTvBox: false,
     disabled: false,
     from: 'custom',
   });
@@ -5800,13 +5802,15 @@ const LiveSourceConfig = ({
         url: newLiveSource.url,
         ua: newLiveSource.ua,
         epg: newLiveSource.epg,
+        isTvBox: newLiveSource.isTvBox,
       });
-      setNewLiveSource({
+        setNewLiveSource({
         name: '',
         key: '',
         url: '',
         epg: '',
         ua: '',
+        isTvBox: false,
         disabled: false,
         from: 'custom',
       });
@@ -6139,6 +6143,27 @@ const LiveSourceConfig = ({
               className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             />
 
+          </div>
+          {/* TVBox 模式开关 */}
+          <div className='flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+            <label className='flex items-center space-x-2 cursor-pointer w-full'>
+              <button
+                type='button'
+                onClick={() => setNewLiveSource(prev => ({ ...prev, isTvBox: !prev.isTvBox }))}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${newLiveSource.isTvBox
+                  ? 'bg-purple-600 focus:ring-purple-500'
+                  : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500'
+                  }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${newLiveSource.isTvBox ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                />
+              </button>
+              <span className='text-sm font-medium text-gray-700 dark:text-gray-300 flex-1'>
+                强制识别为 TVBox 源 (针对 .com / 加密内容)
+              </span>
+            </label>
           </div>
           <div className='flex justify-end'>
             <button

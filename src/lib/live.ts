@@ -71,6 +71,7 @@ export async function refreshLiveChannels(liveInfo: {
   url: string;
   ua?: string;
   epg?: string;
+  isTvBox?: boolean;
   from: 'config' | 'custom';
   channelNumber?: number;
   disabled?: boolean;
@@ -89,8 +90,9 @@ export async function refreshLiveChannels(liveInfo: {
   const ua = liveInfo.ua || defaultUA;
   
   // 尝试检测是否为 TVBox 格式 (JSON 配置 或 TXT 直播源)
-  let isTvBox = liveInfo.url.toLowerCase().endsWith('.json');
-  console.log(`[Live] Initial detection for ${liveInfo.url}: isTvBox=${isTvBox}`);
+  // 如果用户手动指定了 isTvBox，则优先使用
+  let isTvBox = liveInfo.isTvBox || liveInfo.url.toLowerCase().endsWith('.json');
+  console.log(`[Live] Initial detection for ${liveInfo.url}: isTvBox=${isTvBox} (Manual: ${liveInfo.isTvBox})`);
 
   let content = '';
   
