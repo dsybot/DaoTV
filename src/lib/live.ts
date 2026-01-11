@@ -5,7 +5,7 @@ import { getConfig } from "@/lib/config";
 import { db } from "@/lib/db";
 
 const defaultUA = 'AptvPlayer/1.4.10';
-const TVBOX_UA = 'okhttp/3.15';
+const TVBOX_UA = 'okhttp/4.1.0';
 
 export interface LiveChannels {
   channelNumber: number;
