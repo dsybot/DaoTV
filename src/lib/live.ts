@@ -111,12 +111,19 @@ export async function refreshLiveChannels(liveInfo: {
     content = await response.text();
     console.log(`[Live] Content received. Length: ${content.length}. Start: ${content.substring(0, 50)}...`);
 
+    // 0. 尝试解密内容（针对 饭太硬/肥猫 等加密源）
+    const decryptedContent = tryDecrypt(content);
+    const effectiveContent = decryptedContent || content; // 如果解密失败或无加密，使用原内容
+    if (decryptedContent !== content) {
+        console.log(`[Live] Content decrypted. New Length: ${effectiveContent.length}. Start: ${effectiveContent.substring(0, 50)}...`);
+    }
+
     // 尝试从内容判断是否为 TVBox
     if (!isTvBox) {
-        // 检查 JSON 结构 (即使包含注释，通常也以 { 开头)
-        if (content.trim().startsWith('{')) {
+        // 检查 JSON 结构
+        if (effectiveContent.trim().startsWith('{')) {
             try {
-                const json = tryParseJson(content);
+                const json = tryParseJson(effectiveContent);
                 if (json.lives && Array.isArray(json.lives)) {
                     isTvBox = true;
                     console.log(`[Live] Content detected as TVBox JSON Config`);
@@ -127,8 +134,8 @@ export async function refreshLiveChannels(liveInfo: {
         }
         
         // 检查 TXT 特征 (排除 M3U)
-        if (!isTvBox && !content.includes('#EXTM3U')) {
-            if (content.includes(',#genre#') || (content.includes(',') && !content.trim().startsWith('<'))) {
+        if (!isTvBox && !effectiveContent.includes('#EXTM3U')) {
+            if (effectiveContent.includes(',#genre#') || (effectiveContent.includes(',') && !effectiveContent.trim().startsWith('<'))) {
                 isTvBox = true;
                 console.log(`[Live] Content detected as TVBox TXT`);
             }
@@ -196,12 +203,41 @@ export async function refreshLiveChannels(liveInfo: {
 // TVBox Support Functions
 // ----------------------------------------------------------------------
 
+/**
+ * 尝试解密 TVBox 配置
+ * 支持格式：[A-Za-z0-9]{8}** + Base64
+ */
+function tryDecrypt(content: string): string {
+  // 1. 检查是否存在 "8位字符 + **" 的特征 (FanTaiYing, Feimao 等常用加密/混淆格式)
+  const match = content.match(/[A-Za-z0-9]{8}\*\*/);
+  if (match && match.index !== undefined) {
+     // 提取 ** 之后的所有内容作为 Base64
+     // 注意：对于图片隐写，配置通常在文件末尾，match.index 会定位到特征头
+     const base64Part = content.slice(match.index + 10).trim();
+     try {
+       // 尝试 Base64 解码
+       const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
+       // 简单验证解码后是否像 JSON
+       if (decoded.trim().startsWith('{') || decoded.trim().startsWith('[')) {
+           console.log('[Live] Successfully decrypted TVBox config (Base64)');
+           return decoded;
+       }
+     } catch (e) {
+       console.warn('[Live] Detected encrypted format but failed to decode:', e);
+     }
+  }
+  return content;
+}
+
 async function processTvBoxContent(content: string, sourceKey: string): Promise<any> {
   let config: TvBoxConfig | null = null;
   
+  // 0. 尝试解密
+  const decryptedContent = tryDecrypt(content);
+  
   // 1. 尝试解析为 JSON 配置
   try {
-    const trimmed = content.trim();
+    const trimmed = decryptedContent.trim();
     if (trimmed.startsWith('{')) {
         const json = tryParseJson(trimmed);
         if (json.lives && Array.isArray(json.lives)) {
@@ -246,15 +282,15 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
   }
 
   // 3. 优先检查 M3U
-  if (content.includes('#EXTM3U')) {
-      return { type: 'm3u', content, ua: TVBOX_UA };
+  if (decryptedContent.includes('#EXTM3U')) {
+      return { type: 'm3u', content: decryptedContent, ua: TVBOX_UA };
   }
 
   // 4. 检查 TXT
-  if (content.includes(',#genre#') || (content.includes(',') && !content.trim().startsWith('<'))) {
+  if (decryptedContent.includes(',#genre#') || (decryptedContent.includes(',') && !decryptedContent.trim().startsWith('<'))) {
      return { 
        type: 'txt', 
-       data: parseTvBoxLiveTxt(content, sourceKey),
+       data: parseTvBoxLiveTxt(decryptedContent, sourceKey),
        ua: TVBOX_UA 
      };
   }
