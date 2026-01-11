@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
         editSource.url = url as string;
         editSource.ua = ua || '';
         editSource.epg = epg || '';
+        editSource.isTvBox = !!isTvBox;
 
         // 刷新频道数
         try {
