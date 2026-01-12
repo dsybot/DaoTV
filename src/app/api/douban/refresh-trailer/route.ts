@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
+import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 /**
  * 刷新过期的 Douban trailer URL
@@ -32,7 +33,7 @@ async function fetchTrailerWithRedirectDetection(id: string, proxyUrl?: string):
     let response = await fetch(targetUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        'User-Agent': DEFAULT_USER_AGENT,
         'Referer': 'https://movie.douban.com/explore',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
@@ -58,7 +59,7 @@ async function fetchTrailerWithRedirectDetection(id: string, proxyUrl?: string):
       response = await fetch(targetUrl, {
         signal: tvController.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+          'User-Agent': DEFAULT_USER_AGENT,
           'Referer': 'https://movie.douban.com/explore',
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',

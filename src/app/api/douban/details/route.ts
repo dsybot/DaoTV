@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
+import { getRandomUserAgentWithInfo, getSecChUaHeaders, DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // ============================================================================
 // 移动端API数据获取（预告片和高清图片）
@@ -11,7 +12,7 @@ import { getCacheTime, getConfig } from '@/lib/config';
  * 从移动端API获取预告片和高清图片（内部函数）
  * @param id 豆瓣影片ID
  * @param proxyUrl 代理地址（使用 DoubanDetailProxy 配置）
- * 2024-2025 最佳实践：使用最新 User-Agent 和完整请求头
+ * 2026 最佳实践：使用最新 User-Agent 和完整请求头
  * 
  * 注意：豆瓣移动端API对电影和电视剧使用不同的路径
  * - 电影: /movie/{id}
@@ -38,8 +39,8 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
     let response = await fetch(targetUrl, {
       signal: controller.signal,
       headers: {
-        // 2024-2025 最新 User-Agent（桌面版更不容易被限制）
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        // 2026 最新 User-Agent（桌面版更不容易被限制）
+        'User-Agent': DEFAULT_USER_AGENT,
         'Referer': 'https://movie.douban.com/explore',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
@@ -69,7 +70,7 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
       response = await fetch(targetUrl, {
         signal: tvController.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+          'User-Agent': DEFAULT_USER_AGENT,
           'Referer': 'https://movie.douban.com/explore',
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
@@ -137,80 +138,12 @@ const fetchMobileApiData = unstable_cache(
   }
 );
 
-// 用户代理池 - 2025 最新版本（多浏览器策略）
-const USER_AGENTS = [
-  // Chrome 133 (2025最新)
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-  // Firefox 133 (2025最新)
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
-  // Safari 18 (2025最新)
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
-  // Edge 133 (2025最新)
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 Edg/133.0.0.0',
-];
-
 // 请求限制器 - 使用代理时可以更快
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 500; // 降低到0.5秒（使用代理时风险较低）
 const MIN_REQUEST_INTERVAL_NO_PROXY = 2000; // 无代理时保持2秒
 
-/**
- * 获取随机 User-Agent 及对应的浏览器指纹
- */
-function getRandomUserAgent(): {
-  ua: string;
-  browser: 'chrome' | 'firefox' | 'safari' | 'edge';
-  platform: string;
-} {
-  const index = Math.floor(Math.random() * USER_AGENTS.length);
-  const ua = USER_AGENTS[index];
-
-  // 识别浏览器类型和平台
-  let browser: 'chrome' | 'firefox' | 'safari' | 'edge' = 'chrome';
-  let platform = 'Windows';
-
-  if (ua.includes('Firefox')) {
-    browser = 'firefox';
-  } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
-    browser = 'safari';
-  } else if (ua.includes('Edg/')) {
-    browser = 'edge';
-  }
-
-  if (ua.includes('Macintosh')) {
-    platform = 'macOS';
-  } else if (ua.includes('Linux')) {
-    platform = 'Linux';
-  }
-
-  return { ua, browser, platform };
-}
-
-/**
- * 生成 Sec-CH-UA 客户端提示（Chrome/Edge）
- */
-function getSecChUaHeaders(browser: 'chrome' | 'firefox' | 'safari' | 'edge', platform: string): Record<string, string> {
-  if (browser === 'chrome') {
-    return {
-      'Sec-CH-UA': '"Google Chrome";v="133", "Chromium";v="133", "Not?A_Brand";v="24"',
-      'Sec-CH-UA-Mobile': '?0',
-      'Sec-CH-UA-Platform': `"${platform}"`,
-    };
-  } else if (browser === 'edge') {
-    return {
-      'Sec-CH-UA': '"Microsoft Edge";v="133", "Chromium";v="133", "Not?A_Brand";v="24"',
-      'Sec-CH-UA-Mobile': '?0',
-      'Sec-CH-UA-Platform': `"${platform}"`,
-    };
-  }
-  // Firefox 和 Safari 不发送 Sec-CH-UA
-  return {};
-}
-
-function randomDelay(min = 500, max = 1500): Promise<void> {
+function randomDelay(min = 1000, max = 3000): Promise<void> {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
   return new Promise(resolve => setTimeout(resolve, delay));
 }
@@ -274,7 +207,7 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     // 获取随机浏览器指纹
-    const { ua, browser, platform } = getRandomUserAgent();
+    const { ua, browser, platform } = getRandomUserAgentWithInfo();
     const secChHeaders = getSecChUaHeaders(browser, platform);
 
     // 🎯 2025 最佳实践：按照真实浏览器的头部顺序发送
