@@ -75,6 +75,12 @@ export async function GET(request: Request) {
       headers.set('Content-Type', contentType);
     }
 
+    // 传递Content-Length以支持进度显示和更好的缓存（如果上游提供）
+    const contentLength = imageResponse.headers.get('content-length');
+    if (contentLength) {
+      headers.set('Content-Length', contentLength);
+    }
+
     // 设置缓存头 - 缓存7天（604800秒），允许重新验证
     headers.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
     headers.set('CDN-Cache-Control', 'public, s-maxage=604800');
