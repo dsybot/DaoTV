@@ -190,7 +190,7 @@ function ShortDramaCard({
   };
 
   return (
-    <div className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-500 hover:shadow-2xl`}>
+    <div className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-500`}>
       <Link
         href={`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`}
         className="block"
