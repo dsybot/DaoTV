@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     // 登录页背景配置
     LoginBgDesktop: config.SiteConfig.LoginBgDesktop || '',
     LoginBgMobile: config.SiteConfig.LoginBgMobile || '',
+    DownloadEnabled: config.DownloadConfig?.enabled ?? true,
   };
 
   // 添加 Telegram 登录配置（仅公开必要信息）

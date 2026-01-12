@@ -59,28 +59,25 @@ function PlayPageClient() {
   const { createTask, setShowDownloadPanel } = useDownload();
   const watchRoom = useWatchRoomContextSafe();
 
-  // 下载功能是否启用（本地状态，每次进入页面都重新获取）
-  const [downloadEnabled, setDownloadEnabled] = useState<boolean | null>(null);
+  // 下载功能启用状态
+  const [downloadEnabled, setDownloadEnabled] = useState(true);
 
-  // 获取下载配置
+  // 获取服务器配置（下载功能开关）
   useEffect(() => {
-    const fetchDownloadConfig = async () => {
+    const fetchServerConfig = async () => {
       try {
-        const response = await fetch('/api/admin/download-config', {
-          cache: 'no-store',
-        });
+        const response = await fetch('/api/server-config');
         if (response.ok) {
-          const data = await response.json();
-          setDownloadEnabled(data.enabled ?? true);
-        } else {
-          setDownloadEnabled(true);
+          const config = await response.json();
+          setDownloadEnabled(config.DownloadEnabled ?? true);
         }
       } catch (error) {
-        console.error('获取下载配置失败:', error);
+        console.error('获取服务器配置失败:', error);
+        // 出错时默认启用下载功能
         setDownloadEnabled(true);
       }
     };
-    fetchDownloadConfig();
+    fetchServerConfig();
   }, []);
 
   // -----------------------------------------------------------------------------
