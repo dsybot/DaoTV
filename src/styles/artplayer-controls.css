@@ -69,3 +69,15 @@
     max-width: calc(100vw - 40px) !important;
   }
 }
+
+
+/* ===== Resolution Badge Visibility ===== */
+/* 分辨率徽章跟随控制栏显示/隐藏 */
+.art-video-player .art-layer-resolution-badge {
+  opacity: 0;
+  transition: opacity 0.3s ease !important;
+}
+
+.art-video-player.art-control-show .art-layer-resolution-badge {
+  opacity: 1;
+}
