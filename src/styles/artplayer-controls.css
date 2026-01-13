@@ -1,25 +1,26 @@
 /* ============================================
    ArtPlayer Controls Styles
    控制栏样式 - 模块化重构版
+   ⚠️ 重要：保留所有 !important 确保正确覆盖
    ============================================ */
 
 /* ===== Poster (封面图) ===== */
-.art-video-player .art-poster {
-  background-size: contain;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-color: #000;
+.art-poster {
+  background-size: contain !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  background-color: #000 !important;
 }
 
 /* ===== Volume Control Hover Optimization ===== */
 @media (hover: hover) {
-  .art-video-player .art-control-volume {
-    position: relative;
+  .art-control-volume {
+    position: relative !important;
     padding: 3px;
   }
 
   /* 扩展hover检测区域，避免鼠标移动到面板时消失 */
-  .art-video-player .art-control-volume::before {
+  .art-control-volume::before {
     content: '';
     position: absolute;
     top: -20px;
@@ -31,40 +32,40 @@
   }
 
   /* 按钮或面板hover时显示音量面板 */
-  .art-video-player .art-control-volume:hover .art-volume-panel,
-  .art-video-player .art-volume-panel:hover {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-    transition: opacity 0.15s ease 0.1s, transform 0.15s ease 0.1s;
+  .art-control-volume:hover .art-volume-panel,
+  .art-volume-panel:hover {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    transition: opacity 0.15s ease 0.1s, transform 0.15s ease 0.1s !important;
   }
 
   /* 音量面板默认隐藏状态 */
-  .art-video-player .art-volume-panel {
-    transition: opacity 0.15s ease 0.3s, transform 0.15s ease 0.3s;
+  .art-volume-panel {
+    transition: opacity 0.15s ease 0.3s, transform 0.15s ease 0.3s !important;
   }
 }
 
-/* ===== Danmaku System Optimization ===== */
+/* ===== Danmaku System Mobile Optimization ===== */
 /* 弹幕面板在不同挂载位置的定位处理 */
 @media (max-width: 768px) {
   /* 当弹幕插件挂载到控制栏中心时（横屏，宽度>=512px） */
-  .art-video-player .art-controls-center .artplayer-plugin-danmuku .apd-config-panel,
-  .art-video-player .art-controls-center .artplayer-plugin-danmuku .apd-style-panel {
-    position: absolute;
-    left: 10%;
-    transform: translateX(-50%);
-    right: auto;
-    max-width: calc(100vw - 40px);
+  .art-controls-center .artplayer-plugin-danmuku .apd-config-panel,
+  .art-controls-center .artplayer-plugin-danmuku .apd-style-panel {
+    position: absolute !important;
+    left: 10% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    max-width: calc(100vw - 40px) !important;
   }
 
   /* 当弹幕插件挂载到播放器容器时（竖屏，宽度<512px） */
   .art-video-player .artplayer-plugin-danmuku .apd-config-panel,
   .art-video-player .artplayer-plugin-danmuku .apd-style-panel {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    right: auto;
-    max-width: calc(100vw - 40px);
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    max-width: calc(100vw - 40px) !important;
   }
 }
