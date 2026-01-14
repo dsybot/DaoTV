@@ -45,7 +45,7 @@ async function searchFromCaijiAPI(title: string, episode?: string | null): Promi
       const searchUrl = `https://www.caiji.cyou/api.php/provide/vod/?wd=${encodeURIComponent(searchTitle)}`;
       const response = await fetch(searchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': DEFAULT_USER_AGENT,
         },
       });
 
@@ -123,7 +123,7 @@ async function processSelectedResult(selectedResult: any, episode?: string | nul
 
     const detailResponse = await fetch(detailUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent': DEFAULT_USER_AGENT,
       },
     });
 

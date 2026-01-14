@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAllCandidates } from '@/lib/spiderJar';
+import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 /**
  * TVBox JAR 深度诊断 API
@@ -67,7 +68,7 @@ async function testJarSource(url: string, name: string): Promise<JarTestResult> 
       headers['User-Agent'] = 'curl/7.68.0';
     } else if (url.includes('gitee') || url.includes('gitcode')) {
       headers['User-Agent'] =
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+        DEFAULT_USER_AGENT;
     } else {
       headers['User-Agent'] =
         'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 Mobile Safari/537.36';
@@ -190,15 +191,15 @@ export async function GET(request: NextRequest) {
   // 根据环境选择测试源
   const testSources = env.isDomestic
     ? [
-        ...allSources.domestic.map((url) => ({ url, name: '国内CDN' })),
-        ...allSources.international.map((url) => ({ url, name: 'GitHub直连' })),
-        ...allSources.proxy.map((url) => ({ url, name: '代理源' })),
-      ]
+      ...allSources.domestic.map((url) => ({ url, name: '国内CDN' })),
+      ...allSources.international.map((url) => ({ url, name: 'GitHub直连' })),
+      ...allSources.proxy.map((url) => ({ url, name: '代理源' })),
+    ]
     : [
-        ...allSources.international.map((url) => ({ url, name: 'GitHub直连' })),
-        ...allSources.proxy.map((url) => ({ url, name: '代理源' })),
-        ...allSources.domestic.map((url) => ({ url, name: '国内CDN' })),
-      ];
+      ...allSources.international.map((url) => ({ url, name: 'GitHub直连' })),
+      ...allSources.proxy.map((url) => ({ url, name: '代理源' })),
+      ...allSources.domestic.map((url) => ({ url, name: '国内CDN' })),
+    ];
 
   console.log(
     `🔍 开始 JAR 源诊断测试，环境: ${env.isDomestic ? '国内' : '国际'}`

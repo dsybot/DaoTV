@@ -22,20 +22,20 @@ async function checkRateLimit(ip: string, limit = 60, windowMs = 60000): Promise
   const now = Date.now();
   const windowStart = Math.floor(now / windowMs) * windowMs; // 对齐到时间窗口开始
   const key = `tvbox-rate-limit:${ip}:${windowStart}`;
-  
+
   try {
     // 获取当前计数
     const currentCount = await db.getCache(key) || 0;
-    
+
     if (currentCount >= limit) {
       return false;
     }
-    
+
     // 增加计数并设置过期时间
     const newCount = currentCount + 1;
     const expireSeconds = Math.ceil(windowMs / 1000); // 转换为秒
     await db.setCache(key, newCount, expireSeconds);
-    
+
     return true;
   } catch (error) {
     console.error('Rate limit check failed:', error);
@@ -58,7 +58,7 @@ async function cleanExpiredRateLimitCache(): Promise<void> {
 class ConcurrencyLimiter {
   private running = 0;
 
-  constructor(private maxConcurrent: number) {}
+  constructor(private maxConcurrent: number) { }
 
   async run<T>(fn: () => Promise<T>): Promise<T> {
     while (this.running >= this.maxConcurrent) {
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
         }, { status: 401 });
       }
     }
-    
+
     // IP白名单检查（从数据库配置读取）
     if (securityConfig?.enableIpWhitelist && securityConfig.allowedIPs.length > 0) {
       // 获取客户端真实IP - 正确处理x-forwarded-for中的多个IP
@@ -209,16 +209,16 @@ export async function GET(request: NextRequest) {
           return forwardedFor.split(',')[0].trim();
         }
         return request.headers.get('x-real-ip') ||
-               request.headers.get('cf-connecting-ip') ||
-               'unknown';
+          request.headers.get('cf-connecting-ip') ||
+          'unknown';
       };
 
       const clientIP = getClientIP();
-      
+
       const isAllowed = securityConfig.allowedIPs.some(allowedIP => {
         const trimmedIP = allowedIP.trim();
         if (trimmedIP === '*') return true;
-        
+
         // 支持CIDR格式检查
         if (trimmedIP.includes('/')) {
           // 简单的CIDR匹配（实际生产环境建议使用专门的库）
@@ -226,28 +226,28 @@ export async function GET(request: NextRequest) {
           const networkParts = network.split('.').map(Number);
           const clientParts = clientIP.split('.').map(Number);
           const maskBits = parseInt(mask, 10);
-          
+
           // 简化的子网匹配逻辑
           if (maskBits >= 24) {
             const networkPrefix = networkParts.slice(0, 3).join('.');
             const clientPrefix = clientParts.slice(0, 3).join('.');
             return networkPrefix === clientPrefix;
           }
-          
+
           return clientIP.startsWith(network.split('.').slice(0, 2).join('.'));
         }
-        
+
         return clientIP === trimmedIP;
       });
-      
+
       if (!isAllowed) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: `Access denied for IP: ${clientIP}`,
           hint: '该IP地址不在白名单中'
         }, { status: 403 });
       }
     }
-    
+
     // 访问频率限制（从数据库配置读取）
     if (securityConfig?.enableRateLimit) {
       // 获取客户端真实IP - 正确处理x-forwarded-for中的多个IP
@@ -257,16 +257,16 @@ export async function GET(request: NextRequest) {
           return forwardedFor.split(',')[0].trim();
         }
         return request.headers.get('x-real-ip') ||
-               request.headers.get('cf-connecting-ip') ||
-               'unknown';
+          request.headers.get('cf-connecting-ip') ||
+          'unknown';
       };
 
       const clientIP = getClientIP();
-      
+
       const rateLimit = securityConfig.rateLimit || 60;
-      
+
       if (!(await checkRateLimit(clientIP, rateLimit))) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Rate limit exceeded',
           hint: `访问频率超限，每分钟最多${rateLimit}次请求`
         }, { status: 429 });
@@ -639,7 +639,7 @@ export async function GET(request: NextRequest) {
       lives: (() => {
         const enabledLives = (config.LiveConfig || []).filter(live => !live.disabled);
         if (enabledLives.length === 0) return [];
-        
+
         // 如果只有一个源，直接返回
         if (enabledLives.length === 1) {
           return enabledLives.map(live => ({
@@ -650,7 +650,7 @@ export async function GET(request: NextRequest) {
             logo: ""
           }));
         }
-        
+
         // 多个源时，创建一个聚合源
         return [{
           name: "LunaTV聚合直播",
@@ -807,7 +807,7 @@ export async function GET(request: NextRequest) {
           } else {
             fastSite.header = {
               'User-Agent':
-                'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36',
+                DEFAULT_USER_AGENT,
               Connection: 'close',
             };
           }

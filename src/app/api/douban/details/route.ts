@@ -32,6 +32,10 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
       ? `${proxyUrl}${encodeURIComponent(mobileApiUrl)}&noredirect=1`
       : mobileApiUrl;
 
+    // 获取随机浏览器指纹
+    const { ua, browser, platform } = getRandomUserAgentWithInfo();
+    const secChHeaders = getSecChUaHeaders(browser, platform);
+
     // 创建 AbortController 用于超时控制
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
@@ -39,13 +43,13 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
     let response = await fetch(targetUrl, {
       signal: controller.signal,
       headers: {
-        // 2026 最新 User-Agent（桌面版更不容易被限制）
-        'User-Agent': DEFAULT_USER_AGENT,
-        'Referer': 'https://movie.douban.com/explore',
+        'User-Agent': ua,
+        'Referer': 'https://movie.douban.com/explore',  // 更具体的 Referer
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
         'Origin': 'https://movie.douban.com',
+        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
@@ -70,12 +74,13 @@ async function _fetchMobileApiData(id: string, proxyUrl: string): Promise<{
       response = await fetch(targetUrl, {
         signal: tvController.signal,
         headers: {
-          'User-Agent': DEFAULT_USER_AGENT,
+          'User-Agent': ua,
           'Referer': 'https://movie.douban.com/explore',
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
           'Accept-Encoding': 'gzip, deflate, br',
           'Origin': 'https://movie.douban.com',
+          ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
           'Sec-Fetch-Dest': 'empty',
           'Sec-Fetch-Mode': 'cors',
           'Sec-Fetch-Site': 'same-site',

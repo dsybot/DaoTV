@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // 视频解析接口配置
 interface Parser {
@@ -57,7 +58,7 @@ const PARSERS: Parser[] = [
 // 根据URL识别视频平台
 function detectPlatform(url: string): string {
   const urlLower = url.toLowerCase();
-  
+
   if (urlLower.includes('qq.com') || urlLower.includes('v.qq.com')) return 'qq';
   if (urlLower.includes('iqiyi.com') || urlLower.includes('qiyi.com')) return 'iqiyi';
   if (urlLower.includes('youku.com')) return 'youku';
@@ -69,7 +70,7 @@ function detectPlatform(url: string): string {
   if (urlLower.includes('tudou.com')) return 'tudou';
   if (urlLower.includes('wasu.com')) return 'wasu';
   if (urlLower.includes('1905.com')) return '1905';
-  
+
   return 'unknown';
 }
 
@@ -78,18 +79,18 @@ async function checkParserHealth(parser: Parser): Promise<boolean> {
   try {
     const testUrl = 'https://v.qq.com/x/page/test.html';
     const parseUrl = parser.url + encodeURIComponent(testUrl);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), parser.timeout || 5000);
-    
+
     const response = await fetch(parseUrl, {
       method: 'HEAD',
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': DEFAULT_USER_AGENT
       }
     });
-    
+
     clearTimeout(timeoutId);
     return response.ok || response.status === 405; // 405 Method Not Allowed 也算正常
   } catch (error) {
@@ -100,21 +101,21 @@ async function checkParserHealth(parser: Parser): Promise<boolean> {
 
 // 获取可用的解析器（优先返回活跃状态的解析器）
 function getAvailableParsers(platform: string): Parser[] {
-  const filtered = PARSERS.filter(parser => 
+  const filtered = PARSERS.filter(parser =>
     parser.platforms.includes(platform) || platform === 'unknown'
   );
-  
+
   // 按优先级和状态排序：active > unknown > inactive，同级别按priority排序
   return filtered.sort((a, b) => {
     // 状态权重：active=0, unknown=1, inactive=2
     const statusWeight = { active: 0, unknown: 1, inactive: 2 };
     const aWeight = statusWeight[a.status];
     const bWeight = statusWeight[b.status];
-    
+
     if (aWeight !== bWeight) {
       return aWeight - bWeight;
     }
-    
+
     // 状态相同时按优先级排序
     return a.priority - b.priority;
   });
@@ -127,7 +128,7 @@ async function updateParsersHealth() {
     parser.status = isHealthy ? 'active' : 'inactive';
     return { name: parser.name, status: parser.status, isHealthy };
   });
-  
+
   const results = await Promise.allSettled(healthChecks);
   console.log('解析器健康检查结果:', results);
 }
@@ -207,7 +208,7 @@ export async function GET(request: NextRequest) {
       case 'redirect':
         // 直接重定向到解析地址
         return NextResponse.redirect(parseUrl);
-        
+
       case 'iframe': {
         // 返回可嵌入的iframe HTML
         const iframeHtml = `
@@ -233,7 +234,7 @@ export async function GET(request: NextRequest) {
           }
         });
       }
-        
+
       case 'json':
       default:
         // 返回JSON格式的解析信息
@@ -258,10 +259,10 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: '视频解析服务异常', 
-        details: error instanceof Error ? error.message : String(error) 
+        error: '视频解析服务异常',
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
