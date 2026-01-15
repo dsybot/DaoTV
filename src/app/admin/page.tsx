@@ -2545,6 +2545,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
       {/* 删除用户确认弹窗 */}
       {showDeleteUserModal && deletingUser && createPortal(
         <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+          // 删除中禁止关闭弹窗
+          if (isLoading(`deleteUser_${deletingUser}`)) return;
           setShowDeleteUserModal(false);
           setDeletingUser(null);
         }}>
@@ -2559,7 +2561,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     setShowDeleteUserModal(false);
                     setDeletingUser(null);
                   }}
-                  className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
+                  disabled={isLoading(`deleteUser_${deletingUser}`)}
+                  className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                 >
                   <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                     <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
@@ -2589,15 +2592,20 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       setShowDeleteUserModal(false);
                       setDeletingUser(null);
                     }}
-                    className={`px-6 py-2.5 text-sm font-medium ${buttonStyles.secondary}`}
+                    disabled={isLoading(`deleteUser_${deletingUser}`)}
+                    className={`px-6 py-2.5 text-sm font-medium ${isLoading(`deleteUser_${deletingUser}`) ? buttonStyles.disabled : buttonStyles.secondary}`}
                   >
                     取消
                   </button>
                   <button
                     onClick={handleConfirmDeleteUser}
-                    className={`px-6 py-2.5 text-sm font-medium ${buttonStyles.danger}`}
+                    disabled={isLoading(`deleteUser_${deletingUser}`)}
+                    className={`px-6 py-2.5 text-sm font-medium flex items-center space-x-2 ${isLoading(`deleteUser_${deletingUser}`) ? buttonStyles.disabled : buttonStyles.danger}`}
                   >
-                    确认删除
+                    {isLoading(`deleteUser_${deletingUser}`) && (
+                      <div className='animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent'></div>
+                    )}
+                    <span>{isLoading(`deleteUser_${deletingUser}`) ? '删除中...' : '确认删除'}</span>
                   </button>
                 </div>
               </div>
@@ -3682,22 +3690,20 @@ const VideoSourceConfig = ({
           <button
             onClick={handleCheckProxyStatus}
             disabled={!videoProxySettings.enabled || isLoading('checkProxyStatus')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              !videoProxySettings.enabled || isLoading('checkProxyStatus')
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${!videoProxySettings.enabled || isLoading('checkProxyStatus')
                 ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed text-gray-500'
                 : 'bg-green-600 hover:bg-green-700 text-white'
-            }`}
+              }`}
           >
             {isLoading('checkProxyStatus') ? '检测中...' : '🔍 检测代理状态'}
           </button>
           <button
             onClick={handleSaveVideoProxy}
             disabled={isLoading('saveVideoProxy')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              isLoading('saveVideoProxy')
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isLoading('saveVideoProxy')
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
+              }`}
           >
             {isLoading('saveVideoProxy') ? '保存中...' : '保存代理配置'}
           </button>
@@ -3705,11 +3711,10 @@ const VideoSourceConfig = ({
 
         {/* 代理状态显示 */}
         {proxyStatus && (
-          <div className={`mt-3 p-3 rounded-lg border ${
-            proxyStatus.healthy
+          <div className={`mt-3 p-3 rounded-lg border ${proxyStatus.healthy
               ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
               : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-          }`}>
+            }`}>
             <div className='flex items-center gap-2'>
               {proxyStatus.healthy ? (
                 <svg className='w-5 h-5 text-green-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -3721,9 +3726,8 @@ const VideoSourceConfig = ({
                 </svg>
               )}
               <div className='flex-1'>
-                <div className={`text-sm font-semibold ${
-                  proxyStatus.healthy ? 'text-green-900 dark:text-green-300' : 'text-red-900 dark:text-red-300'
-                }`}>
+                <div className={`text-sm font-semibold ${proxyStatus.healthy ? 'text-green-900 dark:text-green-300' : 'text-red-900 dark:text-red-300'
+                  }`}>
                   {proxyStatus.healthy ? '✅ 代理正常工作' : '❌ 代理连接失败'}
                 </div>
                 <div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
@@ -6035,53 +6039,53 @@ const LiveSourceConfig = ({
       <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3'>
         {corsStats.totalChecked > 0 ? (
           <>
-          <div className='flex items-center justify-between'>
-            <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-100'>
-              📊 直连模式统计
-            </h4>
-            <button
-              onClick={handleClearCorsCache}
-              className='text-xs px-3 py-1.5 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-200 rounded-lg transition-colors font-medium'
-            >
-              清除缓存
-            </button>
-          </div>
+            <div className='flex items-center justify-between'>
+              <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-100'>
+                📊 直连模式统计
+              </h4>
+              <button
+                onClick={handleClearCorsCache}
+                className='text-xs px-3 py-1.5 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-200 rounded-lg transition-colors font-medium'
+              >
+                清除缓存
+              </button>
+            </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-            <div className='bg-white dark:bg-gray-800 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700'>
-              <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>支持直连</div>
-              <div className='text-base font-semibold text-green-600 dark:text-green-400'>
-                ✅ {corsStats.directCount} 个
-                <span className='text-sm ml-2 font-normal'>
-                  ({corsStats.totalChecked > 0 ? Math.round((corsStats.directCount / corsStats.totalChecked) * 100) : 0}%)
-                </span>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              <div className='bg-white dark:bg-gray-800 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700'>
+                <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>支持直连</div>
+                <div className='text-base font-semibold text-green-600 dark:text-green-400'>
+                  ✅ {corsStats.directCount} 个
+                  <span className='text-sm ml-2 font-normal'>
+                    ({corsStats.totalChecked > 0 ? Math.round((corsStats.directCount / corsStats.totalChecked) * 100) : 0}%)
+                  </span>
+                </div>
+              </div>
+
+              <div className='bg-white dark:bg-gray-800 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700'>
+                <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>需要代理</div>
+                <div className='text-base font-semibold text-orange-600 dark:text-orange-400'>
+                  ❌ {corsStats.proxyCount} 个
+                  <span className='text-sm ml-2 font-normal'>
+                    ({corsStats.totalChecked > 0 ? Math.round((corsStats.proxyCount / corsStats.totalChecked) * 100) : 0}%)
+                  </span>
+                </div>
               </div>
             </div>
 
             <div className='bg-white dark:bg-gray-800 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700'>
-              <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>需要代理</div>
-              <div className='text-base font-semibold text-orange-600 dark:text-orange-400'>
-                ❌ {corsStats.proxyCount} 个
-                <span className='text-sm ml-2 font-normal'>
-                  ({corsStats.totalChecked > 0 ? Math.round((corsStats.proxyCount / corsStats.totalChecked) * 100) : 0}%)
+              <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>总检测数 / 估算流量节省</div>
+              <div className='text-base font-semibold text-blue-600 dark:text-blue-400'>
+                📈 {corsStats.totalChecked} 个源
+                <span className='text-sm ml-3 text-green-600 dark:text-green-400 font-normal'>
+                  💾 节省约 {corsStats.totalChecked > 0 ? Math.round((corsStats.directCount / corsStats.totalChecked) * 100) : 0}% 带宽
                 </span>
               </div>
             </div>
-          </div>
 
-          <div className='bg-white dark:bg-gray-800 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700'>
-            <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>总检测数 / 估算流量节省</div>
-            <div className='text-base font-semibold text-blue-600 dark:text-blue-400'>
-              📈 {corsStats.totalChecked} 个源
-              <span className='text-sm ml-3 text-green-600 dark:text-green-400 font-normal'>
-                💾 节省约 {corsStats.totalChecked > 0 ? Math.round((corsStats.directCount / corsStats.totalChecked) * 100) : 0}% 带宽
-              </span>
+            <div className='text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-blue-200 dark:border-blue-800'>
+              💡 提示: 直连模式通过客户端直接访问流媒体源来节省服务器带宽，但需要流媒体源支持跨域访问（CORS）。检测结果缓存有效期7天。
             </div>
-          </div>
-
-          <div className='text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-blue-200 dark:border-blue-800'>
-            💡 提示: 直连模式通过客户端直接访问流媒体源来节省服务器带宽，但需要流媒体源支持跨域访问（CORS）。检测结果缓存有效期7天。
-          </div>
           </>
         ) : (
           <div className='text-center py-8'>
@@ -6252,7 +6256,7 @@ const LiveSourceConfig = ({
               <label className='block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'>
                 自定义 UA（选填）
               </label>
-            <input
+              <input
                 type='text'
                 value={editingLiveSource.ua}
                 onChange={(e) =>
