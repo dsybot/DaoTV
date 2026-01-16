@@ -868,7 +868,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             alt={actualTitle}
             fill
             sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
-            className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
+            className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
             referrerPolicy='no-referrer'
             loading={priority ? 'eager' : 'lazy'}
