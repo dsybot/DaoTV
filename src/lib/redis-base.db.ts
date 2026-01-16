@@ -300,7 +300,7 @@ export abstract class BaseRedisStorage implements IStorage {
     await this.withRetry(() => this.client.del(this.userInfoKey(userName)));
 
     // 从用户列表中移除 (V2)
-    await this.withRetry(() => this.client.zrem(this.userListKey(), userName));
+    await this.withRetry(() => this.client.zRem(this.userListKey(), userName));
 
     // 删除 OIDC 映射（如果存在）
     try {
