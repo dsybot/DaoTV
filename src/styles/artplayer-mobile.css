@@ -49,3 +49,29 @@
     height: 3px !important;
   }
 }
+
+
+/* ===== Lock Button Position & Control Bar Fix ===== */
+/* 锁定按钮移到右边 */
+.art-video-player .art-layer-lock {
+  left: auto !important;
+  right: 20px !important;
+}
+
+/* 锁定状态下隐藏底部控制栏背景 */
+.art-video-player.art-lock .art-bottom {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* 锁定状态下隐藏控制栏内容 */
+.art-video-player.art-lock .art-controls,
+.art-video-player.art-lock .art-progress {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 锁定状态下隐藏毛玻璃效果 */
+.art-video-player.art-lock .art-liquid-glass {
+  opacity: 0 !important;
+}
