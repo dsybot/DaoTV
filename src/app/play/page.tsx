@@ -4712,30 +4712,30 @@ function PlayPageClient() {
 
           const updateResolution = () => {
             if (video.videoWidth && video.videoHeight) {
-              const height = video.videoHeight;
-              const label = height >= 2160 ? '4K' :
-                height >= 1440 ? '2K' :
-                  height >= 1080 ? '1080P' :
-                    height >= 720 ? '720P' :
-                      height + 'P';
+              const width = video.videoWidth;
+              const label = width >= 3840 ? '4K' :
+                width >= 2560 ? '2K' :
+                  width >= 1920 ? '1080P' :
+                    width >= 1280 ? '720P' :
+                      width + 'P';
 
               // 根据质量设置不同的渐变背景和发光效果
               let gradientStyle = '';
               let boxShadow = '';
 
-              if (height >= 2160) {
+              if (width >= 3840) {
                 // 4K - 金色/紫色渐变 + 金色发光
                 gradientStyle = 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)';
                 boxShadow = '0 0 20px rgba(255, 215, 0, 0.6), 0 0 10px rgba(255, 165, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-              } else if (height >= 1440) {
+              } else if (width >= 2560) {
                 // 2K - 蓝色/青色渐变 + 蓝色发光
                 gradientStyle = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 boxShadow = '0 0 20px rgba(102, 126, 234, 0.6), 0 0 10px rgba(118, 75, 162, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-              } else if (height >= 1080) {
+              } else if (width >= 1920) {
                 // 1080P - 绿色/青色渐变 + 绿色发光
                 gradientStyle = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
                 boxShadow = '0 0 15px rgba(17, 153, 142, 0.5), 0 0 8px rgba(56, 239, 125, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-              } else if (height >= 720) {
+              } else if (width >= 1280) {
                 // 720P - 橙色渐变 + 橙色发光
                 gradientStyle = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
                 boxShadow = '0 0 15px rgba(240, 147, 251, 0.4), 0 0 8px rgba(245, 87, 108, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
