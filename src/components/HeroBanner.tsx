@@ -356,7 +356,7 @@ export default function HeroBanner({
           {/* 元数据 */}
           <div className="flex items-center gap-1.5 sm:gap-4 text-xs sm:text-base md:text-lg flex-wrap">
             {currentItem.rate && (
-              <div className="flex items-center gap-0.5 sm:gap-1.5 px-1 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-500/90 backdrop-blur-sm rounded text-[10px] sm:text-base">
+              <div className="flex items-center gap-0.5 sm:gap-1.5 px-1 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-500/90 rounded text-[10px] sm:text-base">
                 <span className="text-white font-bold">★</span>
                 <span className="text-white font-bold">{currentItem.rate}</span>
               </div>
@@ -367,7 +367,7 @@ export default function HeroBanner({
               </span>
             )}
             {currentItem.type && (
-              <span className="px-1.5 sm:px-3 py-0.5 sm:py-1 bg-white/20 backdrop-blur-sm rounded text-white/90 font-medium border border-white/30 text-[10px] sm:text-base">
+              <span className="px-1.5 sm:px-3 py-0.5 sm:py-1 bg-white/20 rounded text-white/90 font-medium border border-white/30 text-[10px] sm:text-base">
                 {currentItem.type === 'movie' ? '电影' :
                   currentItem.type === 'tv' ? '剧集' :
                     currentItem.type === 'variety' ? '综艺' :
@@ -404,7 +404,7 @@ export default function HeroBanner({
                   : `/douban?type=${currentItem.type === 'variety' ? 'show' : (currentItem.type || 'movie')
                   }`
               }
-              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white/30 backdrop-blur-md text-white font-bold rounded hover:bg-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl border border-white/50"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white/30 text-white font-bold rounded hover:bg-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl border border-white/50"
             >
               <Info className="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
               <span>详情</span>
@@ -418,7 +418,7 @@ export default function HeroBanner({
       {enableVideo && getEffectiveTrailerUrl(currentItem) && (
         <button
           onClick={toggleMute}
-          className="absolute bottom-10 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50"
+          className="absolute bottom-10 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50"
           aria-label={isMuted ? '取消静音' : '静音'}
         >
           {isMuted ? (
@@ -434,14 +434,14 @@ export default function HeroBanner({
         <>
           <button
             onClick={handlePrev}
-            className="hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/50 backdrop-blur-sm text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30"
+            className="hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30"
             aria-label="上一张"
           >
             <ChevronLeft className="w-7 h-7 lg:w-8 lg:h-8" />
           </button>
           <button
             onClick={handleNext}
-            className="hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/50 backdrop-blur-sm text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30"
+            className="hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30"
             aria-label="下一张"
           >
             <ChevronRight className="w-7 h-7 lg:w-8 lg:h-8" />
@@ -468,7 +468,7 @@ export default function HeroBanner({
 
       {/* 页码标识 */}
       <div className="absolute top-2 sm:top-6 md:top-8 right-2 sm:right-8 md:right-12">
-        <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/60 backdrop-blur-sm border border-white/70 sm:border-2 rounded text-white text-[10px] sm:text-sm font-bold">
+        <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/70 border border-white/70 sm:border-2 rounded text-white text-[10px] sm:text-sm font-bold">
           {currentIndex + 1} / {items.length}
         </div>
       </div>

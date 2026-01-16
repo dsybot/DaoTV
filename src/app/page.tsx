@@ -723,7 +723,7 @@ function HomeClient() {
           }`}
       >
         <div className='relative overflow-hidden rounded-xl bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-2xl'>
-          <div className='relative bg-white dark:bg-gray-900 rounded-xl px-5 py-3 backdrop-blur-sm'>
+          <div className='relative bg-white dark:bg-gray-900 rounded-xl px-5 py-3'>
             <div className='flex items-center gap-3'>
               <div className='shrink-0 w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center'>
                 <span className='text-xl animate-wave origin-bottom-right'>👋</span>

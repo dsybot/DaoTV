@@ -1064,13 +1064,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                     EP {String(currentEpisode).padStart(2, '0')}
                   </span>
                   {/* 右侧：总集数 - 半透明黑背景 */}
-                  <span className='flex items-center bg-black/70 backdrop-blur-sm px-1.5 py-0.5 text-[10px] font-medium text-white/60'>
+                  <span className='flex items-center bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white/60'>
                     / {actualEpisodes}
                   </span>
                 </>
               ) : (
                 /* 仅显示总集数 */
-                <span className='flex items-center bg-black/70 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-white/80'>
+                <span className='flex items-center bg-black/80 px-2 py-0.5 text-[10px] font-medium text-white/80'>
                   {actualEpisodes} 集
                 </span>
               )}
@@ -1080,7 +1080,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 年份徽章 - Netflix 风格 - 左上角第二位 */}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
-              className={`absolute left-2 flex items-center bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99)
+              className={`absolute left-2 flex items-center bg-black/80 px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99)
                 ? 'top-[38px]'  // 有集数徽章时向下偏移
                 : 'top-2'
                 }`}
@@ -1101,7 +1101,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 已完结徽章 - Netflix 风格 - 底部左侧 */}
           {remarks && isSeriesCompleted(remarks) && (
             <div
-              className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30"
+              className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/80 px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30"
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -1131,7 +1131,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
             return (
               <div
-                className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-lg text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30"
+                className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/80 px-2 py-0.5 rounded-md shadow-lg text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30"
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -1245,7 +1245,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 >
                   {/* 源数量徽章 */}
                   <div
-                    className='bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg flex items-center gap-1 hover:scale-105 transition-all duration-300 cursor-pointer'
+                    className='bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg flex items-center gap-1 hover:scale-105 transition-all duration-300 cursor-pointer'
                     style={{
                       WebkitUserSelect: 'none',
                       userSelect: 'none',
@@ -1369,7 +1369,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   setShowAIChat(true);
                 }}
                 className='flex items-center gap-1.5 px-3 py-1.5 rounded-md
-                  bg-black/70 backdrop-blur-sm
+                  bg-black/80
                   shadow-lg text-white/90
                   hover:bg-black/80 hover:scale-105 hover:shadow-[0_0_12px_rgba(168,85,247,0.4)]
                   transition-all duration-300 ease-out
