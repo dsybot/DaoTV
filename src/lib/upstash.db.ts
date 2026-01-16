@@ -194,8 +194,24 @@ export class UpstashRedisStorage implements IStorage {
 
   // 删除用户及其所有数据
   async deleteUser(userName: string): Promise<void> {
-    // 删除用户密码
+    // 删除用户密码 (V1)
     await withRetry(() => this.client.del(this.userPwdKey(userName)));
+
+    // 删除用户信息 (V2)
+    await withRetry(() => this.client.del(this.userInfoKey(userName)));
+
+    // 从用户列表中移除 (V2)
+    await withRetry(() => this.client.zrem(this.userListKey(), userName));
+
+    // 删除 OIDC 映射（如果存在）
+    try {
+      const userInfo = await this.getUserInfoV2(userName);
+      if (userInfo?.oidcSub) {
+        await withRetry(() => this.client.del(this.oidcSubKey(userInfo.oidcSub!)));
+      }
+    } catch (e) {
+      // 忽略错误，用户信息可能已被删除
+    }
 
     // 删除搜索历史
     await withRetry(() => this.client.del(this.shKey(userName)));
@@ -225,6 +241,15 @@ export class UpstashRedisStorage implements IStorage {
     );
     if (skipConfigKeys.length > 0) {
       await withRetry(() => this.client.del(...skipConfigKeys));
+    }
+
+    // 删除剧集跳过配置
+    const episodeSkipPattern = `u:${userName}:episodeskip:*`;
+    const episodeSkipKeys = await withRetry(() =>
+      this.client.keys(episodeSkipPattern)
+    );
+    if (episodeSkipKeys.length > 0) {
+      await withRetry(() => this.client.del(...episodeSkipKeys));
     }
 
     // 删除用户登入统计数据
@@ -504,7 +529,7 @@ export class UpstashRedisStorage implements IStorage {
   async getCarouselCache(): Promise<any | null> {
     const val = await withRetry(() => this.client.get(this.carouselCacheKey()));
     if (!val) return null;
-    
+
     if (typeof val === 'string') {
       try {
         return JSON.parse(val);
@@ -513,7 +538,7 @@ export class UpstashRedisStorage implements IStorage {
         return null;
       }
     }
-    
+
     return val;
   }
 
@@ -696,7 +721,7 @@ export class UpstashRedisStorage implements IStorage {
     try {
       const val = await withRetry(() => this.client.get(this.cacheKey(key)));
       if (!val) return null;
-      
+
       // 智能处理返回值：Upstash 可能返回字符串或已解析的对象
       if (typeof val === 'string') {
         try {
@@ -718,7 +743,7 @@ export class UpstashRedisStorage implements IStorage {
   async setCache(key: string, data: any, expireSeconds?: number): Promise<void> {
     const cacheKey = this.cacheKey(key);
     const value = JSON.stringify(data);
-    
+
     if (expireSeconds) {
       await withRetry(() => this.client.setex(cacheKey, expireSeconds, value));
     } else {
