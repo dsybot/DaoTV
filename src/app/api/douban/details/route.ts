@@ -335,13 +335,13 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     if (!response.ok) {
       console.log(`[Douban] HTTP 错误: ${response.status}`);
 
-      if (response.status === 429) {
-        // 速率限制 - fallback 到 Mobile API（不重试）
-        console.log(`[Douban] 遇到 429 速率限制，使用 Mobile API fallback...`);
+      // 302/301 重定向 或 429 速率限制 - 直接用 Mobile API
+      if (response.status === 429 || response.status === 302 || response.status === 301) {
+        console.log(`[Douban] 状态码 ${response.status}，使用 Mobile API fallback...`);
         try {
           return await fetchFromMobileAPI(id);
         } catch (mobileError) {
-          throw new DoubanError('豆瓣 API 和 Mobile API 均不可用，请稍后再试', 'RATE_LIMIT', 429);
+          throw new DoubanError('豆瓣 API 和 Mobile API 均不可用，请稍后再试', 'NETWORK_ERROR', response.status);
         }
       } else if (response.status >= 500) {
         throw new DoubanError(`豆瓣服务器错误: ${response.status}`, 'SERVER_ERROR', response.status);
