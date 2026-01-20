@@ -167,7 +167,11 @@ function isDoubanChallengePage(html: string): boolean {
 /**
  * 从 Mobile API 获取详情（fallback 方案）
  */
-async function fetchFromMobileAPI(id: string): Promise<any> {
+async function fetchFromMobileAPI(id: string): Promise<{
+  code: number;
+  message: string;
+  data: any;
+}> {
   try {
     const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
@@ -207,28 +211,29 @@ async function fetchFromMobileAPI(id: string): Promise<any> {
     const data = await response.json();
     console.log(`[Douban Mobile API] ✅ 成功获取数据，标题: ${data.title}`);
 
-    // 转换 Mobile API 数据格式到标准格式
+    // 转换 Mobile API 数据格式到标准格式，并包装成 API 响应格式
     return {
-      id: data.id,
-      title: data.title,
-      originalTitle: data.original_title || '',
-      year: data.year || '',
-      rating: {
-        value: data.rating?.value || 0,
-        count: data.rating?.count || 0,
+      code: 200,
+      message: '获取成功（使用 Mobile API）',
+      data: {
+        id: data.id,
+        title: data.title,
+        poster: data.pic?.large || data.pic?.normal || '',
+        rate: data.rating?.value ? data.rating.value.toFixed(1) : '0.0',
+        year: data.year || '',
+        directors: data.directors?.map((d: any) => d.name) || [],
+        screenwriters: [],
+        cast: data.actors?.map((a: any) => a.name) || [],
+        genres: data.genres || [],
+        countries: data.countries || [],
+        languages: data.languages || [],
+        episodes: 0,
+        episode_length: 0,
+        first_aired: data.pubdate?.[0] || '',
+        plot_summary: data.intro || '',
+        backdrop: data.pic?.large || '',
+        trailerUrl: data.trailers?.[0]?.video_url || '',
       },
-      genres: data.genres || [],
-      directors: data.directors?.map((d: any) => d.name) || [],
-      actors: data.actors?.map((a: any) => a.name) || [],
-      summary: data.intro || '',
-      poster: data.pic?.large || data.pic?.normal || '',
-      countries: data.countries || [],
-      languages: data.languages || [],
-      duration: data.durations?.[0] || '',
-      releaseDate: data.pubdate?.[0] || '',
-      trailerUrl: data.trailers?.[0]?.video_url || '',
-      imdbId: '',
-      tags: data.tags || [],
     };
   } catch (error) {
     console.error(`[Douban Mobile API] ❌ 获取失败:`, error);
