@@ -171,7 +171,7 @@ async function fetchFromMobileAPI(id: string): Promise<any> {
   try {
     const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
-    console.log(`[Douban Mobile API] 请求: ${mobileApiUrl}`);
+    console.log(`[Douban Mobile API] 开始请求: ${mobileApiUrl}`);
 
     // 获取随机浏览器指纹
     const { ua, browser, platform } = getRandomUserAgentWithInfo();
@@ -184,12 +184,12 @@ async function fetchFromMobileAPI(id: string): Promise<any> {
       signal: controller.signal,
       headers: {
         'User-Agent': ua,
-        'Referer': 'https://movie.douban.com/explore',  // 更具体的 Referer
+        'Referer': 'https://movie.douban.com/explore',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
         'Origin': 'https://movie.douban.com',
-        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
+        ...secChHeaders,
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
@@ -198,12 +198,14 @@ async function fetchFromMobileAPI(id: string): Promise<any> {
 
     clearTimeout(timeoutId);
 
+    console.log(`[Douban Mobile API] 响应状态: ${response.status}`);
+
     if (!response.ok) {
       throw new Error(`Mobile API 返回 ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`[Douban Mobile API] 成功获取数据`);
+    console.log(`[Douban Mobile API] ✅ 成功获取数据，标题: ${data.title}`);
 
     // 转换 Mobile API 数据格式到标准格式
     return {
@@ -229,7 +231,7 @@ async function fetchFromMobileAPI(id: string): Promise<any> {
       tags: data.tags || [],
     };
   } catch (error) {
-    console.error(`[Douban Mobile API] 获取失败:`, error);
+    console.error(`[Douban Mobile API] ❌ 获取失败:`, error);
     throw new DoubanError(
       'Mobile API 获取失败，请稍后再试',
       'SERVER_ERROR',
@@ -325,21 +327,23 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     const response = await fetch(target, fetchOptions);
     clearTimeout(timeoutId);
 
+    console.log(`[Douban] 响应状态: ${response.status}`);
+
     let html: string;
 
-    // 处理不同的HTTP状态码
+    // 先检查状态码
     if (!response.ok) {
+      console.log(`[Douban] HTTP 错误: ${response.status}`);
+
       if (response.status === 429) {
         // 速率限制 - fallback 到 Mobile API（不重试）
-        console.log(`[Douban] 遇到 429 速率限制，尝试使用 Mobile API...`);
+        console.log(`[Douban] 遇到 429 速率限制，使用 Mobile API fallback...`);
         try {
           return await fetchFromMobileAPI(id);
         } catch (mobileError) {
-          // Mobile API 也失败，直接抛出错误，不再重试
           throw new DoubanError('豆瓣 API 和 Mobile API 均不可用，请稍后再试', 'RATE_LIMIT', 429);
         }
       } else if (response.status >= 500) {
-        // 服务器错误
         throw new DoubanError(`豆瓣服务器错误: ${response.status}`, 'SERVER_ERROR', response.status);
       } else if (response.status === 404) {
         throw new DoubanError(`影片不存在: ${id}`, 'SERVER_ERROR', 404);
@@ -348,18 +352,21 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
       }
     }
 
+    // 获取HTML内容
     html = await response.text();
+    console.log(`[Douban] 页面长度: ${html.length}`);
 
     // 检测 challenge 页面 - fallback 到 Mobile API（不重试）
     if (isDoubanChallengePage(html)) {
-      console.log(`[Douban] 检测到反爬虫 challenge 页面，fallback 到 Mobile API...`);
+      console.log(`[Douban] 检测到 challenge 页面，使用 Mobile API fallback...`);
       try {
         return await fetchFromMobileAPI(id);
       } catch (mobileError) {
-        // Mobile API 也失败，直接抛出错误，不再重试
         throw new DoubanError('豆瓣反爬虫激活且 Mobile API 不可用，请稍后再试', 'RATE_LIMIT', 429);
       }
     }
+
+    console.log(`[Douban] 开始解析页面内容...`);
 
     // 解析详细信息
     const result = parseDoubanDetails(html, id);
