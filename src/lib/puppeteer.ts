@@ -1,13 +1,14 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer-core';
 
 import { getRandomUserAgent, getRandomUserAgentWithInfo, getSecChUaHeaders } from './user-agent';
 
 /**
  * 获取 Puppeteer 浏览器实例
- * 自动处理 Docker 和本地环境的配置差异
+ * 自动处理 Docker、Vercel 和本地环境的配置差异
  */
 export async function getBrowser(): Promise<Browser> {
   const isDocker = process.env.DOCKER_BUILD === 'true';
+  const isVercel = process.env.VERCEL === '1';
 
   const launchOptions: Parameters<typeof puppeteer.launch>[0] = {
     headless: true,
@@ -25,6 +26,21 @@ export async function getBrowser(): Promise<Browser> {
   // Docker 环境：使用系统 Chromium
   if (isDocker && process.env.PUPPETEER_EXECUTABLE_PATH) {
     launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  // Vercel 环境：使用 @sparticuz/chromium
+  else if (isVercel) {
+    const chromium = await import('@sparticuz/chromium');
+    launchOptions.executablePath = await chromium.default.executablePath();
+  }
+  // 本地开发：需要手动指定 Chrome/Chromium 路径
+  else {
+    // 本地需要安装 Chrome 或 Chromium
+    // 可以通过环境变量 CHROME_PATH 指定
+    if (process.env.CHROME_PATH) {
+      launchOptions.executablePath = process.env.CHROME_PATH;
+    } else {
+      throw new Error('本地开发环境需要设置 CHROME_PATH 环境变量指向 Chrome/Chromium 可执行文件');
+    }
   }
 
   return await puppeteer.launch(launchOptions);
