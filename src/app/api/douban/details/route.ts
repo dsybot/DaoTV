@@ -173,16 +173,26 @@ async function fetchFromMobileAPI(id: string): Promise<any> {
 
     console.log(`[Douban Mobile API] 请求: ${mobileApiUrl}`);
 
-    const userAgent = getRandomUserAgent();
+    // 获取随机浏览器指纹
+    const { ua, browser, platform } = getRandomUserAgentWithInfo();
+    const secChHeaders = getSecChUaHeaders(browser, platform);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const response = await fetch(mobileApiUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': userAgent,
-        'Referer': 'https://m.douban.com/',
-        'Accept': 'application/json',
+        'User-Agent': ua,
+        'Referer': 'https://movie.douban.com/explore',  // 更具体的 Referer
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Origin': 'https://movie.douban.com',
+        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
       },
     });
 
@@ -320,9 +330,14 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     // 处理不同的HTTP状态码
     if (!response.ok) {
       if (response.status === 429) {
-        // 速率限制 - fallback 到 Mobile API
+        // 速率限制 - fallback 到 Mobile API（不重试）
         console.log(`[Douban] 遇到 429 速率限制，尝试使用 Mobile API...`);
-        return fetchFromMobileAPI(id);
+        try {
+          return await fetchFromMobileAPI(id);
+        } catch (mobileError) {
+          // Mobile API 也失败，直接抛出错误，不再重试
+          throw new DoubanError('豆瓣 API 和 Mobile API 均不可用，请稍后再试', 'RATE_LIMIT', 429);
+        }
       } else if (response.status >= 500) {
         // 服务器错误
         throw new DoubanError(`豆瓣服务器错误: ${response.status}`, 'SERVER_ERROR', response.status);
@@ -335,10 +350,15 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
 
     html = await response.text();
 
-    // 检测 challenge 页面 - fallback 到 Mobile API
+    // 检测 challenge 页面 - fallback 到 Mobile API（不重试）
     if (isDoubanChallengePage(html)) {
       console.log(`[Douban] 检测到反爬虫 challenge 页面，fallback 到 Mobile API...`);
-      return fetchFromMobileAPI(id);
+      try {
+        return await fetchFromMobileAPI(id);
+      } catch (mobileError) {
+        // Mobile API 也失败，直接抛出错误，不再重试
+        throw new DoubanError('豆瓣反爬虫激活且 Mobile API 不可用，请稍后再试', 'RATE_LIMIT', 429);
+      }
     }
 
     // 解析详细信息
