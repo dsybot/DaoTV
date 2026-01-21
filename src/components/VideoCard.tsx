@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,react-hooks/exhaustive-deps,@typescript-eslint/no-empty-function */
 
-import { ExternalLink, Heart, Info, Link, PlayCircleIcon, Radio, Star, Trash2, Sparkles } from 'lucide-react';
+import { ExternalLink, Heart, Link, PlayCircleIcon, Radio, Star, Trash2, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, {
@@ -708,18 +708,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         color: 'danger' as const,
       });
     }
-
-    // 进入详情页操作
-    actions.push({
-      id: 'detail',
-      label: '进入详情',
-      icon: <Info size={20} />,
-      onClick: () => {
-        setShowMobileActions(false);
-        handleGoToDetail();
-      },
-      color: 'default' as const,
-    });
 
     // 豆瓣链接操作
     if (config.showDoubanLink && actualDoubanId && actualDoubanId !== 0) {
