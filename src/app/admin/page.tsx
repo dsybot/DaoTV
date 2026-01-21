@@ -299,6 +299,7 @@ interface SiteConfig {
   TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
+  TMDBWorkerProxy?: string;  // Cloudflare Workers 代理地址
   EnableDetailPage?: boolean;
   // 弹幕API配置
   DanmuApiEndpoint?: string;
@@ -3691,8 +3692,8 @@ const VideoSourceConfig = ({
             onClick={handleCheckProxyStatus}
             disabled={!videoProxySettings.enabled || isLoading('checkProxyStatus')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${!videoProxySettings.enabled || isLoading('checkProxyStatus')
-                ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed text-gray-500'
-                : 'bg-green-600 hover:bg-green-700 text-white'
+              ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed text-gray-500'
+              : 'bg-green-600 hover:bg-green-700 text-white'
               }`}
           >
             {isLoading('checkProxyStatus') ? '检测中...' : '🔍 检测代理状态'}
@@ -3701,8 +3702,8 @@ const VideoSourceConfig = ({
             onClick={handleSaveVideoProxy}
             disabled={isLoading('saveVideoProxy')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isLoading('saveVideoProxy')
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
           >
             {isLoading('saveVideoProxy') ? '保存中...' : '保存代理配置'}
@@ -3712,8 +3713,8 @@ const VideoSourceConfig = ({
         {/* 代理状态显示 */}
         {proxyStatus && (
           <div className={`mt-3 p-3 rounded-lg border ${proxyStatus.healthy
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
             }`}>
             <div className='flex items-center gap-2'>
               {proxyStatus.healthy ? (
@@ -4729,6 +4730,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBApiKeys: [],
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
+    TMDBWorkerProxy: '',
     EnableDetailPage: false,
     // 弹幕API配置
     DanmuApiEndpoint: '',
@@ -4813,6 +4815,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         TMDBApiKeys: config.SiteConfig.TMDBApiKeys || [],
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
+        TMDBWorkerProxy: config.SiteConfig.TMDBWorkerProxy || '',
         EnableDetailPage: config.SiteConfig.EnableDetailPage ?? false,
         // 弹幕API配置
         DanmuApiEndpoint: config.SiteConfig.DanmuApiEndpoint || '',
@@ -5445,6 +5448,28 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
             <option value='ja-JP'>日语</option>
             <option value='ko-KR'>韩语</option>
           </select>
+        </div>
+
+        {/* TMDB Worker 代理地址 */}
+        <div className='mb-6'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            TMDB Cloudflare Workers 代理地址
+            <span className='ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal'>
+              （可选，用于提升 TMDB API 稳定性）
+            </span>
+          </label>
+          <input
+            type='text'
+            value={siteSettings.TMDBWorkerProxy || ''}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({ ...prev, TMDBWorkerProxy: e.target.value }))
+            }
+            placeholder='https://your-worker.workers.dev'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+            如果服务器访问 TMDB 不稳定，可以配置 Cloudflare Workers 代理。留空则直连 TMDB。
+          </p>
         </div>
 
         {/* 启用TMDB演员搜索 */}

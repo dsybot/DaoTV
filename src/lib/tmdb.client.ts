@@ -9,6 +9,35 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
+/**
+ * 生成 TMDB 图片 URL（支持 Worker 代理）
+ */
+async function getTMDBImageUrl(path: string, size: 'w500' | 'w1280' = 'w500'): Promise<string> {
+  if (!path) return '';
+
+  const config = await getConfig();
+  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+
+  // 如果配置了 Worker 代理，使用代理
+  if (workerProxy) {
+    const proxyUrl = workerProxy.replace(/\/$/, '');
+    return `${proxyUrl}/image/${size}${path}`;
+  }
+
+  // 没有配置代理，直连 TMDB
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+// 获取 TMDB Worker 代理地址（如果配置了）
+async function getTMDBWorkerProxy(): Promise<string> {
+  try {
+    const config = await getConfig();
+    return config.SiteConfig.TMDBWorkerProxy || '';
+  } catch {
+    return '';
+  }
+}
+
 // TMDB API 响应类型
 interface TMDBPerson {
   id: number;
@@ -269,9 +298,38 @@ export async function searchTMDBTVByTitle(
  */
 async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
   const config = await getConfig();
-
   const apiKey = getNextTMDBApiKey(config);
+  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
 
+  // 如果配置了 Worker 代理，使用代理
+  if (workerProxy) {
+    const proxyUrl = workerProxy.replace(/\/$/, ''); // 移除末尾斜杠
+    const url = new URL(`${proxyUrl}${endpoint}`);
+    url.searchParams.append('api_key', apiKey);
+    url.searchParams.append('language', config.SiteConfig.TMDBLanguage || 'zh-CN');
+
+    // 添加其他参数
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, value);
+    });
+
+    console.log(`[TMDB API] 通过 Worker 代理请求: ${endpoint}`);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': DEFAULT_USER_AGENT,
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`TMDB API错误: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  // 没有配置代理，直连 TMDB
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
   url.searchParams.append('api_key', apiKey);
   url.searchParams.append('language', config.SiteConfig.TMDBLanguage || 'zh-CN');
@@ -281,7 +339,7 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
     url.searchParams.append(key, value);
   });
 
-  console.log(`[TMDB API] 请求: ${endpoint}`);
+  console.log(`[TMDB API] 直连请求: ${endpoint}`);
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -491,6 +549,14 @@ export async function searchTMDBActorWorks(
     }
 
     console.log(`✅ [TMDB] TMDB功能已启用`);
+
+    // 获取配置以确定图片 URL 前缀
+    const config = await getConfig();
+    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const imageBaseUrl = workerProxy
+      ? `${workerProxy.replace(/\/$/, '')}/image/w500`
+      : TMDB_IMAGE_BASE_URL;
+
     // 检查缓存 - 为整个搜索结果缓存
     const cacheKey = getCacheKey('actor_works', { actorName, type, ...filterOptions });
     console.log(`🔑 [TMDB] 缓存Key: ${cacheKey}`);
@@ -649,7 +715,7 @@ export async function searchTMDBActorWorks(
         return {
           id: work.id.toString(),
           title: work.title || work.name || '',
-          poster: work.poster_path ? `${TMDB_IMAGE_BASE_URL}${work.poster_path}` : '',
+          poster: work.poster_path ? `${imageBaseUrl}${work.poster_path}` : '',
           rate: work.vote_average ? work.vote_average.toFixed(1) : '',
           year: year,
           popularity: work.popularity,
@@ -1010,12 +1076,22 @@ export async function getCarouselItemByIMDB(
       return null;
     }
 
+    // 获取配置以确定图片 URL 前缀
+    const config = await getConfig();
+    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const backdropBaseUrl = workerProxy
+      ? `${workerProxy.replace(/\/$/, '')}/image/w1280`
+      : TMDB_BACKDROP_BASE_URL;
+    const imageBaseUrl = workerProxy
+      ? `${workerProxy.replace(/\/$/, '')}/image/w500`
+      : TMDB_IMAGE_BASE_URL;
+
     const carouselItem: CarouselItem = {
       id: searchResult.id,
       title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
       overview: searchResult.overview || '',
-      backdrop: searchResult.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}` : '',
-      poster: searchResult.poster_path ? `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}` : '',
+      backdrop: searchResult.backdrop_path ? `${backdropBaseUrl}${searchResult.backdrop_path}` : '',
+      poster: searchResult.poster_path ? `${imageBaseUrl}${searchResult.poster_path}` : '',
       rate: searchResult.vote_average || 0,
       year: type === 'movie'
         ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
@@ -1045,6 +1121,16 @@ export async function getCarouselItemByTitle(
     // 生成搜索变体
     const titleVariants = generateTitleVariants(title);
     console.log(`[TMDB轮播] 生成 ${titleVariants.length} 个搜索变体:`, titleVariants.slice(0, 5));
+
+    // 获取配置以确定图片 URL 前缀
+    const config = await getConfig();
+    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const backdropBaseUrl = workerProxy
+      ? `${workerProxy.replace(/\/$/, '')}/image/w1280`
+      : TMDB_BACKDROP_BASE_URL;
+    const imageBaseUrl = workerProxy
+      ? `${workerProxy.replace(/\/$/, '')}/image/w500`
+      : TMDB_IMAGE_BASE_URL;
 
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
@@ -1090,8 +1176,8 @@ export async function getCarouselItemByTitle(
       id: searchResult.id,
       title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
       overview: searchResult.overview || '',
-      backdrop: searchResult.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}` : '',
-      poster: searchResult.poster_path ? `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}` : '',
+      backdrop: searchResult.backdrop_path ? `${backdropBaseUrl}${searchResult.backdrop_path}` : '',
+      poster: searchResult.poster_path ? `${imageBaseUrl}${searchResult.poster_path}` : '',
       rate: searchResult.vote_average || 0,
       year: type === 'movie'
         ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')

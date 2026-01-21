@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys,
       TMDBLanguage,
       EnableTMDBActorSearch,
+      TMDBWorkerProxy,
       EnableDetailPage,
       DanmuApiEndpoint,
       DanmuApiToken,
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys?: string[];
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
+      TMDBWorkerProxy?: string;
       EnableDetailPage?: boolean;
       DanmuApiEndpoint?: string;
       DanmuApiToken?: string;
@@ -139,6 +141,7 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys: (TMDBApiKeys || []).filter((k: string) => k && k.trim()),  // 过滤空值
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
+      TMDBWorkerProxy: TMDBWorkerProxy || '',
       EnableDetailPage: finalEnableDetailPage,
       DanmuApiEndpoint: DanmuApiEndpoint || '',
       DanmuApiToken: DanmuApiToken || '',

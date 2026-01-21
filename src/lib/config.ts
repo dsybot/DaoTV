@@ -259,6 +259,7 @@ async function getInitConfig(configFile: string, subConfig: {
       TMDBApiKeys: [],  // 多个API Key（轮询使用）
       TMDBLanguage: 'zh-CN',
       EnableTMDBActorSearch: false, // 默认关闭，需要配置API Key后手动开启
+      TMDBWorkerProxy: process.env.TMDB_WORKER_PROXY || '', // Cloudflare Workers 代理地址
     },
     UserConfig: {
       AllowRegister: true, // 默认允许注册
