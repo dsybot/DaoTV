@@ -86,24 +86,51 @@ async function _fetchPageWithPuppeteerOnce(url: string, options?: {
   try {
     const page = await browser.newPage();
 
-    // 🎯 隐藏webdriver属性 - 反bot检测
+    // 🎯 增强型反bot检测 - 基于2025-2026最佳实践
+    // 参考: https://www.zenrows.com/blog/bypass-bot-detection
+    // 参考: https://www.scrapingbee.com/blog/puppeteer-stealth-tutorial-with-examples/
     await page.evaluateOnNewDocument(() => {
-      // 删除 navigator.webdriver
+      // 1. 删除 navigator.webdriver
       Object.defineProperty(navigator, 'webdriver', {
         get: () => undefined,
       });
 
-      // 模拟真实的Chrome对象
+      // 2. 模拟真实的Chrome对象
       (window as any).chrome = {
         runtime: {},
+        loadTimes: function() {},
+        csi: function() {},
+        app: {}
       };
 
-      // 模拟权限API
+      // 3. 覆盖 plugins 和 languages（headless 浏览器常见泄露点）
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5], // 模拟有插件
+      });
+
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['zh-CN', 'zh', 'en-US', 'en'],
+      });
+
+      // 4. 模拟权限API
       const originalQuery = window.navigator.permissions.query;
       window.navigator.permissions.query = (parameters: any) =>
         parameters.name === 'notifications'
           ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
           : originalQuery(parameters);
+
+      // 5. 修复 hairline 泄露（headless Chrome 的特征）
+      window.devicePixelRatio = 1;
+
+      // 6. 添加 Connection API（headless 浏览器常缺失）
+      Object.defineProperty(navigator, 'connection', {
+        get: () => ({
+          effectiveType: '4g',
+          rtt: 50,
+          downlink: 10,
+          saveData: false
+        })
+      });
     });
 
     // 使用项目的随机 User-Agent（带浏览器信息）
@@ -111,6 +138,13 @@ async function _fetchPageWithPuppeteerOnce(url: string, options?: {
     const secChHeaders = getSecChUaHeaders(browserType, platform);
 
     await page.setUserAgent(ua);
+
+    // 设置真实的 viewport（模拟真实设备）
+    await page.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 1,
+    });
 
     // 设置额外的请求头（与 douban API 保持一致）
     await page.setExtraHTTPHeaders({
@@ -140,8 +174,31 @@ async function _fetchPageWithPuppeteerOnce(url: string, options?: {
       timeout: options?.timeout || 30000,
     });
 
-    // 等待额外的时间确保 JS 执行完成（SHA-512 计算）
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // 🎯 主动检测页面加载完成，而不是盲目等待
+    // 参考: https://github.com/puppeteer/puppeteer/issues/3177
+    let retries = 0;
+    const maxRetries = 5;
+    while (retries < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 每次等1秒
+
+      // 检查关键内容是否加载（豆瓣页面必有的元素）
+      const isLoaded = await page.evaluate(() => {
+        const hasBody = document.body && document.body.innerHTML.length > 5000;
+        const hasH1 = document.querySelector('h1');
+        const hasContent = document.querySelector('#content');
+        return hasBody && (hasH1 || hasContent);
+      });
+
+      if (isLoaded) {
+        console.log(`[Puppeteer] ✅ 页面加载完成 (等待 ${retries + 1} 秒)`);
+        break;
+      }
+
+      retries++;
+      if (retries === maxRetries) {
+        console.warn(`[Puppeteer] ⚠️ 页面可能未完全加载，但已达到最大等待时间 (${maxRetries}秒)`);
+      }
+    }
 
     // 获取 HTML
     const html = await page.content();
