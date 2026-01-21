@@ -23,8 +23,7 @@ export interface AdminConfig {
     TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
-    TMDBWorkerProxy?: string;  // Cloudflare Workers 代理地址
-    EnableDetailPage?: boolean; // 是否启用详情页
+    TMDBWorkerProxy?: string;  // Cloudflare Workers 代理地址（用于API和图片代理）
     // 弹幕API配置
     DanmuApiEndpoint?: string;  // 自建弹幕API地址（如：https://your-danmu-api.vercel.app）
     DanmuApiToken?: string;      // 弹幕API访问Token

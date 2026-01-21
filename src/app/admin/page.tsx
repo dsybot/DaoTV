@@ -300,7 +300,6 @@ interface SiteConfig {
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
   TMDBWorkerProxy?: string;  // Cloudflare Workers 代理地址
-  EnableDetailPage?: boolean;
   // 弹幕API配置
   DanmuApiEndpoint?: string;
   DanmuApiToken?: string;
@@ -4731,7 +4730,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
     TMDBWorkerProxy: '',
-    EnableDetailPage: false,
     // 弹幕API配置
     DanmuApiEndpoint: '',
     DanmuApiToken: '',
@@ -4816,7 +4814,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
         TMDBWorkerProxy: config.SiteConfig.TMDBWorkerProxy || '',
-        EnableDetailPage: config.SiteConfig.EnableDetailPage ?? false,
         // 弹幕API配置
         DanmuApiEndpoint: config.SiteConfig.DanmuApiEndpoint || '',
         DanmuApiToken: config.SiteConfig.DanmuApiToken || '',
@@ -4884,7 +4881,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
       try {
         console.log('[SiteConfig] 保存前 TMDB 设置:', {
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch,
-          EnableDetailPage: siteSettings.EnableDetailPage,
         });
 
         // 确保布尔值被明确设置
@@ -4893,12 +4889,10 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           DisableYellowFilter: siteSettings.DisableYellowFilter ?? false,
           FluidSearch: siteSettings.FluidSearch ?? true,
           EnableTMDBActorSearch: siteSettings.EnableTMDBActorSearch ?? false,
-          EnableDetailPage: siteSettings.EnableDetailPage ?? false,
         };
 
         console.log('[SiteConfig] 将要保存 TMDB 设置:', {
           EnableTMDBActorSearch: dataToSave.EnableTMDBActorSearch,
-          EnableDetailPage: dataToSave.EnableDetailPage,
         });
 
         const resp = await fetch('/api/admin/site', {
@@ -5502,35 +5496,6 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
           </button>
         </div>
 
-        {/* 启用详情页 */}
-        <div className='flex items-center justify-between'>
-          <div>
-            <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-              启用详情页
-            </label>
-            <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-              启用后点击卡片将进入详情页，详情页依赖TMDB数据展示背景图、Logo、剧集等信息
-            </p>
-          </div>
-          <button
-            type='button'
-            onClick={() =>
-              setSiteSettings((prev) => ({
-                ...prev,
-                EnableDetailPage: !prev.EnableDetailPage,
-              }))
-            }
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${siteSettings.EnableDetailPage
-              ? 'bg-green-600'
-              : 'bg-gray-200 dark:bg-gray-700'
-              }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteSettings.EnableDetailPage ? 'translate-x-6' : 'translate-x-1'
-                }`}
-            />
-          </button>
-        </div>
       </div>
 
       {/* 弹幕API配置 */}

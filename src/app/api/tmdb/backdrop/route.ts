@@ -29,11 +29,18 @@ function getNextTMDBApiKey(config: any): string | null {
 
   return null;
 }
-const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
-const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-const TMDB_STILL_BASE_URL = 'https://image.tmdb.org/t/p/w400';
-const TMDB_NETWORK_LOGO_URL = 'https://image.tmdb.org/t/p/h60';
-const TMDB_PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w300';
+// TMDB 图片 URL 会根据配置动态生成（支持 Worker 代理）
+function getTMDBImageUrl(config: any, path: string | null, size: string): string | null {
+  if (!path) return null;
+
+  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+  if (workerProxy) {
+    const proxyUrl = workerProxy.replace(/\/$/, '');
+    return `${proxyUrl}/image/${size}${path}`;
+  }
+
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
 
 // 解析中文数字（支持一到九百九十九）
 function parseChineseNumber(str: string): number {
@@ -291,7 +298,7 @@ export async function GET(request: NextRequest) {
     if (result) {
       const mediaId = result.id;
 
-      let backdrop = result.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${result.backdrop_path}` : null;
+      let backdrop = getTMDBImageUrl(config, result.backdrop_path, 'w1280');
       let logo = null;
       let providers: any[] = [];
       let episodes: any[] = [];
@@ -338,7 +345,7 @@ export async function GET(request: NextRequest) {
                 seasonLogos.find((l: any) => l.iso_639_1 === 'en') ||
                 seasonLogos[0];
               if (selectedLogo?.file_path) {
-                logo = `${TMDB_LOGO_BASE_URL}${selectedLogo.file_path}`;
+                logo = getTMDBImageUrl(config, selectedLogo.file_path, 'w500');
                 foundSeasonLogo = true;
                 console.log(`[TMDB] 使用第${detectedSeason}季的Logo`);
               }
@@ -361,14 +368,55 @@ export async function GET(request: NextRequest) {
               logos.find((l: any) => l.iso_639_1 === 'en') ||
               logos[0];
             if (selectedLogo?.file_path) {
-              logo = `${TMDB_LOGO_BASE_URL}${selectedLogo.file_path}`;
+              logo = getTMDBImageUrl(config, selectedLogo.file_path, 'w500');
             }
           }
         }
       } catch (e) { /* ignore */ }
 
-      // 如果需要详细信息
+      // 如果需要详细信息，先获取完整的详情数据
+      let detailData: any = null;
       if (includeDetails) {
+        try {
+          const detailUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}?api_key=${apiKey}&language=${language}`;
+          const detailResponse = await fetch(detailUrl, {
+            headers: { 'Accept': 'application/json' },
+            next: { revalidate: 3600 },
+          });
+
+          if (detailResponse.ok) {
+            detailData = await detailResponse.json();
+            // 使用详情数据更新 result，确保数据完整
+            result = {
+              ...result,
+              overview: detailData.overview || result.overview,
+              vote_average: detailData.vote_average ?? result.vote_average,
+              vote_count: detailData.vote_count ?? result.vote_count,
+              genres: detailData.genres || [],
+            };
+
+            // 对于电视剧，获取季数和播出平台
+            if (searchType === 'tv') {
+              seasons = (detailData.seasons || [])
+                .filter((s: any) => s.season_number > 0)
+                .map((s: any) => ({
+                  seasonNumber: s.season_number,
+                  name: s.name,
+                  episodeCount: s.episode_count,
+                }));
+              // 获取播出平台（networks）
+              const networks = detailData.networks || [];
+              providers = networks.slice(0, 3).map((n: any) => ({
+                id: n.id,
+                name: n.name,
+                logo: getTMDBImageUrl(config, n.logo_path, 'h60'),
+              }));
+            }
+          }
+        } catch (e) {
+          console.error('[TMDB] 获取详情失败:', e);
+        }
+
         // 获取演员列表
         try {
           // 电视剧使用aggregate_credits获取所有季的演员，电影使用credits
@@ -390,7 +438,7 @@ export async function GET(request: NextRequest) {
                 id: c.id,
                 name: c.name,
                 character: searchType === 'tv' ? (c.roles?.[0]?.character || '') : c.character,
-                photo: `${TMDB_PROFILE_BASE_URL}${c.profile_path}`,
+                photo: getTMDBImageUrl(config, c.profile_path, 'w300'),
               }));
             console.log(`[TMDB] 过滤后有头像的演员: ${cast.length} 个`);
           }
@@ -401,30 +449,6 @@ export async function GET(request: NextRequest) {
         // 获取分集信息（仅电视剧）
         if (searchType === 'tv') {
           try {
-            // 先获取剧集详情以获取季数
-            const detailUrl = `${TMDB_BASE_URL}/tv/${mediaId}?api_key=${apiKey}&language=${language}`;
-            const detailResponse = await fetch(detailUrl, {
-              headers: { 'Accept': 'application/json' },
-              next: { revalidate: 3600 },
-            });
-
-            if (detailResponse.ok) {
-              const detailData = await detailResponse.json();
-              seasons = (detailData.seasons || [])
-                .filter((s: any) => s.season_number > 0)
-                .map((s: any) => ({
-                  seasonNumber: s.season_number,
-                  name: s.name,
-                  episodeCount: s.episode_count,
-                }));
-              // 获取播出平台（networks）
-              const networks = detailData.networks || [];
-              providers = networks.slice(0, 3).map((n: any) => ({
-                id: n.id,
-                name: n.name,
-                logo: n.logo_path ? `${TMDB_NETWORK_LOGO_URL}${n.logo_path}` : null,
-              }));
-            }
 
             // 获取指定季的分集
             const seasonUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${season}?api_key=${apiKey}&language=${language}`;
@@ -439,7 +463,7 @@ export async function GET(request: NextRequest) {
                 episodeNumber: ep.episode_number,
                 name: ep.name,
                 overview: ep.overview,
-                stillPath: ep.still_path ? `${TMDB_STILL_BASE_URL}${ep.still_path}` : null,
+                stillPath: getTMDBImageUrl(config, ep.still_path, 'w400'),
                 airDate: ep.air_date,
                 runtime: ep.runtime,
               }));
@@ -454,11 +478,13 @@ export async function GET(request: NextRequest) {
         logo,
         title: result.title || result.name,
         id: mediaId,
-        // 基本信息（从搜索结果中获取）
+        // 基本信息（优先使用详情数据，降级到搜索结果）
         overview: result.overview || '',
         vote_average: result.vote_average || 0,
+        vote_count: result.vote_count || 0,
         first_air_date: result.first_air_date || result.release_date || '',
         genre_ids: result.genre_ids || [],
+        genres: result.genres || [],
       };
 
       // 详细信息

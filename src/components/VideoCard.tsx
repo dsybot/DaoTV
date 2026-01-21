@@ -93,7 +93,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   ref
 ) {
   const router = useRouter();
-  const { enableDetailPage } = useSite();
   const [favorited, setFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
@@ -351,33 +350,15 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       return;
     }
 
-    // 如果未启用详情页，直接跳转到播放页
-    if (!enableDetailPage) {
-      // 内联播放逻辑
-      const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
-      if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
-        navigate(url);
-      } else if (actualSource && actualId) {
-        const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(actualTitle)}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
-        navigate(url);
-      }
-      return;
+    // 直接跳转到播放页（移除详情页功能）
+    const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
+    if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+      const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+      navigate(url);
+    } else if (actualSource && actualId) {
+      const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(actualTitle)}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+      navigate(url);
     }
-
-    // 构建详情页URL参数
-    const params = new URLSearchParams();
-    params.set('title', actualTitle.trim());
-    if (actualYear) params.set('year', actualYear);
-    if (actualPoster) params.set('poster', actualPoster);
-    if (actualSource) params.set('source', actualSource);
-    if (actualId) params.set('id', actualId);
-    if (actualDoubanId && actualDoubanId > 0) params.set('douban_id', actualDoubanId.toString());
-    if (actualSearchType) params.set('stype', actualSearchType);
-    if (actualQuery) params.set('stitle', actualQuery.trim());
-    if (source_name) params.set('source_name', source_name);
-
-    navigate(`/detail?${params.toString()}`);
   }, [
     isUpcoming,
     origin,
@@ -390,7 +371,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     actualDoubanId,
     actualSearchType,
     actualQuery,
-    enableDetailPage,
     from,
     isAggregate,
     source_name,

@@ -7,8 +7,20 @@ import { db } from '@/lib/db';
 import { isTMDBEnabled } from '@/lib/tmdb.client';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w300'; // 演员头像尺寸
 const CACHE_TIME = 24 * 60 * 60; // 24小时缓存
+
+// 生成 TMDB 图片 URL（支持 Worker 代理）
+function getTMDBImageUrl(config: any, path: string | null): string | null {
+  if (!path) return null;
+
+  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+  if (workerProxy) {
+    const proxyUrl = workerProxy.replace(/\/$/, '');
+    return `${proxyUrl}/image/w300${path}`;
+  }
+
+  return `https://image.tmdb.org/t/p/w300${path}`;
+}
 
 // TMDB API Key 轮询索引
 let tmdbApiKeyIndex = 0;
@@ -106,12 +118,35 @@ export async function GET(request: NextRequest) {
 
     const apiKey = getNextTMDBApiKey(config);
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
+    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+
+    // 构建 API URL（支持 Worker 代理）
+    const buildApiUrl = (endpoint: string, params: Record<string, string>): string => {
+      if (workerProxy) {
+        const proxyUrl = workerProxy.replace(/\/$/, '');
+        const url = new URL(`${proxyUrl}${endpoint}`);
+        url.searchParams.append('api_key', apiKey);
+        url.searchParams.append('language', language);
+        Object.entries(params).forEach(([key, value]) => {
+          url.searchParams.append(key, value);
+        });
+        return url.toString();
+      }
+
+      const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
+      url.searchParams.append('api_key', apiKey);
+      url.searchParams.append('language', language);
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.append(key, value);
+      });
+      return url.toString();
+    };
 
     // 并发获取所有演员图片
     const actorPhotos: ActorPhoto[] = await Promise.all(
       limitedNames.map(async (name): Promise<ActorPhoto> => {
         try {
-          const url = `${TMDB_BASE_URL}/search/person?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(name)}`;
+          const url = buildApiUrl('/search/person', { query: name });
           const response = await fetch(url, {
             headers: {
               'Accept': 'application/json',
@@ -134,7 +169,7 @@ export async function GET(request: NextRequest) {
             const person = exactMatchWithPhoto || exactMatch || withPhotoSorted[0] || results.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))[0];
             return {
               name,
-              photo: person.profile_path ? `${TMDB_IMAGE_BASE_URL}${person.profile_path}` : null,
+              photo: getTMDBImageUrl(config, person.profile_path),
               id: person.id
             };
           }

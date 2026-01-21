@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage,
       EnableTMDBActorSearch,
       TMDBWorkerProxy,
-      EnableDetailPage,
       DanmuApiEndpoint,
       DanmuApiToken,
       LoginBgDesktop,
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
       TMDBWorkerProxy?: string;
-      EnableDetailPage?: boolean;
       DanmuApiEndpoint?: string;
       DanmuApiToken?: string;
       LoginBgDesktop?: string;
@@ -109,18 +107,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] 接收到的 TMDB 设置:', {
       EnableTMDBActorSearch,
-      EnableDetailPage,
     });
-
-    // 处理详情页设置
-    let finalEnableDetailPage: boolean;
-    if (EnableDetailPage !== undefined) {
-      finalEnableDetailPage = EnableDetailPage;
-    } else if (adminConfig.SiteConfig.EnableDetailPage !== undefined) {
-      finalEnableDetailPage = adminConfig.SiteConfig.EnableDetailPage;
-    } else {
-      finalEnableDetailPage = false;
-    }
 
     // 更新缓存中的站点设置，保留现有的自定义去广告配置
     adminConfig.SiteConfig = {
@@ -142,7 +129,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
       TMDBWorkerProxy: TMDBWorkerProxy || '',
-      EnableDetailPage: finalEnableDetailPage,
       DanmuApiEndpoint: DanmuApiEndpoint || '',
       DanmuApiToken: DanmuApiToken || '',
       LoginBgDesktop: LoginBgDesktop || '',
@@ -151,7 +137,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] 将要保存到数据库的 TMDB 设置:', {
       EnableTMDBActorSearch: adminConfig.SiteConfig.EnableTMDBActorSearch,
-      EnableDetailPage: adminConfig.SiteConfig.EnableDetailPage,
     });
 
     // 写入数据库
