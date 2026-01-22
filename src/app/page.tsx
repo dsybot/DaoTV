@@ -199,6 +199,8 @@ function HomeClient() {
                 try {
                   const detailsRes = await getDoubanDetails(movie.id);
                   if (detailsRes.code === 200 && detailsRes.data) {
+                    console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
+                    console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
                     return {
                       id: movie.id,
                       plot_summary: detailsRes.data.plot_summary,
@@ -481,77 +483,79 @@ function HomeClient() {
             console.log('📅 日期过滤后的数据:', upcoming.length, '条');
             console.log('📅 过滤后的标题:', upcoming.map((i: ReleaseCalendarItem) => `${i.title} (${i.releaseDate})`));
 
-            // 智能去重：识别同系列内容（如"XX"和"XX第二季"）以及副标题（如"过关斩将：猎杀游戏"和"猎杀游戏"）
-            const normalizeTitle = (title: string): string => {
-              // 先统一冒号格式
-              let normalized = title.replace(/：/g, ':').trim();
+            // 🚀 优化方案5：简化标题归一化逻辑，使用Map提升去重性能
+            // 缓存正则表达式
+            const seasonRegex = /第[一二三四五六七八九十\d]+季|Season\s*\d+|S\d+/gi;
 
-              // 处理副标题：如果有冒号，取冒号后的部分（主标题）
-              // 例如 "过关斩将:猎杀游戏" -> "猎杀游戏"
-              if (normalized.includes(':')) {
-                const parts = normalized.split(':').map(p => p.trim());
-                // 取最后一部分作为主标题（通常主标题在冒号后面）
-                normalized = parts[parts.length - 1];
+            const normalizeTitle = (title: string): string => {
+              // 合并多个replace操作，减少字符串创建
+              let normalized = title.replace(/[：:]/g, ':').trim();
+
+              // 处理副标题
+              const colonIndex = normalized.lastIndexOf(':');
+              if (colonIndex !== -1) {
+                normalized = normalized.substring(colonIndex + 1).trim();
               }
 
-              // 再移除季数、集数等后缀和空格
-              normalized = normalized
-                .replace(/第[一二三四五六七八九十\d]+季/g, '')
-                .replace(/[第]?[一二三四五六七八九十\d]+季/g, '')
-                .replace(/Season\s*\d+/gi, '')
-                .replace(/S\d+/gi, '')
-                .replace(/\s+\d+$/g, '') // 移除末尾数字
-                .replace(/\s+/g, '') // 移除所有空格
-                .trim();
-
-              return normalized;
+              // 一次性移除季数标记和空格
+              return normalized.replace(seasonRegex, '').replace(/\s+/g, '').trim();
             };
 
-            // 去重：基于标题去重，保留最早的那条记录
-            const uniqueUpcoming = upcoming.reduce((acc: ReleaseCalendarItem[], current: ReleaseCalendarItem) => {
-              const normalizedCurrent = normalizeTitle(current.title);
+            // 🚀 使用Map替代reduce+find，O(n)复杂度替代O(n²)
+            const uniqueMap = new Map<string, ReleaseCalendarItem>();
+            const normalizedCache = new Map<string, string>();
+            const seasonCache = new Map<string, boolean>();
 
-              // 先检查精确匹配
-              const exactMatch = acc.find(item => item.title === current.title);
-              if (exactMatch) {
-                // 精确匹配：保留上映日期更早的
-                const existingIndex = acc.findIndex(item => item.title === current.title);
-                if (new Date(current.releaseDate) < new Date(exactMatch.releaseDate)) {
-                  acc[existingIndex] = current;
+            for (const item of upcoming) {
+              const exactKey = item.title;
+
+              // 检查精确匹配
+              if (uniqueMap.has(exactKey)) {
+                const existing = uniqueMap.get(exactKey)!;
+                if (item.releaseDate < existing.releaseDate) {
+                  uniqueMap.set(exactKey, item);
                 }
-                return acc;
+                continue;
               }
 
-              // 再检查归一化后的模糊匹配（识别同系列）
-              const similarMatch = acc.find(item => {
-                const normalizedExisting = normalizeTitle(item.title);
-                return normalizedCurrent === normalizedExisting;
-              });
+              // 检查归一化匹配
+              const normalizedKey = normalizeTitle(item.title);
+              normalizedCache.set(item.title, normalizedKey);
 
-              if (similarMatch) {
-                // 模糊匹配：优先保留没有"第X季"标记的原版
-                const existingIndex = acc.findIndex(item => normalizeTitle(item.title) === normalizedCurrent);
-                const currentHasSeason = /第[一二三四五六七八九十\d]+季|Season\s*\d+|S\d+/i.test(current.title);
-                const existingHasSeason = /第[一二三四五六七八九十\d]+季|Season\s*\d+|S\d+/i.test(similarMatch.title);
-
-                // 如果当前没有季数标记，而已存在的有，则替换
-                if (!currentHasSeason && existingHasSeason) {
-                  acc[existingIndex] = current;
+              let foundSimilar = false;
+              for (const [key, existing] of uniqueMap.entries()) {
+                const existingNormalized = normalizedCache.get(key) || normalizeTitle(key);
+                if (!normalizedCache.has(key)) {
+                  normalizedCache.set(key, existingNormalized);
                 }
-                // 如果都有季数标记或都没有，则保留日期更早的
-                else if (currentHasSeason === existingHasSeason) {
-                  if (new Date(current.releaseDate) < new Date(similarMatch.releaseDate)) {
-                    acc[existingIndex] = current;
+
+                if (normalizedKey === existingNormalized) {
+                  foundSimilar = true;
+
+                  // 缓存季数检测结果
+                  const itemHasSeason = seasonCache.get(item.title) ?? seasonRegex.test(item.title);
+                  const existingHasSeason = seasonCache.get(key) ?? seasonRegex.test(key);
+                  seasonCache.set(item.title, itemHasSeason);
+                  seasonCache.set(key, existingHasSeason);
+
+                  // 优先保留无季数标记的，其次保留日期更早的
+                  if (!itemHasSeason && existingHasSeason) {
+                    uniqueMap.delete(key);
+                    uniqueMap.set(item.title, item);
+                  } else if (itemHasSeason === existingHasSeason && item.releaseDate < existing.releaseDate) {
+                    uniqueMap.delete(key);
+                    uniqueMap.set(item.title, item);
                   }
+                  break;
                 }
-                // 如果当前有季数标记而已存在的没有，则保留已存在的（不替换）
-                return acc;
               }
 
-              // 没有匹配，添加新项
-              acc.push(current);
-              return acc;
-            }, []);
+              if (!foundSimilar) {
+                uniqueMap.set(exactKey, item);
+              }
+            }
+
+            const uniqueUpcoming = Array.from(uniqueMap.values());
 
             console.log('📅 去重后的即将上映数据:', uniqueUpcoming.length, '条');
 
