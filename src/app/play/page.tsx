@@ -440,11 +440,17 @@ function PlayPageClient() {
         setLoadingMovieDetails(true);
         try {
           const response = await getDoubanDetails(videoDoubanId.toString());
-          if (response.code === 200 && response.data) {
+          // 🎯 只有在数据有效（title 存在）时才设置 movieDetails
+          if (response.code === 200 && response.data && response.data.title) {
             setMovieDetails(response.data);
+          } else if (response.code === 200 && response.data && !response.data.title) {
+            console.warn('⚠️ Douban 返回空数据（缺少标题），不设置 movieDetails，避免无限重试');
+            // 设置一个空对象防止无限重试，但不显示任何内容
+            setMovieDetails(null);
           }
         } catch (error) {
           console.error('Failed to load movie details:', error);
+          setMovieDetails(null); // 错误时也设置为 null，避免无限重试
         } finally {
           setLoadingMovieDetails(false);
         }
