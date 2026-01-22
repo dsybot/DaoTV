@@ -97,6 +97,7 @@ function PlayPageClient() {
   // 豆瓣详情状态
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loadingMovieDetails, setLoadingMovieDetails] = useState(false);
+  const [lastMovieDetailsFetchTime, setLastMovieDetailsFetchTime] = useState<number>(0); // 记录上次请求时间
 
   // 豆瓣短评状态
   const [movieComments, setMovieComments] = useState<any[]>([]);
@@ -437,20 +438,28 @@ function PlayPageClient() {
           return;
         }
 
+        // 🎯 防止频繁重试：如果上次请求在1分钟内，则跳过
+        const now = Date.now();
+        const oneMinute = 60 * 1000; // 1分钟 = 60秒 = 60000毫秒
+        if (lastMovieDetailsFetchTime > 0 && now - lastMovieDetailsFetchTime < oneMinute) {
+          console.log(`⏱️ 距离上次请求不足1分钟，跳过重试（${Math.floor((now - lastMovieDetailsFetchTime) / 1000)}秒前）`);
+          return;
+        }
+
         setLoadingMovieDetails(true);
+        setLastMovieDetailsFetchTime(now); // 记录本次请求时间
         try {
           const response = await getDoubanDetails(videoDoubanId.toString());
           // 🎯 只有在数据有效（title 存在）时才设置 movieDetails
           if (response.code === 200 && response.data && response.data.title) {
             setMovieDetails(response.data);
           } else if (response.code === 200 && response.data && !response.data.title) {
-            console.warn('⚠️ Douban 返回空数据（缺少标题），不设置 movieDetails，避免无限重试');
-            // 设置一个空对象防止无限重试，但不显示任何内容
+            console.warn('⚠️ Douban 返回空数据（缺少标题），1分钟后将自动重试');
             setMovieDetails(null);
           }
         } catch (error) {
           console.error('Failed to load movie details:', error);
-          setMovieDetails(null); // 错误时也设置为 null，避免无限重试
+          setMovieDetails(null);
         } finally {
           setLoadingMovieDetails(false);
         }
@@ -458,7 +467,7 @@ function PlayPageClient() {
     };
 
     loadMovieDetails();
-  }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails]);
+  }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails, lastMovieDetailsFetchTime]);
 
   // 加载豆瓣短评
   useEffect(() => {
