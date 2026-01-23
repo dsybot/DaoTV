@@ -29,6 +29,44 @@ function getNextTMDBApiKey(config: any): string | null {
 
   return null;
 }
+
+/**
+ * 构建 TMDB API URL（支持 Worker 代理）
+ * @param config 配置对象
+ * @param endpoint API 端点（如 /search/tv）
+ * @param params 查询参数
+ * @returns 完整的 URL 字符串
+ */
+function buildApiUrl(config: any, endpoint: string, params: Record<string, string>): string {
+  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+
+  // 如果配置了 Worker 代理，使用代理
+  if (workerProxy) {
+    const proxyUrl = workerProxy.replace(/\/$/, ''); // 移除末尾斜杠
+    const url = new URL(`${proxyUrl}${endpoint}`);
+
+    // 添加所有参数
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        url.searchParams.append(key, value);
+      }
+    });
+
+    return url.toString();
+  }
+
+  // 没有配置代理，直连 TMDB
+  const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
+
+  // 添加所有参数
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      url.searchParams.append(key, value);
+    }
+  });
+
+  return url.toString();
+}
 // TMDB 图片 URL 生成（不使用代理，因为 image.tmdb.org 全球可访问）
 function getTMDBImageUrl(config: any, path: string | null, size: string): string | null {
   if (!path) return null;
@@ -139,9 +177,14 @@ function cleanTitle(title: string): { titles: string[]; seasonNumber: number } {
 }
 
 // 通过IMDb ID查找TMDB
-async function findByImdbId(imdbId: string, apiKey: string, type: string): Promise<any> {
+async function findByImdbId(config: any, imdbId: string, apiKey: string, type: string, language: string): Promise<any> {
   try {
-    const findUrl = `${TMDB_BASE_URL}/find/${imdbId}?api_key=${apiKey}&external_source=imdb_id`;
+    const findUrl = buildApiUrl(config, `/find/${imdbId}`, {
+      api_key: apiKey,
+      external_source: 'imdb_id',
+      language: language
+    });
+
     const response = await fetch(findUrl, {
       headers: { 'Accept': 'application/json' },
       cache: 'no-store',
@@ -161,9 +204,25 @@ async function findByImdbId(imdbId: string, apiKey: string, type: string): Promi
 }
 
 // 通过标题搜索TMDB
-async function searchByTitle(searchQuery: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
+async function searchByTitle(config: any, searchQuery: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
   const searchType = type === 'movie' ? 'movie' : 'tv';
-  const searchUrl = `${TMDB_BASE_URL}/search/${searchType}?api_key=${apiKey}&language=${language}&query=${encodeURIComponent(searchQuery)}${year ? `&year=${year}` : ''}`;
+
+  const params: Record<string, string> = {
+    api_key: apiKey,
+    language: language,
+    query: searchQuery
+  };
+
+  if (year) {
+    if (searchType === 'movie') {
+      params.year = year;
+    } else {
+      params.first_air_date_year = year;
+    }
+  }
+
+  const searchUrl = buildApiUrl(config, `/search/${searchType}`, params);
+
   const response = await fetch(searchUrl, {
     headers: { 'Accept': 'application/json' },
     cache: 'no-store',
@@ -223,13 +282,16 @@ export async function GET(request: NextRequest) {
 
     // 1. 优先通过IMDb ID精确匹配
     if (imdbId) {
-      result = await findByImdbId(imdbId, apiKey, type);
+      result = await findByImdbId(config, imdbId, apiKey, type, language);
       if (result) {
         usedImdbMatch = true;
         // 对于电视剧，验证IMDb匹配的结果是否有效（检查是否有季数信息）
         if (searchType === 'tv') {
           try {
-            const detailUrl = `${TMDB_BASE_URL}/tv/${result.id}?api_key=${apiKey}&language=${language}`;
+            const detailUrl = buildApiUrl(config, `/tv/${result.id}`, {
+              api_key: apiKey,
+              language: language
+            });
             const detailResponse = await fetch(detailUrl, {
               headers: { 'Accept': 'application/json' },
               cache: 'no-store',
@@ -257,14 +319,14 @@ export async function GET(request: NextRequest) {
       detectedSeason = seasonNumber; // 使用从标题中检测到的季数
       for (const t of titlesToTry) {
         // 用当前搜索关键词匹配，优先选择名字完全一致的结果
-        result = await searchByTitle(t, year, type, apiKey, language);
+        result = await searchByTitle(config, t, year, type, apiKey, language);
         if (result) {
           console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
           break;
         }
         // 如果带年份搜索不到，尝试不带年份
         if (year && !result) {
-          result = await searchByTitle(t, '', type, apiKey, language);
+          result = await searchByTitle(config, t, '', type, apiKey, language);
           if (result) {
             console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
             break;
@@ -273,14 +335,14 @@ export async function GET(request: NextRequest) {
         // 如果指定类型搜索不到，尝试另一种类型
         if (!result) {
           const alternateType = type === 'movie' ? 'tv' : 'movie';
-          result = await searchByTitle(t, year, alternateType, apiKey, language);
+          result = await searchByTitle(config, t, year, alternateType, apiKey, language);
           if (result) {
             console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}) 找到: ${result.name || result.title} (ID: ${result.id})`);
             break;
           }
           // 不带年份再试一次
           if (year && !result) {
-            result = await searchByTitle(t, '', alternateType, apiKey, language);
+            result = await searchByTitle(config, t, '', alternateType, apiKey, language);
             if (result) {
               console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}, 无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
               break;
@@ -303,7 +365,9 @@ export async function GET(request: NextRequest) {
       // 对于电视剧，尝试获取对应季的背景图和Logo
       if (searchType === 'tv' && detectedSeason > 0) {
         try {
-          const seasonImagesUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${detectedSeason}/images?api_key=${apiKey}`;
+          const seasonImagesUrl = buildApiUrl(config, `/tv/${mediaId}/season/${detectedSeason}/images`, {
+            api_key: apiKey
+          });
           const seasonImagesResponse = await fetch(seasonImagesUrl, {
             headers: { 'Accept': 'application/json' },
             cache: 'no-store',
@@ -324,7 +388,11 @@ export async function GET(request: NextRequest) {
         // 先尝试获取对应季的Logo
         let foundSeasonLogo = false;
         if (searchType === 'tv' && detectedSeason > 0) {
-          const seasonDetailUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${detectedSeason}?api_key=${apiKey}&language=${language}&append_to_response=images`;
+          const seasonDetailUrl = buildApiUrl(config, `/tv/${mediaId}/season/${detectedSeason}`, {
+            api_key: apiKey,
+            language: language,
+            append_to_response: 'images'
+          });
           const seasonDetailResponse = await fetch(seasonDetailUrl, {
             headers: { 'Accept': 'application/json' },
             cache: 'no-store',
@@ -350,7 +418,9 @@ export async function GET(request: NextRequest) {
 
         // 如果没有找到季的Logo，使用剧集的Logo
         if (!foundSeasonLogo) {
-          const imagesUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/images?api_key=${apiKey}`;
+          const imagesUrl = buildApiUrl(config, `/${searchType}/${mediaId}/images`, {
+            api_key: apiKey
+          });
           const imagesResponse = await fetch(imagesUrl, {
             headers: { 'Accept': 'application/json' },
             cache: 'no-store',
@@ -373,7 +443,10 @@ export async function GET(request: NextRequest) {
       let detailData: any = null;
       if (includeDetails) {
         try {
-          const detailUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}?api_key=${apiKey}&language=${language}`;
+          const detailUrl = buildApiUrl(config, `/${searchType}/${mediaId}`, {
+            api_key: apiKey,
+            language: language
+          });
           const detailResponse = await fetch(detailUrl, {
             headers: { 'Accept': 'application/json' },
             next: { revalidate: 3600 },
@@ -416,7 +489,10 @@ export async function GET(request: NextRequest) {
         try {
           // 电视剧使用aggregate_credits获取所有季的演员，电影使用credits
           const creditsEndpoint = searchType === 'tv' ? 'aggregate_credits' : 'credits';
-          const creditsUrl = `${TMDB_BASE_URL}/${searchType}/${mediaId}/${creditsEndpoint}?api_key=${apiKey}&language=${language}`;
+          const creditsUrl = buildApiUrl(config, `/${searchType}/${mediaId}/${creditsEndpoint}`, {
+            api_key: apiKey,
+            language: language
+          });
           const creditsResponse = await fetch(creditsUrl, {
             headers: { 'Accept': 'application/json' },
             cache: 'no-store',
@@ -446,7 +522,10 @@ export async function GET(request: NextRequest) {
           try {
 
             // 获取指定季的分集
-            const seasonUrl = `${TMDB_BASE_URL}/tv/${mediaId}/season/${season}?api_key=${apiKey}&language=${language}`;
+            const seasonUrl = buildApiUrl(config, `/tv/${mediaId}/season/${season}`, {
+              api_key: apiKey,
+              language: language
+            });
             const seasonResponse = await fetch(seasonUrl, {
               headers: { 'Accept': 'application/json' },
               next: { revalidate: 3600 },
