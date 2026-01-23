@@ -565,12 +565,23 @@ function PlayPageClient() {
         const type = searchType === 'movie' ? 'movie' : 'tv';
         // 从标题解析季数
         const detectedSeason = parseSeasonFromTitle(videoTitle);
+        console.log(`[TMDB] 开始获取演员数据: ${videoTitle}, type: ${type}, season: ${detectedSeason}`);
         const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true`);
+        console.log(`[TMDB] API响应状态: ${response.status}`);
         if (response.ok) {
           const data = await response.json();
+          console.log(`[TMDB] 获取到数据:`, {
+            hasCast: !!data.cast,
+            castLength: data.cast?.length || 0,
+            hasEpisodes: !!data.episodes,
+            episodesLength: data.episodes?.length || 0,
+          });
           // 获取演员数据
           if (data.cast && data.cast.length > 0 && tmdbCast.length === 0) {
+            console.log(`[TMDB] 设置演员数据: ${data.cast.length} 个演员`);
             setTmdbCast(data.cast);
+          } else if (!data.cast || data.cast.length === 0) {
+            console.warn(`[TMDB] 未获取到演员数据`);
           }
           // 获取分集信息（仅电视剧）
           if (searchType === 'tv' && data.episodes && data.episodes.length > 0 && tmdbEpisodes.length === 0) {
