@@ -198,7 +198,7 @@ function HomeClient() {
           // 🚀 优化：延迟10秒再加载详情，避免初始加载时CPU飙升
           const loadMovieDetails = () => {
             Promise.all(
-              movies.slice(0, 2).map(async (movie) => {
+              movies.slice(0, 3).map(async (movie) => { // 改为3个，匹配轮播图数量
                 try {
                   console.log(`[HeroBanner] 开始获取电影详情: ${movie.title} (ID: ${movie.id})`);
                   const detailsRes = await getDoubanDetails(movie.id);
@@ -257,7 +257,7 @@ function HomeClient() {
           // 🚀 优化：延迟10秒再加载详情
           const loadTvDetails = () => {
             Promise.all(
-              tvShows.slice(0, 2).map(async (show) => {
+              tvShows.slice(0, 4).map(async (show) => { // 改为4个，匹配轮播图数量
                 try {
                   const detailsRes = await getDoubanDetails(show.id);
                   if (detailsRes.code === 200 && detailsRes.data) {
@@ -312,26 +312,37 @@ function HomeClient() {
             // 延迟15秒加载详情
             if (varietyShows.length > 0) {
               setTimeout(() => {
-                const show = varietyShows[0];
-                getDoubanDetails(show.id)
-                  .then((detailsRes) => {
-                    if (detailsRes.code === 200 && detailsRes.data) {
-                      setHotVarietyShows(prev =>
-                        prev.map(s => s.id === show.id
-                          ? {
-                            ...s,
-                            plot_summary: detailsRes.data!.plot_summary,
-                            backdrop: detailsRes.data!.backdrop,
-                            trailerUrl: detailsRes.data!.trailerUrl,
-                          }
-                          : s
-                        )
-                      );
+                // 获取前2个综艺的详情（匹配轮播图数量）
+                Promise.all(
+                  varietyShows.slice(0, 2).map(async (show) => {
+                    try {
+                      const detailsRes = await getDoubanDetails(show.id);
+                      if (detailsRes.code === 200 && detailsRes.data) {
+                        return {
+                          id: show.id,
+                          plot_summary: detailsRes.data.plot_summary,
+                          backdrop: detailsRes.data.backdrop,
+                          trailerUrl: detailsRes.data.trailerUrl,
+                        };
+                      }
+                    } catch (error) {
+                      console.warn(`获取综艺 ${show.id} 详情失败:`, error);
                     }
+                    return null;
                   })
-                  .catch((error) => {
-                    console.warn(`获取综艺 ${show.id} 详情失败:`, error);
-                  });
+                ).then((results) => {
+                  setHotVarietyShows(prev =>
+                    prev.map(s => {
+                      const detail = results.find(r => r?.id === s.id);
+                      return detail ? {
+                        ...s,
+                        plot_summary: detail.plot_summary,
+                        backdrop: detail.backdrop,
+                        trailerUrl: detail.trailerUrl,
+                      } : s;
+                    })
+                  );
+                });
               }, 15000);
             }
           } else {
