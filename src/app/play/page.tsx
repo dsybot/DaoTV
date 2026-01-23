@@ -2048,10 +2048,22 @@ function PlayPageClient() {
       container.insertBefore(outputCanvas, video);
 
       if (isFirefox && sourceCtx && sourceCanvas) {
+        // 🚀 性能优化：添加帧率限制，降低 CPU 占用
+        let lastFrameTime = 0;
+        const targetFPS = 30; // 从 60fps 降到 30fps，降低约 50% CPU 占用
+        const frameInterval = 1000 / targetFPS;
+
         const captureVideoFrame = () => {
-          if (sourceCtx && sourceCanvas && video.readyState >= video.HAVE_CURRENT_DATA) {
-            sourceCtx.drawImage(video, 0, 0, sourceCanvas.width, sourceCanvas.height);
+          const now = performance.now();
+
+          // 只在达到目标帧间隔时才执行绘制
+          if (now - lastFrameTime >= frameInterval) {
+            if (sourceCtx && sourceCanvas && video.readyState >= video.HAVE_CURRENT_DATA) {
+              sourceCtx.drawImage(video, 0, 0, sourceCanvas.width, sourceCanvas.height);
+            }
+            lastFrameTime = now - ((now - lastFrameTime) % frameInterval);
           }
+
           frameRequestId = requestAnimationFrame(captureVideoFrame);
         };
         captureVideoFrame();
