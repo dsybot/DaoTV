@@ -198,7 +198,7 @@ function HomeClient() {
           // 🚀 优化：延迟10秒再加载详情，避免初始加载时CPU飙升
           const loadMovieDetails = () => {
             Promise.all(
-              movies.slice(0, 3).map(async (movie) => { // 改为3个，匹配轮播图数量
+              movies.slice(0, 2).map(async (movie) => { // 改为2个，匹配轮播图数量
                 try {
                   console.log(`[HeroBanner] 开始获取电影详情: ${movie.title} (ID: ${movie.id})`);
                   const detailsRes = await getDoubanDetails(movie.id);
@@ -257,7 +257,7 @@ function HomeClient() {
           // 🚀 优化：延迟10秒再加载详情
           const loadTvDetails = () => {
             Promise.all(
-              tvShows.slice(0, 4).map(async (show) => { // 改为4个，匹配轮播图数量
+              tvShows.slice(0, 2).map(async (show) => { // 改为2个，匹配轮播图数量
                 try {
                   const detailsRes = await getDoubanDetails(show.id);
                   if (detailsRes.code === 200 && detailsRes.data) {
@@ -312,9 +312,9 @@ function HomeClient() {
             // 延迟15秒加载详情
             if (varietyShows.length > 0) {
               setTimeout(() => {
-                // 获取前2个综艺的详情（匹配轮播图数量）
+                // 获取前1个综艺的详情（匹配轮播图数量）
                 Promise.all(
-                  varietyShows.slice(0, 2).map(async (show) => {
+                  varietyShows.slice(0, 1).map(async (show) => {
                     try {
                       const detailsRes = await getDoubanDetails(show.id);
                       if (detailsRes.code === 200 && detailsRes.data) {
@@ -682,7 +682,7 @@ function HomeClient() {
             <HeroBanner
               items={[
                 // 豆瓣电影
-                ...hotMovies.slice(0, 3).map((movie) => ({
+                ...hotMovies.slice(0, 2).map((movie) => ({
                   id: movie.id,
                   title: movie.title,
                   poster: movie.poster,
@@ -695,7 +695,7 @@ function HomeClient() {
                   type: 'movie' as const,
                 })),
                 // 豆瓣电视剧
-                ...hotTvShows.slice(0, 4).map((show) => ({
+                ...hotTvShows.slice(0, 2).map((show) => ({
                   id: show.id,
                   title: show.title,
                   poster: show.poster,
@@ -708,7 +708,7 @@ function HomeClient() {
                   type: 'tv' as const,
                 })),
                 // 豆瓣综艺
-                ...hotVarietyShows.slice(0, 2).map((show) => ({
+                ...hotVarietyShows.slice(0, 1).map((show) => ({
                   id: show.id,
                   title: show.title,
                   poster: show.poster,
