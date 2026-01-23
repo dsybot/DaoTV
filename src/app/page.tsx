@@ -1339,7 +1339,7 @@ function HomeClient() {
       </div>
       {announcement && showAnnouncement && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4 transition-opacity duration-300 ${showAnnouncement ? '' : 'opacity-0 pointer-events-none'
+          className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 dark:bg-black/70 p-4 transition-opacity duration-300 ${showAnnouncement ? '' : 'opacity-0 pointer-events-none'
             }`}
           onTouchStart={(e) => {
             // 如果点击的是背景区域，阻止触摸事件冒泡，防止背景滚动
@@ -1382,7 +1382,11 @@ function HomeClient() {
                 onClick={() => handleCloseAnnouncement(announcement)}
                 className='text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-white transition-colors'
                 aria-label='关闭'
-              ></button>
+              >
+                <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                </svg>
+              </button>
             </div>
             <div className='mb-6'>
               <div className='relative overflow-hidden rounded-lg mb-4 bg-green-50 dark:bg-green-900/20'>
