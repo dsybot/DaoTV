@@ -200,7 +200,15 @@ function HomeClient() {
             Promise.all(
               movies.slice(0, 2).map(async (movie) => {
                 try {
+                  console.log(`[HeroBanner] 开始获取电影详情: ${movie.title} (ID: ${movie.id})`);
                   const detailsRes = await getDoubanDetails(movie.id);
+                  console.log(`[HeroBanner] 电影 ${movie.title} - API响应:`, {
+                    code: detailsRes.code,
+                    message: detailsRes.message,
+                    hasData: !!detailsRes.data,
+                    plot_summary: detailsRes.data?.plot_summary?.substring(0, 50) + '...',
+                    plot_summary_length: detailsRes.data?.plot_summary?.length || 0,
+                  });
                   if (detailsRes.code === 200 && detailsRes.data) {
                     console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
                     console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
@@ -210,16 +218,22 @@ function HomeClient() {
                       backdrop: detailsRes.data.backdrop,
                       trailerUrl: detailsRes.data.trailerUrl,
                     };
+                  } else {
+                    console.warn(`[HeroBanner] 电影 ${movie.title} - API返回失败:`, detailsRes.code, detailsRes.message);
                   }
                 } catch (error) {
-                  console.warn(`获取电影 ${movie.id} 详情失败:`, error);
+                  console.error(`[HeroBanner] 获取电影 ${movie.id} (${movie.title}) 详情异常:`, error);
                 }
                 return null;
               })
             ).then((results) => {
+              console.log(`[HeroBanner] 电影详情加载完成，成功: ${results.filter(r => r).length}/${results.length}`);
               setHotMovies(prev =>
                 prev.map(m => {
                   const detail = results.find(r => r?.id === m.id);
+                  if (detail) {
+                    console.log(`[HeroBanner] 更新电影 ${m.title} 的详情，简介长度: ${detail.plot_summary?.length || 0}`);
+                  }
                   return detail ? {
                     ...m,
                     plot_summary: detail.plot_summary,
