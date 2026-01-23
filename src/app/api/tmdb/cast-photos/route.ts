@@ -9,16 +9,11 @@ import { isTMDBEnabled } from '@/lib/tmdb.client';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const CACHE_TIME = 24 * 60 * 60; // 24小时缓存
 
-// 生成 TMDB 图片 URL（支持 Worker 代理）
+// 生成 TMDB 图片 URL（不使用代理，因为 image.tmdb.org 全球可访问）
 function getTMDBImageUrl(config: any, path: string | null): string | null {
   if (!path) return null;
 
-  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, '');
-    return `${proxyUrl}/image/w300${path}`;
-  }
-
+  // 图片 CDN 不需要代理，直接返回原始 URL
   return `https://image.tmdb.org/t/p/w300${path}`;
 }
 

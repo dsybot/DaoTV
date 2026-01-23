@@ -29,16 +29,11 @@ function getNextTMDBApiKey(config: any): string | null {
 
   return null;
 }
-// TMDB 图片 URL 会根据配置动态生成（支持 Worker 代理）
+// TMDB 图片 URL 生成（不使用代理，因为 image.tmdb.org 全球可访问）
 function getTMDBImageUrl(config: any, path: string | null, size: string): string | null {
   if (!path) return null;
 
-  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, '');
-    return `${proxyUrl}/image/${size}${path}`;
-  }
-
+  // 图片 CDN 不需要代理，直接返回原始 URL
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
 
