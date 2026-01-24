@@ -125,6 +125,19 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
   // 防止重复调用onLoadMore的ref
   const lastLoadMoreCallRef = useRef<number>(0);
 
+  // 主动检查是否需要加载更多 - 当数据量少时可能不会触发滚动
+  useEffect(() => {
+    // 如果数据很少，可能一屏就显示完了，需要主动触发加载
+    if (needsServerData && totalItemCount > 0) {
+      const now = Date.now();
+      // 使用更长的防抖时间，避免频繁触发
+      if (now - lastLoadMoreCallRef.current > 2000) {
+        lastLoadMoreCallRef.current = now;
+        onLoadMore();
+      }
+    }
+  }, [needsServerData, totalItemCount, onLoadMore]);
+
   // 暴露 scrollToTop 方法给父组件
   useImperativeHandle(ref, () => ({
     scrollToTop: () => {
@@ -296,11 +309,11 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
             // 使用react-window v2.1.2的API：
             // 1. visibleCells: 真实可见的单元格范围
             // 2. allCells: 包含overscan的所有渲染单元格范围
-            // 使用 allCells 的 rowStopIndex 来更早触发加载
             const { rowStopIndex: overscanRowStopIndex } = allCells;
 
-            // 基于overscan行检测，触发服务器分页加载
-            if (overscanRowStopIndex >= rowCount - LOAD_MORE_THRESHOLD && needsServerData) {
+            // 触发条件：滚动到最后一行或接近最后一行时触发加载
+            // 使用 >= rowCount - 1 确保到达最后一行就触发
+            if (overscanRowStopIndex >= rowCount - 1 && needsServerData) {
               // 防止重复调用onLoadMore
               const now = Date.now();
               if (now - lastLoadMoreCallRef.current > 1000) {
