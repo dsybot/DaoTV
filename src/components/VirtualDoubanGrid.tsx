@@ -12,6 +12,8 @@ const Grid = dynamic(
   }
 );
 
+import { useInfiniteLoader } from 'react-window-infinite-loader';
+
 import { DoubanItem } from '@/lib/types';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { useImagePreload } from '@/hooks/useImagePreload';
@@ -122,21 +124,46 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
   // 检查是否需要从服务器加载更多数据
   const needsServerData = totalItemCount > 0 && hasMore && !isLoadingMore;
 
-  // 防止重复调用onLoadMore的ref
-  const lastLoadMoreCallRef = useRef<number>(0);
+  // InfiniteLoader 需要的函数
+  // 检查某个索引的项是否已加载
+  const isItemLoaded = useCallback((index: number) => {
+    // 如果索引小于当前数据量，说明已加载
+    return index < totalItemCount;
+  }, [totalItemCount]);
 
-  // 主动检查是否需要加载更多 - 当数据量少时可能不会触发滚动
-  useEffect(() => {
-    // 如果数据很少，可能一屏就显示完了，需要主动触发加载
-    if (needsServerData && totalItemCount > 0) {
-      const now = Date.now();
-      // 使用更长的防抖时间，避免频繁触发
-      if (now - lastLoadMoreCallRef.current > 2000) {
-        lastLoadMoreCallRef.current = now;
-        onLoadMore();
-      }
+  // 加载更多项的函数 - 返回 Promise
+  const loadMoreItems = useCallback((startIndex: number, stopIndex: number): Promise<void> => {
+    // 如果正在加载或没有更多数据，直接返回
+    if (isLoadingMore || !hasMore) {
+      return Promise.resolve();
     }
-  }, [needsServerData, totalItemCount, onLoadMore]);
+
+    // 触发加载
+    onLoadMore();
+
+    // 返回一个 Promise，等待加载完成
+    return new Promise((resolve) => {
+      // 使用 setTimeout 轮询检查加载状态
+      const checkLoading = () => {
+        // 注意：这里无法直接访问最新的 isLoadingMore 状态
+        // 所以我们简单地延迟 1 秒后 resolve
+        setTimeout(() => resolve(), 1000);
+      };
+      checkLoading();
+    });
+  }, [isLoadingMore, hasMore, onLoadMore]);
+
+  // 计算总项数 - 如果还有更多数据，加1表示还有未加载的
+  const itemCount = hasMore ? totalItemCount + 1 : totalItemCount;
+
+  // 使用 useInfiniteLoader hook
+  const onRowsRendered = useInfiniteLoader({
+    isRowLoaded: isItemLoaded,
+    loadMoreRows: loadMoreItems,
+    rowCount: itemCount,
+    threshold: 15,
+    minimumBatchSize: 10
+  });
 
   // 暴露 scrollToTop 方法给父组件
   useImperativeHandle(ref, () => ({
@@ -289,40 +316,33 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
           rowCount={rowCount}
           rowHeight={itemHeight + 16}
           overscanCount={5}
-          // 添加ARIA支持提升无障碍体验
           role="grid"
           aria-label={`豆瓣${type}列表，共${totalItemCount}个结果`}
           aria-rowcount={rowCount}
           aria-colcount={columnCount}
           style={{
-            // 确保不创建新的stacking context，让菜单能正确显示在最顶层
             isolation: 'auto',
-            // 平滑滚动优化
             scrollBehavior: 'smooth',
-            // 单行网格优化：防止高度异常
             ...(isSingleRow && {
               minHeight: itemHeight + 16,
               maxHeight: itemHeight + 32,
             }),
           }}
           onCellsRendered={(visibleCells, allCells) => {
-            // 使用react-window v2.1.2的API：
-            // 1. visibleCells: 真实可见的单元格范围
-            // 2. allCells: 包含overscan的所有渲染单元格范围
-            const { rowStopIndex: overscanRowStopIndex } = allCells;
+                // 将 Grid 的二维索引转换为一维索引，传递给 InfiniteLoader
+                const { columnStartIndex, columnStopIndex, rowStartIndex, rowStopIndex } = allCells;
 
-            // 触发条件：滚动到最后一行或接近最后一行时触发加载
-            // 使用 >= rowCount - 1 确保到达最后一行就触发
-            if (overscanRowStopIndex >= rowCount - 1 && needsServerData) {
-              // 防止重复调用onLoadMore
-              const now = Date.now();
-              if (now - lastLoadMoreCallRef.current > 1000) {
-                lastLoadMoreCallRef.current = now;
-                onLoadMore();
-              }
-            }
-          }}
-        />
+                // 计算一维索引范围
+                const startIndex = rowStartIndex * columnCount + columnStartIndex;
+                const stopIndex = rowStopIndex * columnCount + columnStopIndex;
+
+                // 调用 InfiniteLoader 的 onRowsRendered
+                onRowsRendered({
+                  startIndex,
+                  stopIndex
+                });
+              }}
+            />
       )}
 
       {/* 加载更多指示器 - 固定在屏幕底部 */}
