@@ -47,7 +47,7 @@ interface VirtualDoubanGridProps {
 
 // 首屏优先加载配置 - 用于图片预加载优化
 const INITIAL_PRIORITY_COUNT = 30; // 首屏优先加载的卡片数量
-const LOAD_MORE_THRESHOLD = 5; // 距离底部多少行时触发加载更多
+const LOAD_MORE_THRESHOLD = 2; // 距离底部多少行时触发加载更多
 
 export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualDoubanGridProps>(({
   doubanData,
