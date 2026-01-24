@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Play, Star, Heart } from 'lucide-react';
+import { Play, Star, Heart, ExternalLink, PlayCircle } from 'lucide-react';
 import Link from 'next/link';
 import { memo, useEffect, useState, useCallback } from 'react';
 
@@ -190,6 +190,16 @@ function ShortDramaCard({
     // Link 组件会处理导航，这里不需要额外操作
   }, []);
 
+  // 处理播放（在操作面板中使用）
+  const handlePlay = useCallback(() => {
+    window.location.href = `/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`;
+  }, [drama.name, drama.id]);
+
+  // 处理新标签页播放
+  const handlePlayInNewTab = useCallback(() => {
+    window.open(`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`, '_blank', 'noopener,noreferrer');
+  }, [drama.name, drama.id]);
+
   // 配置长按功能
   const longPressProps = useLongPress({
     onLongPress: handleLongPress,
@@ -313,11 +323,30 @@ function ShortDramaCard({
         isOpen={showMobileActions}
         onClose={() => setShowMobileActions(false)}
         title={drama.name}
+        poster={drama.cover}
         actions={[
           {
+            id: 'play',
+            label: '播放',
+            icon: <PlayCircle size={20} />,
+            onClick: handlePlay,
+            color: 'primary' as const,
+          },
+          {
+            id: 'play-new-tab',
+            label: '新标签页播放',
+            icon: <ExternalLink size={20} />,
+            onClick: handlePlayInNewTab,
+            color: 'default' as const,
+          },
+          {
             id: 'favorite',
-            label: favorited ? '取消收藏' : '收藏',
-            icon: favorited ? 'heart-filled' : 'heart',
+            label: favorited ? '取消收藏' : '添加收藏',
+            icon: favorited ? (
+              <Heart size={20} className="fill-red-600 stroke-red-600" />
+            ) : (
+              <Heart size={20} className="fill-transparent stroke-red-500" />
+            ),
             onClick: async () => {
               try {
                 if (favorited) {
@@ -339,6 +368,7 @@ function ShortDramaCard({
                 console.error('切换收藏状态失败:', err);
               }
             },
+            color: favorited ? ('danger' as const) : ('default' as const),
           },
         ]}
       />
