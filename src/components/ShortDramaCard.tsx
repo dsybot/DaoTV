@@ -2,12 +2,13 @@
 
 'use client';
 
-import { Play, Star, Heart, ExternalLink, PlayCircle } from 'lucide-react';
+import { Play, Star, Heart, ExternalLink, PlayCircle, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { memo, useEffect, useState, useCallback } from 'react';
 
 import { useLongPress } from '@/hooks/useLongPress';
 import MobileActionSheet from '@/components/MobileActionSheet';
+import AIRecommendModal from '@/components/AIRecommendModal';
 
 import { ShortDramaItem } from '@/lib/types';
 import {
@@ -28,18 +29,21 @@ interface ShortDramaCardProps {
   drama: ShortDramaItem;
   showDescription?: boolean;
   className?: string;
+  aiEnabled?: boolean; // AI功能是否启用
 }
 
 function ShortDramaCard({
   drama,
   showDescription = false,
   className = '',
+  aiEnabled = false,
 }: ShortDramaCardProps) {
   const [realEpisodeCount, setRealEpisodeCount] = useState<number>(drama.episode_count);
   const [showEpisodeCount, setShowEpisodeCount] = useState(drama.episode_count > 1); // 是否显示集数标签
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
   const [favorited, setFavorited] = useState(false); // 收藏状态
   const [showMobileActions, setShowMobileActions] = useState(false); // 移动端操作面板
+  const [showAIChat, setShowAIChat] = useState(false); // AI问片弹窗
 
   // 短剧的source固定为shortdrama
   const source = 'shortdrama';
@@ -301,6 +305,42 @@ function ShortDramaCard({
                 }`}
             />
           </button>
+
+          {/* AI问片按钮 - 桌面端hover显示 */}
+          {aiEnabled && (
+            <div
+              className="
+                hidden md:block absolute
+                bottom-2 left-2
+                opacity-0 group-hover:opacity-100
+                transition-all duration-300 ease-out
+                z-20
+              "
+            >
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowAIChat(true);
+                }}
+                className='
+                  flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+                  bg-black/60 backdrop-blur-md
+                  hover:bg-black/80 hover:scale-105 hover:shadow-[0_0_12px_rgba(168,85,247,0.4)]
+                  transition-all duration-300 ease-out
+                  border border-white/10'
+                aria-label='AI问片'
+                style={{
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                } as React.CSSProperties}
+              >
+                <Sparkles size={14} className='text-purple-400' />
+                <span className='text-xs font-medium whitespace-nowrap text-white'>AI问片</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 信息区域 */}
@@ -370,8 +410,31 @@ function ShortDramaCard({
             },
             color: favorited ? ('danger' as const) : ('default' as const),
           },
+          ...(aiEnabled ? [{
+            id: 'ai-chat',
+            label: 'AI问片',
+            icon: <Sparkles size={20} />,
+            onClick: () => {
+              setShowMobileActions(false);
+              setShowAIChat(true);
+            },
+            color: 'default' as const,
+          }] : []),
         ]}
       />
+
+      {/* AI问片弹窗 */}
+      {aiEnabled && showAIChat && (
+        <AIRecommendModal
+          isOpen={showAIChat}
+          onClose={() => setShowAIChat(false)}
+          context={{
+            title: drama.name,
+            type: 'tv',
+          }}
+          welcomeMessage={`想了解《${drama.name}》的更多信息吗？我可以帮你查询剧情、演员、评价等。`}
+        />
+      )}
     </div>
   );
 }
