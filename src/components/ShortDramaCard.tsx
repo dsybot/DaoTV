@@ -3,7 +3,7 @@
 'use client';
 
 import { Play, Star, Heart, ExternalLink, PlayCircle, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { memo, useEffect, useState, useCallback } from 'react';
 
 import { useLongPress } from '@/hooks/useLongPress';
@@ -38,6 +38,7 @@ function ShortDramaCard({
   className = '',
   aiEnabled: aiEnabledProp,
 }: ShortDramaCardProps) {
+  const router = useRouter();
   const [realEpisodeCount, setRealEpisodeCount] = useState<number>(drama.episode_count);
   const [showEpisodeCount, setShowEpisodeCount] = useState(drama.episode_count > 1); // 是否显示集数标签
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
@@ -233,8 +234,8 @@ function ShortDramaCard({
 
   // 处理点击事件（跳转到播放页面）
   const handleClick = useCallback(() => {
-    // Link 组件会处理导航，这里不需要额外操作
-  }, []);
+    router.push(`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`);
+  }, [router, drama.name, drama.id]);
 
   // 处理播放（在操作面板中使用）
   const handlePlay = useCallback(() => {
@@ -267,15 +268,27 @@ function ShortDramaCard({
   };
 
   return (
-    <div className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-500`}>
-      <Link
-        href={`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`}
-        className="block"
+    <>
+      <div
+        className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-500 cursor-pointer`}
+        onClick={handleClick}
         {...longPressProps}
+        style={{
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+          pointerEvents: 'auto',
+        } as React.CSSProperties}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
           setShowMobileActions(true);
+          return false;
+        }}
+        onDragStart={(e) => {
+          e.preventDefault();
           return false;
         }}
       >
@@ -398,7 +411,7 @@ function ShortDramaCard({
             </p>
           )}
         </div>
-      </Link>
+      </div>
 
       {/* 移动端操作面板 */}
       <MobileActionSheet
@@ -477,7 +490,7 @@ function ShortDramaCard({
           welcomeMessage={`想了解《${drama.name}》的更多信息吗？我可以帮你查询剧情、演员、评价等。`}
         />
       )}
-    </div>
+    </>
   );
 }
 
