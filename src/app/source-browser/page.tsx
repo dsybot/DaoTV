@@ -50,9 +50,8 @@ function CustomSelect<T extends string>({
       >
         <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''
+            }`}
           fill='none'
           stroke='currentColor'
           viewBox='0 0 24 24'
@@ -72,11 +71,10 @@ function CustomSelect<T extends string>({
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  option.value === value
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${option.value === value
                     ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
                     : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
-                }`}
+                  }`}
               >
                 <div className='flex items-center gap-2 min-w-0'>
                   {option.value === value && (
@@ -608,7 +606,7 @@ export default function SourceBrowserPage() {
                 (!item.year ||
                   (r.year &&
                     String(r.year).toLowerCase() ===
-                      String(item.year).toLowerCase())) &&
+                    String(item.year).toLowerCase())) &&
                 r.douban_id
             );
             const matchTitleOnly = list.find(
@@ -721,11 +719,10 @@ export default function SourceBrowserPage() {
                   <button
                     key={s.key}
                     onClick={() => setActiveSourceKey(s.key)}
-                    className={`group relative px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
-                      activeSourceKey === s.key
+                    className={`group relative px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${activeSourceKey === s.key
                         ? 'bg-linear-to-r from-emerald-500 to-green-500 text-white border-transparent shadow-lg shadow-emerald-500/30'
                         : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-emerald-50 hover:to-green-50 dark:hover:from-emerald-900/20 dark:hover:to-green-900/20 hover:border-emerald-300 dark:hover:border-emerald-700'
-                    }`}
+                      }`}
                     style={{
                       animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`,
                     }}
@@ -863,11 +860,10 @@ export default function SourceBrowserPage() {
                       <button
                         key={String(c.type_id)}
                         onClick={() => setActiveCategory(c.type_id)}
-                        className={`group relative px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
-                          activeCategory === c.type_id
+                        className={`group relative px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${activeCategory === c.type_id
                             ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-lg shadow-blue-500/30'
                             : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-300 dark:hover:border-blue-700'
-                        }`}
+                          }`}
                         style={{
                           animation: `fadeInUp 0.3s ease-out ${index * 0.03}s both`,
                         }}
@@ -917,6 +913,15 @@ export default function SourceBrowserPage() {
                           }}
                         >
                           {/* 发光效果 */}
+                          {/* 渐变光泽动画层 */}
+                          <div
+                            className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-20'
+                            style={{
+                              background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+                              backgroundSize: '200% 100%',
+                              animation: 'cover-shimmer 2.5s ease-in-out infinite',
+                            }}
+                          />
                           <div className='absolute inset-0 bg-linear-to-t from-blue-500/0 via-blue-500/0 to-blue-500/0 group-hover:from-blue-500/10 group-hover:via-blue-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none z-10'></div>
 
                           <div className='aspect-[2/3] bg-linear-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 overflow-hidden relative'>
@@ -1224,16 +1229,16 @@ export default function SourceBrowserPage() {
                                 {(d.episodes ||
                                   d.episode_length ||
                                   d.movie_duration) && (
-                                  <div className='text-xs text-gray-800 dark:text-gray-400'>
-                                    {d.episodes ? `集数：${d.episodes} ` : ''}
-                                    {d.episode_length
-                                      ? `单集：${d.episode_length} 分钟 `
-                                      : ''}
-                                    {d.movie_duration
-                                      ? `片长：${d.movie_duration} 分钟`
-                                      : ''}
-                                  </div>
-                                )}
+                                    <div className='text-xs text-gray-800 dark:text-gray-400'>
+                                      {d.episodes ? `集数：${d.episodes} ` : ''}
+                                      {d.episode_length
+                                        ? `单集：${d.episode_length} 分钟 `
+                                        : ''}
+                                      {d.movie_duration
+                                        ? `片长：${d.movie_duration} 分钟`
+                                        : ''}
+                                    </div>
+                                  )}
                                 {d.plot_summary && (
                                   <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
                                     {d.plot_summary}
@@ -1289,13 +1294,13 @@ export default function SourceBrowserPage() {
                                         {info.key}：
                                         {Array.isArray(info.value)
                                           ? info.value
-                                              .map((v) =>
-                                                typeof v === 'string' ? v : v.v
-                                              )
-                                              .join('、')
+                                            .map((v) =>
+                                              typeof v === 'string' ? v : v.v
+                                            )
+                                            .join('、')
                                           : typeof info.value === 'string'
-                                          ? info.value
-                                          : info.value.v}
+                                            ? info.value
+                                            : info.value.v}
                                       </div>
                                     ))}
                                 </div>

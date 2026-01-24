@@ -508,7 +508,16 @@ function DetailPageClient() {
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end">
                 {/* 左侧：封面卡片和按钮 */}
                 <div className="shrink-0 w-36 sm:w-44 md:w-52 mx-auto md:mx-0">
-                  <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10">
+                  <div className="group relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10 hover:shadow-3xl transition-shadow duration-500">
+                    {/* 渐变光泽动画层 */}
+                    <div
+                      className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
+                      style={{
+                        background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'cover-shimmer 2.5s ease-in-out infinite',
+                      }}
+                    />
                     {!imageLoaded && <ImagePlaceholder aspectRatio="aspect-[2/3]" />}
                     {displayPoster && (
                       <Image

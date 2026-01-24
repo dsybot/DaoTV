@@ -820,11 +820,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             return false;
           }}
         >
-          {/* 渐变光泽动画层 - 优化：仅在hover时触发，移除无限循环动画 */}
+          {/* 渐变光泽动画层 - 循环扫过效果 */}
           <div
-            className='absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none z-10'
+            className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
             style={{
-              background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%)',
+              background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+              backgroundSize: '200% 100%',
+              animation: 'cover-shimmer 2.5s ease-in-out infinite',
             }}
           />
 
