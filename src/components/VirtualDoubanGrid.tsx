@@ -12,6 +12,7 @@ const Grid = dynamic(
   }
 );
 
+// @ts-ignore - useInfiniteLoader exists at runtime but type definitions are incomplete
 import { useInfiniteLoader } from 'react-window-infinite-loader';
 
 import { DoubanItem } from '@/lib/types';
@@ -331,26 +332,26 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
             }),
           }}
           onCellsRendered={(visibleCells, allCells) => {
-                // 🔥 关键修复：将 Grid 的二维索引转换为一维索引
-                // 使用 overscan 索引（allCells）来确保提前触发加载
-                const { rowStartIndex, rowStopIndex } = allCells;
+            // 🔥 关键修复：将 Grid 的二维索引转换为一维索引
+            // 使用 overscan 索引（allCells）来确保提前触发加载
+            const { rowStartIndex, rowStopIndex } = allCells;
 
-                // 计算一维索引范围 - 使用整行范围
-                // startIndex: 该行第一个元素的索引
-                // stopIndex: 该行最后一个元素的索引（即下一行第一个元素 - 1）
-                const startIndex = rowStartIndex * columnCount;
-                const stopIndex = Math.min(
-                  (rowStopIndex + 1) * columnCount - 1,
-                  itemCount - 1
-                );
+            // 计算一维索引范围 - 使用整行范围
+            // startIndex: 该行第一个元素的索引
+            // stopIndex: 该行最后一个元素的索引（即下一行第一个元素 - 1）
+            const startIndex = rowStartIndex * columnCount;
+            const stopIndex = Math.min(
+              (rowStopIndex + 1) * columnCount - 1,
+              itemCount - 1
+            );
 
-                // 调用 InfiniteLoader 的 onRowsRendered
-                onRowsRendered({
-                  startIndex,
-                  stopIndex
-                });
-              }}
-            />
+            // 调用 InfiniteLoader 的 onRowsRendered
+            onRowsRendered({
+              startIndex,
+              stopIndex
+            });
+          }}
+        />
       )}
 
       {/* 加载更多指示器 */}

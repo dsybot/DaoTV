@@ -240,12 +240,24 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
   return (
     <div ref={containerRef} className='w-full'>
       {totalItemCount === 0 ? (
-        <div className='flex justify-center items-center h-40'>
+        <div className='flex justify-center items-center min-h-[300px]'>
           {isLoading ? (
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500'></div>
           ) : (
-            <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
-              未找到相关结果
+            <div className='relative px-8 py-6 rounded-2xl bg-gradient-to-r from-gray-50 via-slate-50 to-gray-50 dark:from-gray-800/40 dark:via-slate-800/40 dark:to-gray-800/40 border border-gray-200/50 dark:border-gray-700/50 shadow-lg overflow-hidden'>
+              {/* 装饰背景 */}
+              <div className='absolute inset-0 bg-gradient-to-br from-gray-100/20 to-slate-100/20 dark:from-gray-700/10 dark:to-slate-700/10'></div>
+
+              {/* 内容 */}
+              <div className='relative flex flex-col items-center gap-3'>
+                <div className='text-4xl'>🔍</div>
+                <div className='text-center text-gray-600 dark:text-gray-300 font-medium'>
+                  未搜索到结果
+                </div>
+                <div className='text-sm text-gray-500 dark:text-gray-400'>
+                  试试其他关键词吧
+                </div>
+              </div>
             </div>
           )}
         </div>
