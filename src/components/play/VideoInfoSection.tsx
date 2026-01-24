@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import React, { memo } from 'react';
+import { memo } from 'react';
 import FavoriteButton from '@/components/play/FavoriteButton';
 import VideoCard from '@/components/VideoCard';
 import CommentSection from '@/components/play/CommentSection';
