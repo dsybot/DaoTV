@@ -36,7 +36,7 @@ function ShortDramaCard({
   drama,
   showDescription = false,
   className = '',
-  aiEnabled = false,
+  aiEnabled: aiEnabledProp,
 }: ShortDramaCardProps) {
   const [realEpisodeCount, setRealEpisodeCount] = useState<number>(drama.episode_count);
   const [showEpisodeCount, setShowEpisodeCount] = useState(drama.episode_count > 1); // 是否显示集数标签
@@ -44,6 +44,13 @@ function ShortDramaCard({
   const [favorited, setFavorited] = useState(false); // 收藏状态
   const [showMobileActions, setShowMobileActions] = useState(false); // 移动端操作面板
   const [showAIChat, setShowAIChat] = useState(false); // AI问片弹窗
+
+  // AI功能状态：优先使用父组件传递的值，否则自己检测
+  const [aiEnabledLocal, setAiEnabledLocal] = useState(false);
+  const [aiCheckCompleteLocal, setAiCheckCompleteLocal] = useState(false);
+
+  // 实际使用的AI状态（优先父组件prop）
+  const aiEnabled = aiEnabledProp !== undefined ? aiEnabledProp : aiEnabledLocal;
 
   // 短剧的source固定为shortdrama
   const source = 'shortdrama';
@@ -74,6 +81,41 @@ function ShortDramaCard({
 
     return unsubscribe;
   }, [source, id]);
+
+  // 检查AI功能是否启用 - 只在没有父组件传递时才执行
+  useEffect(() => {
+    // 如果父组件已传递aiEnabled，跳过本地检测
+    if (aiEnabledProp !== undefined) {
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch('/api/ai-recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'ping' }],
+          }),
+        });
+        if (!cancelled) {
+          setAiEnabledLocal(response.status !== 403);
+          setAiCheckCompleteLocal(true);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAiEnabledLocal(false);
+          setAiCheckCompleteLocal(true);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [aiEnabledProp]);
 
   // 获取真实集数（优先使用备用API）
   useEffect(() => {
