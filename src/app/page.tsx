@@ -195,57 +195,53 @@ function HomeClient() {
           const movies = moviesData.value.list;
           setHotMovies(movies);
 
-          // 🚀 优化：延迟10秒再加载详情，避免初始加载时CPU飙升
-          const loadMovieDetails = () => {
-            Promise.all(
-              movies.slice(0, 2).map(async (movie) => { // 改为2个，匹配轮播图数量
-                try {
-                  console.log(`[HeroBanner] 开始获取电影详情: ${movie.title} (ID: ${movie.id})`);
-                  const detailsRes = await getDoubanDetails(movie.id);
-                  console.log(`[HeroBanner] 电影 ${movie.title} - API响应:`, {
-                    code: detailsRes.code,
-                    message: detailsRes.message,
-                    hasData: !!detailsRes.data,
-                    plot_summary: detailsRes.data?.plot_summary?.substring(0, 50) + '...',
-                    plot_summary_length: detailsRes.data?.plot_summary?.length || 0,
-                  });
-                  if (detailsRes.code === 200 && detailsRes.data) {
-                    console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
-                    console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
-                    return {
-                      id: movie.id,
-                      plot_summary: detailsRes.data.plot_summary,
-                      backdrop: detailsRes.data.backdrop,
-                      trailerUrl: detailsRes.data.trailerUrl,
-                    };
-                  } else {
-                    console.warn(`[HeroBanner] 电影 ${movie.title} - API返回失败:`, detailsRes.code, detailsRes.message);
-                  }
-                } catch (error) {
-                  console.error(`[HeroBanner] 获取电影 ${movie.id} (${movie.title}) 详情异常:`, error);
+          // 立即加载详情
+          Promise.all(
+            movies.slice(0, 2).map(async (movie) => { // 改为2个，匹配轮播图数量
+              try {
+                console.log(`[HeroBanner] 开始获取电影详情: ${movie.title} (ID: ${movie.id})`);
+                const detailsRes = await getDoubanDetails(movie.id);
+                console.log(`[HeroBanner] 电影 ${movie.title} - API响应:`, {
+                  code: detailsRes.code,
+                  message: detailsRes.message,
+                  hasData: !!detailsRes.data,
+                  plot_summary: detailsRes.data?.plot_summary?.substring(0, 50) + '...',
+                  plot_summary_length: detailsRes.data?.plot_summary?.length || 0,
+                });
+                if (detailsRes.code === 200 && detailsRes.data) {
+                  console.log(`[HeroBanner] 电影 ${movie.title} - trailerUrl:`, detailsRes.data.trailerUrl);
+                  console.log(`[HeroBanner] 电影 ${movie.title} - backdrop:`, detailsRes.data.backdrop);
+                  return {
+                    id: movie.id,
+                    plot_summary: detailsRes.data.plot_summary,
+                    backdrop: detailsRes.data.backdrop,
+                    trailerUrl: detailsRes.data.trailerUrl,
+                  };
+                } else {
+                  console.warn(`[HeroBanner] 电影 ${movie.title} - API返回失败:`, detailsRes.code, detailsRes.message);
                 }
-                return null;
+              } catch (error) {
+                console.error(`[HeroBanner] 获取电影 ${movie.id} (${movie.title}) 详情异常:`, error);
+              }
+              return null;
+            })
+          ).then((results) => {
+            console.log(`[HeroBanner] 电影详情加载完成，成功: ${results.filter(r => r).length}/${results.length}`);
+            setHotMovies(prev =>
+              prev.map(m => {
+                const detail = results.find(r => r?.id === m.id);
+                if (detail) {
+                  console.log(`[HeroBanner] 更新电影 ${m.title} 的详情，简介长度: ${detail.plot_summary?.length || 0}`);
+                }
+                return detail ? {
+                  ...m,
+                  plot_summary: detail.plot_summary,
+                  backdrop: detail.backdrop,
+                  trailerUrl: detail.trailerUrl,
+                } : m;
               })
-            ).then((results) => {
-              console.log(`[HeroBanner] 电影详情加载完成，成功: ${results.filter(r => r).length}/${results.length}`);
-              setHotMovies(prev =>
-                prev.map(m => {
-                  const detail = results.find(r => r?.id === m.id);
-                  if (detail) {
-                    console.log(`[HeroBanner] 更新电影 ${m.title} 的详情，简介长度: ${detail.plot_summary?.length || 0}`);
-                  }
-                  return detail ? {
-                    ...m,
-                    plot_summary: detail.plot_summary,
-                    backdrop: detail.backdrop,
-                    trailerUrl: detail.trailerUrl,
-                  } : m;
-                })
-              );
-            });
-          };
-
-          setTimeout(loadMovieDetails, 10000);
+            );
+          });
         } else {
           console.warn('获取热门电影失败:', moviesData.status === 'rejected' ? moviesData.reason : '数据格式错误');
         }
@@ -254,10 +250,61 @@ function HomeClient() {
           const tvShows = tvShowsData.value.list;
           setHotTvShows(tvShows);
 
-          // 🚀 优化：延迟10秒再加载详情
-          const loadTvDetails = () => {
+          // 立即加载详情
+          Promise.all(
+            tvShows.slice(0, 2).map(async (show) => { // 改为2个，匹配轮播图数量
+              try {
+                const detailsRes = await getDoubanDetails(show.id);
+                if (detailsRes.code === 200 && detailsRes.data) {
+                  return {
+                    id: show.id,
+                    plot_summary: detailsRes.data.plot_summary,
+                    backdrop: detailsRes.data.backdrop,
+                    trailerUrl: detailsRes.data.trailerUrl,
+                  };
+                }
+              } catch (error) {
+                console.warn(`获取剧集 ${show.id} 详情失败:`, error);
+              }
+              return null;
+            })
+          ).then((results) => {
+            setHotTvShows(prev =>
+              prev.map(s => {
+                const detail = results.find(r => r?.id === s.id);
+                return detail ? {
+                  ...s,
+                  plot_summary: detail.plot_summary,
+                  backdrop: detail.backdrop,
+                  trailerUrl: detail.trailerUrl,
+                } : s;
+              })
+            );
+          });
+        } else {
+          console.warn('获取热门剧集失败:', tvShowsData.status === 'rejected' ? tvShowsData.reason : '数据格式错误');
+        }
+
+        // 🚀 首屏数据加载完成，关闭loading
+        setLoading(false);
+
+        // 第二批：次要数据（综艺+动漫+短剧）- 立即加载
+        const [varietyShowsData, animeData, shortDramasData] = await Promise.allSettled([
+          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
+          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv_animation' }),
+          getRecommendedShortDramas(undefined, 8),
+        ]);
+
+        // 处理综艺数据
+        if (varietyShowsData.status === 'fulfilled' && varietyShowsData.value?.code === 200) {
+          const varietyShows = varietyShowsData.value.list;
+          setHotVarietyShows(varietyShows);
+
+          // 立即加载详情
+          if (varietyShows.length > 0) {
+            // 获取前1个综艺的详情（匹配轮播图数量）
             Promise.all(
-              tvShows.slice(0, 2).map(async (show) => { // 改为2个，匹配轮播图数量
+              varietyShows.slice(0, 1).map(async (show) => {
                 try {
                   const detailsRes = await getDoubanDetails(show.id);
                   if (detailsRes.code === 200 && detailsRes.data) {
@@ -269,12 +316,12 @@ function HomeClient() {
                     };
                   }
                 } catch (error) {
-                  console.warn(`获取剧集 ${show.id} 详情失败:`, error);
+                  console.warn(`获取综艺 ${show.id} 详情失败:`, error);
                 }
                 return null;
               })
             ).then((results) => {
-              setHotTvShows(prev =>
+              setHotVarietyShows(prev =>
                 prev.map(s => {
                   const detail = results.find(r => r?.id === s.id);
                   return detail ? {
@@ -286,254 +333,187 @@ function HomeClient() {
                 })
               );
             });
-          };
-
-          setTimeout(loadTvDetails, 10000);
+          }
         } else {
-          console.warn('获取热门剧集失败:', tvShowsData.status === 'rejected' ? tvShowsData.reason : '数据格式错误');
+          console.warn('获取热门综艺失败:', varietyShowsData.status === 'rejected' ? varietyShowsData.reason : '数据格式错误');
         }
 
-        // 🚀 首屏数据加载完成，关闭loading
-        setLoading(false);
+        // 处理动漫数据
+        if (animeData.status === 'fulfilled' && animeData.value?.code === 200) {
+          const animes = animeData.value.list;
+          setHotAnime(animes);
 
-        // 🚀 第二批：次要数据（综艺+动漫+短剧） - 延迟3秒加载，降低初始CPU压力
-        setTimeout(async () => {
-          const [varietyShowsData, animeData, shortDramasData] = await Promise.allSettled([
-            getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
-            getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv_animation' }),
-            getRecommendedShortDramas(undefined, 8),
-          ]);
+          // 立即加载详情
+          if (animes.length > 0) {
+            const anime = animes[0];
+            getDoubanDetails(anime.id)
+              .then((detailsRes) => {
+                if (detailsRes.code === 200 && detailsRes.data) {
+                  setHotAnime(prev =>
+                    prev.map(a => a.id === anime.id
+                      ? {
+                        ...a,
+                        plot_summary: detailsRes.data!.plot_summary,
+                        backdrop: detailsRes.data!.backdrop,
+                        trailerUrl: detailsRes.data!.trailerUrl,
+                      }
+                      : a
+                    )
+                  );
+                }
+              })
+              .catch((error) => {
+                console.warn(`获取动漫 ${anime.id} 详情失败:`, error);
+              });
+          }
+        } else {
+          console.warn('获取热门动漫失败:', animeData.status === 'rejected' ? animeData.reason : '数据格式错误');
+        }
 
-          // 处理综艺数据
-          if (varietyShowsData.status === 'fulfilled' && varietyShowsData.value?.code === 200) {
-            const varietyShows = varietyShowsData.value.list;
-            setHotVarietyShows(varietyShows);
+        // 处理短剧数据
+        if (shortDramasData.status === 'fulfilled') {
+          const dramas = shortDramasData.value;
+          setHotShortDramas(dramas);
 
-            // 延迟15秒加载详情
-            if (varietyShows.length > 0) {
-              setTimeout(() => {
-                // 获取前1个综艺的详情（匹配轮播图数量）
-                Promise.all(
-                  varietyShows.slice(0, 1).map(async (show) => {
-                    try {
-                      const detailsRes = await getDoubanDetails(show.id);
-                      if (detailsRes.code === 200 && detailsRes.data) {
+          // 立即加载详情
+          Promise.all(
+            dramas.slice(0, 2).map(async (drama) => {
+              try {
+                const response = await fetch(`/api/shortdrama/detail?id=${drama.id}&episode=1`);
+                if (response.ok) {
+                  const detailData = await response.json();
+                  if (detailData.desc) {
+                    return { id: drama.id, description: detailData.desc };
+                  }
+                }
+              } catch (error) {
+                console.warn(`获取短剧 ${drama.id} 详情失败:`, error);
+              }
+              return null;
+            })
+          ).then((results) => {
+            setHotShortDramas(prev =>
+              prev.map(d => {
+                const detail = results.find(r => r?.id === d.id);
+                return detail ? { ...d, description: detail.description } : d;
+              })
+            );
+          });
+        } else {
+          console.warn('获取热门短剧失败:', shortDramasData.reason);
+          setHotShortDramas([]);
+        }
+
+        // 第三批：补充数据（番剧+即将上映）- 立即加载
+        const [bangumiCalendarData, upcomingReleasesData] = await Promise.allSettled([
+          GetBangumiCalendarData(),
+          fetch('/api/release-calendar?limit=100').then(res => {
+            if (!res.ok) {
+              console.error('获取即将上映数据失败，状态码:', res.status);
+              return { items: [] };
+            }
+            return res.json();
+          }),
+        ]);
+
+        // 处理bangumi数据
+        if (bangumiCalendarData.status === 'fulfilled' && Array.isArray(bangumiCalendarData.value)) {
+          const bangumiData = bangumiCalendarData.value;
+          setBangumiCalendarData(bangumiData);
+
+          // 立即加载详情
+          const today = new Date();
+          const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const currentWeekday = weekdays[today.getDay()];
+          const todayAnimes = bangumiData.find(
+            (item) => item.weekday.en === currentWeekday
+          )?.items || [];
+
+          if (todayAnimes.length > 0 && !todayAnimes[0].summary) {
+            const anime = todayAnimes[0];
+            try {
+              const response = await fetch(`/api/proxy/bangumi?path=v0/subjects/${anime.id}`);
+              if (response.ok) {
+                const detailData = await response.json();
+                if (detailData.summary) {
+                  setBangumiCalendarData(prev =>
+                    prev.map(dayData => {
+                      if (dayData.weekday.en === currentWeekday) {
                         return {
-                          id: show.id,
-                          plot_summary: detailsRes.data.plot_summary,
-                          backdrop: detailsRes.data.backdrop,
-                          trailerUrl: detailsRes.data.trailerUrl,
+                          ...dayData,
+                          items: dayData.items.map(item =>
+                            item.id === anime.id
+                              ? { ...item, summary: detailData.summary }
+                              : item
+                          )
                         };
                       }
-                    } catch (error) {
-                      console.warn(`获取综艺 ${show.id} 详情失败:`, error);
-                    }
-                    return null;
-                  })
-                ).then((results) => {
-                  setHotVarietyShows(prev =>
-                    prev.map(s => {
-                      const detail = results.find(r => r?.id === s.id);
-                      return detail ? {
-                        ...s,
-                        plot_summary: detail.plot_summary,
-                        backdrop: detail.backdrop,
-                        trailerUrl: detail.trailerUrl,
-                      } : s;
+                      return dayData;
                     })
                   );
-                });
-              }, 15000);
-            }
-          } else {
-            console.warn('获取热门综艺失败:', varietyShowsData.status === 'rejected' ? varietyShowsData.reason : '数据格式错误');
-          }
-
-          // 处理动漫数据
-          if (animeData.status === 'fulfilled' && animeData.value?.code === 200) {
-            const animes = animeData.value.list;
-            setHotAnime(animes);
-
-            // 延迟15秒加载详情
-            if (animes.length > 0) {
-              setTimeout(() => {
-                const anime = animes[0];
-                getDoubanDetails(anime.id)
-                  .then((detailsRes) => {
-                    if (detailsRes.code === 200 && detailsRes.data) {
-                      setHotAnime(prev =>
-                        prev.map(a => a.id === anime.id
-                          ? {
-                            ...a,
-                            plot_summary: detailsRes.data!.plot_summary,
-                            backdrop: detailsRes.data!.backdrop,
-                            trailerUrl: detailsRes.data!.trailerUrl,
-                          }
-                          : a
-                        )
-                      );
-                    }
-                  })
-                  .catch((error) => {
-                    console.warn(`获取动漫 ${anime.id} 详情失败:`, error);
-                  });
-              }, 15000);
-            }
-          } else {
-            console.warn('获取热门动漫失败:', animeData.status === 'rejected' ? animeData.reason : '数据格式错误');
-          }
-
-          // 处理短剧数据
-          if (shortDramasData.status === 'fulfilled') {
-            const dramas = shortDramasData.value;
-            setHotShortDramas(dramas);
-
-            // 延迟15秒加载详情
-            setTimeout(() => {
-              Promise.all(
-                dramas.slice(0, 2).map(async (drama) => {
-                  try {
-                    const response = await fetch(`/api/shortdrama/detail?id=${drama.id}&episode=1`);
-                    if (response.ok) {
-                      const detailData = await response.json();
-                      if (detailData.desc) {
-                        return { id: drama.id, description: detailData.desc };
-                      }
-                    }
-                  } catch (error) {
-                    console.warn(`获取短剧 ${drama.id} 详情失败:`, error);
-                  }
-                  return null;
-                })
-              ).then((results) => {
-                setHotShortDramas(prev =>
-                  prev.map(d => {
-                    const detail = results.find(r => r?.id === d.id);
-                    return detail ? { ...d, description: detail.description } : d;
-                  })
-                );
-              });
-            }, 15000);
-          } else {
-            console.warn('获取热门短剧失败:', shortDramasData.reason);
-            setHotShortDramas([]);
-          }
-        }, 3000);
-
-        // 🚀 第三批：补充数据（番剧+即将上映） - 延迟6秒加载
-        setTimeout(async () => {
-          const [bangumiCalendarData, upcomingReleasesData] = await Promise.allSettled([
-            GetBangumiCalendarData(),
-            fetch('/api/release-calendar?limit=100').then(res => {
-              if (!res.ok) {
-                console.error('获取即将上映数据失败，状态码:', res.status);
-                return { items: [] };
-              }
-              return res.json();
-            }),
-          ]);
-
-          // 处理bangumi数据
-          if (bangumiCalendarData.status === 'fulfilled' && Array.isArray(bangumiCalendarData.value)) {
-            const bangumiData = bangumiCalendarData.value;
-            setBangumiCalendarData(bangumiData);
-
-            // 延迟20秒加载详情
-            setTimeout(async () => {
-              const today = new Date();
-              const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-              const currentWeekday = weekdays[today.getDay()];
-              const todayAnimes = bangumiData.find(
-                (item) => item.weekday.en === currentWeekday
-              )?.items || [];
-
-              if (todayAnimes.length > 0 && !todayAnimes[0].summary) {
-                const anime = todayAnimes[0];
-                try {
-                  const response = await fetch(`/api/proxy/bangumi?path=v0/subjects/${anime.id}`);
-                  if (response.ok) {
-                    const detailData = await response.json();
-                    if (detailData.summary) {
-                      setBangumiCalendarData(prev =>
-                        prev.map(dayData => {
-                          if (dayData.weekday.en === currentWeekday) {
-                            return {
-                              ...dayData,
-                              items: dayData.items.map(item =>
-                                item.id === anime.id
-                                  ? { ...item, summary: detailData.summary }
-                                  : item
-                              )
-                            };
-                          }
-                          return dayData;
-                        })
-                      );
-                    }
-                  }
-                } catch (error) {
-                  console.warn(`获取番剧 ${anime.id} 详情失败:`, error);
                 }
               }
-            }, 20000);
-          } else {
-            console.warn('Bangumi接口失败或返回数据格式错误:',
-              bangumiCalendarData.status === 'rejected' ? bangumiCalendarData.reason : '数据格式错误');
-            setBangumiCalendarData([]);
-          }
-
-          // 🚀 优化方案1：使用Web Worker处理即将上映数据，避免阻塞主线程
-          if (upcomingReleasesData.status === 'fulfilled' && upcomingReleasesData.value?.items) {
-            const releases = upcomingReleasesData.value.items;
-            console.log('📅 获取到的即将上映数据:', releases.length, '条');
-
-            // 初始化Web Worker
-            if (!workerRef.current && typeof window !== 'undefined' && window.Worker) {
-              try {
-                workerRef.current = new Worker(new URL('../workers/releaseCalendar.worker.ts', import.meta.url));
-
-                workerRef.current.onmessage = (e: MessageEvent) => {
-                  const { selectedItems, stats, error } = e.data;
-
-                  if (error) {
-                    console.error('📅 [Worker] 处理失败:', error);
-                    setUpcomingReleases([]);
-                    return;
-                  }
-
-                  console.log('📅 [Main] Worker处理完成，分配结果:', stats);
-                  setUpcomingReleases(selectedItems);
-                };
-
-                workerRef.current.onerror = (error) => {
-                  console.error('📅 [Worker] 错误:', error);
-                  setUpcomingReleases([]);
-                };
-              } catch (error) {
-                console.error('📅 [Worker] 初始化失败:', error);
-                // Fallback: 如果Worker创建失败，直接设置空数组
-                setUpcomingReleases([]);
-              }
+            } catch (error) {
+              console.warn(`获取番剧 ${anime.id} 详情失败:`, error);
             }
+          }
+        } else {
+          console.warn('Bangumi接口失败或返回数据格式错误:',
+            bangumiCalendarData.status === 'rejected' ? bangumiCalendarData.reason : '数据格式错误');
+          setBangumiCalendarData([]);
+        }
 
-            // 发送数据到Worker处理
-            if (workerRef.current) {
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              workerRef.current.postMessage({
-                releases,
-                today: today.toISOString().split('T')[0],
-              });
-            } else {
-              // Fallback: Worker不可用时的处理
-              console.warn('📅 Web Worker不可用，跳过即将上映数据处理');
+        // 🚀 优化方案1：使用Web Worker处理即将上映数据，避免阻塞主线程
+        if (upcomingReleasesData.status === 'fulfilled' && upcomingReleasesData.value?.items) {
+          const releases = upcomingReleasesData.value.items;
+          console.log('📅 获取到的即将上映数据:', releases.length, '条');
+
+          // 初始化Web Worker
+          if (!workerRef.current && typeof window !== 'undefined' && window.Worker) {
+            try {
+              workerRef.current = new Worker(new URL('../workers/releaseCalendar.worker.ts', import.meta.url));
+
+              workerRef.current.onmessage = (e: MessageEvent) => {
+                const { selectedItems, stats, error } = e.data;
+
+                if (error) {
+                  console.error('📅 [Worker] 处理失败:', error);
+                  setUpcomingReleases([]);
+                  return;
+                }
+
+                console.log('📅 [Main] Worker处理完成，分配结果:', stats);
+                setUpcomingReleases(selectedItems);
+              };
+
+              workerRef.current.onerror = (error) => {
+                console.error('📅 [Worker] 错误:', error);
+                setUpcomingReleases([]);
+              };
+            } catch (error) {
+              console.error('📅 [Worker] 初始化失败:', error);
+              // Fallback: 如果Worker创建失败，直接设置空数组
               setUpcomingReleases([]);
             }
+          }
+
+          // 发送数据到Worker处理
+          if (workerRef.current) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            workerRef.current.postMessage({
+              releases,
+              today: today.toISOString().split('T')[0],
+            });
           } else {
-            console.warn('获取即将上映数据失败:', upcomingReleasesData.status === 'rejected' ? upcomingReleasesData.reason : '数据格式错误');
+            // Fallback: Worker不可用时的处理
+            console.warn('📅 Web Worker不可用，跳过即将上映数据处理');
             setUpcomingReleases([]);
           }
-        }, 6000);
+        } else {
+          console.warn('获取即将上映数据失败:', upcomingReleasesData.status === 'rejected' ? upcomingReleasesData.reason : '数据格式错误');
+          setUpcomingReleases([]);
+        }
       } catch (error) {
         console.error('获取推荐数据失败:', error);
         setLoading(false);
@@ -552,41 +532,6 @@ function HomeClient() {
     };
   }, []);
 
-  // 处理收藏数据更新的函数
-  const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
-    const allPlayRecords = await getAllPlayRecords();
-
-    // 根据保存时间排序（从近到远）
-    const sorted = Object.entries(allFavorites)
-      .sort(([, a], [, b]) => b.save_time - a.save_time)
-      .map(([key, fav]) => {
-        const plusIndex = key.indexOf('+');
-        const source = key.slice(0, plusIndex);
-        const id = key.slice(plusIndex + 1);
-
-        // 查找对应的播放记录，获取当前集数
-        const playRecord = allPlayRecords[key];
-        const currentEpisode = playRecord?.index;
-
-        return {
-          id,
-          source,
-          title: fav.title,
-          year: fav.year,
-          poster: fav.cover,
-          episodes: fav.total_episodes,
-          source_name: fav.source_name,
-          currentEpisode,
-          search_title: fav?.search_title,
-          origin: fav?.origin,
-          type: fav?.type,
-          save_time: fav.save_time,
-          releaseDate: fav?.releaseDate,
-          remarks: fav?.remarks,
-        } as FavoriteItem;
-      });
-    setFavoriteItems(sorted);
-  };
 
   // 处理清空所有收藏
   const handleClearFavorites = async () => {
