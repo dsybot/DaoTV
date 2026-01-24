@@ -296,10 +296,11 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
             // 使用react-window v2.1.2的API：
             // 1. visibleCells: 真实可见的单元格范围
             // 2. allCells: 包含overscan的所有渲染单元格范围
-            const { rowStopIndex: visibleRowStopIndex } = visibleCells;
+            // 使用 allCells 的 rowStopIndex 来更早触发加载
+            const { rowStopIndex: overscanRowStopIndex } = allCells;
 
-            // 简化逻辑：基于可见行检测，触发服务器分页加载
-            if (visibleRowStopIndex >= rowCount - LOAD_MORE_THRESHOLD && needsServerData) {
+            // 基于overscan行检测，触发服务器分页加载
+            if (overscanRowStopIndex >= rowCount - LOAD_MORE_THRESHOLD && needsServerData) {
               // 防止重复调用onLoadMore
               const now = Date.now();
               if (now - lastLoadMoreCallRef.current > 1000) {
@@ -337,47 +338,47 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
               </div>
             </div>
           )}
-        </Grid>
-      )}
 
-      {/* 已加载完所有内容的提示 */}
-      {!hasMore && totalItemCount > 0 && (
-        <div className='flex justify-center mt-8 py-8'>
-          <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
-            {/* 装饰性背景 */}
-            <div className='absolute inset-0 bg-linear-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
+          {/* 已加载完所有内容的提示 - 也放在Grid内部 */}
+          {!hasMore && totalItemCount > 0 && (
+            <div className='flex justify-center mt-8 py-8'>
+              <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+                {/* 装饰性背景 */}
+                <div className='absolute inset-0 bg-linear-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
 
-            {/* 内容 */}
-            <div className='relative flex flex-col items-center gap-2'>
-              {/* 完成图标 */}
-              <div className='relative'>
-                <div className='w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
-                  {isBangumi ? (
-                    <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'></path>
-                    </svg>
-                  ) : (
-                    <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 13l4 4L19 7'></path>
-                    </svg>
-                  )}
+                {/* 内容 */}
+                <div className='relative flex flex-col items-center gap-2'>
+                  {/* 完成图标 */}
+                  <div className='relative'>
+                    <div className='w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
+                      {isBangumi ? (
+                        <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'></path>
+                        </svg>
+                      ) : (
+                        <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 13l4 4L19 7'></path>
+                        </svg>
+                      )}
+                    </div>
+                    {/* 光圈效果 */}
+                    <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+                  </div>
+
+                  {/* 文字 */}
+                  <div className='text-center'>
+                    <p className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-1'>
+                      {isBangumi ? '本日番剧已全部显示' : '已加载全部内容'}
+                    </p>
+                    <p className='text-xs text-gray-600 dark:text-gray-400'>
+                      {isBangumi ? `今日共 ${totalItemCount} 部` : `共 ${totalItemCount} 项`}
+                    </p>
+                  </div>
                 </div>
-                {/* 光圈效果 */}
-                <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
-              </div>
-
-              {/* 文字 */}
-              <div className='text-center'>
-                <p className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-1'>
-                  {isBangumi ? '本日番剧已全部显示' : '已加载全部内容'}
-                </p>
-                <p className='text-xs text-gray-600 dark:text-gray-400'>
-                  {isBangumi ? `今日共 ${totalItemCount} 部` : `共 ${totalItemCount} 项`}
-                </p>
               </div>
             </div>
-          </div>
-        </div>
+          )}
+        </Grid>
       )}
     </div>
   );
