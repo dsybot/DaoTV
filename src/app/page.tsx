@@ -532,6 +532,41 @@ function HomeClient() {
     };
   }, []);
 
+  // 处理收藏数据更新的函数
+  const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
+    const allPlayRecords = await getAllPlayRecords();
+
+    // 根据保存时间排序（从近到远）
+    const sorted = Object.entries(allFavorites)
+      .sort(([, a], [, b]) => b.save_time - a.save_time)
+      .map(([key, fav]) => {
+        const plusIndex = key.indexOf('+');
+        const source = key.slice(0, plusIndex);
+        const id = key.slice(plusIndex + 1);
+
+        // 查找对应的播放记录，获取当前集数
+        const playRecord = allPlayRecords[key];
+        const currentEpisode = playRecord?.index;
+
+        return {
+          id,
+          source,
+          title: fav.title,
+          year: fav.year,
+          poster: fav.cover,
+          episodes: fav.total_episodes,
+          source_name: fav.source_name,
+          currentEpisode,
+          search_title: fav?.search_title,
+          origin: fav?.origin,
+          type: fav?.type,
+          save_time: fav.save_time,
+          releaseDate: fav?.releaseDate,
+          remarks: fav?.remarks,
+        } as FavoriteItem;
+      });
+    setFavoriteItems(sorted);
+  };
 
   // 处理清空所有收藏
   const handleClearFavorites = async () => {
