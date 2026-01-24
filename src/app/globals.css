@@ -397,6 +397,16 @@ div[data-media-provider] video {
   }
 }
 
+/* 播放页面封面光泽动画 - 使用 background-position */
+@keyframes cover-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* 平滑动画效果 */
 @keyframes fade-in {
   from {
