@@ -153,8 +153,10 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     });
   }, [isLoadingMore, hasMore, onLoadMore]);
 
-  // 计算总项数 - 如果还有更多数据，加1表示还有未加载的
-  const itemCount = hasMore ? totalItemCount + 1 : totalItemCount;
+  // 🔥 关键修复：计算总项数
+  // 如果还有更多数据，需要增加 columnCount 个占位项来触发加载
+  // 这样可以确保最后一行被渲染时能触发 InfiniteLoader
+  const itemCount = hasMore ? totalItemCount + columnCount : totalItemCount;
 
   // 使用 useInfiniteLoader hook
   const onRowsRendered = useInfiniteLoader({
@@ -183,8 +185,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     }
   }), []);
 
-  // 网格行数计算 - 基于全部数据
-  const rowCount = Math.ceil(totalItemCount / columnCount);
+  // 网格行数计算 - 基于全部数据（包括占位项）
+  const rowCount = Math.ceil(itemCount / columnCount);
 
   // 单行网格优化：确保单行时布局正确（react-window 2.1.1修复了相关bug）
   const isSingleRow = rowCount === 1;
@@ -329,12 +331,18 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
             }),
           }}
           onCellsRendered={(visibleCells, allCells) => {
-                // 将 Grid 的二维索引转换为一维索引，传递给 InfiniteLoader
-                const { columnStartIndex, columnStopIndex, rowStartIndex, rowStopIndex } = allCells;
+                // 🔥 关键修复：将 Grid 的二维索引转换为一维索引
+                // 使用 overscan 索引（allCells）来确保提前触发加载
+                const { rowStartIndex, rowStopIndex } = allCells;
 
-                // 计算一维索引范围
-                const startIndex = rowStartIndex * columnCount + columnStartIndex;
-                const stopIndex = rowStopIndex * columnCount + columnStopIndex;
+                // 计算一维索引范围 - 使用整行范围
+                // startIndex: 该行第一个元素的索引
+                // stopIndex: 该行最后一个元素的索引（即下一行第一个元素 - 1）
+                const startIndex = rowStartIndex * columnCount;
+                const stopIndex = Math.min(
+                  (rowStopIndex + 1) * columnCount - 1,
+                  itemCount - 1
+                );
 
                 // 调用 InfiniteLoader 的 onRowsRendered
                 onRowsRendered({
