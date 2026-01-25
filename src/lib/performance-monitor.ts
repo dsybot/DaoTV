@@ -284,7 +284,7 @@ export function getRecentMetrics(hours: number): HourlyMetrics[] {
 /**
  * 获取最近的请求列表
  */
-export async function getRecentRequests(limit: number = 100): Promise<RequestMetrics[]> {
+export async function getRecentRequests(limit: number = 100, hours?: number): Promise<RequestMetrics[]> {
   // 从 Kvrocks 加载最新数据
   try {
     const cached = await db.getCache(PERFORMANCE_KEY);
@@ -304,8 +304,21 @@ export async function getRecentRequests(limit: number = 100): Promise<RequestMet
     console.error('❌ 从 Kvrocks 加载性能数据失败:', error);
   }
 
-  // 返回最近的 N 条请求，按时间倒序
-  return requestCache.slice(-limit).reverse();
+  // 如果指定了时间范围，按时间过滤
+  let filteredRequests = requestCache;
+  if (hours !== undefined) {
+    const now = Date.now();
+    const timeRangeMs = hours * 60 * 60 * 1000;
+    const startTime = now - timeRangeMs;
+    filteredRequests = requestCache.filter((r) => r.timestamp >= startTime);
+    console.log(`🕐 [Performance] 时间过滤: ${hours}小时内有 ${filteredRequests.length} 条请求`);
+
+    // 如果指定了时间范围，返回该时间范围内的所有数据（不限制条数）
+    return filteredRequests.reverse();
+  }
+
+  // 如果没有指定时间范围，返回最近的 N 条请求，按时间倒序
+  return filteredRequests.slice(-limit).reverse();
 }
 
 /**
