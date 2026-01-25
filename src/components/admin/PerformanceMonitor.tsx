@@ -54,6 +54,8 @@ export default function PerformanceMonitor() {
       '/api/cron': 'Cron 任务',
       '/api/series': '剧集管理',
       '/api/favorites': '收藏管理',
+      '/api/playrecords': '播放记录',
+      '/api/skipconfigs': '跳过配置',
       '/api/admin': '管理后台',
     };
 
@@ -78,6 +80,8 @@ export default function PerformanceMonitor() {
       if (apiFilter === 'admin') return req.path.startsWith('/api/admin');
       if (apiFilter === 'series') return req.path.startsWith('/api/series');
       if (apiFilter === 'favorites') return req.path.startsWith('/api/favorites');
+      if (apiFilter === 'playrecords') return req.path.startsWith('/api/playrecords');
+      if (apiFilter === 'skipconfigs') return req.path.startsWith('/api/skipconfigs');
       return true;
     });
   };
@@ -172,6 +176,8 @@ export default function PerformanceMonitor() {
             <option value='admin'>管理后台</option>
             <option value='series'>剧集管理</option>
             <option value='favorites'>收藏管理</option>
+            <option value='playrecords'>播放记录</option>
+            <option value='skipconfigs'>跳过配置</option>
           </select>
 
           {/* 自动刷新 */}

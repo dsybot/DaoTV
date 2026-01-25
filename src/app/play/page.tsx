@@ -45,6 +45,9 @@ import CollapseButton from '@/components/play/CollapseButton';
 import BackToTopButton from '@/components/play/BackToTopButton';
 import LoadingScreen from '@/components/play/LoadingScreen';
 import VideoInfoSection from '@/components/play/VideoInfoSection';
+import VideoLoadingOverlay from '@/components/play/VideoLoadingOverlay';
+import WatchRoomSyncBanner from '@/components/play/WatchRoomSyncBanner';
+import SourceSwitchDialog from '@/components/play/SourceSwitchDialog';
 import { SkipSettingsButton } from '@/components/SkipController';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
@@ -5931,43 +5934,10 @@ function PlayPageClient() {
                   )}
 
                   {/* 换源加载蒙层 */}
-                  {isVideoLoading && (
-                    <div className='absolute inset-0 bg-black/85 backdrop-blur-sm rounded-xl flex items-center justify-center z-500 transition-all duration-300'>
-                      <div className='text-center max-w-md mx-auto px-6'>
-                        {/* 动画影院图标 */}
-                        <div className='relative mb-8'>
-                          <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
-                            <div className='text-white text-4xl'>🎬</div>
-                            {/* 旋转光环 */}
-                            <div className='absolute -inset-2 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
-                          </div>
-
-                          {/* 浮动粒子效果 */}
-                          <div className='absolute top-0 left-0 w-full h-full pointer-events-none'>
-                            <div className='absolute top-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-bounce'></div>
-                            <div
-                              className='absolute top-4 right-4 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce'
-                              style={{ animationDelay: '0.5s' }}
-                            ></div>
-                            <div
-                              className='absolute bottom-3 left-6 w-1 h-1 bg-lime-400 rounded-full animate-bounce'
-                              style={{ animationDelay: '1s' }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        {/* 换源消息 */}
-                        <div className='space-y-2'>
-                          <p className='text-xl font-semibold text-white animate-pulse'>
-                            {videoLoadingStage === 'sourceChanging'
-                              ? '🔄 切换播放源...'
-                              : '🔄 视频加载中...'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
+                  <VideoLoadingOverlay
+                    isVisible={isVideoLoading}
+                    loadingStage={videoLoadingStage}
+                  />
                 </div>
               </div>
 
@@ -6113,63 +6083,18 @@ function PlayPageClient() {
         <BackToTopButton show={showBackToTop} onClick={scrollToTop} />
 
         {/* 观影室同步暂停提示条 */}
-        {isInWatchRoom && !isWatchRoomOwner && syncPaused && !pendingOwnerChange && (
-          <div className='fixed bottom-20 left-1/2 -translate-x-1/2 z-9998 animate-fade-in'>
-            <div className='flex items-center gap-3 px-4 py-2.5 rounded-full bg-orange-500/90 backdrop-blur-sm shadow-lg'>
-              <span className='text-sm text-white font-medium'>已退出同步，自由观看中</span>
-              <button
-                onClick={resumeSync}
-                className='px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors'
-              >
-                重新同步
-              </button>
-            </div>
-          </div>
-        )}
+        <WatchRoomSyncBanner
+          show={isInWatchRoom && !isWatchRoomOwner && syncPaused && !pendingOwnerChange}
+          onResumeSync={resumeSync}
+        />
 
         {/* 源切换确认对话框 */}
-        {showSourceSwitchDialog && pendingOwnerState && (
-          <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999'>
-            <div className='bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl'>
-              <div className='text-center'>
-                <div className='w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center'>
-                  <svg className='w-6 h-6 text-yellow-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
-                  </svg>
-                </div>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-                  播放源不同
-                </h3>
-                <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>
-                  房主使用的播放源与您不同，是否切换到房主的播放源？
-                </p>
-                <p className='text-base font-medium text-gray-900 dark:text-white mb-1'>
-                  房主播放源
-                </p>
-                <p className='text-sm text-blue-500 dark:text-blue-400 mb-3 font-mono'>
-                  {pendingOwnerState.source}
-                </p>
-                <p className='text-xs text-orange-500 dark:text-orange-400 mb-6'>
-                  ⚠️ 保持当前源将无法与房主同步进度
-                </p>
-                <div className='flex gap-3'>
-                  <button
-                    onClick={handleCancelSourceSwitch}
-                    className='flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium'
-                  >
-                    保持当前源
-                  </button>
-                  <button
-                    onClick={handleConfirmSourceSwitch}
-                    className='flex-1 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-colors font-medium'
-                  >
-                    切换源
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <SourceSwitchDialog
+          show={showSourceSwitchDialog && !!pendingOwnerState}
+          ownerSource={pendingOwnerState?.source || ''}
+          onConfirm={handleConfirmSourceSwitch}
+          onCancel={handleCancelSourceSwitch}
+        />
 
         {/* 房主切换视频/集数确认框 */}
         {pendingOwnerChange && (
