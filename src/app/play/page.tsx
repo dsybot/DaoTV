@@ -48,6 +48,9 @@ import VideoInfoSection from '@/components/play/VideoInfoSection';
 import VideoLoadingOverlay from '@/components/play/VideoLoadingOverlay';
 import WatchRoomSyncBanner from '@/components/play/WatchRoomSyncBanner';
 import SourceSwitchDialog from '@/components/play/SourceSwitchDialog';
+import OwnerChangeDialog from '@/components/play/OwnerChangeDialog';
+import VideoCoverDisplay from '@/components/play/VideoCoverDisplay';
+import PlayErrorDisplay from '@/components/play/PlayErrorDisplay';
 import { SkipSettingsButton } from '@/components/SkipController';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
@@ -5785,67 +5788,7 @@ function PlayPageClient() {
   if (error) {
     return (
       <PageLayout activePath='/play'>
-        <div className='flex items-center justify-center min-h-screen bg-transparent'>
-          <div className='text-center max-w-md mx-auto px-6'>
-            {/* 错误图标 */}
-            <div className='relative mb-8'>
-              <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-red-500 to-orange-500 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
-                <div className='text-white text-4xl'>😵</div>
-                {/* 脉冲效果 */}
-                <div className='absolute -inset-2 bg-linear-to-r from-red-500 to-orange-500 rounded-2xl opacity-20 animate-pulse'></div>
-              </div>
-
-              {/* 浮动错误粒子 */}
-              <div className='absolute top-0 left-0 w-full h-full pointer-events-none'>
-                <div className='absolute top-2 left-2 w-2 h-2 bg-red-400 rounded-full animate-bounce'></div>
-                <div
-                  className='absolute top-4 right-4 w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce'
-                  style={{ animationDelay: '0.5s' }}
-                ></div>
-                <div
-                  className='absolute bottom-3 left-6 w-1 h-1 bg-yellow-400 rounded-full animate-bounce'
-                  style={{ animationDelay: '1s' }}
-                ></div>
-              </div>
-            </div>
-
-            {/* 错误信息 */}
-            <div className='space-y-4 mb-8'>
-              <h2 className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
-                哎呀，出现了一些问题
-              </h2>
-              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4'>
-                <p className='text-red-600 dark:text-red-400 font-medium'>
-                  {error}
-                </p>
-              </div>
-              <p className='text-sm text-gray-500 dark:text-gray-400'>
-                请检查网络连接或尝试刷新页面
-              </p>
-            </div>
-
-            {/* 操作按钮 */}
-            <div className='space-y-3'>
-              <button
-                onClick={() =>
-                  videoTitle
-                    ? router.push(`/search?q=${encodeURIComponent(videoTitle)}`)
-                    : router.back()
-                }
-                className='w-full px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl'
-              >
-                {videoTitle ? '🔍 返回搜索' : '← 返回上页'}
-              </button>
-
-              <button
-                onClick={() => window.location.reload()}
-                className='w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200'
-              >
-                🔄 重新尝试
-              </button>
-            </div>
-          </div>
-        </div>
+        <PlayErrorDisplay error={error} videoTitle={videoTitle} />
       </PageLayout>
     );
   }
@@ -6012,70 +5955,13 @@ function PlayPageClient() {
             />
 
             {/* 封面展示 */}
-            <div className='hidden md:block md:col-span-1 md:order-first'>
-              <div className='pl-0 py-4 pr-6'>
-                <div className='group relative bg-gray-300 dark:bg-gray-700 aspect-[2/3] flex items-center justify-center rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]'>
-                  {(videoCover || bangumiDetails?.images?.large) ? (
-                    <>
-                      {/* 渐变光泽动画层 */}
-                      <div
-                        className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
-                        style={{
-                          background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'cover-shimmer 2.5s ease-in-out infinite',
-                        }}
-                      />
-
-                      <img
-                        src={processImageUrl(bangumiDetails?.images?.large || videoCover)}
-                        alt={videoTitle}
-                        className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105'
-                      />
-
-                      {/* 悬浮遮罩 */}
-                      <div className='absolute inset-0 bg-linear-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
-
-                      {/* 链接按钮（bangumi或豆瓣） */}
-                      {videoDoubanId !== 0 && (
-                        <a
-                          href={
-                            bangumiDetails
-                              ? `https://bgm.tv/subject/${videoDoubanId.toString()}`
-                              : `https://movie.douban.com/subject/${videoDoubanId.toString()}`
-                          }
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='absolute top-3 left-3 z-20'
-                        >
-                          <div className={`relative ${bangumiDetails ? 'bg-linear-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600' : 'bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'} text-white text-xs font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 ease-out hover:scale-110 group/link`}>
-                            <div className={`absolute inset-0 ${bangumiDetails ? 'bg-pink-400' : 'bg-green-400'} rounded-full opacity-0 group-hover/link:opacity-30 blur transition-opacity duration-300`}></div>
-                            <svg
-                              width='18'
-                              height='18'
-                              viewBox='0 0 24 24'
-                              fill='none'
-                              stroke='currentColor'
-                              strokeWidth='2'
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              className='relative z-10'
-                            >
-                              <path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'></path>
-                              <path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'></path>
-                            </svg>
-                          </div>
-                        </a>
-                      )}
-                    </>
-                  ) : (
-                    <span className='text-gray-600 dark:text-gray-400'>
-                      封面图片
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+            <VideoCoverDisplay
+              videoCover={videoCover}
+              bangumiDetails={bangumiDetails}
+              videoTitle={videoTitle}
+              videoDoubanId={videoDoubanId}
+              processImageUrl={processImageUrl}
+            />
           </div>
         </div>
 
@@ -6097,45 +5983,13 @@ function PlayPageClient() {
         />
 
         {/* 房主切换视频/集数确认框 */}
-        {pendingOwnerChange && (
-          <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999'>
-            <div className='bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl'>
-              <div className='text-center'>
-                <div className='w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center'>
-                  <svg className='w-6 h-6 text-blue-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' />
-                  </svg>
-                </div>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-                  房主切换了内容
-                </h3>
-                <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>
-                  房主正在观看：
-                </p>
-                <p className='text-base font-medium text-gray-900 dark:text-white mb-1'>
-                  {pendingOwnerChange.videoName || '未知视频'}
-                </p>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mb-6'>
-                  第 {(pendingOwnerChange.episode || 0) + 1} 集
-                </p>
-                <div className='flex gap-3'>
-                  <button
-                    onClick={rejectFollowOwner}
-                    className='flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium'
-                  >
-                    自由观看
-                  </button>
-                  <button
-                    onClick={confirmFollowOwner}
-                    className='flex-1 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-colors font-medium'
-                  >
-                    跟随房主
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <OwnerChangeDialog
+          show={!!pendingOwnerChange}
+          videoName={pendingOwnerChange?.videoName || ''}
+          episode={pendingOwnerChange?.episode || 0}
+          onConfirm={confirmFollowOwner}
+          onReject={rejectFollowOwner}
+        />
 
         {/* 使用 Portal 的统一浮层 - 自动适应全屏和非全屏模式 */}
         {showEpisodePopup && portalContainer && createPortal(

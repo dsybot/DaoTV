@@ -96,10 +96,11 @@ export default function PerformanceMonitor() {
   const getFilteredStats = () => {
     if (!data) return null;
 
-    // 获取最近1分钟的请求
+    // 根据选择的时间范围获取请求
     const now = Date.now();
-    const oneMinuteAgo = now - 60000;
-    const recentRequests = data.recentRequests.filter((r: any) => r.timestamp > oneMinuteAgo);
+    const timeRangeMs = parseInt(timeRange) * 60 * 60 * 1000; // 转换为毫秒
+    const startTime = now - timeRangeMs;
+    const recentRequests = data.recentRequests.filter((r: any) => r.timestamp > startTime);
 
     // 应用API筛选
     const filteredRequests = filterRequests(recentRequests);
@@ -113,19 +114,30 @@ export default function PerformanceMonitor() {
       };
     }
 
+    // 计算时间范围内的分钟数
+    const minutes = parseInt(timeRange) * 60;
+
+    // 计算平均每分钟请求数
+    const requestsPerMinute = Math.round(filteredRequests.length / minutes);
+
+    // 计算平均响应时间
     const avgResponseTime = Math.round(
       filteredRequests.reduce((sum: number, r: any) => sum + r.duration, 0) / filteredRequests.length
     );
 
-    const dbQueriesPerMinute = filteredRequests.reduce((sum: number, r: any) => sum + r.dbQueries, 0);
+    // 计算平均每分钟DB查询数
+    const totalDbQueries = filteredRequests.reduce((sum: number, r: any) => sum + r.dbQueries, 0);
+    const dbQueriesPerMinute = Math.round(totalDbQueries / minutes);
 
-    const trafficPerMinute = filteredRequests.reduce(
+    // 计算平均每分钟流量
+    const totalTraffic = filteredRequests.reduce(
       (sum: number, r: any) => sum + r.requestSize + r.responseSize,
       0
     );
+    const trafficPerMinute = Math.round(totalTraffic / minutes);
 
     return {
-      requestsPerMinute: filteredRequests.length,
+      requestsPerMinute,
       avgResponseTime,
       dbQueriesPerMinute,
       trafficPerMinute,
