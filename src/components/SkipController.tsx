@@ -68,7 +68,7 @@ export default function SkipController({
   });
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isHovering, setIsHovering] = useState(false);
-  
+
   // 🔑 悬浯球拖动和边缘吸附状态
   const [isDraggingBall, setIsDraggingBall] = useState(false);
   const [ballPosition, setBallPosition] = useState(() => {
@@ -184,7 +184,7 @@ export default function SkipController({
     const checkFullscreen = () => {
       const fullscreenElement = document.fullscreenElement as HTMLElement;
       setIsFullscreen(!!fullscreenElement);
-      
+
       // 如果全屏，找到播放器容器
       if (fullscreenElement) {
         // 查找 artplayer 容器
@@ -844,7 +844,7 @@ export default function SkipController({
       if (isFullscreen) {
         // 显示跳过配置组件
         setShowConfigPanelInFullscreen(true);
-        
+
         // 5秒后自动隐藏
         if (fullscreenPanelTimeoutRef.current) {
           clearTimeout(fullscreenPanelTimeoutRef.current);
@@ -852,22 +852,22 @@ export default function SkipController({
         fullscreenPanelTimeoutRef.current = setTimeout(() => {
           setShowConfigPanelInFullscreen(false);
         }, 5000);
-        
+
         // 不显示 alert，避免干扰全屏体验
       } else {
         // 🔑 非全屏模式：显示配置面板，6秒后自动收起为悬浮球
         setIsCollapsed(false);
-        
+
         // 清除之前的定时器
         if (collapseTimeoutRef.current) {
           clearTimeout(collapseTimeoutRef.current);
         }
-        
+
         // 6秒后自动收起
         collapseTimeoutRef.current = setTimeout(() => {
           setIsCollapsed(true);
         }, 6000);
-        
+
         alert('跳过配置已保存');
       }
     } catch (err) {
@@ -969,13 +969,13 @@ export default function SkipController({
           openingEnd: openingSegment ? secondsToTime(openingSegment.end) : prev.openingEnd,
           endingStart: endingSegment
             ? (endingSegment.mode === 'remaining' && endingSegment.remainingTime
-                ? secondsToTime(endingSegment.remainingTime)
-                : (duration > 0 ? secondsToTime(duration - endingSegment.start) : prev.endingStart))
+              ? secondsToTime(endingSegment.remainingTime)
+              : (duration > 0 ? secondsToTime(duration - endingSegment.start) : prev.endingStart))
             : prev.endingStart,
           endingEnd: endingSegment
             ? (endingSegment.mode === 'remaining' && endingSegment.end < duration && duration > 0
-                ? secondsToTime(duration - endingSegment.end)
-                : '')
+              ? secondsToTime(duration - endingSegment.end)
+              : '')
             : prev.endingEnd,
           endingMode: endingSegment?.mode === 'absolute' ? 'absolute' : 'remaining',
           // 🔑 保持当前的 autoSkip 和 autoNextEpisode 不变（已经通过其他 useEffect 从 localStorage 读取）
@@ -1084,7 +1084,7 @@ export default function SkipController({
     if (nearRight) return { edge: 'right' as const, x: screenWidth, y };
     if (nearTop) return { edge: 'top' as const, x, y: 0 };
     if (nearBottom) return { edge: 'bottom' as const, x, y: screenHeight };
-    
+
     return { edge: null, x, y };
   }, []);
 
@@ -1173,7 +1173,7 @@ export default function SkipController({
   const renderConfigPanel = () => {
     // 全屏模式：只在 showConfigPanelInFullscreen 为 true 时显示
     // 非全屏模式：按原逻辑显示
-    const shouldShow = isFullscreen 
+    const shouldShow = isFullscreen
       ? showConfigPanelInFullscreen && actualSegments.length > 0
       : actualSegments.length > 0 && !isSettingMode;
 
@@ -1183,11 +1183,11 @@ export default function SkipController({
     if (!isFullscreen && isCollapsed) {
       const snap = getEdgeSnap(ballPosition.x, ballPosition.y);
       const isSnapped = snap.edge !== null;
-      
+
       // 获取跳过时间信息用于显示
       const openingSegment = actualSegments.find(s => s.type === 'opening');
       const endingSegment = actualSegments.find(s => s.type === 'ending');
-      
+
       const floatingBall = (
         <div
           ref={ballRef}
@@ -1231,7 +1231,7 @@ export default function SkipController({
               <span className="text-[9px] font-medium opacity-90">跳过</span>
             </div>
           )}
-          
+
           {/* 边缘吸附形态 */}
           {isSnapped && (
             <div className={`bg-linear-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-2xl border border-white/30 transition-all
@@ -1311,7 +1311,7 @@ export default function SkipController({
               </button>
             </div>
           )}
-          
+
           <div className="drag-handle flex items-center justify-between mb-2 cursor-move select-none">
             <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1405,302 +1405,302 @@ export default function SkipController({
         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 animate-fade-in"
         onClick={handleCloseDialog}
       >
-          <div
-            className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-[0_20px_60px_0_rgba(0,0,0,0.4)] border border-white/20 dark:border-gray-700/50 animate-scale-in"
-            style={{
-              backdropFilter: 'blur(20px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 标题栏带关闭按钮 */}
-            <div className="flex items-center justify-between mb-6 border-b border-gray-200/50 dark:border-gray-700/50 pb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <span className="text-2xl">⚙️</span>
-                智能跳过设置
-              </h3>
-              <button
-                onClick={handleCloseDialog}
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                title="关闭 (ESC)"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+        <div
+          className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-[0_20px_60px_0_rgba(0,0,0,0.4)] border border-white/20 dark:border-gray-700/50 animate-scale-in"
+          style={{
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 标题栏带关闭按钮 */}
+          <div className="flex items-center justify-between mb-6 border-b border-gray-200/50 dark:border-gray-700/50 pb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <span className="text-2xl">⚙️</span>
+              智能跳过设置
+            </h3>
+            <button
+              onClick={handleCloseDialog}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              title="关闭 (ESC)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-            {/* 全局开关 */}
-            <div className="bg-linear-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-xl mb-6 border border-blue-100/50 dark:border-blue-800/50 shadow-sm backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-2">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={batchSettings.autoSkip}
-                    onChange={(e) => {
-                      const newValue = e.target.checked;
-                      setBatchSettings({...batchSettings, autoSkip: newValue});
-                      // 🔑 保存到 localStorage，确保跨集保持
-                      localStorage.setItem('enableAutoSkip', JSON.stringify(newValue));
-                      // 🔑 通知其他组件 localStorage 已更新
-                      window.dispatchEvent(new Event('localStorageChanged'));
-                    }}
-                    className="rounded"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    启用自动跳过
-                  </span>
+          {/* 全局开关 */}
+          <div className="bg-linear-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-xl mb-6 border border-blue-100/50 dark:border-blue-800/50 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={batchSettings.autoSkip}
+                  onChange={(e) => {
+                    const newValue = e.target.checked;
+                    setBatchSettings({ ...batchSettings, autoSkip: newValue });
+                    // 🔑 保存到 localStorage，确保跨集保持
+                    localStorage.setItem('enableAutoSkip', JSON.stringify(newValue));
+                    // 🔑 通知其他组件 localStorage 已更新
+                    window.dispatchEvent(new Event('localStorageChanged'));
+                  }}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  启用自动跳过
+                </span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={batchSettings.autoNextEpisode}
+                  onChange={(e) => {
+                    const newValue = e.target.checked;
+                    setBatchSettings({ ...batchSettings, autoNextEpisode: newValue });
+                    // 🔑 保存到 localStorage，确保跨集保持
+                    localStorage.setItem('enableAutoNextEpisode', JSON.stringify(newValue));
+                    // 🔑 通知其他组件 localStorage 已更新
+                    window.dispatchEvent(new Event('localStorageChanged'));
+                  }}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  片尾自动播放下一集
+                </span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              开启后将自动跳过设定的片头片尾，无需手动点击
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 片头设置 */}
+            <div className="space-y-4 bg-linear-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border border-green-100/50 dark:border-green-800/50 backdrop-blur-sm">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-green-200/50 dark:border-green-700/50 pb-2 flex items-center gap-2">
+                <span className="text-xl">🎬</span>
+                片头设置
+              </h4>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  开始时间 (分:秒)
                 </label>
+                <input
+                  type="text"
+                  value={batchSettings.openingStart}
+                  onChange={(e) => setBatchSettings({ ...batchSettings, openingStart: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
+                  placeholder="0:00"
+                />
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 0:00)</p>
               </div>
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={batchSettings.autoNextEpisode}
-                    onChange={(e) => {
-                      const newValue = e.target.checked;
-                      setBatchSettings({...batchSettings, autoNextEpisode: newValue});
-                      // 🔑 保存到 localStorage，确保跨集保持
-                      localStorage.setItem('enableAutoNextEpisode', JSON.stringify(newValue));
-                      // 🔑 通知其他组件 localStorage 已更新
-                      window.dispatchEvent(new Event('localStorageChanged'));
-                    }}
-                    className="rounded"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    片尾自动播放下一集
-                  </span>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  结束时间 (分:秒)
                 </label>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                开启后将自动跳过设定的片头片尾，无需手动点击
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 片头设置 */}
-              <div className="space-y-4 bg-linear-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border border-green-100/50 dark:border-green-800/50 backdrop-blur-sm">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-green-200/50 dark:border-green-700/50 pb-2 flex items-center gap-2">
-                  <span className="text-xl">🎬</span>
-                  片头设置
-                </h4>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    开始时间 (分:秒)
-                  </label>
-                  <input
-                    type="text"
-                    value={batchSettings.openingStart}
-                    onChange={(e) => setBatchSettings({...batchSettings, openingStart: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
-                    placeholder="0:00"
-                  />
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 0:00)</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    结束时间 (分:秒)
-                  </label>
-                  <input
-                    type="text"
-                    value={batchSettings.openingEnd}
-                    onChange={(e) => setBatchSettings({...batchSettings, openingEnd: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all mb-2"
-                    placeholder="1:30"
-                  />
-                  <button
-                    onClick={markCurrentAsOpeningEnd}
-                    className="w-full px-4 py-2 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
-                    title="标记当前播放时间为片头结束时间"
-                  >
-                      📍 标记当前时间
-                  </button>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 1:30)</p>
-                </div>
-              </div>
-
-              {/* 片尾设置 */}
-              <div className="space-y-4 bg-linear-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border border-purple-100/50 dark:border-purple-800/50 backdrop-blur-sm">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-purple-200/50 dark:border-purple-700/50 pb-2 flex items-center gap-2">
-                  <span className="text-xl">🎭</span>
-                  片尾设置
-                </h4>
-
-                {/* 片尾模式选择 */}
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    计时模式
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center text-gray-700 dark:text-gray-300">
-                      <input
-                        type="radio"
-                        name="endingMode"
-                        value="remaining"
-                        checked={batchSettings.endingMode === 'remaining'}
-                        onChange={(e) => setBatchSettings({...batchSettings, endingMode: e.target.value})}
-                        className="mr-2"
-                      />
-                      剩余时间（推荐）
-                    </label>
-                    <label className="flex items-center text-gray-700 dark:text-gray-300">
-                      <input
-                        type="radio"
-                        name="endingMode"
-                        value="absolute"
-                        checked={batchSettings.endingMode === 'absolute'}
-                        onChange={(e) => setBatchSettings({...batchSettings, endingMode: e.target.value})}
-                        className="mr-2"
-                      />
-                      绝对时间
-                    </label>
-                  </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {batchSettings.endingMode === 'remaining'
-                      ? '基于剩余时间倒计时（如：还剩2分钟时开始）'
-                      : '基于播放时间（如：播放到第20分钟时开始）'
-                    }
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    {batchSettings.endingMode === 'remaining' ? '剩余时间 (分:秒)' : '开始时间 (分:秒)'}
-                  </label>
-                  <input
-                    type="text"
-                    value={batchSettings.endingStart}
-                    onChange={(e) => setBatchSettings({...batchSettings, endingStart: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all mb-2"
-                    placeholder={batchSettings.endingMode === 'remaining' ? '2:00' : '20:00'}
-                  />
-                  <button
-                    onClick={markCurrentAsEndingStart}
-                    className="w-full px-4 py-2 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
-                    title="标记当前播放时间为片尾开始时间"
-                  >
-                    📍 标记当前时间
-                  </button>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">
-                    {batchSettings.endingMode === 'remaining'
-                      ? '当剩余时间达到此值时开始倒计时'
-                      : '从视频开始播放此时间后开始检测片尾'
-                    }
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    结束时间 (分:秒) - 可选
-                  </label>
-                  <input
-                    type="text"
-                    value={batchSettings.endingEnd}
-                    onChange={(e) => setBatchSettings({...batchSettings, endingEnd: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
-                    placeholder="留空直接跳下一集"
-                  />
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">空白=直接跳下一集</p>
-                </div>
+                <input
+                  type="text"
+                  value={batchSettings.openingEnd}
+                  onChange={(e) => setBatchSettings({ ...batchSettings, openingEnd: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all mb-2"
+                  placeholder="1:30"
+                />
+                <button
+                  onClick={markCurrentAsOpeningEnd}
+                  className="w-full px-4 py-2 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
+                  title="标记当前播放时间为片头结束时间"
+                >
+                  📍 标记当前时间
+                </button>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">格式: 分:秒 (如 1:30)</p>
               </div>
             </div>
 
-            <div className="mt-6 p-5 bg-linear-to-br from-gray-50/80 to-slate-50/80 dark:from-gray-700/80 dark:to-slate-700/80 rounded-xl border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm shadow-inner">
-              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <p><strong>当前播放时间:</strong> {secondsToTime(currentTime)}</p>
-                {duration > 0 && (
-                  <>
-                    <p><strong>视频总长度:</strong> {secondsToTime(duration)}</p>
-                    <p><strong>剩余时间:</strong> {secondsToTime(duration - currentTime)}</p>
-                  </>
-                )}
-                <div className="text-xs mt-3 text-gray-600 dark:text-gray-400 space-y-1 border-t border-gray-300 dark:border-gray-600 pt-2">
-                  <p className="font-semibold text-gray-700 dark:text-gray-300">📝 使用说明：</p>
-                  <p>🎬 <strong>片头设置:</strong> 播放到片头结束位置，点击"📍 标记"按钮</p>
-                  <p>🎭 <strong>片尾设置:</strong> 播放到片尾开始位置，点击"📍 标记"按钮</p>
-                  <p>💾 设置完成后点击"保存智能配置"即可</p>
-                  <p className="mt-2">💡 也可手动输入时间，支持格式: 1:30 (1分30秒) 或 90 (90秒)</p>
+            {/* 片尾设置 */}
+            <div className="space-y-4 bg-linear-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border border-purple-100/50 dark:border-purple-800/50 backdrop-blur-sm">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-purple-200/50 dark:border-purple-700/50 pb-2 flex items-center gap-2">
+                <span className="text-xl">🎭</span>
+                片尾设置
+              </h4>
+
+              {/* 片尾模式选择 */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  计时模式
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="endingMode"
+                      value="remaining"
+                      checked={batchSettings.endingMode === 'remaining'}
+                      onChange={(e) => setBatchSettings({ ...batchSettings, endingMode: e.target.value })}
+                      className="mr-2"
+                    />
+                    剩余时间（推荐）
+                  </label>
+                  <label className="flex items-center text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="endingMode"
+                      value="absolute"
+                      checked={batchSettings.endingMode === 'absolute'}
+                      onChange={(e) => setBatchSettings({ ...batchSettings, endingMode: e.target.value })}
+                      className="mr-2"
+                    />
+                    绝对时间
+                  </label>
                 </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {batchSettings.endingMode === 'remaining'
+                    ? '基于剩余时间倒计时（如：还剩2分钟时开始）'
+                    : '基于播放时间（如：播放到第20分钟时开始）'
+                  }
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  {batchSettings.endingMode === 'remaining' ? '剩余时间 (分:秒)' : '开始时间 (分:秒)'}
+                </label>
+                <input
+                  type="text"
+                  value={batchSettings.endingStart}
+                  onChange={(e) => setBatchSettings({ ...batchSettings, endingStart: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all mb-2"
+                  placeholder={batchSettings.endingMode === 'remaining' ? '2:00' : '20:00'}
+                />
+                <button
+                  onClick={markCurrentAsEndingStart}
+                  className="w-full px-4 py-2 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm"
+                  title="标记当前播放时间为片尾开始时间"
+                >
+                  📍 标记当前时间
+                </button>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">
+                  {batchSettings.endingMode === 'remaining'
+                    ? '当剩余时间达到此值时开始倒计时'
+                    : '从视频开始播放此时间后开始检测片尾'
+                  }
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  结束时间 (分:秒) - 可选
+                </label>
+                <input
+                  type="text"
+                  value={batchSettings.endingEnd}
+                  onChange={(e) => setBatchSettings({ ...batchSettings, endingEnd: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
+                  placeholder="留空直接跳下一集"
+                />
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5">空白=直接跳下一集</p>
               </div>
             </div>
+          </div>
 
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={handleSaveBatchSettings}
-                className="flex-1 px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
-              >
-                💾 保存智能配置
-              </button>
-              <button
-                onClick={handleCloseDialog}
-                className="flex-1 px-6 py-3 bg-linear-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
-              >
-                ❌ 取消
-              </button>
+          <div className="mt-6 p-5 bg-linear-to-br from-gray-50/80 to-slate-50/80 dark:from-gray-700/80 dark:to-slate-700/80 rounded-xl border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm shadow-inner">
+            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <p><strong>当前播放时间:</strong> {secondsToTime(currentTime)}</p>
+              {duration > 0 && (
+                <>
+                  <p><strong>视频总长度:</strong> {secondsToTime(duration)}</p>
+                  <p><strong>剩余时间:</strong> {secondsToTime(duration - currentTime)}</p>
+                </>
+              )}
+              <div className="text-xs mt-3 text-gray-600 dark:text-gray-400 space-y-1 border-t border-gray-300 dark:border-gray-600 pt-2">
+                <p className="font-semibold text-gray-700 dark:text-gray-300">📝 使用说明：</p>
+                <p>🎬 <strong>片头设置:</strong> 播放到片头结束位置，点击"📍 标记"按钮</p>
+                <p>🎭 <strong>片尾设置:</strong> 播放到片尾开始位置，点击"📍 标记"按钮</p>
+                <p>💾 设置完成后点击"保存智能配置"即可</p>
+                <p className="mt-2">💡 也可手动输入时间，支持格式: 1:30 (1分30秒) 或 90 (90秒)</p>
+              </div>
             </div>
+          </div>
 
-            {/* 分割线 */}
-            <div className="my-6 border-t border-gray-200 dark:border-gray-600"></div>
+          <div className="flex space-x-3 mt-6">
+            <button
+              onClick={handleSaveBatchSettings}
+              className="flex-1 px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
+            >
+              💾 保存智能配置
+            </button>
+            <button
+              onClick={handleCloseDialog}
+              className="flex-1 px-6 py-3 bg-linear-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
+            >
+              ❌ 取消
+            </button>
+          </div>
 
-            {/* 传统单个设置模式 */}
-            <details className="mb-4">
-              <summary className="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-                高级设置：添加单个片段
-              </summary>
-              <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200 dark:border-gray-600">
+          {/* 分割线 */}
+          <div className="my-6 border-t border-gray-200 dark:border-gray-600"></div>
+
+          {/* 传统单个设置模式 */}
+          <details className="mb-4">
+            <summary className="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+              高级设置：添加单个片段
+            </summary>
+            <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200 dark:border-gray-600">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                  类型
+                </label>
+                <select
+                  value={newSegment.type || ''}
+                  onChange={(e) => setNewSegment({ ...newSegment, type: e.target.value as 'opening' | 'ending' })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">选择类型</option>
+                  <option value="opening">片头</option>
+                  <option value="ending">片尾</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    类型
+                    开始时间 (秒)
                   </label>
-                  <select
-                    value={newSegment.type || ''}
-                    onChange={(e) => setNewSegment({ ...newSegment, type: e.target.value as 'opening' | 'ending' })}
+                  <input
+                    type="number"
+                    value={newSegment.start || ''}
+                    onChange={(e) => setNewSegment({ ...newSegment, start: parseFloat(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">选择类型</option>
-                    <option value="opening">片头</option>
-                    <option value="ending">片尾</option>
-                  </select>
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                      开始时间 (秒)
-                    </label>
-                    <input
-                      type="number"
-                      value={newSegment.start || ''}
-                      onChange={(e) => setNewSegment({ ...newSegment, start: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                      结束时间 (秒)
-                    </label>
-                    <input
-                      type="number"
-                      value={newSegment.end || ''}
-                      onChange={(e) => setNewSegment({ ...newSegment, end: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    结束时间 (秒)
+                  </label>
+                  <input
+                    type="number"
+                    value={newSegment.end || ''}
+                    onChange={(e) => setNewSegment({ ...newSegment, end: parseFloat(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
                 </div>
-
-                <button
-                  onClick={handleSaveSegment}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
-                >
-                  添加片段
-                </button>
               </div>
-            </details>
-          </div>
+
+              <button
+                onClick={handleSaveSegment}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+              >
+                添加片段
+              </button>
+            </div>
+          </details>
         </div>
+      </div>
     );
 
     // 如果是全屏模式且有全屏容器，使用 Portal 渲染到全屏容器内
@@ -1787,13 +1787,29 @@ export function SkipSettingsButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center space-x-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 transition-colors"
-      title="设置跳过片头片尾"
+      className='group flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-xl border border-white/30 hover:border-white/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:shadow-[0_8px_32px_0_rgba(255,255,255,0.18)] hover:scale-105 transition-all duration-300 ease-out'
+      title='跳过设置'
+      style={{
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      }}
     >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+      <svg
+        className='w-5 h-5 text-white drop-shadow-lg group-hover:rotate-90 transition-all duration-300'
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'
+      >
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
+        />
       </svg>
-      <span>跳过设置</span>
+      <span className='text-sm font-medium text-white drop-shadow-lg transition-all duration-300 hidden sm:inline'>
+        跳过设置
+      </span>
     </button>
   );
 }
