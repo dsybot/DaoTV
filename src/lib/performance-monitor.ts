@@ -24,6 +24,10 @@ const MAX_SYSTEM_METRICS = 1000;
 let dbQueryCount = 0;
 let lastDbQueryReset = Date.now();
 
+// CPU 使用率跟踪（用于计算百分比）
+let lastCpuUsage = process.cpuUsage();
+let lastCpuTime = process.hrtime.bigint();
+
 // 标记是否已从 Kvrocks 加载数据
 let dataLoaded = false;
 
@@ -131,9 +135,32 @@ export function collectSystemMetrics(): SystemMetrics {
   const memUsage = process.memoryUsage();
   const os = require('os');
 
-  // CPU 使用率计算（简化版）
-  const cpuUsage = process.cpuUsage();
-  const cpuPercent = (cpuUsage.user + cpuUsage.system) / 1000000; // 转换为秒
+  // ✅ 正确的 CPU 使用率计算
+  const currentCpuUsage = process.cpuUsage(lastCpuUsage);
+  const currentTime = process.hrtime.bigint();
+
+  // 计算时间间隔（微秒）
+  const elapsedNs = currentTime - lastCpuTime;
+  const elapsedTimeMicroseconds = Number(elapsedNs / 1000n);
+
+  // 计算 CPU 时间使用（微秒）
+  const cpuTimeUsedMicroseconds = currentCpuUsage.user + currentCpuUsage.system;
+
+  // 获取 CPU 核心数
+  const numberOfCores = os.cpus().length;
+
+  // 计算总可用 CPU 时间
+  const totalAvailableCpuTimeMicroseconds = elapsedTimeMicroseconds * numberOfCores;
+
+  // 计算 CPU 使用率百分比
+  let cpuPercent = 0;
+  if (totalAvailableCpuTimeMicroseconds > 0) {
+    cpuPercent = (cpuTimeUsedMicroseconds / totalAvailableCpuTimeMicroseconds) * 100;
+  }
+
+  // 更新上次记录的值
+  lastCpuUsage = process.cpuUsage();
+  lastCpuTime = process.hrtime.bigint();
 
   // 系统总内存和可用内存
   const totalSystemMemory = os.totalmem();
