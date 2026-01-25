@@ -384,10 +384,10 @@ export default function PerformanceMonitor() {
             <HardDrive className='w-5 h-5 text-blue-500' />
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
-            {data.currentStatus.system.memoryUsage.systemUsed.toFixed(0)} MB
+            {formatTraffic(data.currentStatus.system.memoryUsage.systemUsed * 1024 * 1024)}
           </div>
           <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-            已用 / 总共 {data.currentStatus.system.memoryUsage.systemTotal.toFixed(0)} MB
+            已用 / 总共 {formatTraffic(data.currentStatus.system.memoryUsage.systemTotal * 1024 * 1024)}
             <span className='ml-2 text-blue-600 dark:text-blue-400'>
               ({((data.currentStatus.system.memoryUsage.systemUsed / data.currentStatus.system.memoryUsage.systemTotal) * 100).toFixed(1)}%)
             </span>
@@ -460,9 +460,9 @@ export default function PerformanceMonitor() {
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
             {data?.externalTraffic ?
-              ((data.externalTraffic.totalTraffic / parseInt(timeRange) / 60) / 1024).toFixed(2) :
-              '0.00'
-            } KB
+              formatTraffic(data.externalTraffic.totalTraffic / parseInt(timeRange) / 60) :
+              '0.00 B'
+            }
           </div>
           <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
             {data?.externalTraffic && data.externalTraffic.totalRequests > 0 ? (
