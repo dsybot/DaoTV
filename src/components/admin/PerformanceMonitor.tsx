@@ -39,7 +39,7 @@ interface PerformanceData {
 export default function PerformanceMonitor() {
   const [data, setData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'1' | '24'>('24');
+  const [timeRange, setTimeRange] = useState<'1' | '24'>('1'); // 默认显示最近1小时
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [apiFilter, setApiFilter] = useState<string>('all');
 
@@ -59,6 +59,7 @@ export default function PerformanceMonitor() {
       '/api/search': '视频搜索',
       '/api/source-browser/list': '视频列表',
       '/api/detail': '视频详情',
+      '/api/danmu-external': '弹幕获取',
       '/api/admin': '管理后台',
     };
 
@@ -88,6 +89,7 @@ export default function PerformanceMonitor() {
       if (apiFilter === 'search') return req.path.startsWith('/api/search');
       if (apiFilter === 'list') return req.path.startsWith('/api/source-browser/list');
       if (apiFilter === 'detail') return req.path.startsWith('/api/detail');
+      if (apiFilter === 'danmu') return req.path.startsWith('/api/danmu-external');
       return true;
     });
   };
@@ -117,24 +119,24 @@ export default function PerformanceMonitor() {
     // 计算时间范围内的分钟数
     const minutes = parseInt(timeRange) * 60;
 
-    // 计算平均每分钟请求数
-    const requestsPerMinute = Math.round(filteredRequests.length / minutes);
+    // 计算平均每分钟请求数（保留2位小数）
+    const requestsPerMinute = Number((filteredRequests.length / minutes).toFixed(2));
 
-    // 计算平均响应时间
+    // 计算平均响应时间（保留整数）
     const avgResponseTime = Math.round(
       filteredRequests.reduce((sum: number, r: any) => sum + r.duration, 0) / filteredRequests.length
     );
 
-    // 计算平均每分钟DB查询数
+    // 计算平均每分钟DB查询数（保留2位小数）
     const totalDbQueries = filteredRequests.reduce((sum: number, r: any) => sum + r.dbQueries, 0);
-    const dbQueriesPerMinute = Math.round(totalDbQueries / minutes);
+    const dbQueriesPerMinute = Number((totalDbQueries / minutes).toFixed(2));
 
-    // 计算平均每分钟流量
+    // 计算平均每分钟流量（保留2位小数，单位：字节）
     const totalTraffic = filteredRequests.reduce(
       (sum: number, r: any) => sum + r.requestSize + r.responseSize,
       0
     );
-    const trafficPerMinute = Math.round(totalTraffic / minutes);
+    const trafficPerMinute = Number((totalTraffic / minutes).toFixed(2));
 
     return {
       requestsPerMinute,
@@ -236,6 +238,7 @@ export default function PerformanceMonitor() {
             <option value='search'>视频搜索</option>
             <option value='list'>视频列表</option>
             <option value='detail'>视频详情</option>
+            <option value='danmu'>弹幕获取</option>
             <option value='favorites'>收藏管理</option>
             <option value='playrecords'>播放记录</option>
             <option value='skipconfigs'>跳过配置</option>

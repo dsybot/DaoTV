@@ -583,9 +583,13 @@ function HomeClient() {
     };
   }, []);
 
+  // 缓存播放记录，避免重复请求
+  const [cachedPlayRecords, setCachedPlayRecords] = useState<Record<string, any>>({});
+
   // 处理收藏数据更新的函数
   const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
-    const allPlayRecords = await getAllPlayRecords();
+    // 使用缓存的播放记录，避免每次都请求API
+    const allPlayRecords = cachedPlayRecords;
 
     // 根据保存时间排序（从近到远）
     const sorted = Object.entries(allFavorites)
@@ -625,27 +629,45 @@ function HomeClient() {
     setFavoriteItems([]);
   };
 
-  // 当切换到收藏夹时加载收藏数据
+  // 组件挂载时加载收藏数据和播放记录（只执行一次）
   useEffect(() => {
-    if (activeTab !== 'favorites') return;
+    const loadData = async () => {
+      // 并行加载收藏和播放记录
+      const [allFavorites, allPlayRecords] = await Promise.all([
+        getAllFavorites(),
+        getAllPlayRecords(),
+      ]);
 
-    const loadFavorites = async () => {
-      const allFavorites = await getAllFavorites();
+      // 缓存播放记录
+      setCachedPlayRecords(allPlayRecords);
+
+      // 更新收藏列表
       await updateFavoriteItems(allFavorites);
     };
 
-    loadFavorites();
+    loadData();
 
     // 监听收藏更新事件
-    const unsubscribe = subscribeToDataUpdates(
+    const unsubscribeFavorites = subscribeToDataUpdates(
       'favoritesUpdated',
       (newFavorites: Record<string, any>) => {
         updateFavoriteItems(newFavorites);
       }
     );
 
-    return unsubscribe;
-  }, [activeTab]);
+    // 监听播放记录更新事件，更新缓存
+    const unsubscribePlayRecords = subscribeToDataUpdates(
+      'playRecordsUpdated',
+      (newPlayRecords: Record<string, any>) => {
+        setCachedPlayRecords(newPlayRecords);
+      }
+    );
+
+    return () => {
+      unsubscribeFavorites();
+      unsubscribePlayRecords();
+    };
+  }, []); // 空依赖数组，只在组件挂载时执行一次
 
   const handleCloseAnnouncement = (announcement: string) => {
     dispatch({ type: 'SET_SHOW_ANNOUNCEMENT', payload: false });
