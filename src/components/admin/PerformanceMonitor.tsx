@@ -41,6 +41,7 @@ export default function PerformanceMonitor() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'1' | '24'>('24');
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [apiFilter, setApiFilter] = useState<string>('all');
 
   // 将 API 路径转换为友好的名称
   const getApiName = (path: string): string => {
@@ -64,6 +65,20 @@ export default function PerformanceMonitor() {
     }
 
     return path;
+  };
+
+  // 过滤请求列表
+  const filterRequests = (requests: any[]) => {
+    if (apiFilter === 'all') return requests;
+
+    return requests.filter((req) => {
+      if (apiFilter === 'douban') return req.path.startsWith('/api/douban');
+      if (apiFilter === 'cron') return req.path === '/api/cron';
+      if (apiFilter === 'admin') return req.path.startsWith('/api/admin');
+      if (apiFilter === 'series') return req.path.startsWith('/api/series');
+      if (apiFilter === 'favorites') return req.path.startsWith('/api/favorites');
+      return true;
+    });
   };
 
   // 获取性能数据
@@ -142,6 +157,20 @@ export default function PerformanceMonitor() {
           >
             <option value='1'>最近 1 小时</option>
             <option value='24'>最近 24 小时</option>
+          </select>
+
+          {/* API 筛选器 */}
+          <select
+            value={apiFilter}
+            onChange={(e) => setApiFilter(e.target.value)}
+            className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800'
+          >
+            <option value='all'>全部 API</option>
+            <option value='douban'>豆瓣 API</option>
+            <option value='cron'>Cron 任务</option>
+            <option value='admin'>管理后台</option>
+            <option value='series'>剧集管理</option>
+            <option value='favorites'>收藏管理</option>
           </select>
 
           {/* 自动刷新 */}
@@ -278,7 +307,7 @@ export default function PerformanceMonitor() {
               </tr>
             </thead>
             <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-              {data.recentRequests.map((request: any, index: number) => {
+              {filterRequests(data.recentRequests).map((request: any, index: number) => {
                 const responseSizeKB = (request.responseSize / 1024).toFixed(2);
                 const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
                 const isError = request.statusCode >= 400;

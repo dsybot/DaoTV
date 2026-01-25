@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
+import { recordRequest } from '@/lib/performance-monitor';
 
 export const runtime = 'nodejs';
 
@@ -14,15 +15,34 @@ export const runtime = 'nodejs';
 let isRunning = false;
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const startMemory = process.memoryUsage().heapUsed;
+  let dbQueryCount = 0;
+
   console.log(request.url);
 
   if (isRunning) {
     console.log('⚠️ Cron job 已在运行中，跳过此次请求');
-    return NextResponse.json({
+    const alreadyRunningResponse = {
       success: false,
       message: 'Cron job already running',
       timestamp: new Date().toISOString(),
+    };
+    const responseSize = Buffer.byteLength(JSON.stringify(alreadyRunningResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/cron',
+      statusCode: 200,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize,
     });
+
+    return NextResponse.json(alreadyRunningResponse);
   }
 
   try {
@@ -31,23 +51,50 @@ export async function GET(request: NextRequest) {
 
     await cronJob();
 
-    return NextResponse.json({
+    const successResponse = {
       success: true,
       message: 'Cron job executed successfully',
       timestamp: new Date().toISOString(),
+    };
+    const successResponseSize = Buffer.byteLength(JSON.stringify(successResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/cron',
+      statusCode: 200,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: dbQueryCount,
+      requestSize: 0,
+      responseSize: successResponseSize,
     });
+
+    return NextResponse.json(successResponse);
   } catch (error) {
     console.error('Cron job failed:', error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Cron job failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    const errorResponse = {
+      success: false,
+      message: 'Cron job failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    };
+    const errorResponseSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/cron',
+      statusCode: 500,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: dbQueryCount,
+      requestSize: 0,
+      responseSize: errorResponseSize,
+    });
+
+    return NextResponse.json(errorResponse, { status: 500 });
   } finally {
     isRunning = false;
   }

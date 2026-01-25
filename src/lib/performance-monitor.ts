@@ -6,9 +6,10 @@
 
 import { RequestMetrics, HourlyMetrics, SystemMetrics } from './performance.types';
 
-// 内存中的请求数据缓存（最近1小时）
+// 内存中的请求数据缓存（最近48小时）
 const requestCache: RequestMetrics[] = [];
 const MAX_CACHE_SIZE = 10000; // 最多缓存 10000 条请求
+const MAX_CACHE_AGE = 48 * 60 * 60 * 1000; // 48 小时（毫秒）
 
 // 系统指标缓存
 const systemMetricsCache: SystemMetrics[] = [];
@@ -24,6 +25,13 @@ let lastDbQueryReset = Date.now();
 export function recordRequest(metrics: RequestMetrics): void {
   // 添加到缓存
   requestCache.push(metrics);
+
+  // 清理超过 48 小时的旧数据
+  const now = Date.now();
+  const cutoffTime = now - MAX_CACHE_AGE;
+  while (requestCache.length > 0 && requestCache[0].timestamp < cutoffTime) {
+    requestCache.shift();
+  }
 
   // 限制缓存大小，移除最旧的数据
   if (requestCache.length > MAX_CACHE_SIZE) {
