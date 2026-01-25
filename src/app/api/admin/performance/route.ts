@@ -6,9 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getRecentMetrics, getCurrentStatus, clearCache } from '@/lib/performance-monitor';
+import { getRecentMetrics, getCurrentStatus, clearCache, startAutoCollection } from '@/lib/performance-monitor';
 
 export const runtime = 'nodejs';
+
+// 启动自动数据收集
+startAutoCollection();
 
 /**
  * GET - 获取性能数据

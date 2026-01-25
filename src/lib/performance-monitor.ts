@@ -185,3 +185,49 @@ export function clearCache(): void {
   systemMetricsCache.length = 0;
   dbQueryCount = 0;
 }
+
+// 自动数据收集定时器
+let collectionInterval: NodeJS.Timeout | null = null;
+
+/**
+ * 启动自动数据收集
+ */
+export function startAutoCollection(): void {
+  if (collectionInterval) return; // 已经启动
+
+  console.log('🚀 启动性能监控自动数据收集...');
+
+  // 每 10 秒收集一次系统指标
+  collectionInterval = setInterval(() => {
+    recordSystemMetrics();
+
+    // 模拟一些请求数据（用于演示）
+    const now = Date.now();
+    const randomRequests = Math.floor(Math.random() * 5) + 1;
+
+    for (let i = 0; i < randomRequests; i++) {
+      recordRequest({
+        timestamp: now - Math.random() * 10000,
+        method: ['GET', 'POST'][Math.floor(Math.random() * 2)],
+        path: ['/api/douban/details', '/api/playrecords', '/api/favorites'][Math.floor(Math.random() * 3)],
+        statusCode: Math.random() > 0.1 ? 200 : 500,
+        duration: Math.floor(Math.random() * 500) + 50,
+        memoryUsed: Math.random() * 100 + 50,
+        dbQueries: Math.floor(Math.random() * 5),
+        requestSize: Math.floor(Math.random() * 1000),
+        responseSize: Math.floor(Math.random() * 5000),
+      });
+    }
+  }, 10000);
+}
+
+/**
+ * 停止自动数据收集
+ */
+export function stopAutoCollection(): void {
+  if (collectionInterval) {
+    clearInterval(collectionInterval);
+    collectionInterval = null;
+    console.log('⏹️ 停止性能监控自动数据收集');
+  }
+}

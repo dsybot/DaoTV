@@ -294,7 +294,7 @@ async function fetchFromMobileAPI(id: string): Promise<{
         languages: data.languages || [],
         ...(episodes > 0 && { episodes }), // 只在有值时才包含
         ...(episode_length > 0 && { episode_length }), // 只在有值时才包含
-        movie_duration,
+        ...(movie_duration > 0 && { movie_duration }), // 只在有值时才包含
         first_aired: data.pubdate?.[0] || '',
         plot_summary: data.intro || '',
         celebrities,
