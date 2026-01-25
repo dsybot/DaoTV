@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getRecentMetrics, getCurrentStatus, clearCache, startAutoCollection } from '@/lib/performance-monitor';
+import { getRecentMetrics, getRecentRequests, getCurrentStatus, clearCache, startAutoCollection } from '@/lib/performance-monitor';
 
 export const runtime = 'nodejs';
 
@@ -32,16 +32,19 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const hours = parseInt(searchParams.get('hours') || '24');
+    const limit = parseInt(searchParams.get('limit') || '100');
 
     // 获取最近 N 小时的数据
     const metrics = getRecentMetrics(hours);
     const currentStatus = getCurrentStatus();
+    const recentRequests = getRecentRequests(limit);
 
     return NextResponse.json({
       ok: true,
       data: {
         metrics,
         currentStatus,
+        recentRequests,
       },
     });
   } catch (error) {

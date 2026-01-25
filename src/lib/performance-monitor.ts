@@ -168,6 +168,14 @@ export function getRecentMetrics(hours: number): HourlyMetrics[] {
 }
 
 /**
+ * 获取最近的请求列表
+ */
+export function getRecentRequests(limit: number = 100): RequestMetrics[] {
+  // 返回最近的 N 条请求，按时间倒序
+  return requestCache.slice(-limit).reverse();
+}
+
+/**
  * 获取当前系统状态
  */
 export function getCurrentStatus() {

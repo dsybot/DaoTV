@@ -607,6 +607,10 @@ export async function GET(request: Request) {
       'X-Data-Source': 'scraper-cached',
     };
 
+    // 计算响应大小
+    const responseData = JSON.stringify(details);
+    const responseSize = Buffer.byteLength(responseData, 'utf8');
+
     // 记录成功请求
     recordRequest({
       timestamp: startTime,
@@ -616,8 +620,8 @@ export async function GET(request: Request) {
       duration: Date.now() - startTime,
       memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
       dbQueries: 0,
-      requestSize: 0,
-      responseSize: 0,
+      requestSize: 0, // GET 请求通常没有 body
+      responseSize: responseSize,
     });
 
     return NextResponse.json(details, { headers: cacheHeaders });
@@ -631,6 +635,14 @@ export async function GET(request: Request) {
               500
       );
 
+      const errorResponse = {
+        code: statusCode,
+        message: error.message,
+        error: error.code,
+        details: `获取豆瓣详情失败 (ID: ${id})`,
+      };
+      const errorResponseSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
       // 记录错误请求
       recordRequest({
         timestamp: startTime,
@@ -641,16 +653,10 @@ export async function GET(request: Request) {
         memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
         dbQueries: 0,
         requestSize: 0,
-        responseSize: 0,
+        responseSize: errorResponseSize,
       });
 
-      return NextResponse.json(
-        {
-          code: statusCode,
-          message: error.message,
-          error: error.code,
-          details: `获取豆瓣详情失败 (ID: ${id})`,
-        },
+      return NextResponse.json(errorResponse,
         {
           status: statusCode,
           headers: {
@@ -665,27 +671,51 @@ export async function GET(request: Request) {
 
     // 解析错误
     if (error instanceof Error && error.message.includes('解析')) {
-      return NextResponse.json(
-        {
-          code: 500,
-          message: '解析豆瓣数据失败，可能是页面结构已变化',
-          error: 'PARSE_ERROR',
-          details: error.message,
-        },
-        { status: 500 }
-      );
+      const parseErrorResponse = {
+        code: 500,
+        message: '解析豆瓣数据失败，可能是页面结构已变化',
+        error: 'PARSE_ERROR',
+        details: error.message,
+      };
+      const parseErrorSize = Buffer.byteLength(JSON.stringify(parseErrorResponse), 'utf8');
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/details',
+        statusCode: 500,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize: parseErrorSize,
+      });
+
+      return NextResponse.json(parseErrorResponse, { status: 500 });
     }
 
     // 未知错误
-    return NextResponse.json(
-      {
-        code: 500,
-        message: '获取豆瓣详情失败',
-        error: 'UNKNOWN_ERROR',
-        details: error instanceof Error ? error.message : '未知错误',
-      },
-      { status: 500 }
-    );
+    const unknownErrorResponse = {
+      code: 500,
+      message: '获取豆瓣详情失败',
+      error: 'UNKNOWN_ERROR',
+      details: error instanceof Error ? error.message : '未知错误',
+    };
+    const unknownErrorSize = Buffer.byteLength(JSON.stringify(unknownErrorResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/details',
+      statusCode: 500,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: unknownErrorSize,
+    });
+
+    return NextResponse.json(unknownErrorResponse, { status: 500 });
   }
 }
 

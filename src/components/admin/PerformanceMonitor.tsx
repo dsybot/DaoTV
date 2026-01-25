@@ -6,6 +6,17 @@ import { Activity, Database, Zap, HardDrive, Trash2, RefreshCw } from 'lucide-re
 
 interface PerformanceData {
   metrics: any[];
+  recentRequests: {
+    timestamp: number;
+    method: string;
+    path: string;
+    statusCode: number;
+    duration: number;
+    memoryUsed: number;
+    dbQueries: number;
+    requestSize: number;
+    responseSize: number;
+  }[];
   currentStatus: {
     system: {
       cpuUsage: number;
@@ -29,6 +40,30 @@ export default function PerformanceMonitor() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'1' | '24'>('24');
   const [autoRefresh, setAutoRefresh] = useState(false);
+
+  // 将 API 路径转换为友好的名称
+  const getApiName = (path: string): string => {
+    const apiNames: Record<string, string> = {
+      '/api/douban/details': '豆瓣详情',
+      '/api/douban/comments': '豆瓣短评',
+      '/api/douban/recommends': '豆瓣推荐',
+      '/api/douban/categories': '豆瓣分类',
+      '/api/douban': '豆瓣搜索',
+      '/api/series': '剧集管理',
+      '/api/favorites': '收藏管理',
+      '/api/admin': '管理后台',
+    };
+
+    // 精确匹配
+    if (apiNames[path]) return apiNames[path];
+
+    // 前缀匹配
+    for (const [prefix, name] of Object.entries(apiNames)) {
+      if (path.startsWith(prefix)) return name;
+    }
+
+    return path;
+  };
 
   // 获取性能数据
   const fetchData = async () => {
@@ -196,11 +231,11 @@ export default function PerformanceMonitor() {
         </div>
       </div>
 
-      {/* 历史数据表格 */}
+      {/* 最近请求列表 */}
       <div className='bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden'>
         <div className='px-6 py-4 border-b border-gray-200 dark:border-gray-700'>
           <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200'>
-            历史数据（最近 {timeRange} 小时）
+            最近请求（最新 100 条）
           </h3>
         </div>
         <div className='overflow-x-auto'>
@@ -211,66 +246,66 @@ export default function PerformanceMonitor() {
                   时间
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  总请求
+                  API 名称
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  成功率
+                  状态码
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  平均响应
+                  响应时间
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  最大响应
+                  内存
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
                   DB 查询
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  流量
+                  响应大小
                 </th>
               </tr>
             </thead>
             <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-              {data.metrics.map((metric: any, index: number) => {
-                const successRate = metric.totalRequests > 0
-                  ? ((metric.successRequests / metric.totalRequests) * 100).toFixed(1)
-                  : '0.0';
-                const trafficMB = (metric.totalTraffic / 1024 / 1024).toFixed(2);
+              {data.recentRequests.map((request: any, index: number) => {
+                const responseSizeKB = (request.responseSize / 1024).toFixed(2);
+                const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
+                const isError = request.statusCode >= 400;
 
                 return (
                   <tr key={index}>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {new Date(metric.hour).toLocaleString('zh-CN', {
+                      {new Date(request.timestamp).toLocaleString('zh-CN', {
                         month: '2-digit',
                         day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit',
+                        second: '2-digit',
                       })}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {metric.totalRequests}
+                      {getApiName(request.path)}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                      <span className={`${parseFloat(successRate) >= 95
-                        ? 'text-green-600 dark:text-green-400'
-                        : parseFloat(successRate) >= 80
-                          ? 'text-yellow-600 dark:text-yellow-400'
-                          : 'text-red-600 dark:text-red-400'
+                      <span className={`${isSuccess
+                          ? 'text-green-600 dark:text-green-400'
+                          : isError
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-yellow-600 dark:text-yellow-400'
                         }`}>
-                        {successRate}%
+                        {request.statusCode}
                       </span>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {metric.avgDuration}ms
+                      {request.duration}ms
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {metric.maxDuration}ms
+                      {request.memoryUsed.toFixed(2)} MB
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {metric.totalDbQueries}
+                      {request.dbQueries > 0 ? request.dbQueries : '-'}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {trafficMB} MB
+                      {responseSizeKB} KB
                     </td>
                   </tr>
                 );
