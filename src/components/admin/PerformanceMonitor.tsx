@@ -143,18 +143,18 @@ export default function PerformanceMonitor() {
   }
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pb-safe-bottom'>
       {/* 标题和控制按钮 */}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
         <h2 className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
           性能监控
         </h2>
-        <div className='flex items-center gap-3'>
+        <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
           {/* 时间范围选择 */}
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as '1' | '24')}
-            className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800'
+            className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 flex-shrink-0'
           >
             <option value='1'>最近 1 小时</option>
             <option value='24'>最近 24 小时</option>
@@ -164,7 +164,7 @@ export default function PerformanceMonitor() {
           <select
             value={apiFilter}
             onChange={(e) => setApiFilter(e.target.value)}
-            className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800'
+            className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 flex-shrink-0'
           >
             <option value='all'>全部 API</option>
             <option value='douban'>豆瓣 API</option>
@@ -275,85 +275,87 @@ export default function PerformanceMonitor() {
 
       {/* 最近请求列表 */}
       <div className='bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden'>
-        <div className='px-6 py-4 border-b border-gray-200 dark:border-gray-700'>
+        <div className='px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700'>
           <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200'>
             最近请求（最新 100 条）
           </h3>
         </div>
-        <div className='overflow-x-auto'>
-          <table className='w-full'>
-            <thead className='bg-gray-50 dark:bg-gray-700'>
-              <tr>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  时间
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  API 名称
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  状态码
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  响应时间
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  内存
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  DB 查询
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
-                  响应大小
-                </th>
-              </tr>
-            </thead>
-            <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-              {filterRequests(data.recentRequests).map((request: any, index: number) => {
-                const responseSizeKB = (request.responseSize / 1024).toFixed(2);
-                const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
-                const isError = request.statusCode >= 400;
+        <div className='overflow-x-auto -mx-4 sm:mx-0'>
+          <div className='inline-block min-w-full align-middle'>
+            <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+              <thead className='bg-gray-50 dark:bg-gray-700'>
+                <tr>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    时间
+                  </th>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    API 名称
+                  </th>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    状态码
+                  </th>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    响应时间
+                  </th>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    内存
+                  </th>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    DB 查询
+                  </th>
+                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                    响应大小
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                {filterRequests(data.recentRequests).map((request: any, index: number) => {
+                  const responseSizeKB = (request.responseSize / 1024).toFixed(2);
+                  const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
+                  const isError = request.statusCode >= 400;
 
-                return (
-                  <tr key={index}>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {new Date(request.timestamp).toLocaleString('zh-CN', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {getApiName(request.path)}
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                      <span className={`${isSuccess
-                        ? 'text-green-600 dark:text-green-400'
-                        : isError
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-yellow-600 dark:text-yellow-400'
-                        }`}>
-                        {request.statusCode}
-                      </span>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {request.duration}ms
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {request.memoryUsed.toFixed(2)} MB
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {request.dbQueries > 0 ? request.dbQueries : '-'}
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                      {responseSizeKB} KB
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  return (
+                    <tr key={index}>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {new Date(request.timestamp).toLocaleString('zh-CN', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })}
+                      </td>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {getApiName(request.path)}
+                      </td>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm'>
+                        <span className={`${isSuccess
+                          ? 'text-green-600 dark:text-green-400'
+                          : isError
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-yellow-600 dark:text-yellow-400'
+                          }`}>
+                          {request.statusCode}
+                        </span>
+                      </td>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {request.duration}ms
+                      </td>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {request.memoryUsed.toFixed(2)} MB
+                      </td>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {request.dbQueries > 0 ? request.dbQueries : '-'}
+                      </td>
+                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {responseSizeKB} KB
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
