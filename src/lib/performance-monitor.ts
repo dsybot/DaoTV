@@ -257,7 +257,10 @@ export async function getRecentRequests(limit: number = 100): Promise<RequestMet
 /**
  * 获取当前系统状态
  */
-export function getCurrentStatus() {
+export async function getCurrentStatus() {
+  // 首次调用时从 Kvrocks 加载历史数据
+  await loadFromKvrocks();
+
   const systemMetrics = collectSystemMetrics();
   const recentRequests = requestCache.filter(
     (r) => r.timestamp > Date.now() - 60000 // 最近1分钟
