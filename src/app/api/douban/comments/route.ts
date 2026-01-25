@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getCacheTime, getConfig } from '@/lib/config';
 import { bypassDoubanChallenge } from '@/lib/puppeteer';
 import { getRandomUserAgent } from '@/lib/user-agent';
+import { recordRequest } from '@/lib/performance-monitor';
 
 // 请求限制器
 let lastRequestTime = 0;
@@ -27,6 +28,9 @@ function isDoubanChallengePage(html: string): boolean {
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const startMemory = process.memoryUsage().heapUsed;
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const start = parseInt(searchParams.get('start') || '0');
@@ -34,6 +38,19 @@ export async function GET(request: Request) {
   const sort = searchParams.get('sort') || 'new_score'; // new_score 或 time
 
   if (!id) {
+    // 记录失败请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/comments',
+      statusCode: 400,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: 0,
+    });
+
     return NextResponse.json(
       { error: '缺少必要参数: id' },
       { status: 400 }
@@ -42,6 +59,19 @@ export async function GET(request: Request) {
 
   // 验证参数
   if (limit < 1 || limit > 50) {
+    // 记录失败请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/comments',
+      statusCode: 400,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: 0,
+    });
+
     return NextResponse.json(
       { error: 'limit 必须在 1-50 之间' },
       { status: 400 }
@@ -49,6 +79,19 @@ export async function GET(request: Request) {
   }
 
   if (start < 0) {
+    // 记录失败请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/comments',
+      statusCode: 400,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: 0,
+    });
+
     return NextResponse.json(
       { error: 'start 不能小于 0' },
       { status: 400 }
@@ -150,7 +193,7 @@ export async function GET(request: Request) {
     const comments = parseDoubanComments(html);
 
     const cacheTime = await getCacheTime();
-    return NextResponse.json({
+    const successResponse = {
       code: 200,
       message: '获取成功',
       data: {
@@ -159,7 +202,23 @@ export async function GET(request: Request) {
         limit,
         count: comments.length
       }
-    }, {
+    };
+    const successResponseSize = Buffer.byteLength(JSON.stringify(successResponse), 'utf8');
+
+    // 记录成功请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/comments',
+      statusCode: 200,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: successResponseSize,
+    });
+
+    return NextResponse.json(successResponse, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
         'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
@@ -168,10 +227,26 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: '获取豆瓣短评失败', details: (error as Error).message },
-      { status: 500 }
-    );
+    const errorResponse = {
+      error: '获取豆瓣短评失败',
+      details: (error as Error).message
+    };
+    const errorResponseSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    // 记录错误请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/comments',
+      statusCode: 500,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: errorResponseSize,
+    });
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
 

@@ -184,6 +184,12 @@ export function getCurrentStatus() {
     (r) => r.timestamp > Date.now() - 60000 // 最近1分钟
   );
 
+  // 计算流量/分钟（请求大小 + 响应大小）
+  const trafficPerMinute = recentRequests.reduce(
+    (sum, r) => sum + r.requestSize + r.responseSize,
+    0
+  );
+
   return {
     system: systemMetrics,
     requestsPerMinute: recentRequests.length,
@@ -191,6 +197,7 @@ export function getCurrentStatus() {
     avgResponseTime: recentRequests.length > 0
       ? Math.round(recentRequests.reduce((sum, r) => sum + r.duration, 0) / recentRequests.length)
       : 0,
+    trafficPerMinute, // 字节数
   };
 }
 
