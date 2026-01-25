@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const metrics = getRecentMetrics(hours);
     const currentStatus = await getCurrentStatus();
     const recentRequests = await getRecentRequests(limit, hours);
-    const externalTraffic = getExternalTrafficStats(hours);
+    const externalTraffic = await getExternalTrafficStats(hours);
 
     return NextResponse.json({
       ok: true,

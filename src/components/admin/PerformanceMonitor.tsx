@@ -85,6 +85,19 @@ export default function PerformanceMonitor() {
     return path;
   };
 
+  // 格式化流量显示（自动选择 KB/MB/GB）
+  const formatTraffic = (bytes: number): string => {
+    if (bytes < 1024) {
+      return `${bytes.toFixed(2)} B`;
+    } else if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(2)} KB`;
+    } else if (bytes < 1024 * 1024 * 1024) {
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    } else {
+      return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    }
+  };
+
   // 过滤请求列表（用于统计，不限制条数）
   const filterRequestsForStats = (requests: any[]) => {
     if (apiFilter === 'all') return requests;
@@ -352,7 +365,7 @@ export default function PerformanceMonitor() {
       </div>
 
       {/* 实时状态卡片 */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4'>
         {/* CPU 使用率 */}
         <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
           <div className='flex items-center justify-between mb-2'>
@@ -504,10 +517,10 @@ export default function PerformanceMonitor() {
                         {stats.requests}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {(stats.traffic / 1024).toFixed(2)} KB
+                        {formatTraffic(stats.traffic)}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {(stats.traffic / stats.requests / 1024).toFixed(2)} KB
+                        {formatTraffic(stats.traffic / stats.requests)}
                       </td>
                     </tr>
                   ))}
