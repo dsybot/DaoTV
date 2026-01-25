@@ -180,6 +180,13 @@ export interface AdminConfig {
   DoubanConfig?: {
     enablePuppeteer: boolean;            // 是否启用 Puppeteer 绕过 Challenge（默认 false）
   };
+  CronConfig?: {
+    enableAutoRefresh: boolean;          // 是否启用自动刷新播放记录和收藏（默认 true）
+    maxRecordsPerRun: number;            // 每次运行最多处理的记录数（默认 100）
+    onlyRefreshRecent: boolean;          // 仅刷新最近活跃的记录（默认 true）
+    recentDays: number;                  // 最近活跃的天数定义（默认 30）
+    onlyRefreshOngoing: boolean;         // 仅刷新连载中的剧集（默认 true）
+  };
 }
 
 export interface AdminConfigResult {

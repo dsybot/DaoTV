@@ -311,6 +311,15 @@ interface SiteConfig {
   LoginBgMobile?: string;
 }
 
+// Cron 配置类型
+interface CronConfig {
+  enableAutoRefresh: boolean;
+  maxRecordsPerRun: number;
+  onlyRefreshRecent: boolean;
+  recentDays: number;
+  onlyRefreshOngoing: boolean;
+}
+
 // 视频源数据类型
 interface DataSource {
   name: string;
@@ -4742,6 +4751,15 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     LoginBgMobile: '',
   });
 
+  // Cron 配置状态
+  const [cronSettings, setCronSettings] = useState<CronConfig>({
+    enableAutoRefresh: true,
+    maxRecordsPerRun: 100,
+    onlyRefreshRecent: true,
+    recentDays: 30,
+    onlyRefreshOngoing: true,
+  });
+
   // 豆瓣数据源相关状态
   const [isDoubanDropdownOpen, setIsDoubanDropdownOpen] = useState(false);
   const [isDoubanImageProxyDropdownOpen, setIsDoubanImageProxyDropdownOpen] =
@@ -4829,6 +4847,19 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     }
   }, [config]);
 
+  // 加载 Cron 配置
+  useEffect(() => {
+    if (config?.CronConfig) {
+      setCronSettings({
+        enableAutoRefresh: config.CronConfig.enableAutoRefresh ?? true,
+        maxRecordsPerRun: config.CronConfig.maxRecordsPerRun ?? 100,
+        onlyRefreshRecent: config.CronConfig.onlyRefreshRecent ?? true,
+        recentDays: config.CronConfig.recentDays ?? 30,
+        onlyRefreshOngoing: config.CronConfig.onlyRefreshOngoing ?? true,
+      });
+    }
+  }, [config]);
+
   // 点击外部区域关闭下拉框
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -4903,7 +4934,10 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dataToSave),
+          body: JSON.stringify({
+            ...dataToSave,
+            cronConfig: cronSettings, // 添加 Cron 配置
+          }),
         });
 
         if (!resp.ok) {
@@ -5239,8 +5273,8 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
               }))
             }
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${siteSettings.EnablePuppeteer
-                ? 'bg-green-600'
-                : 'bg-gray-300 dark:bg-gray-600'
+              ? 'bg-green-600'
+              : 'bg-gray-300 dark:bg-gray-600'
               }`}
           >
             <span
@@ -5252,6 +5286,148 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
           开启后可获取完整数据（演员图片、相关推荐、评论），但会增加服务器 CPU 占用。默认关闭以节省资源。
         </p>
+      </div>
+
+      {/* Cron 任务优化配置 */}
+      <div className='border-t border-gray-200 dark:border-gray-700 pt-6 mt-6'>
+        <h4 className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-4'>
+          Cron 任务优化配置
+        </h4>
+        <p className='text-sm text-gray-600 dark:text-gray-400 mb-4'>
+          优化自动刷新任务，减少外部请求，降低服务器负载和流量消耗
+        </p>
+
+        {/* 启用自动刷新 */}
+        <div className='mb-4'>
+          <label className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
+            <span>启用自动刷新</span>
+            <button
+              type='button'
+              onClick={() =>
+                setCronSettings((prev) => ({
+                  ...prev,
+                  enableAutoRefresh: !prev.enableAutoRefresh,
+                }))
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${cronSettings.enableAutoRefresh
+                  ? 'bg-green-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${cronSettings.enableAutoRefresh ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+              />
+            </button>
+          </label>
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            自动刷新播放记录和收藏的剧集更新
+          </p>
+        </div>
+
+        {/* 每次最多处理记录数 */}
+        <div className='mb-4'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            每次最多处理记录数
+          </label>
+          <input
+            type='number'
+            min={10}
+            max={1000}
+            value={cronSettings.maxRecordsPerRun}
+            onChange={(e) =>
+              setCronSettings((prev) => ({
+                ...prev,
+                maxRecordsPerRun: Number(e.target.value),
+              }))
+            }
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            限制每次 Cron 任务处理的最大记录数（10-1000）
+          </p>
+        </div>
+
+        {/* 仅刷新最近活跃 */}
+        <div className='mb-4'>
+          <label className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
+            <span>仅刷新最近活跃的记录</span>
+            <button
+              type='button'
+              onClick={() =>
+                setCronSettings((prev) => ({
+                  ...prev,
+                  onlyRefreshRecent: !prev.onlyRefreshRecent,
+                }))
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${cronSettings.onlyRefreshRecent
+                  ? 'bg-green-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${cronSettings.onlyRefreshRecent ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+              />
+            </button>
+          </label>
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            只刷新最近有活动的记录，跳过长期未观看的内容
+          </p>
+        </div>
+
+        {/* 最近活跃天数 */}
+        {cronSettings.onlyRefreshRecent && (
+          <div className='mb-4 ml-4'>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+              最近活跃天数
+            </label>
+            <input
+              type='number'
+              min={1}
+              max={365}
+              value={cronSettings.recentDays}
+              onChange={(e) =>
+                setCronSettings((prev) => ({
+                  ...prev,
+                  recentDays: Number(e.target.value),
+                }))
+              }
+              className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+            />
+            <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+              定义"最近活跃"的天数范围（1-365天）
+            </p>
+          </div>
+        )}
+
+        {/* 仅刷新连载中 */}
+        <div className='mb-4'>
+          <label className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
+            <span>仅刷新连载中的剧集</span>
+            <button
+              type='button'
+              onClick={() =>
+                setCronSettings((prev) => ({
+                  ...prev,
+                  onlyRefreshOngoing: !prev.onlyRefreshOngoing,
+                }))
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${cronSettings.onlyRefreshOngoing
+                  ? 'bg-green-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${cronSettings.onlyRefreshOngoing ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+              />
+            </button>
+          </label>
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            跳过已完结的剧集，只刷新还在更新的内容
+          </p>
+        </div>
       </div>
 
       {/* 搜索接口可拉取最大页数 */}
