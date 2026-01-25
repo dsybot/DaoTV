@@ -2,13 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { API_CONFIG, getAvailableApiSites } from '@/lib/config';
+import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const startMemory = process.memoryUsage().heapUsed;
+  resetDbQueryCount();
+
   const authInfo = getAuthInfoFromCookie(request);
   if (!authInfo || !authInfo.username) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const errorResponse = { error: 'Unauthorized' };
+    const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    await recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/source-browser/list',
+      statusCode: 401,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: getDbQueryCount(),
+      requestSize: 0,
+      responseSize: errorSize,
+    });
+
+    return NextResponse.json(errorResponse, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -17,8 +37,24 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1', 10) || 1;
 
   if (!sourceKey || !typeId) {
+    const errorResponse = { error: '缺少 source 或 type_id 参数' };
+    const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    await recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/source-browser/list',
+      statusCode: 400,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: getDbQueryCount(),
+      requestSize: 0,
+      responseSize: errorSize,
+      filter: `source=${sourceKey || 'missing'},type_id=${typeId || 'missing'}`,
+    });
+
     return NextResponse.json(
-      { error: '缺少 source 或 type_id 参数' },
+      errorResponse,
       { status: 400 }
     );
   }
@@ -27,8 +63,24 @@ export async function GET(request: NextRequest) {
     const availableSites = await getAvailableApiSites(authInfo.username);
     const source = availableSites.find((s) => s.key === sourceKey);
     if (!source) {
+      const errorResponse = { error: '你没有权限访问该资源源' };
+      const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+      await recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/source-browser/list',
+        statusCode: 403,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: getDbQueryCount(),
+        requestSize: 0,
+        responseSize: errorSize,
+        filter: `source=${sourceKey},type_id=${typeId}`,
+      });
+
       return NextResponse.json(
-        { error: '你没有权限访问该资源源' },
+        errorResponse,
         { status: 403 }
       );
     }
@@ -77,8 +129,8 @@ export async function GET(request: NextRequest) {
     const list: AppleCMSItem[] = Array.isArray(data.list)
       ? data.list
       : Array.isArray(data.data)
-      ? data.data
-      : [];
+        ? data.data
+        : [];
     const items = list
       .map((r) => ({
         id: String(r.vod_id ?? r.id ?? ''),
@@ -97,15 +149,64 @@ export async function GET(request: NextRequest) {
       limit: Number(data.limit ?? data.pageSize ?? 0),
     };
 
-    return NextResponse.json({
+    const successResponse = {
       items,
       meta,
       source: { key: source.key, name: source.name },
+    };
+    const responseSize = Buffer.byteLength(JSON.stringify(successResponse), 'utf8');
+
+    await recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/source-browser/list',
+      statusCode: 200,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: getDbQueryCount(),
+      requestSize: 0,
+      responseSize,
+      filter: `source=${sourceKey},type_id=${typeId},page=${page},items=${items.length}`,
     });
+
+    return NextResponse.json(successResponse);
   } catch (error: unknown) {
     if (error instanceof Error && error.name === 'AbortError') {
-      return NextResponse.json({ error: '请求超时' }, { status: 408 });
+      const errorResponse = { error: '请求超时' };
+      const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+      await recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/source-browser/list',
+        statusCode: 408,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: getDbQueryCount(),
+        requestSize: 0,
+        responseSize: errorSize,
+        filter: `source=${sourceKey},type_id=${typeId},page=${page}`,
+      });
+
+      return NextResponse.json(errorResponse, { status: 408 });
     }
-    return NextResponse.json({ error: '获取列表失败' }, { status: 500 });
+
+    const errorResponse = { error: '获取列表失败' };
+    const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    await recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/source-browser/list',
+      statusCode: 500,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: getDbQueryCount(),
+      requestSize: 0,
+      responseSize: errorSize,
+      filter: `source=${sourceKey},type_id=${typeId},page=${page}`,
+    });
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
