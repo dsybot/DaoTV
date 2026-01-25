@@ -278,8 +278,24 @@ export function getRecentMetrics(hours: number): HourlyMetrics[] {
  * 获取最近的请求列表
  */
 export async function getRecentRequests(limit: number = 100): Promise<RequestMetrics[]> {
-  // 首次调用时从 Kvrocks 加载数据
-  await loadFromKvrocks();
+  // 每次都尝试从 Kvrocks 加载最新数据
+  try {
+    const cached = await db.getCache(PERFORMANCE_KEY);
+    if (cached && Array.isArray(cached)) {
+      // 清空现有缓存
+      requestCache.length = 0;
+
+      // 过滤掉超过 48 小时的数据
+      const now = Date.now();
+      const cutoffTime = now - MAX_CACHE_AGE;
+      const validData = cached.filter((item: RequestMetrics) => item.timestamp >= cutoffTime);
+
+      requestCache.push(...validData);
+      console.log(`✅ 从 Kvrocks 重新加载了 ${validData.length} 条性能监控数据`);
+    }
+  } catch (error) {
+    console.error('❌ 从 Kvrocks 加载性能数据失败:', error);
+  }
 
   // 返回最近的 N 条请求，按时间倒序
   return requestCache.slice(-limit).reverse();
