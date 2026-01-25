@@ -34,6 +34,14 @@ interface PerformanceData {
     avgResponseTime: number;
     trafficPerMinute: number;
   };
+  externalTraffic: {
+    totalRequests: number;
+    totalTraffic: number;
+    requestTraffic: number;
+    responseTraffic: number;
+    avgDuration: number;
+    byDomain: Record<string, { requests: number; traffic: number }>;
+  };
 }
 
 export default function PerformanceMonitor() {
@@ -180,7 +188,7 @@ export default function PerformanceMonitor() {
     }
   };
 
-  // 性能评估函数 - 流量（针对元数据 API）
+  // 性能评估函数 - API 流量（返回给用户的流量）
   const getTrafficRating = (trafficPerMinute: number) => {
     const trafficKB = trafficPerMinute / 1024; // 转换为 KB
     if (trafficKB < 10) {
@@ -191,6 +199,20 @@ export default function PerformanceMonitor() {
       return { level: 'fair', label: '中等', color: 'text-yellow-600 dark:text-yellow-400', tip: '50-200 KB/分钟' };
     } else {
       return { level: 'poor', label: '较重', color: 'text-orange-600 dark:text-orange-400', tip: '> 200 KB/分钟' };
+    }
+  };
+
+  // 性能评估函数 - 外部流量（调用外部 API 的流量）
+  const getExternalTrafficRating = (trafficPerMinute: number) => {
+    const trafficMB = trafficPerMinute / 1024 / 1024; // 转换为 MB
+    if (trafficMB < 1) {
+      return { level: 'excellent', label: '正常', color: 'text-green-600 dark:text-green-400', tip: '< 1 MB/分钟' };
+    } else if (trafficMB < 3) {
+      return { level: 'good', label: '中等', color: 'text-blue-600 dark:text-blue-400', tip: '1-3 MB/分钟' };
+    } else if (trafficMB < 5) {
+      return { level: 'fair', label: '较高', color: 'text-yellow-600 dark:text-yellow-400', tip: '3-5 MB/分钟' };
+    } else {
+      return { level: 'poor', label: '异常高', color: 'text-red-600 dark:text-red-400', tip: '> 5 MB/分钟' };
     }
   };
 
@@ -402,7 +424,7 @@ export default function PerformanceMonitor() {
         {/* 流量/分钟 */}
         <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
           <div className='flex items-center justify-between mb-2'>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>流量/分钟</span>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>API 流量/分钟</span>
             <Activity className='w-5 h-5 text-orange-500' />
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
@@ -416,7 +438,84 @@ export default function PerformanceMonitor() {
             )}
           </div>
         </div>
+
+        {/* 外部流量/分钟 */}
+        <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between mb-2'>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>外部流量/分钟</span>
+            <Zap className='w-5 h-5 text-purple-500' />
+          </div>
+          <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
+            {data?.externalTraffic ?
+              ((data.externalTraffic.totalTraffic / parseInt(timeRange) / 60) / 1024).toFixed(2) :
+              '0.00'
+            } KB
+          </div>
+          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+            {data?.externalTraffic && data.externalTraffic.totalRequests > 0 ? (
+              <>
+                {data.externalTraffic.totalRequests} 次外部请求
+                <span className={`ml-2 font-semibold ${getExternalTrafficRating(data.externalTraffic.totalTraffic / parseInt(timeRange) / 60).color}`}>
+                  ({getExternalTrafficRating(data.externalTraffic.totalTraffic / parseInt(timeRange) / 60).label})
+                </span>
+              </>
+            ) : (
+              <span className='text-gray-400'>暂无外部请求</span>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* 外部流量详情（按域名分组） */}
+      {data?.externalTraffic && data.externalTraffic.totalRequests > 0 && (
+        <div className='bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mt-6'>
+          <div className='px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700'>
+            <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200'>
+              外部流量详情（按域名）
+            </h3>
+          </div>
+          <div className='overflow-x-auto'>
+            <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+              <thead className='bg-gray-50 dark:bg-gray-700'>
+                <tr>
+                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                    域名
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                    请求次数
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                    总流量
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                    平均流量/请求
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                {Object.entries(data.externalTraffic.byDomain)
+                  .sort((a, b) => b[1].traffic - a[1].traffic)
+                  .map(([domain, stats]) => (
+                    <tr key={domain}>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {domain}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {stats.requests}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {(stats.traffic / 1024).toFixed(2)} KB
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                        {(stats.traffic / stats.requests / 1024).toFixed(2)} KB
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* 最近请求列表 */}
       <div className='bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden'>
