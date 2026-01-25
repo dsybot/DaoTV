@@ -204,8 +204,8 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
   useEffect(() => {
     if (savedConfig?.enabled && savedConfig.serverUrl && savedConfig.authKey) {
       fetchStats(true); // 使用已保存的配置
-      // 每30秒自动刷新
-      const interval = setInterval(() => fetchStats(true), 30000);
+      // 每1小时自动刷新
+      const interval = setInterval(() => fetchStats(true), 60 * 60 * 1000);
       return () => clearInterval(interval);
     }
   }, [savedConfig?.enabled, savedConfig?.serverUrl, savedConfig?.authKey]);
@@ -329,11 +329,10 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
             {isTesting ? '测试中...' : '测试连接'}
           </button>
           {testResult && (
-            <div className={`mt-3 p-3 rounded-lg flex items-start gap-2 ${
-              testResult.success
+            <div className={`mt-3 p-3 rounded-lg flex items-start gap-2 ${testResult.success
                 ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
                 : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
-            }`}>
+              }`}>
               {testResult.success ? (
                 <CheckCircle className='w-5 h-5 shrink-0' />
               ) : (
@@ -347,11 +346,10 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
 
       {/* 消息提示 */}
       {message && (
-        <div className={`flex items-center gap-2 p-4 rounded-lg ${
-          message.type === 'success'
+        <div className={`flex items-center gap-2 p-4 rounded-lg ${message.type === 'success'
             ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
             : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
-        }`}>
+          }`}>
           {message.type === 'success' ? (
             <CheckCircle className='w-5 h-5 shrink-0' />
           ) : (
@@ -444,8 +442,8 @@ const WatchRoomConfig = ({ config, refreshConfig }: WatchRoomConfigProps) => {
                       const timeText = diffMinutes < 60
                         ? `${diffMinutes}分钟前`
                         : diffMinutes < 1440
-                        ? `${Math.floor(diffMinutes / 60)}小时前`
-                        : `${Math.floor(diffMinutes / 1440)}天前`;
+                          ? `${Math.floor(diffMinutes / 60)}小时前`
+                          : `${Math.floor(diffMinutes / 1440)}天前`;
 
                       return (
                         <div

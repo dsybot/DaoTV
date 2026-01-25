@@ -65,8 +65,8 @@ export default function WatchRoomPage() {
   useEffect(() => {
     if (activeTab === 'list') {
       loadRooms();
-      // 每5秒刷新一次
-      const interval = setInterval(loadRooms, 5000);
+      // 每1小时刷新一次
+      const interval = setInterval(loadRooms, 60 * 60 * 1000);
       return () => clearInterval(interval);
     }
   }, [activeTab, isConnected]);
@@ -253,10 +253,9 @@ export default function WatchRoomPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap
-                  ${
-                    activeTab === tab.id
-                      ? 'text-indigo-600 dark:text-indigo-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  ${activeTab === tab.id
+                    ? 'text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                   }
                 `}
               >
@@ -390,77 +389,77 @@ export default function WatchRoomPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleCreateRoom} className="space-y-4">
-                  {/* 显示当前用户 */}
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800">
-                    <p className="text-sm text-indigo-800 dark:text-indigo-200">
-                      <strong>当前用户：</strong>{currentUsername}
-                    </p>
-                  </div>
+                    {/* 显示当前用户 */}
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800">
+                      <p className="text-sm text-indigo-800 dark:text-indigo-200">
+                        <strong>当前用户：</strong>{currentUsername}
+                      </p>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      房间名称 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={createForm.roomName}
-                      onChange={(e) => setCreateForm({ ...createForm, roomName: e.target.value })}
-                      placeholder="请输入房间名称"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      maxLength={50}
-                      required
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        房间名称 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.roomName}
+                        onChange={(e) => setCreateForm({ ...createForm, roomName: e.target.value })}
+                        placeholder="请输入房间名称"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        maxLength={50}
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      房间描述
-                    </label>
-                    <textarea
-                      value={createForm.description}
-                      onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                      placeholder="请输入房间描述（可选）"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                      rows={3}
-                      maxLength={200}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        房间描述
+                      </label>
+                      <textarea
+                        value={createForm.description}
+                        onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                        placeholder="请输入房间描述（可选）"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                        rows={3}
+                        maxLength={200}
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      房间密码
-                    </label>
-                    <input
-                      type="password"
-                      value={createForm.password}
-                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                      placeholder="留空表示无需密码"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      maxLength={20}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        房间密码
+                      </label>
+                      <input
+                        type="password"
+                        value={createForm.password}
+                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                        placeholder="留空表示无需密码"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        maxLength={20}
+                      />
+                    </div>
 
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="isPublic"
-                      checked={createForm.isPublic}
-                      onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
-                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
-                      在房间列表中公开显示
-                    </label>
-                  </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="isPublic"
+                        checked={createForm.isPublic}
+                        onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
+                        在房间列表中公开显示
+                      </label>
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={createLoading || !createForm.roomName.trim()}
-                    className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
-                  >
-                    {createLoading ? '创建中...' : '创建房间'}
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      disabled={createLoading || !createForm.roomName.trim()}
+                      className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                    >
+                      {createLoading ? '创建中...' : '创建房间'}
+                    </button>
+                  </form>
                 )}
               </div>
 
@@ -595,50 +594,50 @@ export default function WatchRoomPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleJoinRoom} className="space-y-4">
-                  {/* 显示当前用户 */}
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                    <p className="text-sm text-green-800 dark:text-green-200">
-                      <strong>当前用户：</strong>{currentUsername}
-                    </p>
-                  </div>
+                    {/* 显示当前用户 */}
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        <strong>当前用户：</strong>{currentUsername}
+                      </p>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      房间号 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={joinForm.roomId}
-                      onChange={(e) => setJoinForm({ ...joinForm, roomId: e.target.value.toUpperCase() })}
-                      placeholder="请输入6位房间号"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-green-500"
-                      maxLength={6}
-                      required
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        房间号 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={joinForm.roomId}
+                        onChange={(e) => setJoinForm({ ...joinForm, roomId: e.target.value.toUpperCase() })}
+                        placeholder="请输入6位房间号"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-green-500"
+                        maxLength={6}
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      房间密码
-                    </label>
-                    <input
-                      type="password"
-                      value={joinForm.password}
-                      onChange={(e) => setJoinForm({ ...joinForm, password: e.target.value })}
-                      placeholder="如果房间有密码，请输入"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      maxLength={20}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        房间密码
+                      </label>
+                      <input
+                        type="password"
+                        value={joinForm.password}
+                        onChange={(e) => setJoinForm({ ...joinForm, password: e.target.value })}
+                        placeholder="如果房间有密码，请输入"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        maxLength={20}
+                      />
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={joinLoading || !joinForm.roomId.trim()}
-                    className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
-                  >
-                    {joinLoading ? '加入中...' : '加入房间'}
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      disabled={joinLoading || !joinForm.roomId.trim()}
+                      className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                    >
+                      {joinLoading ? '加入中...' : '加入房间'}
+                    </button>
+                  </form>
                 )}
               </div>
 

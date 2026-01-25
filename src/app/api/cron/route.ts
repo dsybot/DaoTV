@@ -7,7 +7,7 @@ import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
-import { recordRequest } from '@/lib/performance-monitor';
+import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +17,9 @@ let isRunning = false;
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const startMemory = process.memoryUsage().heapUsed;
-  let dbQueryCount = 0;
+
+  // Reset DB query counter at the start
+  resetDbQueryCount();
 
   console.log(request.url);
 
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
       statusCode: 200,
       duration: Date.now() - startTime,
       memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-      dbQueries: 0,
+      dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize,
     });
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
       statusCode: 200,
       duration: Date.now() - startTime,
       memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-      dbQueries: dbQueryCount,
+      dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: successResponseSize,
     });
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest) {
       statusCode: 500,
       duration: Date.now() - startTime,
       memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-      dbQueries: dbQueryCount,
+      dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorResponseSize,
     });

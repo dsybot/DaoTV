@@ -122,7 +122,7 @@ export default function PerformanceMonitor() {
   useEffect(() => {
     if (!autoRefresh) return;
 
-    const interval = setInterval(fetchData, 30000); // 每30秒刷新
+    const interval = setInterval(fetchData, 60 * 60 * 1000); // 每1小时刷新
     return () => clearInterval(interval);
   }, [autoRefresh, timeRange]);
 

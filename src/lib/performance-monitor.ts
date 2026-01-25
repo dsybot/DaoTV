@@ -28,6 +28,28 @@ let lastDbQueryReset = Date.now();
 let dataLoaded = false;
 
 /**
+ * 增加数据库查询计数（由 db 模块调用）
+ */
+export function incrementDbQuery(): void {
+  dbQueryCount++;
+}
+
+/**
+ * 获取当前 DB 查询计数
+ */
+export function getDbQueryCount(): number {
+  return dbQueryCount;
+}
+
+/**
+ * 重置 DB 查询计数
+ */
+export function resetDbQueryCount(): void {
+  dbQueryCount = 0;
+  lastDbQueryReset = Date.now();
+}
+
+/**
  * 从 Kvrocks 加载历史数据到内存
  */
 async function loadFromKvrocks(): Promise<void> {
@@ -86,13 +108,6 @@ export function recordRequest(metrics: RequestMetrics): void {
   saveToKvrocks().catch((error) => {
     console.error('❌ 保存性能数据到 Kvrocks 失败:', error);
   });
-}
-
-/**
- * 增加数据库查询计数
- */
-export function incrementDbQuery(): void {
-  dbQueryCount++;
 }
 
 /**
@@ -281,10 +296,10 @@ export function startAutoCollection(): void {
 
   console.log('🚀 启动性能监控自动数据收集...');
 
-  // 每 10 秒收集一次系统指标
+  // 每 1 小时收集一次系统指标
   collectionInterval = setInterval(() => {
     recordSystemMetrics();
-  }, 10000);
+  }, 60 * 60 * 1000); // 1小时
 }
 
 /**
