@@ -93,9 +93,13 @@ async function saveToKvrocks(): Promise<void> {
 /**
  * 记录单次请求的性能数据
  */
-export async function recordRequest(metrics: RequestMetrics): Promise<void> {
-  // 首次调用时从 Kvrocks 加载历史数据
-  await loadFromKvrocks();
+export function recordRequest(metrics: RequestMetrics): void {
+  // 首次调用时从 Kvrocks 加载历史数据（异步，不阻塞）
+  if (!dataLoaded) {
+    loadFromKvrocks().catch(err => {
+      console.error('❌ 加载性能数据失败:', err);
+    });
+  }
 
   // 添加到缓存
   requestCache.push(metrics);
