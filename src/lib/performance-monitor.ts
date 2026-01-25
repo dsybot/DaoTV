@@ -94,6 +94,8 @@ async function saveToKvrocks(): Promise<void> {
  * 记录单次请求的性能数据
  */
 export function recordRequest(metrics: RequestMetrics): void {
+  console.log(`📝 [Performance] 记录请求: ${metrics.method} ${metrics.path} (${metrics.statusCode})`);
+
   // 首次调用时从 Kvrocks 加载历史数据（异步，不阻塞）
   if (!dataLoaded) {
     loadFromKvrocks().catch(err => {
@@ -103,6 +105,7 @@ export function recordRequest(metrics: RequestMetrics): void {
 
   // 添加到缓存
   requestCache.push(metrics);
+  console.log(`📊 [Performance] 当前缓存数量: ${requestCache.length}`);
 
   // 清理超过 48 小时的旧数据
   const now = Date.now();
