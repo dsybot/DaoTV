@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorSize,
-      filter: `source=${sourceKey || 'missing'},type_id=${typeId || 'missing'}`,
     });
 
     return NextResponse.json(
@@ -76,7 +75,7 @@ export async function GET(request: NextRequest) {
         dbQueries: getDbQueryCount(),
         requestSize: 0,
         responseSize: errorSize,
-        filter: `source=${sourceKey},type_id=${typeId}`,
+        filter: `source:${sourceKey}`,
       });
 
       return NextResponse.json(
@@ -97,8 +96,24 @@ export async function GET(request: NextRequest) {
     });
     clearTimeout(timeoutId);
     if (!res.ok) {
+      const errorResponse = { error: `上游返回错误: ${res.status}` };
+      const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+      await recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/source-browser/list',
+        statusCode: res.status,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: getDbQueryCount(),
+        requestSize: 0,
+        responseSize: errorSize,
+        filter: `source:${sourceKey}`,
+      });
+
       return NextResponse.json(
-        { error: `上游返回错误: ${res.status}` },
+        errorResponse,
         { status: res.status }
       );
     }
@@ -166,7 +181,7 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize,
-      filter: `source=${sourceKey},type_id=${typeId},page=${page},items=${items.length}`,
+      filter: `source:${sourceKey}`,
     });
 
     return NextResponse.json(successResponse);
@@ -185,7 +200,6 @@ export async function GET(request: NextRequest) {
         dbQueries: getDbQueryCount(),
         requestSize: 0,
         responseSize: errorSize,
-        filter: `source=${sourceKey},type_id=${typeId},page=${page}`,
       });
 
       return NextResponse.json(errorResponse, { status: 408 });
@@ -204,7 +218,6 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorSize,
-      filter: `source=${sourceKey},type_id=${typeId},page=${page}`,
     });
 
     return NextResponse.json(errorResponse, { status: 500 });

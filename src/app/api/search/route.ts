@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
 
   if (!query) {
     const cacheTime = await getCacheTime();
-    const emptyResponse = { results: [] };
-    const responseSize = Buffer.byteLength(JSON.stringify(emptyResponse), 'utf8');
+    const successResponse = { results: [] };
+    const responseSize = Buffer.byteLength(JSON.stringify(successResponse), 'utf8');
 
     await recordRequest({
       timestamp: startTime,
@@ -54,11 +54,11 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize,
-      filter: `query=empty`,
+      filter: 'empty-query',
     });
 
     return NextResponse.json(
-      emptyResponse,
+      successResponse,
       {
         headers: {
           'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         dbQueries: getDbQueryCount(),
         requestSize: 0,
         responseSize,
-        filter: `query=${query}`,
+        filter: `query:${query}`,
       });
 
       return NextResponse.json(emptyResponse, { status: 200 });
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize,
-      filter: `query=${query},results=${flattenedResults.length}`,
+      filter: `query:${query}`,
     });
 
     return NextResponse.json(
@@ -166,7 +166,6 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorSize,
-      filter: `query=${query || 'unknown'}`,
     });
 
     return NextResponse.json(errorResponse, { status: 500 });

@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorSize,
-      filter: `source=${sourceCode || 'missing'},id=${id || 'missing'}`,
     });
 
     return NextResponse.json(errorResponse, { status: 400 });
@@ -70,7 +69,7 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorSize,
-      filter: `source=${sourceCode},id=${id}`,
+      filter: `id:${id}`,
     });
 
     return NextResponse.json(errorResponse, { status: 400 });
@@ -94,7 +93,7 @@ export async function GET(request: NextRequest) {
         dbQueries: getDbQueryCount(),
         requestSize: 0,
         responseSize: errorSize,
-        filter: `source=${sourceCode},id=${id}`,
+        filter: `source:${sourceCode}`,
       });
 
       return NextResponse.json(errorResponse, { status: 400 });
@@ -124,7 +123,7 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize,
-      filter: `source=${sourceCode},id=${id}`,
+      filter: `source:${sourceCode}|id:${id}`,
     });
 
     return NextResponse.json(result, {
@@ -144,7 +143,6 @@ export async function GET(request: NextRequest) {
       dbQueries: getDbQueryCount(),
       requestSize: 0,
       responseSize: errorSize,
-      filter: `source=${sourceCode},id=${id}`,
     });
 
     return NextResponse.json(
