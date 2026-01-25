@@ -279,10 +279,18 @@ export function getCurrentStatus() {
 /**
  * 清空缓存数据
  */
-export function clearCache(): void {
+export async function clearCache(): Promise<void> {
   requestCache.length = 0;
   systemMetricsCache.length = 0;
   dbQueryCount = 0;
+
+  // 同时删除 Kvrocks 中的持久化数据
+  try {
+    await db.deleteCache(PERFORMANCE_KEY);
+    console.log('✅ 已清空 Kvrocks 中的性能监控数据');
+  } catch (error) {
+    console.error('❌ 清空 Kvrocks 数据失败:', error);
+  }
 }
 
 // 自动数据收集定时器

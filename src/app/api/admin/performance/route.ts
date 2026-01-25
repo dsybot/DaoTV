@@ -74,7 +74,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 清空缓存
-    clearCache();
+    await clearCache();
 
     return NextResponse.json({
       ok: true,
