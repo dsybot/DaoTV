@@ -5,11 +5,16 @@
  */
 
 import { RequestMetrics, HourlyMetrics, SystemMetrics } from './performance.types';
+import { db } from './db';
 
 // 内存中的请求数据缓存（最近48小时）
 const requestCache: RequestMetrics[] = [];
 const MAX_CACHE_SIZE = 10000; // 最多缓存 10000 条请求
 const MAX_CACHE_AGE = 48 * 60 * 60 * 1000; // 48 小时（毫秒）
+
+// Kvrocks 存储 key
+const PERFORMANCE_KEY = 'performance:requests';
+const PERFORMANCE_LOADED = 'performance:loaded';
 
 // 系统指标缓存
 const systemMetricsCache: SystemMetrics[] = [];
@@ -18,6 +23,45 @@ const MAX_SYSTEM_METRICS = 1000;
 // 数据库查询计数器
 let dbQueryCount = 0;
 let lastDbQueryReset = Date.now();
+
+// 标记是否已从 Kvrocks 加载数据
+let dataLoaded = false;
+
+/**
+ * 从 Kvrocks 加载历史数据到内存
+ */
+async function loadFromKvrocks(): Promise<void> {
+  if (dataLoaded) return;
+
+  try {
+    const cached = await db.getCache(PERFORMANCE_KEY);
+    if (cached && Array.isArray(cached)) {
+      // 过滤掉超过 48 小时的数据
+      const now = Date.now();
+      const cutoffTime = now - MAX_CACHE_AGE;
+      const validData = cached.filter((item: RequestMetrics) => item.timestamp >= cutoffTime);
+
+      requestCache.push(...validData);
+      console.log(`✅ 从 Kvrocks 加载了 ${validData.length} 条性能监控数据`);
+    }
+    dataLoaded = true;
+  } catch (error) {
+    console.error('❌ 从 Kvrocks 加载性能数据失败:', error);
+    dataLoaded = true; // 即使失败也标记为已加载，避免重复尝试
+  }
+}
+
+/**
+ * 保存数据到 Kvrocks
+ */
+async function saveToKvrocks(): Promise<void> {
+  try {
+    // 保存整个 requestCache 到 Kvrocks，不设置过期时间（手动管理 48 小时清理）
+    await db.setCache(PERFORMANCE_KEY, requestCache);
+  } catch (error) {
+    console.error('❌ 保存性能数据到 Kvrocks 失败:', error);
+  }
+}
 
 /**
  * 记录单次请求的性能数据
@@ -37,6 +81,11 @@ export function recordRequest(metrics: RequestMetrics): void {
   if (requestCache.length > MAX_CACHE_SIZE) {
     requestCache.shift();
   }
+
+  // 异步保存到 Kvrocks（不阻塞主流程）
+  saveToKvrocks().catch((error) => {
+    console.error('❌ 保存性能数据到 Kvrocks 失败:', error);
+  });
 }
 
 /**
@@ -178,7 +227,10 @@ export function getRecentMetrics(hours: number): HourlyMetrics[] {
 /**
  * 获取最近的请求列表
  */
-export function getRecentRequests(limit: number = 100): RequestMetrics[] {
+export async function getRecentRequests(limit: number = 100): Promise<RequestMetrics[]> {
+  // 首次调用时从 Kvrocks 加载数据
+  await loadFromKvrocks();
+
   // 返回最近的 N 条请求，按时间倒序
   return requestCache.slice(-limit).reverse();
 }

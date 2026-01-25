@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     // 获取最近 N 小时的数据
     const metrics = getRecentMetrics(hours);
     const currentStatus = getCurrentStatus();
-    const recentRequests = getRecentRequests(limit);
+    const recentRequests = await getRecentRequests(limit);
 
     return NextResponse.json({
       ok: true,

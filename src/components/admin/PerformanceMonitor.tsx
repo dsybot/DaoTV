@@ -51,6 +51,7 @@ export default function PerformanceMonitor() {
       '/api/douban/recommends': '豆瓣推荐',
       '/api/douban/categories': '豆瓣分类',
       '/api/douban': '豆瓣搜索',
+      '/api/cron': 'Cron 任务',
       '/api/series': '剧集管理',
       '/api/favorites': '收藏管理',
       '/api/admin': '管理后台',
