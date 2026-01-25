@@ -13,6 +13,9 @@ interface PerformanceData {
         heapUsed: number;
         heapTotal: number;
         rss: number;
+        systemTotal: number;
+        systemUsed: number;
+        systemFree: number;
       };
     };
     requestsPerMinute: number;
@@ -108,11 +111,10 @@ export default function PerformanceMonitor() {
           {/* 自动刷新 */}
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-              autoRefresh
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
+            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${autoRefresh
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
           >
             <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
             自动刷新
@@ -154,14 +156,17 @@ export default function PerformanceMonitor() {
         {/* 内存使用 */}
         <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
           <div className='flex items-center justify-between mb-2'>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>内存使用</span>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>系统内存</span>
             <HardDrive className='w-5 h-5 text-blue-500' />
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
-            {data.currentStatus.system.memoryUsage.heapUsed.toFixed(0)} MB
+            {data.currentStatus.system.memoryUsage.systemUsed.toFixed(0)} MB
           </div>
           <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-            / {data.currentStatus.system.memoryUsage.heapTotal.toFixed(0)} MB
+            已用 / 总共 {data.currentStatus.system.memoryUsage.systemTotal.toFixed(0)} MB
+            <span className='ml-2 text-blue-600 dark:text-blue-400'>
+              ({((data.currentStatus.system.memoryUsage.systemUsed / data.currentStatus.system.memoryUsage.systemTotal) * 100).toFixed(1)}%)
+            </span>
           </div>
         </div>
 
@@ -246,13 +251,12 @@ export default function PerformanceMonitor() {
                       {metric.totalRequests}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                      <span className={`${
-                        parseFloat(successRate) >= 95
-                          ? 'text-green-600 dark:text-green-400'
-                          : parseFloat(successRate) >= 80
+                      <span className={`${parseFloat(successRate) >= 95
+                        ? 'text-green-600 dark:text-green-400'
+                        : parseFloat(successRate) >= 80
                           ? 'text-yellow-600 dark:text-yellow-400'
                           : 'text-red-600 dark:text-red-400'
-                      }`}>
+                        }`}>
                         {successRate}%
                       </span>
                     </td>

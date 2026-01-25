@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getCacheTime, getConfig } from '@/lib/config';
 import { bypassDoubanChallenge } from '@/lib/puppeteer';
 import { getRandomUserAgent, getRandomUserAgentWithInfo, getSecChUaHeaders, DEFAULT_USER_AGENT } from '@/lib/user-agent';
+import { recordRequest } from '@/lib/performance-monitor';
 
 // ============================================================================
 // 移动端API数据获取（预告片和高清图片）
@@ -535,11 +536,27 @@ export const scrapeDoubanDetails = unstable_cache(
 );
 
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const startMemory = process.memoryUsage().heapUsed;
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const noCache = searchParams.get('nocache') === '1' || searchParams.get('debug') === '1';
 
   if (!id) {
+    // 记录失败请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/details',
+      statusCode: 400,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: 0,
+    });
+
     return NextResponse.json(
       {
         code: 400,
@@ -590,6 +607,19 @@ export async function GET(request: Request) {
       'X-Data-Source': 'scraper-cached',
     };
 
+    // 记录成功请求
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/details',
+      statusCode: 200,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: 0,
+    });
+
     return NextResponse.json(details, { headers: cacheHeaders });
   } catch (error) {
     // 处理 DoubanError
@@ -600,6 +630,19 @@ export async function GET(request: Request) {
             error.code === 'SERVER_ERROR' ? 502 :
               500
       );
+
+      // 记录错误请求
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/details',
+        statusCode,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize: 0,
+      });
 
       return NextResponse.json(
         {

@@ -46,6 +46,9 @@ export interface SystemMetrics {
     heapTotal: number;         // 堆内存总量（MB）
     rss: number;               // 常驻内存（MB）
     external: number;          // C++ 对象内存（MB）
+    systemTotal: number;       // 系统总内存（MB）
+    systemUsed: number;        // 系统已用内存（MB）
+    systemFree: number;        // 系统可用内存（MB）
   };
   eventLoopDelay: number;      // 事件循环延迟（毫秒）
 }

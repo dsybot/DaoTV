@@ -53,10 +53,16 @@ export function getAndResetDbQueryCount(): number {
  */
 export function collectSystemMetrics(): SystemMetrics {
   const memUsage = process.memoryUsage();
+  const os = require('os');
 
   // CPU 使用率计算（简化版）
   const cpuUsage = process.cpuUsage();
   const cpuPercent = (cpuUsage.user + cpuUsage.system) / 1000000; // 转换为秒
+
+  // 系统总内存和可用内存
+  const totalSystemMemory = os.totalmem();
+  const freeSystemMemory = os.freemem();
+  const usedSystemMemory = totalSystemMemory - freeSystemMemory;
 
   return {
     timestamp: Date.now(),
@@ -66,6 +72,9 @@ export function collectSystemMetrics(): SystemMetrics {
       heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024 * 100) / 100,
       rss: Math.round(memUsage.rss / 1024 / 1024 * 100) / 100,
       external: Math.round(memUsage.external / 1024 / 1024 * 100) / 100,
+      systemTotal: Math.round(totalSystemMemory / 1024 / 1024 * 100) / 100,
+      systemUsed: Math.round(usedSystemMemory / 1024 / 1024 * 100) / 100,
+      systemFree: Math.round(freeSystemMemory / 1024 / 1024 * 100) / 100,
     },
     eventLoopDelay: 0, // 暂时设为 0，后续可以用 perf_hooks 实现
   };
