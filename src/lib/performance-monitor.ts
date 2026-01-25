@@ -80,11 +80,11 @@ async function loadFromKvrocks(): Promise<void> {
 /**
  * 保存数据到 Kvrocks
  */
-async function saveToKvrocks(): Promise<void> {
+async function saveToKvrocks(snapshot: RequestMetrics[]): Promise<void> {
   try {
-    // 保存整个 requestCache 到 Kvrocks，不设置过期时间（手动管理 48 小时清理）
-    console.log(`💾 [Performance] 保存 ${requestCache.length} 条数据到 Kvrocks`);
-    await db.setCache(PERFORMANCE_KEY, requestCache);
+    // 保存数据快照到 Kvrocks，不设置过期时间（手动管理 48 小时清理）
+    console.log(`💾 [Performance] 保存 ${snapshot.length} 条数据到 Kvrocks`);
+    await db.setCache(PERFORMANCE_KEY, snapshot);
   } catch (error) {
     console.error('❌ 保存性能数据到 Kvrocks 失败:', error);
   }
@@ -119,8 +119,9 @@ export function recordRequest(metrics: RequestMetrics): void {
     requestCache.shift();
   }
 
-  // 异步保存到 Kvrocks（不阻塞主流程）
-  saveToKvrocks().catch((error) => {
+  // 创建当前缓存的快照，然后异步保存到 Kvrocks（不阻塞主流程）
+  const snapshot = [...requestCache];
+  saveToKvrocks(snapshot).catch((error) => {
     console.error('❌ 保存性能数据到 Kvrocks 失败:', error);
   });
 }
@@ -281,20 +282,20 @@ export function getRecentMetrics(hours: number): HourlyMetrics[] {
  * 获取最近的请求列表
  */
 export async function getRecentRequests(limit: number = 100): Promise<RequestMetrics[]> {
-  // 每次都尝试从 Kvrocks 加载最新数据
+  // 从 Kvrocks 加载最新数据
   try {
     const cached = await db.getCache(PERFORMANCE_KEY);
     if (cached && Array.isArray(cached)) {
-      // 清空现有缓存
-      requestCache.length = 0;
-
       // 过滤掉超过 48 小时的数据
       const now = Date.now();
       const cutoffTime = now - MAX_CACHE_AGE;
       const validData = cached.filter((item: RequestMetrics) => item.timestamp >= cutoffTime);
 
+      // 更新内存缓存
+      requestCache.length = 0;
       requestCache.push(...validData);
-      console.log(`✅ 从 Kvrocks 重新加载了 ${validData.length} 条性能监控数据`);
+
+      console.log(`✅ 从 Kvrocks 加载了 ${validData.length} 条性能监控数据`);
     }
   } catch (error) {
     console.error('❌ 从 Kvrocks 加载性能数据失败:', error);
