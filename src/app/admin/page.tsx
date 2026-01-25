@@ -297,6 +297,7 @@ interface SiteConfig {
   ShowAdultContent: boolean;
   FluidSearch: boolean;
   EnablePuppeteer: boolean; // 豆瓣 Puppeteer 开关
+  DoubanCookies?: string; // 豆瓣认证 Cookies
   // TMDB配置
   TMDBApiKey?: string;  // 单个API Key（向后兼容）
   TMDBApiKeys?: string[];  // 多个API Key（轮询使用）
@@ -4737,6 +4738,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
     ShowAdultContent: false,
     FluidSearch: true,
     EnablePuppeteer: false, // 默认关闭 Puppeteer
+    DoubanCookies: '', // 默认无 Cookies
     // TMDB配置默认值
     TMDBApiKey: '',
     TMDBApiKeys: [],
@@ -4828,6 +4830,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         DoubanImageProxy: config.SiteConfig.DoubanImageProxy || '',
         DoubanDetailProxy: config.SiteConfig.DoubanDetailProxy || '',
         EnablePuppeteer: config.DoubanConfig?.enablePuppeteer || false,
+        DoubanCookies: config.DoubanConfig?.cookies || '',
         DisableYellowFilter: config.SiteConfig.DisableYellowFilter || false,
         ShowAdultContent: config.SiteConfig.ShowAdultContent || false,
         FluidSearch: config.SiteConfig.FluidSearch || true,
@@ -5288,6 +5291,28 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         </p>
       </div>
 
+      {/* 豆瓣 Cookies 设置 */}
+      <div>
+        <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+          豆瓣认证 Cookies（推荐）
+        </label>
+        <textarea
+          value={siteSettings.DoubanCookies || ''}
+          onChange={(e) =>
+            setSiteSettings((prev) => ({
+              ...prev,
+              DoubanCookies: e.target.value,
+            }))
+          }
+          placeholder='bid=xxx; dbcl2="xxx"; ck=xxx; frodotk_db="xxx"; ...'
+          rows={3}
+          className='w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:border-gray-400 dark:hover:border-gray-500 font-mono'
+        />
+        <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+          配置豆瓣认证 Cookies 后可直接访问 Web 页面，无需 Puppeteer。需包含 <code className='px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded'>dbcl2</code>、<code className='px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded'>frodotk_db</code>、<code className='px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded'>ck</code> 等关键字段。
+        </p>
+      </div>
+
       {/* Cron 任务优化配置 */}
       <div className='border-t border-gray-200 dark:border-gray-700 pt-6 mt-6'>
         <h4 className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-4'>
@@ -5310,8 +5335,8 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 }))
               }
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${cronSettings.enableAutoRefresh
-                  ? 'bg-green-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                ? 'bg-green-600'
+                : 'bg-gray-300 dark:bg-gray-600'
                 }`}
             >
               <span
@@ -5361,8 +5386,8 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 }))
               }
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${cronSettings.onlyRefreshRecent
-                  ? 'bg-green-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                ? 'bg-green-600'
+                : 'bg-gray-300 dark:bg-gray-600'
                 }`}
             >
               <span
@@ -5414,8 +5439,8 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
                 }))
               }
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${cronSettings.onlyRefreshOngoing
-                  ? 'bg-green-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                ? 'bg-green-600'
+                : 'bg-gray-300 dark:bg-gray-600'
                 }`}
             >
               <span

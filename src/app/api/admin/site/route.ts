@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       ShowAdultContent,
       FluidSearch,
       EnablePuppeteer,
+      DoubanCookies,
       TMDBApiKey,
       TMDBApiKeys,
       TMDBLanguage,
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
       ShowAdultContent: boolean;
       FluidSearch: boolean;
       EnablePuppeteer: boolean;
+      DoubanCookies?: string;
       TMDBApiKey?: string;
       TMDBApiKeys?: string[];
       TMDBLanguage?: string;
@@ -157,6 +159,7 @@ export async function POST(request: NextRequest) {
       };
     }
     adminConfig.DoubanConfig.enablePuppeteer = EnablePuppeteer;
+    adminConfig.DoubanConfig.cookies = DoubanCookies || undefined;
 
     // 更新 Cron 配置
     if (cronConfig) {
