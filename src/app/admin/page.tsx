@@ -22,6 +22,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+  Activity,
   AlertCircle,
   AlertTriangle,
   Brain,
@@ -63,6 +64,7 @@ import ShortDramaConfig from '@/components/ShortDramaConfig';
 import DownloadConfig from '@/components/OfflineDownloadConfig';
 import CustomAdFilterConfig from '@/components/CustomAdFilterConfig';
 import WatchRoomConfig from '@/components/WatchRoomConfig';
+import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
 import PageLayout from '@/components/PageLayout';
 
 // 统一按钮样式系统
@@ -6688,6 +6690,7 @@ function AdminPageClient() {
     configFile: false,
     cacheManager: false,
     dataMigration: false,
+    performanceMonitor: false,
   });
 
   // 获取管理员配置
@@ -7157,6 +7160,23 @@ function AdminPageClient() {
                 onToggle={() => toggleTab('dataMigration')}
               >
                 <DataMigration onRefreshConfig={fetchConfig} />
+              </CollapsibleTab>
+            )}
+
+            {/* 性能监控标签 - 仅站长可见 */}
+            {role === 'owner' && (
+              <CollapsibleTab
+                title='性能监控'
+                icon={
+                  <Activity
+                    size={20}
+                    className='text-gray-600 dark:text-gray-400'
+                  />
+                }
+                isExpanded={expandedTabs.performanceMonitor}
+                onToggle={() => toggleTab('performanceMonitor')}
+              >
+                <PerformanceMonitor />
               </CollapsibleTab>
             )}
           </div>
