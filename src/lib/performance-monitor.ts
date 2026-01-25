@@ -107,6 +107,10 @@ export function recordRequest(metrics: RequestMetrics): void {
   requestCache.push(metrics);
   console.log(`📊 [Performance] 当前缓存数量: ${requestCache.length}`);
 
+  // 立即创建快照用于保存（在清理之前）
+  const snapshot = [...requestCache];
+  console.log(`📸 [Performance] 创建快照: ${snapshot.length} 条`);
+
   // 清理超过 48 小时的旧数据
   const now = Date.now();
   const cutoffTime = now - MAX_CACHE_AGE;
@@ -119,8 +123,7 @@ export function recordRequest(metrics: RequestMetrics): void {
     requestCache.shift();
   }
 
-  // 创建当前缓存的快照，然后异步保存到 Kvrocks（不阻塞主流程）
-  const snapshot = [...requestCache];
+  // 异步保存快照到 Kvrocks（不阻塞主流程）
   saveToKvrocks(snapshot).catch((error) => {
     console.error('❌ 保存性能数据到 Kvrocks 失败:', error);
   });
