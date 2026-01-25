@@ -151,8 +151,52 @@ export default function PerformanceMonitor() {
     };
   };
 
+  // 性能评估函数 - 响应时间
+  const getResponseTimeRating = (avgResponseTime: number) => {
+    if (avgResponseTime < 100) {
+      return { level: 'excellent', label: '优秀', color: 'text-green-600 dark:text-green-400', tip: '< 100ms' };
+    } else if (avgResponseTime < 200) {
+      return { level: 'good', label: '良好', color: 'text-blue-600 dark:text-blue-400', tip: '100-200ms' };
+    } else if (avgResponseTime < 2000) {
+      return { level: 'fair', label: '可接受', color: 'text-yellow-600 dark:text-yellow-400', tip: '200-2000ms' };
+    } else {
+      return { level: 'poor', label: '需优化', color: 'text-red-600 dark:text-red-400', tip: '> 2000ms' };
+    }
+  };
+
+  // 性能评估函数 - 每请求DB查询数
+  const getDbQueriesRating = (requestsPerMinute: number, dbQueriesPerMinute: number) => {
+    if (requestsPerMinute === 0) return { level: 'unknown', label: '无数据', color: 'text-gray-500', tip: '' };
+
+    const queriesPerRequest = dbQueriesPerMinute / requestsPerMinute;
+    if (queriesPerRequest < 5) {
+      return { level: 'excellent', label: '优秀', color: 'text-green-600 dark:text-green-400', tip: '< 5次/请求' };
+    } else if (queriesPerRequest < 10) {
+      return { level: 'good', label: '良好', color: 'text-blue-600 dark:text-blue-400', tip: '5-10次/请求' };
+    } else if (queriesPerRequest < 20) {
+      return { level: 'fair', label: '可接受', color: 'text-yellow-600 dark:text-yellow-400', tip: '10-20次/请求' };
+    } else {
+      return { level: 'poor', label: '需优化', color: 'text-red-600 dark:text-red-400', tip: '> 20次/请求' };
+    }
+  };
+
+  // 性能评估函数 - 流量（针对元数据 API）
+  const getTrafficRating = (trafficPerMinute: number) => {
+    const trafficKB = trafficPerMinute / 1024; // 转换为 KB
+    if (trafficKB < 10) {
+      return { level: 'excellent', label: '非常轻量', color: 'text-green-600 dark:text-green-400', tip: '< 10 KB/分钟' };
+    } else if (trafficKB < 50) {
+      return { level: 'good', label: '轻量', color: 'text-blue-600 dark:text-blue-400', tip: '10-50 KB/分钟' };
+    } else if (trafficKB < 200) {
+      return { level: 'fair', label: '中等', color: 'text-yellow-600 dark:text-yellow-400', tip: '50-200 KB/分钟' };
+    } else {
+      return { level: 'poor', label: '较重', color: 'text-orange-600 dark:text-orange-400', tip: '> 200 KB/分钟' };
+    }
+  };
+
   // 获取性能数据
   const fetchData = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/admin/performance?hours=${timeRange}`);
       if (response.ok) {
@@ -326,6 +370,11 @@ export default function PerformanceMonitor() {
           </div>
           <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
             平均响应: {filteredStats?.avgResponseTime ?? 0}ms
+            {filteredStats && (
+              <span className={`ml-2 font-semibold ${getResponseTimeRating(filteredStats.avgResponseTime).color}`}>
+                ({getResponseTimeRating(filteredStats.avgResponseTime).label})
+              </span>
+            )}
           </div>
         </div>
 
@@ -338,6 +387,16 @@ export default function PerformanceMonitor() {
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
             {filteredStats?.dbQueriesPerMinute ?? 0}
           </div>
+          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+            {filteredStats && filteredStats.requestsPerMinute > 0 && (
+              <>
+                平均: {(filteredStats.dbQueriesPerMinute / filteredStats.requestsPerMinute).toFixed(1)} 次/请求
+                <span className={`ml-2 font-semibold ${getDbQueriesRating(filteredStats.requestsPerMinute, filteredStats.dbQueriesPerMinute).color}`}>
+                  ({getDbQueriesRating(filteredStats.requestsPerMinute, filteredStats.dbQueriesPerMinute).label})
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* 流量/分钟 */}
@@ -348,6 +407,13 @@ export default function PerformanceMonitor() {
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
             {((filteredStats?.trafficPerMinute ?? 0) / 1024).toFixed(2)} KB
+          </div>
+          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+            {filteredStats && (
+              <span className={`font-semibold ${getTrafficRating(filteredStats.trafficPerMinute).color}`}>
+                ({getTrafficRating(filteredStats.trafficPerMinute).label})
+              </span>
+            )}
           </div>
         </div>
       </div>
