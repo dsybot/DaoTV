@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
+import { recordRequest } from '@/lib/performance-monitor';
 
 /**
  * 刷新过期的 Douban trailer URL
@@ -96,18 +97,33 @@ async function fetchTrailerWithRedirectDetection(id: string, proxyUrl?: string):
 }
 
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const startMemory = process.memoryUsage().heapUsed;
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
   if (!id) {
-    return NextResponse.json(
-      {
-        code: 400,
-        message: '缺少必要参数: id',
-        error: 'MISSING_PARAMETER',
-      },
-      { status: 400 }
-    );
+    const errorResponse = {
+      code: 400,
+      message: '缺少必要参数: id',
+      error: 'MISSING_PARAMETER',
+    };
+    const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/refresh-trailer',
+      statusCode: 400,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: errorSize,
+    });
+
+    return NextResponse.json(errorResponse, { status: 400 });
   }
 
   try {
@@ -120,12 +136,27 @@ export async function GET(request: Request) {
     const trailerUrl = await fetchTrailerWithRedirectDetection(id, proxyUrl);
 
     if (!trailerUrl) {
+      const noTrailerResponse = {
+        code: 404,
+        message: '未能获取预告片URL（movie和tv类型都尝试过）',
+        error: 'NO_TRAILER',
+      };
+      const noTrailerSize = Buffer.byteLength(JSON.stringify(noTrailerResponse), 'utf8');
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/refresh-trailer',
+        statusCode: 404,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize: noTrailerSize,
+      });
+
       return NextResponse.json(
-        {
-          code: 404,
-          message: '未能获取预告片URL（movie和tv类型都尝试过）',
-          error: 'NO_TRAILER',
-        },
+        noTrailerResponse,
         {
           status: 404,
           headers: {
@@ -135,14 +166,29 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(
-      {
-        code: 200,
-        message: '获取成功',
-        data: {
-          trailerUrl,
-        },
+    const successResponse = {
+      code: 200,
+      message: '获取成功',
+      data: {
+        trailerUrl,
       },
+    };
+    const responseSize = Buffer.byteLength(JSON.stringify(successResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/refresh-trailer',
+      statusCode: 200,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize,
+    });
+
+    return NextResponse.json(
+      successResponse,
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -154,14 +200,74 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error(`[refresh-trailer] 异常:`, error);
 
-    return NextResponse.json(
-      {
+    if (error instanceof Error) {
+      // 超时错误
+      if (error.name === 'AbortError') {
+        const timeoutResponse = {
+          code: 504,
+          message: '请求超时，豆瓣响应过慢',
+          error: 'TIMEOUT',
+        };
+        const timeoutSize = Buffer.byteLength(JSON.stringify(timeoutResponse), 'utf8');
+
+        recordRequest({
+          timestamp: startTime,
+          method: 'GET',
+          path: '/api/douban/refresh-trailer',
+          statusCode: 504,
+          duration: Date.now() - startTime,
+          memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+          dbQueries: 0,
+          requestSize: 0,
+          responseSize: timeoutSize,
+        });
+
+        return NextResponse.json(timeoutResponse, { status: 504 });
+      }
+
+      // 其他错误
+      const fetchErrorResponse = {
         code: 500,
         message: '刷新 trailer URL 失败',
-        error: 'UNKNOWN_ERROR',
-        details: error instanceof Error ? error.message : '未知错误',
-      },
-      { status: 500 }
-    );
+        error: 'FETCH_ERROR',
+        details: error.message,
+      };
+      const fetchErrorSize = Buffer.byteLength(JSON.stringify(fetchErrorResponse), 'utf8');
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/refresh-trailer',
+        statusCode: 500,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize: fetchErrorSize,
+      });
+
+      return NextResponse.json(fetchErrorResponse, { status: 500 });
+    }
+
+    const unknownErrorResponse = {
+      code: 500,
+      message: '刷新 trailer URL 失败',
+      error: 'UNKNOWN_ERROR',
+    };
+    const unknownErrorSize = Buffer.byteLength(JSON.stringify(unknownErrorResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/refresh-trailer',
+      statusCode: 500,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: unknownErrorSize,
+    });
+
+    return NextResponse.json(unknownErrorResponse, { status: 500 });
   }
 }
