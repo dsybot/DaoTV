@@ -31,7 +31,7 @@ export default function VideoCoverDisplay({
                 style={{
                   background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
                   backgroundSize: '200% 100%',
-                  animation: 'shimmer 2.5s ease-in-out infinite',
+                  animation: 'cover-shimmer 2.5s ease-in-out infinite',
                 }}
               />
 
