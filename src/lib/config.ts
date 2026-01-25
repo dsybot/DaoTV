@@ -509,6 +509,13 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
     };
   }
 
+  // 确保豆瓣配置有默认值
+  if (!adminConfig.DoubanConfig) {
+    adminConfig.DoubanConfig = {
+      enablePuppeteer: false,                           // 默认关闭 Puppeteer（省资源）
+    };
+  }
+
   // 🔥 OIDC 配置迁移：从单 Provider 迁移到多 Provider
   if (adminConfig.OIDCAuthConfig && !adminConfig.OIDCProviders) {
     // 自动识别 Provider ID

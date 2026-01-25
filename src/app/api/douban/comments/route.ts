@@ -113,25 +113,36 @@ export async function GET(request: Request) {
 
     let html = await response.text();
 
-    // 检测 challenge 页面 - 使用 Puppeteer 绕过
+    // 检测 challenge 页面 - 根据配置决定是否使用 Puppeteer
     if (isDoubanChallengePage(html)) {
-      console.log(`[Douban Comments] 检测到 challenge 页面，尝试使用 Puppeteer 绕过...`);
+      console.log(`[Douban Comments] 检测到 challenge 页面`);
 
-      try {
-        // 尝试使用 Puppeteer 绕过 Challenge
-        const puppeteerResult = await bypassDoubanChallenge(target);
-        html = puppeteerResult.html;
+      // 获取配置，检查是否启用 Puppeteer
+      const config = await getConfig();
+      const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
 
-        // 再次检测是否成功绕过
-        if (isDoubanChallengePage(html)) {
-          console.log(`[Douban Comments] Puppeteer 绕过失败`);
+      if (enablePuppeteer) {
+        console.log(`[Douban Comments] Puppeteer 已启用，尝试绕过 Challenge...`);
+        try {
+          // 尝试使用 Puppeteer 绕过 Challenge
+          const puppeteerResult = await bypassDoubanChallenge(target);
+          html = puppeteerResult.html;
+
+          // 再次检测是否成功绕过
+          if (isDoubanChallengePage(html)) {
+            console.log(`[Douban Comments] Puppeteer 绕过失败`);
+            throw new Error('豆瓣反爬虫激活，无法获取短评');
+          }
+
+          console.log(`[Douban Comments] ✅ Puppeteer 成功绕过 Challenge`);
+        } catch (puppeteerError) {
+          console.error(`[Douban Comments] Puppeteer 执行失败:`, puppeteerError);
           throw new Error('豆瓣反爬虫激活，无法获取短评');
         }
-
-        console.log(`[Douban Comments] ✅ Puppeteer 成功绕过 Challenge`);
-      } catch (puppeteerError) {
-        console.error(`[Douban Comments] Puppeteer 执行失败:`, puppeteerError);
-        throw new Error('豆瓣反爬虫激活，无法获取短评');
+      } else {
+        // Puppeteer 未启用，直接返回错误
+        console.log(`[Douban Comments] Puppeteer 未启用，无法绕过 Challenge`);
+        throw new Error('豆瓣反爬虫激活，请在管理后台启用 Puppeteer');
       }
     }
 

@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       DisableYellowFilter,
       ShowAdultContent,
       FluidSearch,
+      EnablePuppeteer,
       TMDBApiKey,
       TMDBApiKeys,
       TMDBLanguage,
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
       DisableYellowFilter: boolean;
       ShowAdultContent: boolean;
       FluidSearch: boolean;
+      EnablePuppeteer: boolean;
       TMDBApiKey?: string;
       TMDBApiKeys?: string[];
       TMDBLanguage?: string;
@@ -87,7 +89,8 @@ export async function POST(request: NextRequest) {
       typeof DoubanImageProxyType !== 'string' ||
       typeof DoubanImageProxy !== 'string' ||
       typeof DisableYellowFilter !== 'boolean' ||
-      typeof FluidSearch !== 'boolean'
+      typeof FluidSearch !== 'boolean' ||
+      typeof EnablePuppeteer !== 'boolean'
     ) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
@@ -138,6 +141,14 @@ export async function POST(request: NextRequest) {
     console.log('[API] 将要保存到数据库的 TMDB 设置:', {
       EnableTMDBActorSearch: adminConfig.SiteConfig.EnableTMDBActorSearch,
     });
+
+    // 更新豆瓣配置
+    if (!adminConfig.DoubanConfig) {
+      adminConfig.DoubanConfig = {
+        enablePuppeteer: false,
+      };
+    }
+    adminConfig.DoubanConfig.enablePuppeteer = EnablePuppeteer;
 
     // 写入数据库
     await db.saveAdminConfig(adminConfig);

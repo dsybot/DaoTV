@@ -430,31 +430,42 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     html = await response.text();
     console.log(`[Douban] 页面长度: ${html.length}`);
 
-    // 检测 challenge 页面 - 尝试 Puppeteer 绕过，失败则 fallback 到 Mobile API
+    // 检测 challenge 页面 - 根据配置决定是否使用 Puppeteer
     if (isDoubanChallengePage(html)) {
-      console.log(`[Douban] 检测到 challenge 页面，尝试使用 Puppeteer 绕过...`);
+      console.log(`[Douban] 检测到 challenge 页面`);
 
-      try {
-        // 尝试使用 Puppeteer 绕过 Challenge
-        const puppeteerResult = await bypassDoubanChallenge(target);
-        html = puppeteerResult.html;
+      // 获取配置，检查是否启用 Puppeteer
+      const config = await getConfig();
+      const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
 
-        // 再次检测是否成功绕过
-        if (isDoubanChallengePage(html)) {
-          console.log(`[Douban] Puppeteer 绕过失败，使用 Mobile API fallback...`);
-          return await fetchFromMobileAPI(id);
-        }
-
-        console.log(`[Douban] ✅ Puppeteer 成功绕过 Challenge`);
-        // 继续使用 Puppeteer 获取的 HTML 进行解析
-      } catch (puppeteerError) {
-        console.error(`[Douban] Puppeteer 执行失败:`, puppeteerError);
-        console.log(`[Douban] 使用 Mobile API fallback...`);
+      if (enablePuppeteer) {
+        console.log(`[Douban] Puppeteer 已启用，尝试绕过 Challenge...`);
         try {
-          return await fetchFromMobileAPI(id);
-        } catch (mobileError) {
-          throw new DoubanError('豆瓣反爬虫激活，Puppeteer 和 Mobile API 均不可用', 'RATE_LIMIT', 429);
+          // 尝试使用 Puppeteer 绕过 Challenge
+          const puppeteerResult = await bypassDoubanChallenge(target);
+          html = puppeteerResult.html;
+
+          // 再次检测是否成功绕过
+          if (isDoubanChallengePage(html)) {
+            console.log(`[Douban] Puppeteer 绕过失败，使用 Mobile API fallback...`);
+            return await fetchFromMobileAPI(id);
+          }
+
+          console.log(`[Douban] ✅ Puppeteer 成功绕过 Challenge`);
+          // 继续使用 Puppeteer 获取的 HTML 进行解析
+        } catch (puppeteerError) {
+          console.error(`[Douban] Puppeteer 执行失败:`, puppeteerError);
+          console.log(`[Douban] 使用 Mobile API fallback...`);
+          try {
+            return await fetchFromMobileAPI(id);
+          } catch (mobileError) {
+            throw new DoubanError('豆瓣反爬虫激活，Puppeteer 和 Mobile API 均不可用', 'RATE_LIMIT', 429);
+          }
         }
+      } else {
+        // Puppeteer 未启用，直接使用 Mobile API
+        console.log(`[Douban] Puppeteer 未启用，直接使用 Mobile API fallback...`);
+        return await fetchFromMobileAPI(id);
       }
     }
 

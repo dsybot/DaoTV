@@ -177,6 +177,9 @@ export interface AdminConfig {
     serverUrl: string;                   // 外部观影室服务器地址
     authKey: string;                     // 观影室服务器认证密钥
   };
+  DoubanConfig?: {
+    enablePuppeteer: boolean;            // 是否启用 Puppeteer 绕过 Challenge（默认 false）
+  };
 }
 
 export interface AdminConfigResult {
