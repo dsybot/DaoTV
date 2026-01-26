@@ -134,41 +134,51 @@ const CustomAdFilterConfig = ({ config, refreshConfig }: CustomAdFilterConfigPro
 function filterAdsFromM3U8(type, m3u8Content) {
   if (!m3u8Content) return '';
 
+  // 广告关键字列表
+  const adKeywords = [
+    'sponsor',
+    '/ad/',
+    '/ads/',
+    'advert',
+    'advertisement',
+    '/adjump',
+    'redtraffic'
+  ];
+
+  // 按行分割M3U8内容
   const lines = m3u8Content.split('\\n');
   const filteredLines = [];
-  let inAdBlock = false;
 
-  for (let i = 0; i < lines.length; i++) {
+  let i = 0;
+  while (i < lines.length) {
     const line = lines[i];
 
-    // 检测广告开始标记
-    if (line.includes('#EXT-X-CUE-OUT') ||
-        line.includes('#EXT-X-DISCONTINUITY')) {
-      inAdBlock = true;
+    // 跳过 #EXT-X-DISCONTINUITY 标识
+    if (line.includes('#EXT-X-DISCONTINUITY')) {
+      i++;
       continue;
     }
 
-    // 检测广告结束标记
-    if (line.includes('#EXT-X-CUE-IN')) {
-      inAdBlock = false;
-      continue;
-    }
+    // 如果是 EXTINF 行，检查下一行 URL 是否包含广告关键字
+    if (line.includes('#EXTINF:')) {
+      // 检查下一行 URL 是否包含广告关键字
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1];
+        const containsAdKeyword = adKeywords.some(keyword =>
+          nextLine.toLowerCase().includes(keyword.toLowerCase())
+        );
 
-    // 跳过广告区块内容
-    if (inAdBlock) {
-      continue;
-    }
-
-    // 针对特定源的自定义规则
-    if (type === 'ruyi') {
-      // 过滤如意源特定时长的广告片段
-      if (line.includes('EXTINF:5.640000') ||
-          line.includes('EXTINF:2.960000')) {
-        continue;
+        if (containsAdKeyword) {
+          // 跳过 EXTINF 行和 URL 行
+          i += 2;
+          continue;
+        }
       }
     }
 
+    // 保留当前行
     filteredLines.push(line);
+    i++;
   }
 
   return filteredLines.join('\\n');
@@ -253,11 +263,10 @@ function filterAdsFromM3U8(type, m3u8Content) {
 
       {/* 消息提示 */}
       {message && (
-        <div className={`flex items-center gap-2 p-4 rounded-lg ${
-          message.type === 'success'
+        <div className={`flex items-center gap-2 p-4 rounded-lg ${message.type === 'success'
             ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
             : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
-        }`}>
+          }`}>
           {message.type === 'success' ? (
             <CheckCircle className='w-5 h-5 shrink-0' />
           ) : (
