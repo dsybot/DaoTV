@@ -700,18 +700,14 @@ function SearchPageClient() {
     const value = e.target.value;
     setSearchQuery(value);
 
-    if (value.trim()) {
-      setShowSuggestions(true);
-    } else {
-      setShowSuggestions(false);
-    }
+    // 无论输入框是否为空，都显示建议（空时显示搜索历史）
+    setShowSuggestions(true);
   };
 
   // 搜索框聚焦时触发，显示搜索建议
   const handleInputFocus = () => {
-    if (searchQuery.trim()) {
-      setShowSuggestions(true);
-    }
+    // 聚焦时始终显示建议（空时显示搜索历史）
+    setShowSuggestions(true);
   };
 
   // YouTube搜索函数
