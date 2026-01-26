@@ -243,7 +243,12 @@ export async function GET(request: Request) {
           headers,
         });
       } catch (error) {
-        console.error('[VideoProxy] 处理视频缓存失败，降级到流式传输:', error);
+        console.error('[VideoProxy] 处理视频缓存失败:', error);
+        // 缓存失败时返回错误响应，因为流已经被消费无法再使用
+        return NextResponse.json(
+          { error: 'Failed to cache video', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        );
       }
     }
 
