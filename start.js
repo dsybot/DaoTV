@@ -87,8 +87,8 @@ function executeCronJob() {
     console.error('Error executing cron job:', err);
   });
 
-  req.setTimeout(30000, () => {
-    console.error('Cron job timeout');
+  req.setTimeout(300000, () => {
+    console.error('Cron job timeout (5 minutes)');
     req.destroy();
   });
 }
