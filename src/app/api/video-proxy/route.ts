@@ -40,8 +40,10 @@ export async function GET(request: Request) {
   if (storageType === 'kvrocks') {
     try {
       const cached = await isVideoCached(videoUrl);
+      console.log(`[VideoProxy] 缓存检查结果: cached=${cached}, url=${videoUrl.substring(0, 50)}...`);
       if (cached) {
         const cachedPath = await getCachedVideoPath(videoUrl);
+        console.log(`[VideoProxy] 缓存路径: ${cachedPath}`);
         if (cachedPath) {
           console.log('[VideoProxy] 🎯 命中缓存，从本地文件返回');
           return serveVideoFromFile(cachedPath, request);

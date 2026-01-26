@@ -27,7 +27,7 @@ interface AcgSearchProps {
   onError?: (error: string) => void;
 }
 
-type AcgSearchSource = 'acgrip' | 'mikan';
+type AcgSearchSource = 'acgrip' | 'mikan' | 'dmhy';
 
 export default function AcgSearch({
   keyword,
@@ -47,8 +47,9 @@ export default function AcgSearch({
   // 执行搜索
   const performSearch = async (page: number, isLoadMore = false) => {
     if (isLoadingMoreRef.current) return;
-    // Mikan 不支持分页，page > 1 时直接返回
+    // Mikan 和 DMHY 不支持分页，page > 1 时直接返回
     if (source === 'mikan' && page > 1) return;
+    if (source === 'dmhy' && page > 1) return;
 
     isLoadingMoreRef.current = true;
     setLoading(true);
@@ -56,7 +57,12 @@ export default function AcgSearch({
 
     try {
       // 根据选择的源确定 API 路径
-      const apiUrl = source === 'mikan' ? '/api/acg/mikan' : '/api/acg/acgrip';
+      const apiUrl =
+        source === 'mikan'
+          ? '/api/acg/mikan'
+          : source === 'dmhy'
+            ? '/api/acg/dmhy'
+            : '/api/acg/acgrip';
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -79,11 +85,13 @@ export default function AcgSearch({
       if (isLoadMore) {
         // 追加新数据
         setAllItems(prev => [...prev, ...data.items]);
-        setHasMore(data.items.length > 0);
+        // 如果当前页没有结果，说明没有更多了
+        setHasMore(source !== 'mikan' && source !== 'dmhy' && data.items.length > 0);
       } else {
         // 新搜索，重置数据
         setAllItems(data.items);
-        setHasMore(data.items.length > 0);
+        // 如果第一页有结果，假设可能还有更多
+        setHasMore(source !== 'mikan' && source !== 'dmhy' && data.items.length > 0);
       }
 
       setCurrentPage(page);
@@ -128,16 +136,18 @@ export default function AcgSearch({
     // 重置状态并开始新搜索
     setAllItems([]);
     setCurrentPage(1);
-    setHasMore(source === 'acgrip'); // Mikan 不支持分页
+    setHasMore(source === 'acgrip'); // Mikan 和 DMHY 不支持分页
     performSearch(1, false);
   }, [source]);
 
   // 加载更多数据
   const loadMore = useCallback(() => {
+    if (source === 'mikan') return;
+    if (source === 'dmhy') return;
     if (!loading && hasMore && !isLoadingMoreRef.current) {
       performSearch(currentPage + 1, true);
     }
-  }, [loading, hasMore, currentPage]);
+  }, [loading, hasMore, currentPage, source]);
 
   // 使用 Intersection Observer 监听滚动到底部
   useEffect(() => {
@@ -239,6 +249,16 @@ export default function AcgSearch({
           >
             蜜柑计划
           </button>
+          <button
+            onClick={() => setSource('dmhy')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              source === 'dmhy'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            动漫花园
+          </button>
         </div>
       </div>
 
@@ -316,7 +336,7 @@ export default function AcgSearch({
       </div>
 
       {/* 加载更多指示器 */}
-      {hasMore && (
+      {source !== 'mikan' && source !== 'dmhy' && hasMore && (
         <div ref={loadMoreRef} className='flex items-center justify-center py-8'>
           <div className='text-center'>
             <Loader2 className='mx-auto h-6 w-6 animate-spin text-green-600 dark:text-green-400' />
