@@ -58,6 +58,10 @@ export async function GET(request: Request) {
   const ifNoneMatch = request.headers.get('if-none-match');
   const ifModifiedSince = request.headers.get('if-modified-since');
 
+  // 🎯 决定是否需要缓存：Kvrocks 存储 + 豆瓣视频
+  const shouldCache = storageType === 'kvrocks' &&
+                      (videoUrl.includes('douban') || videoUrl.includes('doubanio'));
+
   // 创建 AbortController 用于超时控制
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
@@ -78,8 +82,9 @@ export async function GET(request: Request) {
       'Connection': 'keep-alive',
     };
 
-    // 如果客户端发送了 Range 请求，转发给目标服务器
-    if (rangeHeader) {
+    // 🎯 如果需要缓存，不转发 Range 请求头（下载完整视频）
+    // 如果不需要缓存，转发 Range 请求头（流式传输）
+    if (rangeHeader && !shouldCache) {
       fetchHeaders['Range'] = rangeHeader;
     }
 
@@ -183,8 +188,8 @@ export async function GET(request: Request) {
     // 返回正确的状态码：Range请求返回206，完整请求返回200
     const statusCode = rangeHeader && contentRange ? 206 : 200;
 
-    // 🎯 如果是完整请求（非 Range）且使用 Kvrocks，缓存视频内容
-    if (!rangeHeader && storageType === 'kvrocks' && videoResponse.body) {
+    // 🎯 如果需要缓存且下载了完整视频，缓存视频内容
+    if (shouldCache && !contentRange && videoResponse.body) {
       try {
         // 读取完整视频内容
         const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
@@ -202,9 +207,29 @@ export async function GET(request: Request) {
           });
         }
 
-        // 返回缓存的内容
+        console.log(`[VideoProxy] ✅ 视频已缓存: ${videoUrl.substring(0, 50)}...`);
+
+        // 🎯 如果客户端请求的是 Range，从缓存的完整视频中返回指定范围
+        if (rangeHeader) {
+          const fileSize = videoBuffer.length;
+          const parts = rangeHeader.replace(/bytes=/, '').split('-');
+          const start = parseInt(parts[0], 10);
+          const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+          const chunkSize = end - start + 1;
+
+          const rangeHeaders = new Headers(headers);
+          rangeHeaders.set('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+          rangeHeaders.set('Content-Length', chunkSize.toString());
+
+          return new Response(videoBuffer.slice(start, end + 1), {
+            status: 206,
+            headers: rangeHeaders,
+          });
+        }
+
+        // 返回完整视频
         return new Response(videoBuffer, {
-          status: statusCode,
+          status: 200,
           headers,
         });
       } catch (error) {
