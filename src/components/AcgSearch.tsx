@@ -27,11 +27,14 @@ interface AcgSearchProps {
   onError?: (error: string) => void;
 }
 
+type AcgSearchSource = 'acgrip' | 'mikan';
+
 export default function AcgSearch({
   keyword,
   triggerSearch,
   onError,
 }: AcgSearchProps) {
+  const [source, setSource] = useState<AcgSearchSource>('acgrip');
   const [loading, setLoading] = useState(false);
   const [allItems, setAllItems] = useState<AcgSearchItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -44,13 +47,18 @@ export default function AcgSearch({
   // 执行搜索
   const performSearch = async (page: number, isLoadMore = false) => {
     if (isLoadingMoreRef.current) return;
+    // Mikan 不支持分页，page > 1 时直接返回
+    if (source === 'mikan' && page > 1) return;
 
     isLoadingMoreRef.current = true;
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/acg/search', {
+      // 根据选择的源确定 API 路径
+      const apiUrl = source === 'mikan' ? '/api/acg/mikan' : '/api/acg/acgrip';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,6 +113,24 @@ export default function AcgSearch({
     setHasMore(true);
     performSearch(1, false);
   }, [triggerSearch]);
+
+  // 切换源时重新搜索
+  useEffect(() => {
+    if (triggerSearch === undefined) {
+      return;
+    }
+
+    const currentKeyword = keyword.trim();
+    if (!currentKeyword) {
+      return;
+    }
+
+    // 重置状态并开始新搜索
+    setAllItems([]);
+    setCurrentPage(1);
+    setHasMore(source === 'acgrip'); // Mikan 不支持分页
+    performSearch(1, false);
+  }, [source]);
 
   // 加载更多数据
   const loadMore = useCallback(() => {
@@ -189,6 +215,33 @@ export default function AcgSearch({
 
   return (
     <div className='space-y-6'>
+      {/* 源切换器 */}
+      <div className='flex items-center justify-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+        <span className='text-sm text-gray-600 dark:text-gray-400'>搜索源：</span>
+        <div className='flex gap-2'>
+          <button
+            onClick={() => setSource('acgrip')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              source === 'acgrip'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            ACG.RIP
+          </button>
+          <button
+            onClick={() => setSource('mikan')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              source === 'mikan'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            蜜柑计划
+          </button>
+        </div>
+      </div>
+
       {/* 结果列表 */}
       <div className='space-y-3'>
         {allItems.map((item) => (
