@@ -62,6 +62,8 @@ export async function GET(request: Request) {
   const shouldCache = storageType === 'kvrocks' &&
                       (videoUrl.includes('douban') || videoUrl.includes('doubanio'));
 
+  console.log(`[VideoProxy] 缓存检查: storageType=${storageType}, shouldCache=${shouldCache}, url=${videoUrl.substring(0, 50)}...`);
+
   // 创建 AbortController 用于超时控制
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
@@ -189,10 +191,14 @@ export async function GET(request: Request) {
     const statusCode = rangeHeader && contentRange ? 206 : 200;
 
     // 🎯 如果需要缓存且下载了完整视频，缓存视频内容
+    console.log(`[VideoProxy] 缓存条件检查: shouldCache=${shouldCache}, contentRange=${contentRange}, hasBody=${!!videoResponse.body}, rangeHeader=${rangeHeader}`);
+
     if (shouldCache && !contentRange && videoResponse.body) {
       try {
+        console.log('[VideoProxy] 开始缓存视频...');
         // 读取完整视频内容
         const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+        console.log(`[VideoProxy] 视频下载完成，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`);
 
         // 异步缓存视频内容（不阻塞响应）
         cacheVideoContent(videoUrl, videoBuffer, contentType || 'video/mp4').catch(err => {

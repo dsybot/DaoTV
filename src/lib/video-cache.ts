@@ -71,9 +71,12 @@ function getVideoCachePath(urlHash: string): string {
  */
 async function ensureCacheDir(): Promise<void> {
   try {
+    console.log(`[VideoCache] 确保缓存目录存在: ${CACHE_CONFIG.VIDEO_CACHE_DIR}`);
     await fs.mkdir(CACHE_CONFIG.VIDEO_CACHE_DIR, { recursive: true });
+    console.log('[VideoCache] 缓存目录已创建/确认存在');
   } catch (error) {
     console.error('[VideoCache] 创建缓存目录失败:', error);
+    throw error;
   }
 }
 
@@ -172,11 +175,14 @@ export async function cacheVideoContent(
   videoBuffer: Buffer,
   contentType: string = 'video/mp4'
 ): Promise<string> {
+  console.log(`[VideoCache] 开始缓存视频内容，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`);
   await ensureCacheDir();
 
   const urlHash = hashUrl(videoUrl);
   const filePath = getVideoCachePath(urlHash);
   const fileSize = videoBuffer.length;
+
+  console.log(`[VideoCache] 文件路径: ${filePath}`);
 
   try {
     // 检查缓存大小限制
@@ -184,13 +190,17 @@ export async function cacheVideoContent(
     const totalSizeStr = await redis.get(KEYS.VIDEO_SIZE);
     const totalSize = totalSizeStr ? parseInt(totalSizeStr) : 0;
 
+    console.log(`[VideoCache] 当前缓存大小: ${(totalSize / 1024 / 1024).toFixed(2)}MB / ${(CACHE_CONFIG.MAX_CACHE_SIZE / 1024 / 1024).toFixed(2)}MB`);
+
     if (totalSize + fileSize > CACHE_CONFIG.MAX_CACHE_SIZE) {
       console.warn(`[VideoCache] 缓存空间不足，跳过缓存 (当前: ${(totalSize / 1024 / 1024).toFixed(2)}MB)`);
       return filePath;
     }
 
     // 写入文件
+    console.log('[VideoCache] 开始写入文件...');
     await fs.writeFile(filePath, videoBuffer);
+    console.log('[VideoCache] 文件写入成功');
 
     // 保存元数据到 Kvrocks
     const meta = JSON.stringify({

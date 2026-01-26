@@ -51,6 +51,9 @@ RUN apk add --no-cache \
 RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
 
 WORKDIR /app
+
+# 创建视频缓存目录并设置权限
+RUN mkdir -p /app/video-cache && chown -R nextjs:nodejs /app/video-cache
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
