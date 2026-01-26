@@ -719,7 +719,7 @@ function HomeClient() {
         </div>
       </div>
 
-      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
+      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible pb-32 md:pb-safe-bottom'>
 
         {/* 轮播图 - 在所有tab显示 */}
         {!loading && (hotMovies.length > 0 || hotTvShows.length > 0 || hotVarietyShows.length > 0 || hotShortDramas.length > 0) && (
