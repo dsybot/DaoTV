@@ -1326,12 +1326,11 @@ function HomeClient() {
                   ))
                   : // 显示真实数据
                   hotShortDramas.map((drama, index) => (
-                    <div
+                    <ShortDramaCard
                       key={index}
+                      drama={drama}
                       className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                    >
-                      <ShortDramaCard drama={drama} />
-                    </div>
+                    />
                   ))}
               </ScrollableRow>
             </section>

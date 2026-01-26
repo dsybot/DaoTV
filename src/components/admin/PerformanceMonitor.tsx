@@ -216,16 +216,17 @@ export default function PerformanceMonitor() {
   };
 
   // 性能评估函数 - 外部流量（调用外部 API 的流量）
+  // 注意：包含图片代理流量，标准相对宽松
   const getExternalTrafficRating = (trafficPerMinute: number) => {
     const trafficMB = trafficPerMinute / 1024 / 1024; // 转换为 MB
-    if (trafficMB < 1) {
-      return { level: 'excellent', label: '正常', color: 'text-green-600 dark:text-green-400', tip: '< 1 MB/分钟' };
-    } else if (trafficMB < 3) {
-      return { level: 'good', label: '中等', color: 'text-blue-600 dark:text-blue-400', tip: '1-3 MB/分钟' };
-    } else if (trafficMB < 5) {
-      return { level: 'fair', label: '较高', color: 'text-yellow-600 dark:text-yellow-400', tip: '3-5 MB/分钟' };
+    if (trafficMB < 5) {
+      return { level: 'excellent', label: '正常', color: 'text-green-600 dark:text-green-400', tip: '< 5 MB/分钟' };
+    } else if (trafficMB < 15) {
+      return { level: 'good', label: '中等', color: 'text-blue-600 dark:text-blue-400', tip: '5-15 MB/分钟' };
+    } else if (trafficMB < 30) {
+      return { level: 'fair', label: '较高', color: 'text-yellow-600 dark:text-yellow-400', tip: '15-30 MB/分钟' };
     } else {
-      return { level: 'poor', label: '异常高', color: 'text-red-600 dark:text-red-400', tip: '> 5 MB/分钟' };
+      return { level: 'poor', label: '异常高', color: 'text-red-600 dark:text-red-400', tip: '> 30 MB/分钟' };
     }
   };
 
@@ -489,44 +490,44 @@ export default function PerformanceMonitor() {
           </summary>
           <div className='border-t border-gray-200 dark:border-gray-700'>
             <div className='overflow-x-auto'>
-            <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
-              <thead className='bg-gray-50 dark:bg-gray-700'>
-                <tr>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
-                    域名
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
-                    请求次数
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
-                    总流量
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
-                    平均流量/请求
-                  </th>
-                </tr>
-              </thead>
-              <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-                {Object.entries(data.externalTraffic.byDomain)
-                  .sort((a, b) => b[1].traffic - a[1].traffic)
-                  .map(([domain, stats]) => (
-                    <tr key={domain}>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {domain}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {stats.requests}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {formatTraffic(stats.traffic)}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {formatTraffic(stats.traffic / stats.requests)}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+              <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+                <thead className='bg-gray-50 dark:bg-gray-700'>
+                  <tr>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                      域名
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                      请求次数
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                      总流量
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
+                      平均流量/请求
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                  {Object.entries(data.externalTraffic.byDomain)
+                    .sort((a, b) => b[1].traffic - a[1].traffic)
+                    .map(([domain, stats]) => (
+                      <tr key={domain}>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {domain}
+                        </td>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {stats.requests}
+                        </td>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {formatTraffic(stats.traffic)}
+                        </td>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {formatTraffic(stats.traffic / stats.requests)}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </details>
@@ -540,83 +541,83 @@ export default function PerformanceMonitor() {
           </h3>
         </summary>
         <div className='border-t border-gray-200 dark:border-gray-700'>
-        <div className='overflow-x-auto -mx-4 sm:mx-0'>
-          <div className='inline-block min-w-full align-middle'>
-            <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
-              <thead className='bg-gray-50 dark:bg-gray-700'>
-                <tr>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    时间
-                  </th>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    API 名称
-                  </th>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    状态码
-                  </th>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    响应时间
-                  </th>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    内存
-                  </th>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    DB 查询
-                  </th>
-                  <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
-                    响应大小
-                  </th>
-                </tr>
-              </thead>
-              <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-                {filterRequestsForDisplay(data.recentRequests).map((request: any, index: number) => {
-                  const responseSizeKB = (request.responseSize / 1024).toFixed(2);
-                  const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
-                  const isError = request.statusCode >= 400;
+          <div className='overflow-x-auto -mx-4 sm:mx-0'>
+            <div className='inline-block min-w-full align-middle'>
+              <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+                <thead className='bg-gray-50 dark:bg-gray-700'>
+                  <tr>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      时间
+                    </th>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      API 名称
+                    </th>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      状态码
+                    </th>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      响应时间
+                    </th>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      内存
+                    </th>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      DB 查询
+                    </th>
+                    <th className='px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap'>
+                      响应大小
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                  {filterRequestsForDisplay(data.recentRequests).map((request: any, index: number) => {
+                    const responseSizeKB = (request.responseSize / 1024).toFixed(2);
+                    const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
+                    const isError = request.statusCode >= 400;
 
-                  return (
-                    <tr key={index}>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {new Date(request.timestamp).toLocaleString('zh-CN', {
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                        })}
-                      </td>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {getApiName(request.path)}
-                      </td>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm'>
-                        <span className={`${isSuccess
-                          ? 'text-green-600 dark:text-green-400'
-                          : isError
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-yellow-600 dark:text-yellow-400'
-                          }`}>
-                          {request.statusCode}
-                        </span>
-                      </td>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {request.duration}ms
-                      </td>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {request.memoryUsed.toFixed(2)} MB
-                      </td>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {request.dbQueries > 0 ? request.dbQueries : '-'}
-                      </td>
-                      <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
-                        {responseSizeKB} KB
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={index}>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {new Date(request.timestamp).toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          })}
+                        </td>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {getApiName(request.path)}
+                        </td>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm'>
+                          <span className={`${isSuccess
+                            ? 'text-green-600 dark:text-green-400'
+                            : isError
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-yellow-600 dark:text-yellow-400'
+                            }`}>
+                            {request.statusCode}
+                          </span>
+                        </td>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {request.duration}ms
+                        </td>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {request.memoryUsed.toFixed(2)} MB
+                        </td>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {request.dbQueries > 0 ? request.dbQueries : '-'}
+                        </td>
+                        <td className='px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
+                          {responseSizeKB} KB
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         </div>
       </details>
     </div>
