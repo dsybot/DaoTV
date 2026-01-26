@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
+import { isVideoCached, getCachedVideoPath, cacheVideoContent, cacheTrailerUrl, deleteVideoCache } from '@/lib/video-cache';
+import { promises as fs } from 'fs';
+import { createReadStream } from 'fs';
 
 export const runtime = 'nodejs';
+
+/**
+ * 从豆瓣视频 URL 中提取 douban_id
+ * 例如：从 localStorage 或 HeroBanner 的 refreshedTrailerUrls 中获取映射关系
+ */
+function extractDoubanIdFromReferer(request: Request): string | null {
+  const referer = request.headers.get('referer');
+  if (!referer) return null;
+
+  // 从 referer 中提取 douban_id（如果有的话）
+  const match = referer.match(/douban_id=(\d+)/);
+  return match ? match[1] : null;
+}
 
 // 视频代理接口 - 支持流式传输和Range请求
 export async function GET(request: Request) {
@@ -17,6 +33,23 @@ export async function GET(request: Request) {
     new URL(videoUrl);
   } catch {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+  }
+
+  // 🎯 优先检查缓存（Kvrocks + 文件系统）
+  const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE;
+  if (storageType === 'kvrocks') {
+    try {
+      const cached = await isVideoCached(videoUrl);
+      if (cached) {
+        const cachedPath = await getCachedVideoPath(videoUrl);
+        if (cachedPath) {
+          console.log('[VideoProxy] 🎯 命中缓存，从本地文件返回');
+          return serveVideoFromFile(cachedPath, request);
+        }
+      }
+    } catch (error) {
+      console.error('[VideoProxy] 缓存检查失败，降级到直接代理:', error);
+    }
   }
 
   // 获取客户端的 Range 请求头
@@ -87,6 +120,14 @@ export async function GET(request: Request) {
     }
 
     if (!videoResponse.ok) {
+      // 🎯 如果是 403/404 等错误，删除可能过期的缓存
+      if (storageType === 'kvrocks' && (videoResponse.status === 403 || videoResponse.status === 404)) {
+        console.log(`[VideoProxy] 视频URL返回 ${videoResponse.status}，删除缓存: ${videoUrl}`);
+        deleteVideoCache(videoUrl).catch(err => {
+          console.error('[VideoProxy] 删除缓存失败:', err);
+        });
+      }
+
       const errorResponse = NextResponse.json(
         {
           error: 'Failed to fetch video',
@@ -142,7 +183,36 @@ export async function GET(request: Request) {
     // 返回正确的状态码：Range请求返回206，完整请求返回200
     const statusCode = rangeHeader && contentRange ? 206 : 200;
 
-    // 直接返回视频流
+    // 🎯 如果是完整请求（非 Range）且使用 Kvrocks，缓存视频内容
+    if (!rangeHeader && storageType === 'kvrocks' && videoResponse.body) {
+      try {
+        // 读取完整视频内容
+        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+
+        // 异步缓存视频内容（不阻塞响应）
+        cacheVideoContent(videoUrl, videoBuffer, contentType || 'video/mp4').catch(err => {
+          console.error('[VideoProxy] 缓存视频失败:', err);
+        });
+
+        // 🎯 尝试缓存 URL 映射（如果能从 referer 提取 douban_id）
+        const doubanId = extractDoubanIdFromReferer(request);
+        if (doubanId) {
+          cacheTrailerUrl(doubanId, videoUrl).catch(err => {
+            console.error('[VideoProxy] 缓存 trailer URL 失败:', err);
+          });
+        }
+
+        // 返回缓存的内容
+        return new Response(videoBuffer, {
+          status: statusCode,
+          headers,
+        });
+      } catch (error) {
+        console.error('[VideoProxy] 处理视频缓存失败，降级到流式传输:', error);
+      }
+    }
+
+    // 直接返回视频流（Range 请求或缓存失败）
     return new Response(videoResponse.body, {
       status: statusCode,
       headers,
@@ -218,6 +288,49 @@ export async function HEAD(request: Request) {
     console.error('[Video Proxy] HEAD request error:', error.message);
     return new NextResponse(null, { status: 500 });
   }
+}
+
+/**
+ * 从缓存文件返回视频（支持 Range 请求）
+ */
+async function serveVideoFromFile(filePath: string, request: Request): Promise<Response> {
+  const rangeHeader = request.headers.get('range');
+  const stats = await fs.stat(filePath);
+  const fileSize = stats.size;
+
+  const headers = new Headers({
+    'Content-Type': 'video/mp4',
+    'Accept-Ranges': 'bytes',
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'public, max-age=7200', // 2小时缓存
+  });
+
+  // 处理 Range 请求
+  if (rangeHeader) {
+    const parts = rangeHeader.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunkSize = end - start + 1;
+
+    headers.set('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+    headers.set('Content-Length', chunkSize.toString());
+
+    const fileStream = createReadStream(filePath, { start, end });
+
+    return new Response(fileStream as any, {
+      status: 206,
+      headers,
+    });
+  }
+
+  // 完整文件请求
+  headers.set('Content-Length', fileSize.toString());
+  const fileStream = createReadStream(filePath);
+
+  return new Response(fileStream as any, {
+    status: 200,
+    headers,
+  });
 }
 
 // 处理 CORS 预检请求
