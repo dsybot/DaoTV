@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
+import { fetchDoubanWithVerification } from '@/lib/douban-anti-crawler';
 import { bypassDoubanChallenge } from '@/lib/puppeteer';
 import { getRandomUserAgent, getRandomUserAgentWithInfo, getSecChUaHeaders, DEFAULT_USER_AGENT } from '@/lib/user-agent';
 import { recordRequest } from '@/lib/performance-monitor';
@@ -348,6 +349,28 @@ class DoubanError extends Error {
   }
 }
 
+/**
+ * 尝试使用反爬验证获取页面
+ */
+async function tryFetchWithAntiCrawler(url: string): Promise<{ success: boolean; html?: string; error?: string }> {
+  try {
+    console.log('[Douban] 🔐 尝试使用反爬验证...');
+    const response = await fetchDoubanWithVerification(url);
+
+    if (response.ok) {
+      const html = await response.text();
+      console.log(`[Douban] ✅ 反爬验证成功，页面长度: ${html.length}`);
+      return { success: true, html };
+    }
+
+    console.log(`[Douban] ⚠️ 反爬验证返回状态: ${response.status}`);
+    return { success: false, error: `Status ${response.status}` };
+  } catch (error) {
+    console.log('[Douban] ❌ 反爬验证失败:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 // ============================================================================
 // 核心爬虫函数（带缓存和重试）
 // ============================================================================
@@ -393,115 +416,133 @@ async function _scrapeDoubanDetails(id: string, proxyUrl: string, retryCount = 0
     // 🍪 获取豆瓣 Cookies（如果配置了）
     const doubanCookies = await getDoubanCookies();
 
-    // 🎯 2025 最佳实践：按照真实浏览器的头部顺序发送
-    const fetchOptions = {
-      signal: controller.signal,
-      headers: {
-        // 基础头部（所有浏览器通用）
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Cache-Control': 'max-age=0',
-        'DNT': '1',
-        ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': ua,
-        // 随机添加 Referer（50% 概率）
-        ...(Math.random() > 0.5 ? { 'Referer': 'https://www.douban.com/' } : {}),
-        // 🍪 如果配置了 Cookies，则添加到请求头
-        ...(doubanCookies ? { 'Cookie': doubanCookies } : {}),
-      },
-    };
+    let html: string | null = null;
 
-    // 如果使用了 Cookies，记录日志
-    if (doubanCookies) {
-      console.log(`[Douban] 使用配置的 Cookies 请求: ${id}`);
-    }
-
-    const response = await fetch(target, fetchOptions);
-    clearTimeout(timeoutId);
-
-    console.log(`[Douban] 响应状态: ${response.status}`);
-
-    let html: string;
-
-    // 先检查状态码
-    if (!response.ok) {
-      console.log(`[Douban] HTTP 错误: ${response.status}`);
-
-      // 302/301 重定向 或 429 速率限制 - 直接用 Mobile API
-      if (response.status === 429 || response.status === 302 || response.status === 301) {
-        console.log(`[Douban] 状态码 ${response.status}，使用 Mobile API fallback...`);
-        try {
-          return await fetchFromMobileAPI(id);
-        } catch (mobileError) {
-          throw new DoubanError('豆瓣 API 和 Mobile API 均不可用，请稍后再试', 'NETWORK_ERROR', response.status);
-        }
-      } else if (response.status >= 500) {
-        throw new DoubanError(`豆瓣服务器错误: ${response.status}`, 'SERVER_ERROR', response.status);
-      } else if (response.status === 404) {
-        throw new DoubanError(`影片不存在: ${id}`, 'SERVER_ERROR', 404);
+    // 🔐 优先级 1: 尝试使用反爬验证
+    const antiCrawlerResult = await tryFetchWithAntiCrawler(target);
+    if (antiCrawlerResult.success && antiCrawlerResult.html) {
+      // 检查是否为 challenge 页面
+      if (!isDoubanChallengePage(antiCrawlerResult.html)) {
+        console.log('[Douban] ✅ 反爬验证成功，直接使用返回的页面');
+        html = antiCrawlerResult.html;
       } else {
-        throw new DoubanError(`HTTP错误: ${response.status}`, 'NETWORK_ERROR', response.status);
+        console.log('[Douban] ⚠️ 反爬验证返回了 challenge 页面，尝试其他方式');
       }
+    } else {
+      console.log('[Douban] ⚠️ 反爬验证失败，尝试 Cookie 方式');
     }
 
-    // 获取HTML内容
-    html = await response.text();
-    console.log(`[Douban] 页面长度: ${html.length}`);
+    // 🍪 优先级 2: 如果反爬验证失败，使用 Cookie 方式（原有逻辑）
+    if (!html) {
 
-    // 检测 challenge 页面
-    if (isDoubanChallengePage(html)) {
-      console.log(`[Douban] 检测到 challenge 页面`);
+      // 🎯 2025 最佳实践：按照真实浏览器的头部顺序发送
+      const fetchOptions = {
+        signal: controller.signal,
+        headers: {
+          // 基础头部（所有浏览器通用）
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br, zstd',
+          'Cache-Control': 'max-age=0',
+          'DNT': '1',
+          ...secChHeaders,  // Chrome/Edge 的 Sec-CH-UA 头部
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+          'User-Agent': ua,
+          // 随机添加 Referer（50% 概率）
+          ...(Math.random() > 0.5 ? { 'Referer': 'https://www.douban.com/' } : {}),
+          // 🍪 如果配置了 Cookies，则添加到请求头
+          ...(doubanCookies ? { 'Cookie': doubanCookies } : {}),
+        },
+      };
 
-      // 🍪 如果使用了 Cookies 但仍然遇到 challenge，说明 cookies 可能失效
+      // 如果使用了 Cookies，记录日志
       if (doubanCookies) {
-        console.warn(`[Douban] ⚠️ 使用 Cookies 仍遇到 Challenge，Cookies 可能已失效`);
+        console.log(`[Douban] 使用配置的 Cookies 请求: ${id}`);
       }
 
-      // 获取配置，检查是否启用 Puppeteer
-      const config = await getConfig();
-      const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
+      const response = await fetch(target, fetchOptions);
+      clearTimeout(timeoutId);
 
-      if (enablePuppeteer) {
-        console.log(`[Douban] Puppeteer 已启用，尝试绕过 Challenge...`);
-        try {
-          // 尝试使用 Puppeteer 绕过 Challenge
-          const puppeteerResult = await bypassDoubanChallenge(target);
-          html = puppeteerResult.html;
+      console.log(`[Douban] 响应状态: ${response.status}`);
 
-          // 再次检测是否成功绕过
-          if (isDoubanChallengePage(html)) {
-            console.log(`[Douban] Puppeteer 绕过失败，使用 Mobile API fallback...`);
-            return await fetchFromMobileAPI(id);
-          }
+      // 先检查状态码
+      if (!response.ok) {
+        console.log(`[Douban] HTTP 错误: ${response.status}`);
 
-          console.log(`[Douban] ✅ Puppeteer 成功绕过 Challenge`);
-          // 继续使用 Puppeteer 获取的 HTML 进行解析
-        } catch (puppeteerError) {
-          console.error(`[Douban] Puppeteer 执行失败:`, puppeteerError);
-          console.log(`[Douban] 使用 Mobile API fallback...`);
+        // 302/301 重定向 或 429 速率限制 - 直接用 Mobile API
+        if (response.status === 429 || response.status === 302 || response.status === 301) {
+          console.log(`[Douban] 状态码 ${response.status}，使用 Mobile API fallback...`);
           try {
             return await fetchFromMobileAPI(id);
           } catch (mobileError) {
-            throw new DoubanError('豆瓣反爬虫激活，Puppeteer 和 Mobile API 均不可用', 'RATE_LIMIT', 429);
+            throw new DoubanError('豆瓣 API 和 Mobile API 均不可用，请稍后再试', 'NETWORK_ERROR', response.status);
           }
+        } else if (response.status >= 500) {
+          throw new DoubanError(`豆瓣服务器错误: ${response.status}`, 'SERVER_ERROR', response.status);
+        } else if (response.status === 404) {
+          throw new DoubanError(`影片不存在: ${id}`, 'SERVER_ERROR', 404);
+        } else {
+          throw new DoubanError(`HTTP错误: ${response.status}`, 'NETWORK_ERROR', response.status);
         }
-      } else {
-        // Puppeteer 未启用，直接使用 Mobile API
-        console.log(`[Douban] Puppeteer 未启用，直接使用 Mobile API fallback...`);
-        return await fetchFromMobileAPI(id);
       }
-    }
 
-    // 🍪 如果使用了 Cookies 且成功获取页面，记录成功日志
-    if (doubanCookies) {
-      console.log(`[Douban] ✅ 使用 Cookies 成功获取页面: ${id}`);
-    }
+      // 获取HTML内容
+      html = await response.text();
+      console.log(`[Douban] 页面长度: ${html.length}`);
+
+      // 检测 challenge 页面
+      if (isDoubanChallengePage(html)) {
+        console.log(`[Douban] 检测到 challenge 页面`);
+
+        // 🍪 如果使用了 Cookies 但仍然遇到 challenge，说明 cookies 可能失效
+        if (doubanCookies) {
+          console.warn(`[Douban] ⚠️ 使用 Cookies 仍遇到 Challenge，Cookies 可能已失效`);
+        }
+
+        // 获取配置，检查是否启用 Puppeteer
+        const config = await getConfig();
+        const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
+
+        if (enablePuppeteer) {
+          console.log(`[Douban] Puppeteer 已启用，尝试绕过 Challenge...`);
+          try {
+            // 尝试使用 Puppeteer 绕过 Challenge
+            const puppeteerResult = await bypassDoubanChallenge(target);
+            html = puppeteerResult.html;
+
+            // 再次检测是否成功绕过
+            if (isDoubanChallengePage(html)) {
+              console.log(`[Douban] Puppeteer 绕过失败，使用 Mobile API fallback...`);
+              return await fetchFromMobileAPI(id);
+            }
+
+            console.log(`[Douban] ✅ Puppeteer 成功绕过 Challenge`);
+            // 继续使用 Puppeteer 获取的 HTML 进行解析
+          } catch (puppeteerError) {
+            console.error(`[Douban] Puppeteer 执行失败:`, puppeteerError);
+            console.log(`[Douban] 使用 Mobile API fallback...`);
+            try {
+              return await fetchFromMobileAPI(id);
+            } catch (mobileError) {
+              throw new DoubanError('豆瓣反爬虫激活，Puppeteer 和 Mobile API 均不可用', 'RATE_LIMIT', 429);
+            }
+          }
+        } else {
+          // Puppeteer 未启用，直接使用 Mobile API
+          console.log(`[Douban] Puppeteer 未启用，直接使用 Mobile API fallback...`);
+          return await fetchFromMobileAPI(id);
+        }
+      }
+
+      // 🍪 如果使用了 Cookies 且成功获取页面，记录成功日志
+      if (doubanCookies) {
+        console.log(`[Douban] ✅ 使用 Cookies 成功获取页面: ${id}`);
+      }
+    } // 结束 if (!html) 块
 
     console.log(`[Douban] 开始解析页面内容...`);
 

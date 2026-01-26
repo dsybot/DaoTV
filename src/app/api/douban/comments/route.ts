@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
+import { fetchDoubanWithVerification } from '@/lib/douban-anti-crawler';
 import { bypassDoubanChallenge } from '@/lib/puppeteer';
 import { getRandomUserAgent } from '@/lib/user-agent';
 import { recordRequest } from '@/lib/performance-monitor';
@@ -36,6 +37,28 @@ function isDoubanChallengePage(html: string): boolean {
     html.includes('process(cha)') &&
     html.includes('载入中')
   );
+}
+
+/**
+ * 尝试使用反爬验证获取页面
+ */
+async function tryFetchWithAntiCrawler(url: string): Promise<{ success: boolean; html?: string; error?: string }> {
+  try {
+    console.log('[Douban Comments] 🔐 尝试使用反爬验证...');
+    const response = await fetchDoubanWithVerification(url);
+
+    if (response.ok) {
+      const html = await response.text();
+      console.log(`[Douban Comments] ✅ 反爬验证成功，页面长度: ${html.length}`);
+      return { success: true, html };
+    }
+
+    console.log(`[Douban Comments] ⚠️ 反爬验证返回状态: ${response.status}`);
+    return { success: false, error: `Status ${response.status}` };
+  } catch (error) {
+    console.log('[Douban Comments] ❌ 反爬验证失败:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
 export const runtime = 'nodejs';
@@ -141,86 +164,106 @@ export async function GET(request: Request) {
     // 🍪 获取豆瓣 Cookies（如果配置了）
     const doubanCookies = await getDoubanCookies();
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    let html: string | null = null;
 
-    const fetchOptions = {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Cache-Control': 'max-age=0',
-        // 随机添加Referer
-        ...(Math.random() > 0.5 ? { 'Referer': 'https://movie.douban.com/' } : {}),
-        // 🍪 如果配置了 Cookies，则添加到请求头
-        ...(doubanCookies ? { 'Cookie': doubanCookies } : {}),
-      },
-    };
-
-    // 如果使用了 Cookies，记录日志
-    if (doubanCookies) {
-      console.log(`[Douban Comments] 使用配置的 Cookies 请求: ${id}`);
+    // 🔐 优先级 1: 尝试使用反爬验证
+    const antiCrawlerResult = await tryFetchWithAntiCrawler(target);
+    if (antiCrawlerResult.success && antiCrawlerResult.html) {
+      // 检查是否为 challenge 页面
+      if (!isDoubanChallengePage(antiCrawlerResult.html)) {
+        console.log('[Douban Comments] ✅ 反爬验证成功，直接使用返回的页面');
+        html = antiCrawlerResult.html;
+      } else {
+        console.log('[Douban Comments] ⚠️ 反爬验证返回了 challenge 页面，尝试其他方式');
+      }
+    } else {
+      console.log('[Douban Comments] ⚠️ 反爬验证失败，尝试 Cookie 方式');
     }
 
-    const response = await fetch(target, fetchOptions);
-    clearTimeout(timeoutId);
+    // 🍪 优先级 2: 如果反爬验证失败，使用 Cookie 方式（原有逻辑）
+    if (!html) {
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    let html = await response.text();
+      const fetchOptions = {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': getRandomUserAgent(),
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0',
+          // 随机添加Referer
+          ...(Math.random() > 0.5 ? { 'Referer': 'https://movie.douban.com/' } : {}),
+          // 🍪 如果配置了 Cookies，则添加到请求头
+          ...(doubanCookies ? { 'Cookie': doubanCookies } : {}),
+        },
+      };
 
-    // 检测 challenge 页面 - 根据配置决定是否使用 Puppeteer
-    if (isDoubanChallengePage(html)) {
-      console.log(`[Douban Comments] 检测到 challenge 页面`);
-
-      // 🍪 如果使用了 Cookies 但仍然遇到 challenge，说明 cookies 可能失效
+      // 如果使用了 Cookies，记录日志
       if (doubanCookies) {
-        console.warn(`[Douban Comments] ⚠️ 使用 Cookies 仍遇到 Challenge，Cookies 可能已失效`);
+        console.log(`[Douban Comments] 使用配置的 Cookies 请求: ${id}`);
       }
 
-      // 获取配置，检查是否启用 Puppeteer
-      const config = await getConfig();
-      const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
+      const response = await fetch(target, fetchOptions);
+      clearTimeout(timeoutId);
 
-      if (enablePuppeteer) {
-        console.log(`[Douban Comments] Puppeteer 已启用，尝试绕过 Challenge...`);
-        try {
-          // 尝试使用 Puppeteer 绕过 Challenge
-          const puppeteerResult = await bypassDoubanChallenge(target);
-          html = puppeteerResult.html;
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-          // 再次检测是否成功绕过
-          if (isDoubanChallengePage(html)) {
-            console.log(`[Douban Comments] Puppeteer 绕过失败`);
+      html = await response.text();
+
+      // 检测 challenge 页面 - 根据配置决定是否使用 Puppeteer
+      if (isDoubanChallengePage(html)) {
+        console.log(`[Douban Comments] 检测到 challenge 页面`);
+
+        // 🍪 如果使用了 Cookies 但仍然遇到 challenge，说明 cookies 可能失效
+        if (doubanCookies) {
+          console.warn(`[Douban Comments] ⚠️ 使用 Cookies 仍遇到 Challenge，Cookies 可能已失效`);
+        }
+
+        // 获取配置，检查是否启用 Puppeteer
+        const config = await getConfig();
+        const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
+
+        if (enablePuppeteer) {
+          console.log(`[Douban Comments] Puppeteer 已启用，尝试绕过 Challenge...`);
+          try {
+            // 尝试使用 Puppeteer 绕过 Challenge
+            const puppeteerResult = await bypassDoubanChallenge(target);
+            html = puppeteerResult.html;
+
+            // 再次检测是否成功绕过
+            if (isDoubanChallengePage(html)) {
+              console.log(`[Douban Comments] Puppeteer 绕过失败`);
+              throw new Error('豆瓣反爬虫激活，无法获取短评');
+            }
+
+            console.log(`[Douban Comments] ✅ Puppeteer 成功绕过 Challenge`);
+          } catch (puppeteerError) {
+            console.error(`[Douban Comments] Puppeteer 执行失败:`, puppeteerError);
             throw new Error('豆瓣反爬虫激活，无法获取短评');
           }
-
-          console.log(`[Douban Comments] ✅ Puppeteer 成功绕过 Challenge`);
-        } catch (puppeteerError) {
-          console.error(`[Douban Comments] Puppeteer 执行失败:`, puppeteerError);
-          throw new Error('豆瓣反爬虫激活，无法获取短评');
+        } else {
+          // Puppeteer 未启用，直接返回错误
+          console.log(`[Douban Comments] Puppeteer 未启用，无法绕过 Challenge`);
+          throw new Error('豆瓣反爬虫激活，请在管理后台启用 Puppeteer');
         }
-      } else {
-        // Puppeteer 未启用，直接返回错误
-        console.log(`[Douban Comments] Puppeteer 未启用，无法绕过 Challenge`);
-        throw new Error('豆瓣反爬虫激活，请在管理后台启用 Puppeteer');
       }
-    }
 
-    // 🍪 如果使用了 Cookies 且成功获取页面，记录成功日志
-    if (doubanCookies) {
-      console.log(`[Douban Comments] ✅ 使用 Cookies 成功获取短评: ${id}`);
-    }
+      // 🍪 如果使用了 Cookies 且成功获取页面，记录成功日志
+      if (doubanCookies) {
+        console.log(`[Douban Comments] ✅ 使用 Cookies 成功获取短评: ${id}`);
+      }
+    } // 结束 if (!html) 块
 
     // 解析短评列表
     const comments = parseDoubanComments(html);
