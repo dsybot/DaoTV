@@ -77,8 +77,8 @@ export default function PerformanceMonitor() {
     return path;
   };
 
-  // 过滤请求列表
-  const filterRequests = (requests: any[]) => {
+  // 过滤请求列表（用于统计，不限制条数）
+  const filterRequestsForStats = (requests: any[]) => {
     if (apiFilter === 'all') return requests;
 
     return requests.filter((req) => {
@@ -98,18 +98,19 @@ export default function PerformanceMonitor() {
     });
   };
 
+  // 过滤请求列表（用于显示，最多显示100条）
+  const filterRequestsForDisplay = (requests: any[]) => {
+    const filtered = filterRequestsForStats(requests);
+    // 限制最多显示100条（取最新的100条）
+    return filtered.slice(0, 100);
+  };
+
   // 计算过滤后的统计数据
   const getFilteredStats = () => {
     if (!data) return null;
 
-    // 根据选择的时间范围获取请求
-    const now = Date.now();
-    const timeRangeMs = parseInt(timeRange) * 60 * 60 * 1000; // 转换为毫秒
-    const startTime = now - timeRangeMs;
-    const recentRequests = data.recentRequests.filter((r: any) => r.timestamp > startTime);
-
-    // 应用API筛选
-    const filteredRequests = filterRequests(recentRequests);
+    // 应用API筛选（用于统计，不限制条数）
+    const filteredRequests = filterRequestsForStats(data.recentRequests);
 
     if (filteredRequests.length === 0) {
       return {
@@ -387,7 +388,7 @@ export default function PerformanceMonitor() {
                 </tr>
               </thead>
               <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-                {filterRequests(data.recentRequests).map((request: any, index: number) => {
+                {filterRequestsForDisplay(data.recentRequests).map((request: any, index: number) => {
                   const responseSizeKB = (request.responseSize / 1024).toFixed(2);
                   const isSuccess = request.statusCode >= 200 && request.statusCode < 300;
                   const isError = request.statusCode >= 400;
