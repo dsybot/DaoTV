@@ -162,6 +162,8 @@ export async function GET(request: Request) {
     const etag = videoResponse.headers.get('etag');
     const lastModified = videoResponse.headers.get('last-modified');
 
+    console.log(`[VideoProxy] 响应头: status=${videoResponse.status}, contentLength=${contentLength}, contentRange=${contentRange}, rangeHeader=${rangeHeader}`);
+
     // 创建响应头
     const headers = new Headers();
     if (contentType) headers.set('Content-Type', contentType);
