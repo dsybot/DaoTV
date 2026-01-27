@@ -62,13 +62,13 @@ export async function GET(request: Request) {
 
   // 🎯 决定是否需要缓存：Kvrocks 存储 + 豆瓣视频
   const shouldCache = storageType === 'kvrocks' &&
-                      (videoUrl.includes('douban') || videoUrl.includes('doubanio'));
+    (videoUrl.includes('douban') || videoUrl.includes('doubanio'));
 
   console.log(`[VideoProxy] 缓存检查: storageType=${storageType}, shouldCache=${shouldCache}, url=${videoUrl.substring(0, 50)}...`);
 
   // 创建 AbortController 用于超时控制
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 120秒超时（2分钟）
 
   try {
     // 动态设置 Referer 和 Origin（根据视频源域名）
