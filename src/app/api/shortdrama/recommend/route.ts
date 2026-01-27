@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
 import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
+import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
@@ -13,34 +14,38 @@ async function getRecommendedShortDramasInternal(
   category?: number,
   size = 10
 ) {
-  const params = new URLSearchParams();
-  if (category) params.append('category', category.toString());
-  params.append('size', size.toString());
+  // 新API格式: ?ac=detail&t=46&pg=1
+  const typeId = category || 46; // 默认使用46（短剧分类）
+  const apiUrl = `https://cj.rycjapi.com/api.php/provide/vod?ac=detail&t=${typeId}&pg=1`;
 
-  const response = await fetch(
-    `https://api.r2afosne.dpdns.org/vod/recommend?${params.toString()}`,
-    {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
-      },
-    }
-  );
+  const response = await fetch(apiUrl, {
+    headers: {
+      'User-Agent': DEFAULT_USER_AGENT,
+      'Accept': 'application/json',
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
   const data = await response.json();
-  const items = data.items || [];
-  return items.map((item: any) => ({
-    id: item.vod_id || item.id,
-    name: item.vod_name || item.name,
-    cover: item.vod_pic || item.cover,
-    update_time: item.vod_time || item.update_time || new Date().toISOString(),
-    score: item.vod_score || item.score || 0,
+  const items = data.list || [];
+
+  // 只取前 size 个
+  const limitedItems = items.slice(0, size);
+
+  return limitedItems.map((item: any) => ({
+    id: item.vod_id,
+    name: item.vod_name,
+    cover: item.vod_pic || '',
+    update_time: item.vod_time || new Date().toISOString(),
+    score: parseFloat(item.vod_score) || 0,
     episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
-    description: item.vod_content || item.description || '',
+    description: item.vod_content || item.vod_blurb || '',
+    author: item.vod_actor || '',
+    backdrop: item.vod_pic_slide || item.vod_pic || '',
+    vote_average: parseFloat(item.vod_score) || 0,
   }));
 }
 

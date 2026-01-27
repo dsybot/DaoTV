@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
+import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
@@ -13,15 +14,15 @@ async function searchShortDramasInternal(
   page = 1,
   size = 20
 ) {
-  const response = await fetch(
-    `https://api.r2afosne.dpdns.org/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`,
-    {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
-      },
-    }
-  );
+  // 新API格式: ?ac=detail&wd=关键词&pg=1
+  const apiUrl = `https://cj.rycjapi.com/api.php/provide/vod?ac=detail&wd=${encodeURIComponent(query)}&pg=${page}`;
+
+  const response = await fetch(apiUrl, {
+    headers: {
+      'User-Agent': DEFAULT_USER_AGENT,
+      'Accept': 'application/json',
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -29,19 +30,26 @@ async function searchShortDramasInternal(
 
   const data = await response.json();
   const items = data.list || [];
-  const list = items.map((item: any) => ({
-    id: item.id,
-    name: item.name,
-    cover: item.cover,
-    update_time: item.update_time || new Date().toISOString(),
-    score: item.score || 0,
-    episode_count: 1, // 搜索API没有集数信息，ShortDramaCard会自动获取
-    description: item.description || '',
+
+  // 只取前 size 个
+  const limitedItems = items.slice(0, size);
+
+  const list = limitedItems.map((item: any) => ({
+    id: item.vod_id,
+    name: item.vod_name,
+    cover: item.vod_pic || '',
+    update_time: item.vod_time || new Date().toISOString(),
+    score: parseFloat(item.vod_score) || 0,
+    episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+    description: item.vod_content || item.vod_blurb || '',
+    author: item.vod_actor || '',
+    backdrop: item.vod_pic_slide || item.vod_pic || '',
+    vote_average: parseFloat(item.vod_score) || 0,
   }));
 
   return {
     list,
-    hasMore: data.currentPage < data.totalPages,
+    hasMore: data.page < data.pagecount,
   };
 }
 

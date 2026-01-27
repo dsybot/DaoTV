@@ -23,10 +23,10 @@ const isMobile = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
-// 获取API基础URL - 新API使用统一的采集接口格式
+// 获取API基础URL - 统一使用内部 API 代理避免 CORS 问题
 const getApiBase = () => {
-  // 移动端和桌面端都使用相同的 API 地址
-  return SHORTDRAMA_API_BASE;
+  // 所有请求都通过内部 API 代理
+  return '/api/shortdrama';
 };
 
 // 获取短剧分类列表
@@ -40,17 +40,10 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
       return cached;
     }
 
-    // 新API格式: ?ac=list
-    const apiUrl = `${getApiBase()}?ac=list`;
+    // 使用内部 API 代理
+    const apiUrl = `${getApiBase()}/categories`;
 
-    const fetchOptions: RequestInit = {
-      headers: {
-        'User-Agent': DEFAULT_USER_AGENT,
-        'Accept': 'application/json',
-      },
-    };
-
-    const response = await fetch(apiUrl, fetchOptions);
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -58,13 +51,8 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
 
     const data = await response.json();
 
-    // 新API返回格式: { code: 1, msg: "数据列表", class: [...] }
-    const categories = data.class || [];
-
-    const result: ShortDramaCategory[] = categories.map((item: any) => ({
-      type_id: item.type_id,
-      type_name: item.type_name,
-    }));
+    // 内部 API 已经处理好格式
+    const result: ShortDramaCategory[] = data;
 
     // 缓存结果
     await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.categories);
@@ -89,45 +77,19 @@ export async function getRecommendedShortDramas(
       return cached;
     }
 
-    // 新API格式: ?ac=detail&t=46&pg=1
-    // t=46 是短剧分类ID
-    const typeId = category || 46; // 默认使用46（短剧分类）
-    const apiUrl = `${getApiBase()}?ac=detail&t=${typeId}&pg=1`;
+    // 使用内部 API 代理
+    const params = new URLSearchParams();
+    if (category) params.append('category', category.toString());
+    params.append('size', size.toString());
+    const apiUrl = `${getApiBase()}/recommend?${params.toString()}`;
 
-    const fetchOptions: RequestInit = {
-      headers: {
-        'User-Agent': DEFAULT_USER_AGENT,
-        'Accept': 'application/json',
-      },
-    };
-
-    const response = await fetch(apiUrl, fetchOptions);
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    // 新API返回格式: { code: 1, msg: "数据列表", page: 1, pagecount: 194, limit: "50", total: 9669, list: [...] }
-    const items = data.list || [];
-
-    // 只取前 size 个
-    const limitedItems = items.slice(0, size);
-
-    const result: ShortDramaItem[] = limitedItems.map((item: any) => ({
-      id: item.vod_id,
-      name: item.vod_name,
-      cover: item.vod_pic || '',
-      update_time: item.vod_time || new Date().toISOString(),
-      score: parseFloat(item.vod_score) || 0,
-      episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
-      description: item.vod_content || item.vod_blurb || '',
-      author: item.vod_actor || '',
-      backdrop: item.vod_pic_slide || item.vod_pic || '',
-      vote_average: parseFloat(item.vod_score) || 0,
-      tmdb_id: undefined,
-    }));
+    const result = await response.json();
 
     // 缓存结果
     await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.recommends);
@@ -153,48 +115,16 @@ export async function getShortDramaList(
       return cached;
     }
 
-    // 新API格式: ?ac=detail&t=46&pg=1
-    const apiUrl = `${getApiBase()}?ac=detail&t=${category}&pg=${page}`;
+    // 使用内部 API 代理
+    const apiUrl = `${getApiBase()}/list?categoryId=${category}&page=${page}&size=${size}`;
 
-    const fetchOptions: RequestInit = {
-      headers: {
-        'User-Agent': DEFAULT_USER_AGENT,
-        'Accept': 'application/json',
-      },
-    };
-
-    const response = await fetch(apiUrl, fetchOptions);
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    // 新API返回格式: { code: 1, msg: "数据列表", page: 1, pagecount: 194, limit: "50", total: 9669, list: [...] }
-    const items = data.list || [];
-
-    // 只取前 size 个
-    const limitedItems = items.slice(0, size);
-
-    const list: ShortDramaItem[] = limitedItems.map((item: any) => ({
-      id: item.vod_id,
-      name: item.vod_name,
-      cover: item.vod_pic || '',
-      update_time: item.vod_time || new Date().toISOString(),
-      score: parseFloat(item.vod_score) || 0,
-      episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
-      description: item.vod_content || item.vod_blurb || '',
-      author: item.vod_actor || '',
-      backdrop: item.vod_pic_slide || item.vod_pic || '',
-      vote_average: parseFloat(item.vod_score) || 0,
-      tmdb_id: undefined,
-    }));
-
-    const result = {
-      list,
-      hasMore: data.page < data.pagecount, // 使用pagecount判断是否还有更多
-    };
+    const result = await response.json();
 
     // 缓存结果 - 第一页缓存时间更长
     const cacheTime = page === 1 ? SHORTDRAMA_CACHE_EXPIRE.lists * 2 : SHORTDRAMA_CACHE_EXPIRE.lists;
@@ -213,47 +143,16 @@ export async function searchShortDramas(
   size = 20
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
   try {
-    // 新API格式: ?ac=detail&wd=关键词&pg=1
-    const apiUrl = `${getApiBase()}?ac=detail&wd=${encodeURIComponent(query)}&pg=${page}`;
+    // 使用内部 API 代理
+    const apiUrl = `${getApiBase()}/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`;
 
-    const fetchOptions: RequestInit = {
-      headers: {
-        'User-Agent': DEFAULT_USER_AGENT,
-        'Accept': 'application/json',
-      },
-    };
-
-    const response = await fetch(apiUrl, fetchOptions);
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    // 新API返回格式与列表接口相同
-    const items = data.list || [];
-    const limitedItems = items.slice(0, size);
-
-    const list: ShortDramaItem[] = limitedItems.map((item: any) => ({
-      id: item.vod_id,
-      name: item.vod_name,
-      cover: item.vod_pic || '',
-      update_time: item.vod_time || new Date().toISOString(),
-      score: parseFloat(item.vod_score) || 0,
-      episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
-      description: item.vod_content || item.vod_blurb || '',
-      author: item.vod_actor || '',
-      backdrop: item.vod_pic_slide || item.vod_pic || '',
-      vote_average: parseFloat(item.vod_score) || 0,
-      tmdb_id: undefined,
-    }));
-
-    const result = {
-      list,
-      hasMore: data.page < data.pagecount,
-    };
-
+    const result = await response.json();
     return result;
   } catch (error) {
     console.error('搜索短剧失败:', error);
