@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getConfig } from '@/lib/config';
 import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
@@ -8,20 +9,52 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-// 服务端专用函数，直接调用外部API
-async function searchShortDramasInternal(
+// 从单个短剧源搜索数据（通过分类名称过滤）
+async function searchFromSource(
+  api: string,
   query: string,
-  page = 1,
-  size = 20
+  page: number,
+  size: number
 ) {
-  // 新API格式: ?ac=detail&wd=关键词&pg=1
-  const apiUrl = `https://cj.rycjapi.com/api.php/provide/vod?ac=detail&wd=${encodeURIComponent(query)}&pg=${page}`;
+  // Step 1: 获取分类列表，找到"短剧"分类的ID
+  const listUrl = `${api}?ac=list`;
+
+  const listResponse = await fetch(listUrl, {
+    headers: {
+      'User-Agent': DEFAULT_USER_AGENT,
+      'Accept': 'application/json',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!listResponse.ok) {
+    throw new Error(`HTTP error! status: ${listResponse.status}`);
+  }
+
+  const listData = await listResponse.json();
+  const categories = listData.class || [];
+
+  // 查找"短剧"分类
+  const shortDramaCategory = categories.find((cat: any) =>
+    cat.type_name === '短剧' || cat.type_name === '微短剧'
+  );
+
+  if (!shortDramaCategory) {
+    console.log(`该源没有短剧分类`);
+    return { list: [], hasMore: false };
+  }
+
+  const categoryId = shortDramaCategory.type_id;
+
+  // Step 2: 搜索该分类下的短剧
+  const apiUrl = `${api}?ac=detail&wd=${encodeURIComponent(query)}&pg=${page}`;
 
   const response = await fetch(apiUrl, {
     headers: {
       'User-Agent': DEFAULT_USER_AGENT,
       'Accept': 'application/json',
     },
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
@@ -31,8 +64,9 @@ async function searchShortDramasInternal(
   const data = await response.json();
   const items = data.list || [];
 
-  // 只取前 size 个
-  const limitedItems = items.slice(0, size);
+  // 过滤出短剧分类的结果
+  const shortDramaItems = items.filter((item: any) => item.type_id === categoryId);
+  const limitedItems = shortDramaItems.slice(0, size);
 
   const list = limitedItems.map((item: any) => ({
     id: item.vod_id,
@@ -51,6 +85,78 @@ async function searchShortDramasInternal(
     list,
     hasMore: data.page < data.pagecount,
   };
+}
+
+// 服务端专用函数，从所有短剧源聚合搜索结果
+async function searchShortDramasInternal(
+  query: string,
+  page = 1,
+  size = 20
+) {
+  try {
+    const config = await getConfig();
+
+    // 筛选出所有启用的短剧源
+    const shortDramaSources = config.SourceConfig.filter(
+      source => source.type === 'shortdrama' && !source.disabled
+    );
+
+    // 如果没有配置短剧源，使用默认源
+    if (shortDramaSources.length === 0) {
+      return await searchFromSource(
+        'https://wwzy.tv/api.php/provide/vod',
+        query,
+        page,
+        size
+      );
+    }
+
+    // 有配置短剧源，聚合所有源的搜索结果
+    const results = await Promise.allSettled(
+      shortDramaSources.map(source =>
+        searchFromSource(source.api, query, page, size)
+      )
+    );
+
+    // 合并所有成功的结果
+    const allItems: any[] = [];
+    let hasMore = false;
+
+    results.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        allItems.push(...result.value.list);
+        hasMore = hasMore || result.value.hasMore;
+      }
+    });
+
+    // 去重
+    const uniqueItems = Array.from(
+      new Map(allItems.map(item => [item.name, item])).values()
+    );
+
+    // 按更新时间排序
+    uniqueItems.sort((a, b) =>
+      new Date(b.update_time).getTime() - new Date(a.update_time).getTime()
+    );
+
+    return {
+      list: uniqueItems.slice(0, size),
+      hasMore,
+    };
+  } catch (error) {
+    console.error('搜索短剧失败:', error);
+    // fallback到默认源
+    try {
+      return await searchFromSource(
+        'https://wwzy.tv/api.php/provide/vod',
+        query,
+        page,
+        size
+      );
+    } catch (fallbackError) {
+      return { list: [], hasMore: false };
+    }
+  }
 }
 
 export async function GET(request: NextRequest) {

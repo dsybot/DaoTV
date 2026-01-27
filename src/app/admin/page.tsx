@@ -330,6 +330,7 @@ interface DataSource {
   disabled?: boolean;
   from: 'config' | 'custom';
   is_adult?: boolean;
+  type?: 'vod' | 'shortdrama'; // 视频源类型：vod=普通视频，shortdrama=短剧
 }
 
 // 直播源数据类型
@@ -3049,6 +3050,7 @@ const VideoSourceConfig = ({
         api: newSource.api,
         detail: newSource.detail,
         is_adult: newSource.is_adult,
+        type: newSource.type,
       });
       setNewSource({
         name: '',
@@ -3058,6 +3060,7 @@ const VideoSourceConfig = ({
         disabled: false,
         from: 'custom',
         is_adult: false,
+        type: 'vod',
       });
       setShowAddForm(false);
     }).catch(() => {
@@ -3295,6 +3298,17 @@ const VideoSourceConfig = ({
           </button>
           {source.is_adult && (
             <span className='ml-2 text-xs text-red-600 dark:text-red-400'>🔞</span>
+          )}
+        </td>
+        <td className='px-6 py-4 whitespace-nowrap text-center'>
+          {source.type === 'shortdrama' ? (
+            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200'>
+              🎬 短剧源
+            </span>
+          ) : (
+            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'>
+              普通源
+            </span>
           )}
         </td>
         <td className='px-6 py-4 whitespace-nowrap max-w-[1rem]'>
@@ -3932,6 +3946,49 @@ const VideoSourceConfig = ({
               </span>
             )}
           </div>
+          {/* 源类型选择 */}
+          <div className='p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+              源类型
+            </label>
+            <div className='flex items-center space-x-4'>
+              <label className='flex items-center space-x-2 cursor-pointer'>
+                <input
+                  type='radio'
+                  name='sourceType'
+                  value='vod'
+                  checked={!newSource.type || newSource.type === 'vod'}
+                  onChange={(e) =>
+                    setNewSource((prev) => ({ ...prev, type: e.target.value as 'vod' }))
+                  }
+                  className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+                />
+                <span className='text-sm text-gray-700 dark:text-gray-300'>
+                  普通视频源
+                </span>
+              </label>
+              <label className='flex items-center space-x-2 cursor-pointer'>
+                <input
+                  type='radio'
+                  name='sourceType'
+                  value='shortdrama'
+                  checked={newSource.type === 'shortdrama'}
+                  onChange={(e) =>
+                    setNewSource((prev) => ({ ...prev, type: e.target.value as 'shortdrama' }))
+                  }
+                  className='w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+                />
+                <span className='text-sm text-gray-700 dark:text-gray-300'>
+                  短剧源 🎬
+                </span>
+              </label>
+            </div>
+            {newSource.type === 'shortdrama' && (
+              <div className='mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs text-purple-700 dark:text-purple-300'>
+                💡 系统会自动查找该源的"短剧"或"微短剧"分类
+              </div>
+            )}
+          </div>
           <div className='flex justify-end'>
             <button
               onClick={handleAddSource}
@@ -3977,6 +4034,9 @@ const VideoSourceConfig = ({
               </th>
               <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                 成人资源
+              </th>
+              <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                源类型
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                 有效性
