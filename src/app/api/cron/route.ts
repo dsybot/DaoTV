@@ -49,6 +49,11 @@ interface CronStats {
 
 let currentCronStats: CronStats | null = null;
 
+// 🚀 阶段3优化：将统计数据导出到全局，供 /api/cron/stats 访问
+if (typeof global !== 'undefined') {
+  (global as any).currentCronStats = currentCronStats;
+}
+
 // ========== 性能统计接口结束 ==========
 
 // ========== 🚀 阶段1优化：并发控制工具函数 ==========
@@ -120,6 +125,43 @@ async function withTimeout<T>(
       )
     ),
   ]);
+}
+
+/**
+ * 🚀 阶段3优化：重试机制
+ * @param fn 要执行的函数
+ * @param options 重试配置
+ * @returns 执行结果
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: {
+    maxRetries?: number;
+    retryDelay?: number;
+    onRetry?: (attempt: number, error: Error) => void;
+  } = {}
+): Promise<T> {
+  const { maxRetries = 3, retryDelay = 1000, onRetry } = options;
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < maxRetries) {
+        if (onRetry) {
+          onRetry(attempt, lastError);
+        }
+        console.warn(`重试 ${attempt}/${maxRetries}: ${lastError.message}`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 // ========== 工具函数结束 ==========
@@ -287,6 +329,11 @@ async function cronJob() {
     currentCronStats.memoryUsed = process.memoryUsage().heapUsed / 1024 / 1024;
     currentCronStats.dbQueries = getDbQueryCount();
 
+    // 🚀 阶段3优化：更新全局统计数据
+    if (typeof global !== 'undefined') {
+      (global as any).currentCronStats = currentCronStats;
+    }
+
     console.log('📊 ========== Cron 性能统计 ==========');
     console.log(`⏱️  总耗时: ${currentCronStats.duration}ms (${(currentCronStats.duration / 1000).toFixed(2)}s)`);
     console.log(`💾 内存使用: ${currentCronStats.memoryUsed.toFixed(2)}MB`);
@@ -416,7 +463,7 @@ async function refreshRecordAndFavorites() {
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();
 
-    // 获取详情 Promise（带缓存、超时和错误处理）
+    // 获取详情 Promise（带缓存、超时、重试和错误处理）
     const getDetail = async (
       source: string,
       id: string,
@@ -425,15 +472,24 @@ async function refreshRecordAndFavorites() {
       const key = `${source}+${id}`;
       let promise = detailCache.get(key);
       if (!promise) {
-        // 🚀 阶段1优化：添加 5 秒超时控制
-        promise = withTimeout(
-          fetchVideoDetail({
-            source,
-            id,
-            fallbackTitle: fallbackTitle.trim(),
-          }),
-          5000, // 5秒超时
-          `获取视频详情超时 (${source}+${id})`
+        // 🚀 阶段3优化：添加重试机制（最多重试2次）
+        promise = withRetry(
+          () => withTimeout(
+            fetchVideoDetail({
+              source,
+              id,
+              fallbackTitle: fallbackTitle.trim(),
+            }),
+            5000, // 5秒超时
+            `获取视频详情超时 (${source}+${id})`
+          ),
+          {
+            maxRetries: 2,
+            retryDelay: 1000,
+            onRetry: (attempt, error) => {
+              console.log(`🔄 重试获取视频详情 (${source}+${id}), 第 ${attempt} 次: ${error.message}`);
+            }
+          }
         )
           .then((detail) => {
             // 成功时才缓存结果
