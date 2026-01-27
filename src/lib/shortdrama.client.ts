@@ -13,7 +13,8 @@ import {
 } from './shortdrama-cache';
 import { DEFAULT_USER_AGENT } from './user-agent';
 
-const SHORTDRAMA_API_BASE = 'https://api.r2afosne.dpdns.org';
+// 新的视频源 API（资源站采集接口）
+const SHORTDRAMA_API_BASE = 'https://cj.rycjapi.com/api.php/provide/vod';
 const ALTERNATIVE_API_BASE = 'https://001038.xyz'; // Alternative API for when primary is down
 
 // 检测是否为移动端环境
@@ -22,13 +23,10 @@ const isMobile = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
-// 获取API基础URL - 移动端使用内部API代理，桌面端直接调用外部API
-const getApiBase = (endpoint: string) => {
-  if (isMobile()) {
-    return `/api/shortdrama${endpoint}`;
-  }
-  // 桌面端使用外部API的完整路径
-  return `${SHORTDRAMA_API_BASE}/vod${endpoint}`;
+// 获取API基础URL - 新API使用统一的采集接口格式
+const getApiBase = () => {
+  // 移动端和桌面端都使用相同的 API 地址
+  return SHORTDRAMA_API_BASE;
 };
 
 // 获取短剧分类列表
@@ -36,22 +34,16 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
   const cacheKey = getCacheKey('categories', {});
 
   try {
-    // 临时禁用缓存进行测试 - 移动端强制刷新
-    if (!isMobile()) {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return cached;
-      }
+    // 检查缓存
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
     }
 
-    const apiUrl = isMobile()
-      ? `/api/shortdrama/categories`
-      : getApiBase('/categories');
+    // 新API格式: ?ac=list
+    const apiUrl = `${getApiBase()}?ac=list`;
 
-    // 移动端使用内部API，桌面端调用外部API
-    const fetchOptions: RequestInit = isMobile() ? {
-      // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
-    } : {
+    const fetchOptions: RequestInit = {
       headers: {
         'User-Agent': DEFAULT_USER_AGENT,
         'Accept': 'application/json',
@@ -66,17 +58,13 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
 
     const data = await response.json();
 
-    let result: ShortDramaCategory[];
-    // 内部API直接返回数组，外部API返回带categories的对象
-    if (isMobile()) {
-      result = data; // 内部API已经处理过格式
-    } else {
-      const categories = data.categories || [];
-      result = categories.map((item: any) => ({
-        type_id: item.type_id,
-        type_name: item.type_name,
-      }));
-    }
+    // 新API返回格式: { code: 1, msg: "数据列表", class: [...] }
+    const categories = data.class || [];
+
+    const result: ShortDramaCategory[] = categories.map((item: any) => ({
+      type_id: item.type_id,
+      type_name: item.type_name,
+    }));
 
     // 缓存结果
     await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.categories);
@@ -95,21 +83,18 @@ export async function getRecommendedShortDramas(
   const cacheKey = getCacheKey('recommends', { category, size });
 
   try {
-    // 临时禁用缓存进行测试 - 移动端强制刷新
-    if (!isMobile()) {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return cached;
-      }
+    // 检查缓存
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
     }
 
-    const apiUrl = isMobile()
-      ? `/api/shortdrama/recommend?${category ? `category=${category}&` : ''}size=${size}`
-      : `${SHORTDRAMA_API_BASE}/vod/recommend?${category ? `category=${category}&` : ''}size=${size}`;
+    // 新API格式: ?ac=detail&t=46&pg=1
+    // t=46 是短剧分类ID
+    const typeId = category || 46; // 默认使用46（短剧分类）
+    const apiUrl = `${getApiBase()}?ac=detail&t=${typeId}&pg=1`;
 
-    const fetchOptions: RequestInit = isMobile() ? {
-      // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
-    } : {
+    const fetchOptions: RequestInit = {
       headers: {
         'User-Agent': DEFAULT_USER_AGENT,
         'Accept': 'application/json',
@@ -124,26 +109,25 @@ export async function getRecommendedShortDramas(
 
     const data = await response.json();
 
-    let result: ShortDramaItem[];
-    if (isMobile()) {
-      result = data; // 内部API已经处理过格式
-    } else {
-      // 外部API的处理逻辑
-      const items = data.items || [];
-      result = items.map((item: any) => ({
-        id: item.vod_id || item.id,
-        name: item.vod_name || item.name,
-        cover: item.vod_pic || item.cover,
-        update_time: item.vod_time || item.update_time || new Date().toISOString(),
-        score: item.vod_score || item.score || 0,
-        episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
-        description: item.vod_content || item.description || '',
-        author: item.vod_actor || item.author || '',
-        backdrop: item.vod_pic_slide || item.backdrop || item.vod_pic || item.cover,
-        vote_average: item.vod_score || item.vote_average || 0,
-        tmdb_id: item.tmdb_id || undefined,
-      }));
-    }
+    // 新API返回格式: { code: 1, msg: "数据列表", page: 1, pagecount: 194, limit: "50", total: 9669, list: [...] }
+    const items = data.list || [];
+
+    // 只取前 size 个
+    const limitedItems = items.slice(0, size);
+
+    const result: ShortDramaItem[] = limitedItems.map((item: any) => ({
+      id: item.vod_id,
+      name: item.vod_name,
+      cover: item.vod_pic || '',
+      update_time: item.vod_time || new Date().toISOString(),
+      score: parseFloat(item.vod_score) || 0,
+      episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+      description: item.vod_content || item.vod_blurb || '',
+      author: item.vod_actor || '',
+      backdrop: item.vod_pic_slide || item.vod_pic || '',
+      vote_average: parseFloat(item.vod_score) || 0,
+      tmdb_id: undefined,
+    }));
 
     // 缓存结果
     await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.recommends);
@@ -163,21 +147,16 @@ export async function getShortDramaList(
   const cacheKey = getCacheKey('lists', { category, page, size });
 
   try {
-    // 临时禁用缓存进行测试 - 移动端强制刷新
-    if (!isMobile()) {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return cached;
-      }
+    // 检查缓存
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
     }
 
-    const apiUrl = isMobile()
-      ? `/api/shortdrama/list?categoryId=${category}&page=${page}&size=${size}`
-      : `${SHORTDRAMA_API_BASE}/vod/list?categoryId=${category}&page=${page}&size=${size}`;
+    // 新API格式: ?ac=detail&t=46&pg=1
+    const apiUrl = `${getApiBase()}?ac=detail&t=${category}&pg=${page}`;
 
-    const fetchOptions: RequestInit = isMobile() ? {
-      // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
-    } : {
+    const fetchOptions: RequestInit = {
       headers: {
         'User-Agent': DEFAULT_USER_AGENT,
         'Accept': 'application/json',
@@ -192,31 +171,30 @@ export async function getShortDramaList(
 
     const data = await response.json();
 
-    let result: { list: ShortDramaItem[]; hasMore: boolean };
-    if (isMobile()) {
-      result = data; // 内部API已经处理过格式
-    } else {
-      // 外部API的处理逻辑
-      const items = data.list || [];
-      const list = items.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        cover: item.cover,
-        update_time: item.update_time || new Date().toISOString(),
-        score: item.score || 0,
-        episode_count: 1, // 分页API没有集数信息，ShortDramaCard会自动获取
-        description: item.description || '',
-        author: item.author || '',
-        backdrop: item.backdrop || item.cover,
-        vote_average: item.vote_average || item.score || 0,
-        tmdb_id: item.tmdb_id || undefined,
-      }));
+    // 新API返回格式: { code: 1, msg: "数据列表", page: 1, pagecount: 194, limit: "50", total: 9669, list: [...] }
+    const items = data.list || [];
 
-      result = {
-        list,
-        hasMore: data.currentPage < data.totalPages, // 使用totalPages判断是否还有更多
-      };
-    }
+    // 只取前 size 个
+    const limitedItems = items.slice(0, size);
+
+    const list: ShortDramaItem[] = limitedItems.map((item: any) => ({
+      id: item.vod_id,
+      name: item.vod_name,
+      cover: item.vod_pic || '',
+      update_time: item.vod_time || new Date().toISOString(),
+      score: parseFloat(item.vod_score) || 0,
+      episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+      description: item.vod_content || item.vod_blurb || '',
+      author: item.vod_actor || '',
+      backdrop: item.vod_pic_slide || item.vod_pic || '',
+      vote_average: parseFloat(item.vod_score) || 0,
+      tmdb_id: undefined,
+    }));
+
+    const result = {
+      list,
+      hasMore: data.page < data.pagecount, // 使用pagecount判断是否还有更多
+    };
 
     // 缓存结果 - 第一页缓存时间更长
     const cacheTime = page === 1 ? SHORTDRAMA_CACHE_EXPIRE.lists * 2 : SHORTDRAMA_CACHE_EXPIRE.lists;
@@ -235,13 +213,10 @@ export async function searchShortDramas(
   size = 20
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
   try {
-    const apiUrl = isMobile()
-      ? `/api/shortdrama/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`
-      : `${SHORTDRAMA_API_BASE}/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`;
+    // 新API格式: ?ac=detail&wd=关键词&pg=1
+    const apiUrl = `${getApiBase()}?ac=detail&wd=${encodeURIComponent(query)}&pg=${page}`;
 
-    const fetchOptions: RequestInit = isMobile() ? {
-      // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
-    } : {
+    const fetchOptions: RequestInit = {
       headers: {
         'User-Agent': DEFAULT_USER_AGENT,
         'Accept': 'application/json',
@@ -256,31 +231,28 @@ export async function searchShortDramas(
 
     const data = await response.json();
 
-    let result: { list: ShortDramaItem[]; hasMore: boolean };
-    if (isMobile()) {
-      result = data; // 内部API已经处理过格式
-    } else {
-      // 外部API的处理逻辑
-      const items = data.list || [];
-      const list = items.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        cover: item.cover,
-        update_time: item.update_time || new Date().toISOString(),
-        score: item.score || 0,
-        episode_count: 1, // 搜索API没有集数信息，ShortDramaCard会自动获取
-        description: item.description || '',
-        author: item.author || '',
-        backdrop: item.backdrop || item.cover,
-        vote_average: item.vote_average || item.score || 0,
-        tmdb_id: item.tmdb_id || undefined,
-      }));
+    // 新API返回格式与列表接口相同
+    const items = data.list || [];
+    const limitedItems = items.slice(0, size);
 
-      result = {
-        list,
-        hasMore: data.currentPage < data.totalPages,
-      };
-    }
+    const list: ShortDramaItem[] = limitedItems.map((item: any) => ({
+      id: item.vod_id,
+      name: item.vod_name,
+      cover: item.vod_pic || '',
+      update_time: item.vod_time || new Date().toISOString(),
+      score: parseFloat(item.vod_score) || 0,
+      episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+      description: item.vod_content || item.vod_blurb || '',
+      author: item.vod_actor || '',
+      backdrop: item.vod_pic_slide || item.vod_pic || '',
+      vote_average: parseFloat(item.vod_score) || 0,
+      tmdb_id: undefined,
+    }));
+
+    const result = {
+      list,
+      hasMore: data.page < data.pagecount,
+    };
 
     return result;
   } catch (error) {
