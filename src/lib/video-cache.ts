@@ -39,10 +39,10 @@ const CACHE_CONFIG = {
   VIDEO_TTL: 12 * 60 * 60, // 43200 秒
 
   // 视频文件存储目录（Docker volume 持久化）
-  VIDEO_CACHE_DIR: process.env.VIDEO_CACHE_DIR || '/tmp/video-cache',
+  VIDEO_CACHE_DIR: process.env.VIDEO_CACHE_DIR || '/app/video-cache',
 
-  // 最大缓存大小：500MB（防止磁盘占用过多）
-  MAX_CACHE_SIZE: 500 * 1024 * 1024, // 500 MB
+  // 最大缓存大小：2GB（从 500MB 增加，避免缓存空间不足）
+  MAX_CACHE_SIZE: 2 * 1024 * 1024 * 1024, // 2 GB
 };
 
 // Kvrocks Key 前缀
@@ -365,6 +365,73 @@ export async function getCacheStats(): Promise<{
       fileCount: 0,
       maxSize: CACHE_CONFIG.MAX_CACHE_SIZE,
     };
+  }
+}
+
+/**
+ * 修复缓存不一致问题
+ * 当文件丢失但元数据还在时，清理孤儿元数据并重置计数器
+ */
+export async function repairCacheInconsistency(): Promise<{
+  cleanedMetaCount: number;
+  oldTotalSize: number;
+  newTotalSize: number;
+}> {
+  try {
+    console.log('[VideoCache] 开始修复缓存不一致...');
+    await ensureCacheDir();
+
+    const redis = await getKvrocksClient();
+
+    // 获取旧的总大小
+    const oldTotalSizeStr = await redis.get(KEYS.VIDEO_SIZE);
+    const oldTotalSize = oldTotalSizeStr ? parseInt(oldTotalSizeStr) : 0;
+    console.log(`[VideoCache] 旧的缓存总大小: ${(oldTotalSize / 1024 / 1024).toFixed(2)}MB`);
+
+    // 扫描所有元数据
+    const metaKeys = await redis.keys(`${KEYS.VIDEO_META}*`);
+    console.log(`[VideoCache] 找到 ${metaKeys.length} 个元数据记录`);
+
+    let cleanedCount = 0;
+    let actualTotalSize = 0;
+
+    for (const metaKey of metaKeys) {
+      const cacheKey = metaKey.replace(KEYS.VIDEO_META, '');
+      const filePath = getVideoCachePath(cacheKey);
+
+      try {
+        // 检查文件是否存在
+        const stats = await fs.stat(filePath);
+        actualTotalSize += stats.size;
+        console.log(`[VideoCache] ✅ 文件存在: ${cacheKey} (${(stats.size / 1024 / 1024).toFixed(2)}MB)`);
+      } catch {
+        // 文件不存在，删除元数据
+        await redis.del(metaKey);
+        cleanedCount++;
+        console.log(`[VideoCache] 🗑️ 清理孤儿元数据: ${cacheKey}`);
+      }
+    }
+
+    // 重置总大小为实际大小
+    if (actualTotalSize > 0) {
+      await redis.set(KEYS.VIDEO_SIZE, actualTotalSize.toString());
+    } else {
+      await redis.del(KEYS.VIDEO_SIZE);
+    }
+
+    console.log(`[VideoCache] ✅ 修复完成:`);
+    console.log(`  - 清理孤儿元数据: ${cleanedCount} 个`);
+    console.log(`  - 旧的总大小: ${(oldTotalSize / 1024 / 1024).toFixed(2)}MB`);
+    console.log(`  - 新的总大小: ${(actualTotalSize / 1024 / 1024).toFixed(2)}MB`);
+
+    return {
+      cleanedMetaCount: cleanedCount,
+      oldTotalSize,
+      newTotalSize: actualTotalSize,
+    };
+  } catch (error) {
+    console.error('[VideoCache] 修复缓存失败:', error);
+    throw error;
   }
 }
 
