@@ -7,16 +7,7 @@ import { useRouter } from 'next/navigation';
 import { memo, useEffect, useState, useCallback } from 'react';
 
 import { useLongPress } from '@/hooks/useLongPress';
-import MobileActionSheet from '@/components/MobileActionSheet';
-import AIRecommendModal from '@/components/AIRecommendModal';
-
-import { ShortDramaItem } from '@/lib/types';
-import {
-  SHORTDRAMA_CACHE_EXPIRE,
-  getCacheKey,
-  getCache,
-  setCache,
-} from '@/lib/shortdrama-cache';
+import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
 import {
   isFavorited,
   saveFavorite,
@@ -24,6 +15,16 @@ import {
   generateStorageKey,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import {
+  SHORTDRAMA_CACHE_EXPIRE,
+  getCacheKey,
+  getCache,
+  setCache,
+} from '@/lib/shortdrama-cache';
+import { ShortDramaItem } from '@/lib/types';
+
+import AIRecommendModal from '@/components/AIRecommendModal';
+import MobileActionSheet from '@/components/MobileActionSheet';
 
 interface ShortDramaCardProps {
   drama: ShortDramaItem;
@@ -87,6 +88,12 @@ function ShortDramaCard({
   useEffect(() => {
     // 如果父组件已传递aiEnabled，跳过本地检测
     if (aiEnabledProp !== undefined) {
+      return;
+    }
+
+    if (isAIRecommendFeatureDisabled()) {
+      setAiEnabledLocal(false);
+      setAiCheckCompleteLocal(true);
       return;
     }
 

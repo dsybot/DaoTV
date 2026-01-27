@@ -41,8 +41,8 @@ const CACHE_CONFIG = {
   // 视频文件存储目录（Docker volume 持久化）
   VIDEO_CACHE_DIR: process.env.VIDEO_CACHE_DIR || '/app/video-cache',
 
-  // 最大缓存大小：2GB（从 500MB 增加，避免缓存空间不足）
-  MAX_CACHE_SIZE: 2 * 1024 * 1024 * 1024, // 2 GB
+  // 最大缓存大小：500MB（轮播图视频缓存，约 10-15 个视频）
+  MAX_CACHE_SIZE: 500 * 1024 * 1024, // 500 MB
 };
 
 // Kvrocks Key 前缀

@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
 
+import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
+
 import { BackButton } from './BackButton';
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
@@ -51,34 +53,37 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
     localStorage.setItem('layoutMode', mode);
   };
 
-  // 检查AI功能是否启用
+  // 检查 AI 功能是否开启
   useEffect(() => {
-    const checkAIEnabled = async () => {
+    if (isAIRecommendFeatureDisabled()) {
+      setAiEnabled(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
       try {
         const response = await fetch('/api/admin/ai-recommend');
-        if (response.ok) {
-          const data = await response.json();
-          setAiEnabled(data.enabled === true); // 只有明确启用才显示
-        } else {
-          // API 失败时默认隐藏（安全起见）
-          setAiEnabled(false);
+        if (!cancelled) {
+          if (response.ok) {
+            const data = await response.json();
+            setAiEnabled(data.enabled === true); // 只有明确启用才显示
+          } else {
+            // API 失败时默认隐藏（安全起见）
+            setAiEnabled(false);
+          }
         }
       } catch (error) {
         // 发生错误时默认隐藏
-        setAiEnabled(false);
+        if (!cancelled) {
+          setAiEnabled(false);
+        }
       }
-    };
-    checkAIEnabled();
+    })();
 
-    // 监听配置更新事件，实时同步AI按钮显示状态
-    const handleConfigUpdate = () => {
-      console.log('配置更新，重新检查AI状态');
-      checkAIEnabled();
-    };
-
-    window.addEventListener('adminConfigUpdated', handleConfigUpdate);
     return () => {
-      window.removeEventListener('adminConfigUpdated', handleConfigUpdate);
+      cancelled = true;
     };
   }, []);
 

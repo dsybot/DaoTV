@@ -44,6 +44,15 @@ export interface AIRecommendHistory {
   response: string;
 }
 
+export function isAIRecommendFeatureDisabled(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const runtimeConfig = (window as any).RUNTIME_CONFIG;
+  return runtimeConfig?.AI_RECOMMEND_ENABLED === false;
+}
+
 /**
  * 发送AI推荐请求（支持流式响应）
  */
@@ -181,6 +190,10 @@ export async function getAIRecommendHistory(): Promise<{
  * 检查AI推荐功能是否可用
  */
 export async function checkAIRecommendAvailable(): Promise<boolean> {
+  if (isAIRecommendFeatureDisabled()) {
+    return false;
+  }
+
   try {
     const response = await fetch('/api/ai-recommend', {
       method: 'POST',
@@ -268,7 +281,7 @@ const MOVIE_TITLE_PATTERNS = [
  */
 export function extractMovieTitles(content: string): string[] {
   const titles = new Set<string>();
-  
+
   MOVIE_TITLE_PATTERNS.forEach(pattern => {
     let match;
     const globalPattern = new RegExp(pattern.source, pattern.flags);
@@ -284,7 +297,7 @@ export function extractMovieTitles(content: string): string[] {
       if (!pattern.global) break;
     }
   });
-  
+
   return Array.from(titles);
 }
 
@@ -296,10 +309,10 @@ export function formatAIResponseWithLinks(
   _onTitleClick?: (title: string) => void
 ): string {
   let formatted = content;
-  
+
   // 提取所有影视作品名称
   const titles = extractMovieTitles(content);
-  
+
   // 只添加视觉样式，不添加点击功能（点击功能由右侧卡片提供）
   titles.forEach(title => {
     // 替换《片名》格式 - 只添加样式，不添加点击
@@ -307,44 +320,44 @@ export function formatAIResponseWithLinks(
       new RegExp(`《${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}》`, 'g'),
       `<span class="text-blue-600 dark:text-blue-400 font-medium">《${title}》</span>`
     );
-    
+
     // 替换"片名"格式
     formatted = formatted.replace(
       new RegExp(`"${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'g'),
       `<span class="text-blue-600 dark:text-blue-400 font-medium">"${title}"</span>`
     );
-    
+
     // 替换【片名】格式
     formatted = formatted.replace(
       new RegExp(`【${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}】`, 'g'),
       `<span class="text-blue-600 dark:text-blue-400 font-medium">【${title}】</span>`
     );
   });
-  
+
   // 处理其他markdown格式
   // 处理标题
   formatted = formatted.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h3>');
   formatted = formatted.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h2>');
   formatted = formatted.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h1>');
-  
+
   // 处理粗体
   formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900 dark:text-gray-100">$1</strong>');
-  
+
   // 处理数字列表 - 先匹配整行包括换行符
   formatted = formatted.replace(/^\d+[.、]\s*(.*?)(?=\n|$)/gim, '<div class="ml-4 text-gray-800 dark:text-gray-200">• $1</div>');
-  
+
   // 处理普通列表 - 先匹配整行包括换行符
   formatted = formatted.replace(/^[-•]\s*(.*?)(?=\n|$)/gim, '<div class="ml-4 text-gray-800 dark:text-gray-200">• $1</div>');
-  
+
   // 清理列表项之间多余的换行符
   formatted = formatted.replace(/(<\/div>)\n+(?=<div class="ml-4)/g, '$1');
-  
+
   // 处理段落分隔
   formatted = formatted.replace(/\n\n+/g, '<br><br>');
-  
+
   // 处理剩余的单换行
   formatted = formatted.replace(/\n/g, '<br>');
-  
+
   return formatted;
 }
 
@@ -370,24 +383,24 @@ export function addMovieTitleClickListeners(
   if (existingHandler) {
     element.removeEventListener('click', existingHandler);
   }
-  
+
   // 创建新的事件处理器
   const handleClick = (e: Event) => {
     const target = e.target as HTMLElement;
-    
+
     // 查找最近的具有movie-title类的元素
     const movieTitleEl = target.closest('.movie-title[data-title]') as HTMLElement;
     if (movieTitleEl) {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const title = movieTitleEl.getAttribute('data-title');
       if (title) {
         onTitleClick(title);
       }
     }
   };
-  
+
   // 存储并添加新的监听器
   elementHandlers.set(element, handleClick);
   element.addEventListener('click', handleClick);
@@ -399,12 +412,12 @@ export function addMovieTitleClickListeners(
 export function generateChatSummary(messages: AIMessage[]): string {
   const userMessages = messages.filter(msg => msg.role === 'user');
   if (userMessages.length === 0) return '新对话';
-  
+
   const firstUserMessage = userMessages[0].content;
   if (firstUserMessage.length <= 20) {
     return firstUserMessage;
   }
-  
+
   return firstUserMessage.substring(0, 17) + '...';
 }
 
@@ -418,7 +431,7 @@ export function isRecommendationRelated(message: string): boolean {
     '喜剧', '爱情', '动作', '悬疑', '科幻', '恐怖',
     '剧情', '战争', '历史', '犯罪', '冒险', '奇幻'
   ];
-  
+
   return keywords.some(keyword => message.includes(keyword));
 }
 
