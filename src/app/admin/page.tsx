@@ -2771,6 +2771,9 @@ const VideoSourceConfig = ({
     from: 'config',
   });
 
+  // 编辑视频源状态
+  const [editingSource, setEditingSource] = useState<DataSource | null>(null);
+
   // 🔑 普通视频源代理配置
   const [videoProxySettings, setVideoProxySettings] = useState({
     enabled: false,
@@ -3068,6 +3071,30 @@ const VideoSourceConfig = ({
     });
   };
 
+  // 编辑视频源
+  const handleEditSource = (source: DataSource) => {
+    setEditingSource({ ...source });
+  };
+
+  // 保存编辑的视频源
+  const handleSaveEditSource = () => {
+    if (!editingSource || !editingSource.name || !editingSource.key || !editingSource.api) return;
+    withLoading(`editSource_${editingSource.key}`, async () => {
+      await callSourceApi({
+        action: 'update',
+        key: editingSource.key,
+        name: editingSource.name,
+        api: editingSource.api,
+        detail: editingSource.detail,
+        is_adult: editingSource.is_adult,
+        type: editingSource.type,
+      });
+      setEditingSource(null);
+    }).catch(() => {
+      console.error('编辑视频源失败', editingSource);
+    });
+  };
+
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -3338,6 +3365,12 @@ const VideoSourceConfig = ({
               } transition-colors ${isLoading(`toggleSource_${source.key}`) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {!source.disabled ? '禁用' : '启用'}
+          </button>
+          <button
+            onClick={() => handleEditSource(source)}
+            className={buttonStyles.roundedPrimary}
+          >
+            编辑
           </button>
           {source.from !== 'config' && (
             <button
@@ -4001,6 +4034,133 @@ const VideoSourceConfig = ({
         </div>
       )}
 
+      {/* 编辑视频源弹窗 */}
+      {editingSource && createPortal(
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+            <div className='p-6 border-b border-gray-200 dark:border-gray-700'>
+              <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
+                编辑视频源: {editingSource.name}
+              </h3>
+            </div>
+            <div className='p-6 space-y-4'>
+              {/* 基本信息 */}
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                    名称
+                  </label>
+                  <input
+                    type='text'
+                    value={editingSource.name}
+                    onChange={(e) => setEditingSource(prev => prev ? { ...prev, name: e.target.value } : null)}
+                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  />
+                </div>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                    Key（不可修改）
+                  </label>
+                  <input
+                    type='text'
+                    value={editingSource.key}
+                    disabled
+                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  />
+                </div>
+              </div>
+
+              {/* API 地址 */}
+              <div>
+                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                  API 地址
+                </label>
+                <input
+                  type='text'
+                  value={editingSource.api}
+                  onChange={(e) => setEditingSource(prev => prev ? { ...prev, api: e.target.value } : null)}
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                />
+              </div>
+
+              {/* Detail 地址 */}
+              <div>
+                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                  Detail 地址（选填）
+                </label>
+                <input
+                  type='text'
+                  value={editingSource.detail || ''}
+                  onChange={(e) => setEditingSource(prev => prev ? { ...prev, detail: e.target.value } : null)}
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                />
+              </div>
+
+              {/* 成人资源标记 */}
+              <div className='flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+                <label className='flex items-center space-x-2 cursor-pointer'>
+                  <input
+                    type='checkbox'
+                    checked={editingSource.is_adult || false}
+                    onChange={(e) => setEditingSource(prev => prev ? { ...prev, is_adult: e.target.checked } : null)}
+                    className='w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500'
+                  />
+                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    标记为成人资源 <span className='text-red-600'>🔞</span>
+                  </span>
+                </label>
+              </div>
+
+              {/* 源类型选择 */}
+              <div className='p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                  源类型
+                </label>
+                <div className='flex items-center space-x-4'>
+                  <label className='flex items-center space-x-2 cursor-pointer'>
+                    <input
+                      type='radio'
+                      name='editSourceType'
+                      checked={editingSource.type !== 'shortdrama'}
+                      onChange={() => setEditingSource(prev => prev ? { ...prev, type: 'vod' } : null)}
+                      className='w-4 h-4 text-blue-600'
+                    />
+                    <span className='text-sm text-gray-700 dark:text-gray-300'>普通视频源</span>
+                  </label>
+                  <label className='flex items-center space-x-2 cursor-pointer'>
+                    <input
+                      type='radio'
+                      name='editSourceType'
+                      checked={editingSource.type === 'shortdrama'}
+                      onChange={() => setEditingSource(prev => prev ? { ...prev, type: 'shortdrama' } : null)}
+                      className='w-4 h-4 text-purple-600'
+                    />
+                    <span className='text-sm text-gray-700 dark:text-gray-300'>📺 短剧源</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700'>
+                <button
+                  onClick={() => setEditingSource(null)}
+                  className={buttonStyles.secondary}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSaveEditSource}
+                  disabled={!editingSource.name || !editingSource.api || isLoading(`editSource_${editingSource.key}`)}
+                  className={!editingSource.name || !editingSource.api || isLoading(`editSource_${editingSource.key}`) ? buttonStyles.disabled : buttonStyles.primary}
+                >
+                  {isLoading(`editSource_${editingSource.key}`) ? '保存中...' : '保存'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
 
       {/* 视频源表格 */}

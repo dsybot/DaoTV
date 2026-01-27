@@ -34,9 +34,9 @@ async function searchFromSource(
   const listData = await listResponse.json();
   const categories = listData.class || [];
 
-  // 查找"短剧"分类
+  // 查找"短剧"分类（只要包含"短剧"两个字即可）
   const shortDramaCategory = categories.find((cat: any) =>
-    cat.type_name === '短剧' || cat.type_name === '微短剧'
+    cat.type_name && cat.type_name.includes('短剧')
   );
 
   if (!shortDramaCategory) {
