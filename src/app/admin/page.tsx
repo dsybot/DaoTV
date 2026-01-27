@@ -3043,6 +3043,39 @@ const VideoSourceConfig = ({
     }
   };
 
+  const handleBatchMarkType = async (type: 'vod' | 'shortdrama') => {
+    if (selectedSources.size === 0) {
+      showAlert({
+        type: 'warning',
+        title: '提示',
+        message: '请先选择要操作的视频源'
+      });
+      return;
+    }
+
+    const keys = Array.from(selectedSources);
+    const action = type === 'shortdrama' ? 'batch_mark_shortdrama' : 'batch_mark_vod';
+    const typeName = type === 'shortdrama' ? '短剧' : '视频';
+
+    try {
+      await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys, type }));
+      showAlert({
+        type: 'success',
+        title: '操作成功',
+        message: `标记为${typeName}类型成功！共处理 ${keys.length} 个视频源`,
+        timer: 2000
+      });
+      setSelectedSources(new Set());
+    } catch {
+      showAlert({
+        type: 'error',
+        title: '操作失败',
+        message: `标记为${typeName}类型失败，请重试`,
+        showConfirm: true
+      });
+    }
+  };
+
   const handleAddSource = () => {
     if (!newSource.name || !newSource.key || !newSource.api) return;
     withLoading('addSource', async () => {
@@ -3857,6 +3890,22 @@ const VideoSourceConfig = ({
                   title='取消选中视频源的成人资源标记'
                 >
                   {isLoading('batchSource_batch_unmark_adult') ? '取消中...' : '取消标记'}
+                </button>
+                <button
+                  onClick={() => handleBatchMarkType('shortdrama')}
+                  disabled={isLoading('batchSource_batch_mark_shortdrama')}
+                  className={`px-3 py-1 text-sm ${isLoading('batchSource_batch_mark_shortdrama') ? buttonStyles.disabled : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg transition-colors'}`}
+                  title='将选中的视频源标记为短剧类型'
+                >
+                  {isLoading('batchSource_batch_mark_shortdrama') ? '标记中...' : '标记短剧'}
+                </button>
+                <button
+                  onClick={() => handleBatchMarkType('vod')}
+                  disabled={isLoading('batchSource_batch_mark_vod')}
+                  className={`px-3 py-1 text-sm ${isLoading('batchSource_batch_mark_vod') ? buttonStyles.disabled : buttonStyles.secondary}`}
+                  title='将选中的视频源标记为普通视频类型'
+                >
+                  {isLoading('batchSource_batch_mark_vod') ? '标记中...' : '标记视频'}
                 </button>
               </div>
               <div className='hidden sm:block w-px h-6 bg-gray-300 dark:bg-gray-600 order-2'></div>

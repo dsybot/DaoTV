@@ -71,52 +71,37 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
 
   // 合并文件中的源信息
   const apiSitesFromFile = Object.entries(fileConfig.api_site || []);
-  const apiSitesFromFileKeys = new Set(apiSitesFromFile.map(([key]) => key));
 
-  // 🔥 修复：保留所有现有源的顺序和属性，只更新/添加订阅源
-  // 创建现有源的 Map（用于快速查找）
-  const existingSourcesMap = new Map(
-    (adminConfig.SourceConfig || []).map((s) => [s.key, s])
+  // 保留所有现有源（包括 custom 和 config），以便保留用户的手动修改
+  const currentApiSites = new Map(
+    (adminConfig.SourceConfig || [])
+      .map((s) => [s.key, s])
   );
 
-  // 保留现有源的顺序，同时更新订阅源的信息
-  const updatedSources = (adminConfig.SourceConfig || []).map((source) => {
-    if (source.from === 'config' && apiSitesFromFileKeys.has(source.key)) {
-      // 订阅源：更新 name/api/detail，但保留 disabled/is_adult 等用户设置
-      const fileSource = apiSitesFromFile.find(([key]) => key === source.key)?.[1];
-      if (fileSource) {
-        return {
-          ...source,
-          name: fileSource.name,
-          api: fileSource.api,
-          detail: fileSource.detail,
-          // 保留用户设置的属性：disabled, is_adult
-        };
-      }
-    }
-    // custom 源或未在订阅中的源：完全保留
-    return source;
-  });
-
-  // 添加订阅中新增的源（不在现有配置中的）
+  // 添加或更新订阅中的所有源
   apiSitesFromFile.forEach(([key, site]) => {
-    if (!existingSourcesMap.has(key)) {
-      updatedSources.push({
+    const existingSource = currentApiSites.get(key);
+    if (existingSource) {
+      // 如果源已存在，更新基本信息但保留用户手动设置的字段
+      existingSource.name = site.name;
+      existingSource.api = site.api;
+      existingSource.detail = site.detail;
+      // 保留用户手动设置的 from、type、is_adult、disabled 等字段
+    } else {
+      // 添加新的订阅源
+      currentApiSites.set(key, {
         key,
         name: site.name,
         api: site.api,
         detail: site.detail,
         from: 'config',
         disabled: false,
+        type: 'vod', // 默认为普通视频类型
       });
     }
   });
 
-  // 移除订阅中已删除的 from='config' 源（但保留 custom 源）
-  adminConfig.SourceConfig = updatedSources.filter((source) => {
-    if (source.from === 'custom') return true; // 保留所有 custom 源
-    return apiSitesFromFileKeys.has(source.key); // 只保留订阅中存在的 config 源
-  });
+  adminConfig.SourceConfig = Array.from(currentApiSites.values());
 
   // 覆盖 CustomCategories
   const customCategoriesFromFile = fileConfig.custom_category || [];
