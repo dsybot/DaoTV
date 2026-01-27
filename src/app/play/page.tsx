@@ -2779,7 +2779,10 @@ function PlayPageClient() {
         if (shortdramaId) {
           try {
             const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
-            if (shortdramaSource.length > 0) {
+            // 检查短剧源是否有有效数据（必须有 episodes 且 episodes 不为空）
+            if (shortdramaSource.length > 0 &&
+              shortdramaSource[0].episodes &&
+              shortdramaSource[0].episodes.length > 0) {
               // 检查是否已存在相同的短剧源，避免重复
               const existingShortdrama = sourcesInfo.find(
                 (s) => s.source === 'shortdrama' && s.id === shortdramaId
@@ -2789,6 +2792,8 @@ function PlayPageClient() {
                 // 重新设置 availableSources 以包含短剧源
                 setAvailableSources(sourcesInfo);
               }
+            } else {
+              console.log('⚠️ 短剧源没有有效的集数数据，跳过添加');
             }
           } catch (error) {
             console.error('添加短剧源失败:', error);
