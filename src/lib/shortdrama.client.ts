@@ -14,7 +14,7 @@ import {
 import { DEFAULT_USER_AGENT } from './user-agent';
 
 // 新的视频源 API（资源站采集接口）
-const SHORTDRAMA_API_BASE = 'https://cj.rycjapi.com/api.php/provide/vod';
+const SHORTDRAMA_API_BASE = 'https://wwzy.tv/api.php/provide/vod';
 const ALTERNATIVE_API_BASE = 'https://001038.xyz'; // Alternative API for when primary is down
 
 // 检测是否为移动端环境
