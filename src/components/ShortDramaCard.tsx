@@ -274,6 +274,47 @@ function ShortDramaCard({
     }
   };
 
+  // 根据评分获取徽章样式（与 VideoCard 保持一致）
+  const getRatingBadgeStyle = useCallback((score: number) => {
+    if (score >= 8.5) {
+      // 高分：金色 + 发光
+      return {
+        bgColor: 'bg-linear-to-br from-yellow-400 via-amber-500 to-yellow-600',
+        ringColor: 'ring-2 ring-yellow-400/50',
+        shadowColor: 'shadow-lg shadow-yellow-500/50',
+        textColor: 'text-white',
+        glowClass: 'group-hover:shadow-yellow-500/70',
+      };
+    } else if (score >= 7.0) {
+      // 中高分：蓝色
+      return {
+        bgColor: 'bg-linear-to-br from-blue-500 via-blue-600 to-blue-700',
+        ringColor: 'ring-2 ring-blue-400/40',
+        shadowColor: 'shadow-md shadow-blue-500/30',
+        textColor: 'text-white',
+        glowClass: 'group-hover:shadow-blue-500/50',
+      };
+    } else if (score >= 6.0) {
+      // 中分：绿色
+      return {
+        bgColor: 'bg-linear-to-br from-green-500 via-green-600 to-green-700',
+        ringColor: 'ring-2 ring-green-400/40',
+        shadowColor: 'shadow-md shadow-green-500/30',
+        textColor: 'text-white',
+        glowClass: 'group-hover:shadow-green-500/50',
+      };
+    } else {
+      // 低分：灰色
+      return {
+        bgColor: 'bg-linear-to-br from-gray-500 via-gray-600 to-gray-700',
+        ringColor: 'ring-2 ring-gray-400/40',
+        shadowColor: 'shadow-md shadow-gray-500/30',
+        textColor: 'text-white',
+        glowClass: 'group-hover:shadow-gray-500/50',
+      };
+    }
+  }, []);
+
   return (
     <>
       <div
@@ -340,13 +381,23 @@ function ShortDramaCard({
             </div>
           )}
 
-          {/* 评分 */}
-          {drama.score > 0 && (
-            <div className="absolute top-2 right-2 flex items-center rounded bg-yellow-500 px-2 py-1 text-xs text-white">
-              <Star className="h-3 w-3 mr-1" fill="currentColor" />
-              {formatScore(drama.score)}
-            </div>
-          )}
+          {/* 评分徽章 - 动态颜色（右上角倾斜丝带，与 VideoCard 保持一致） */}
+          {drama.score > 0 && (() => {
+            const badgeStyle = getRatingBadgeStyle(drama.score);
+            return (
+              <div
+                className={`absolute top-[10px] right-[-35px] z-30 w-[120px] ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] font-bold py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 rotate-45 pointer-events-none`}
+                style={{
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                } as React.CSSProperties}
+              >
+                <Star size={10} className="fill-current" />
+                <span className="font-extrabold leading-none">{formatScore(drama.score)}</span>
+              </div>
+            );
+          })()}
 
           {/* 更新时间标签 */}
           <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/30 dark:bg-white/20 px-2.5 py-1 text-[10px] text-white dark:text-gray-900 backdrop-blur-sm">
