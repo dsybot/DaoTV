@@ -43,6 +43,7 @@ export interface SystemMetrics {
   timestamp: number;
   cpuUsage: number;            // CPU 使用率（百分比）
   cpuCores: number;            // CPU 核心数
+  cpuModel: string;            // CPU 型号名称
   memoryUsage: {
     heapUsed: number;          // 堆内存使用（MB）
     heapTotal: number;         // 堆内存总量（MB）

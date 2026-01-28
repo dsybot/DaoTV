@@ -21,6 +21,7 @@ interface PerformanceData {
     system: {
       cpuUsage: number;
       cpuCores: number;
+      cpuModel: string;
       memoryUsage: {
         heapUsed: number;
         heapTotal: number;
@@ -416,8 +417,8 @@ export default function PerformanceMonitor() {
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
             {data.currentStatus.system.cpuUsage.toFixed(2)}%
           </div>
-          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-            机器共 {data.currentStatus.system.cpuCores} 核
+          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 truncate' title={data.currentStatus.system.cpuModel}>
+            {data.currentStatus.system.cpuCores} 核 · {data.currentStatus.system.cpuModel.split('@')[0].trim()}
           </div>
         </div>
 
