@@ -42,6 +42,7 @@ export interface HourlyMetrics {
 export interface SystemMetrics {
   timestamp: number;
   cpuUsage: number;            // CPU 使用率（百分比）
+  cpuCores: number;            // CPU 核心数
   memoryUsage: {
     heapUsed: number;          // 堆内存使用（MB）
     heapTotal: number;         // 堆内存总量（MB）

@@ -20,6 +20,7 @@ interface PerformanceData {
   currentStatus: {
     system: {
       cpuUsage: number;
+      cpuCores: number;
       memoryUsage: {
         heapUsed: number;
         heapTotal: number;
@@ -405,29 +406,49 @@ export default function PerformanceMonitor() {
       </div>
 
       {/* 实时状态卡片 */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4'>
-        {/* CPU 使用率 */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4'>
+        {/* 进程 CPU 使用率 */}
         <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
           <div className='flex items-center justify-between mb-2'>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>CPU 使用率</span>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>进程 CPU</span>
             <Zap className='w-5 h-5 text-yellow-500' />
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
             {data.currentStatus.system.cpuUsage.toFixed(2)}%
           </div>
+          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+            机器共 {data.currentStatus.system.cpuCores} 核
+          </div>
         </div>
 
-        {/* 内存使用 */}
+        {/* 进程内存（DaoTV 专属） */}
+        <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
+          <div className='flex items-center justify-between mb-2'>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>进程内存</span>
+            <HardDrive className='w-5 h-5 text-blue-500' />
+          </div>
+          <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
+            {formatTraffic(data.currentStatus.system.memoryUsage.rss * 1024 * 1024)}
+          </div>
+          <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+            堆内存: {formatTraffic(data.currentStatus.system.memoryUsage.heapUsed * 1024 * 1024)}
+            <span className='ml-2 text-blue-600 dark:text-blue-400'>
+              / {formatTraffic(data.currentStatus.system.memoryUsage.heapTotal * 1024 * 1024)}
+            </span>
+          </div>
+        </div>
+
+        {/* 系统内存 */}
         <div className='bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700'>
           <div className='flex items-center justify-between mb-2'>
             <span className='text-sm text-gray-600 dark:text-gray-400'>系统内存</span>
-            <HardDrive className='w-5 h-5 text-blue-500' />
+            <HardDrive className='w-5 h-5 text-green-500' />
           </div>
           <div className='text-2xl font-bold text-gray-800 dark:text-gray-200'>
             {formatTraffic(data.currentStatus.system.memoryUsage.systemUsed * 1024 * 1024)}
           </div>
           <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-            已用 / 总共 {formatTraffic(data.currentStatus.system.memoryUsage.systemTotal * 1024 * 1024)}
+            总共 {formatTraffic(data.currentStatus.system.memoryUsage.systemTotal * 1024 * 1024)}
             <span className='ml-2 text-blue-600 dark:text-blue-400'>
               ({((data.currentStatus.system.memoryUsage.systemUsed / data.currentStatus.system.memoryUsage.systemTotal) * 100).toFixed(1)}%)
             </span>

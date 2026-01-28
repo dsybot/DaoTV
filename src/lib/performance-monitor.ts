@@ -149,6 +149,7 @@ export function collectSystemMetrics(): SystemMetrics {
   return {
     timestamp: Date.now(),
     cpuUsage: cpuPercent,
+    cpuCores: numberOfCores,
     memoryUsage: {
       heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024 * 100) / 100, // MB
       heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024 * 100) / 100,
