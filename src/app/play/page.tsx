@@ -4049,6 +4049,9 @@ function PlayPageClient() {
                 const savedOpacity = parseFloat(localStorage.getItem('danmaku_opacity') || '0.8');
                 const savedMargin = JSON.parse(localStorage.getItem('danmaku_margin') || '[10, "75%"]');
                 const savedModes = JSON.parse(localStorage.getItem('danmaku_modes') || '[0, 1, 2]');
+                const savedAntiOverlap = localStorage.getItem('danmaku_antiOverlap') !== null
+                  ? localStorage.getItem('danmaku_antiOverlap') === 'true'
+                  : !isMobile; // 默认值：桌面端开启，移动端关闭
 
                 return [
                   {
@@ -4144,7 +4147,16 @@ function PlayPageClient() {
                   },
                   {
                     html: '弹幕类型',
-                    tooltip: '选择显示的弹幕类型',
+                    tooltip: (() => {
+                      // 根据 savedModes 返回对应的文本
+                      const modesStr = JSON.stringify(savedModes);
+                      if (modesStr === JSON.stringify([0, 1, 2])) return '全部显示';
+                      if (modesStr === JSON.stringify([0])) return '仅滚动';
+                      if (modesStr === JSON.stringify([0, 1])) return '滚动+顶部';
+                      if (modesStr === JSON.stringify([0, 2])) return '滚动+底部';
+                      if (modesStr === JSON.stringify([1, 2])) return '仅固定';
+                      return '全部显示'; // 默认值
+                    })(),
                     selector: [
                       { html: '全部显示', value: [0, 1, 2], default: JSON.stringify(savedModes) === JSON.stringify([0, 1, 2]) },
                       { html: '仅滚动', value: [0], default: JSON.stringify(savedModes) === JSON.stringify([0]) },
@@ -4157,6 +4169,23 @@ function PlayPageClient() {
                       if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
                         artPlayerRef.current.plugins.artplayerPluginDanmuku.config({
                           modes: item.value,
+                        });
+                      }
+                      return item.html;
+                    },
+                  },
+                  {
+                    html: '防重叠',
+                    tooltip: savedAntiOverlap ? '开启' : '关闭',
+                    selector: [
+                      { html: '开启', value: true, default: savedAntiOverlap === true },
+                      { html: '关闭', value: false, default: savedAntiOverlap === false },
+                    ],
+                    onSelect: function (item: any) {
+                      localStorage.setItem('danmaku_antiOverlap', String(item.value));
+                      if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+                        artPlayerRef.current.plugins.artplayerPluginDanmuku.config({
+                          antiOverlap: item.value,
                         });
                       }
                       return item.html;
@@ -4390,7 +4419,9 @@ function PlayPageClient() {
                   width: 300,
 
                   // 🎯 激进优化配置 - 保持功能完整性
-                  antiOverlap: devicePerformance === 'high', // 只有高性能设备开启防重叠，避免重叠计算
+                  antiOverlap: localStorage.getItem('danmaku_antiOverlap') !== null
+                    ? localStorage.getItem('danmaku_antiOverlap') === 'true'
+                    : (devicePerformance === 'high'), // 默认值：高性能设备开启防重叠
                   synchronousPlayback: true, // ✅ 必须保持true！确保弹幕与视频播放速度同步
                   heatmap: false, // 关闭热力图，减少DOM计算开销
 
