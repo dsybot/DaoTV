@@ -139,6 +139,7 @@ export default function PerformanceMonitor() {
         avgResponseTime: 0,
         dbQueriesPerMinute: 0,
         trafficPerMinute: 0,
+        isCron: false,
       };
     }
 
@@ -164,16 +165,39 @@ export default function PerformanceMonitor() {
     );
     const trafficPerMinute = Number((totalTraffic / minutes).toFixed(2));
 
+    // 🚀 检测是否为 Cron 任务筛选
+    const isCron = apiFilter === 'cron';
+
     return {
       requestsPerMinute,
       avgResponseTime,
       dbQueriesPerMinute,
       trafficPerMinute,
+      isCron,
     };
   };
 
-  // 性能评估函数 - 响应时间
-  const getResponseTimeRating = (avgResponseTime: number) => {
+  // 🚀 检查是否为 Cron 任务（基于路径判断）
+  const isCronTask = (path: string) => {
+    return path.includes('/api/cron') || path.includes('/api/admin/cron');
+  };
+
+  // 性能评估函数 - 响应时间（区分 Cron 和普通 API）
+  const getResponseTimeRating = (avgResponseTime: number, path?: string) => {
+    // Cron 任务使用宽松阈值
+    if (path && isCronTask(path)) {
+      if (avgResponseTime < 30000) { // < 30秒
+        return { level: 'excellent', label: '优秀', color: 'text-green-600 dark:text-green-400', tip: '< 30s' };
+      } else if (avgResponseTime < 120000) { // < 2分钟
+        return { level: 'good', label: '良好', color: 'text-blue-600 dark:text-blue-400', tip: '30s-2min' };
+      } else if (avgResponseTime < 300000) { // < 5分钟
+        return { level: 'fair', label: '正常', color: 'text-yellow-600 dark:text-yellow-400', tip: '2-5min' };
+      } else {
+        return { level: 'poor', label: '需优化', color: 'text-red-600 dark:text-red-400', tip: '> 5min' };
+      }
+    }
+
+    // 普通 API 使用严格阈值
     if (avgResponseTime < 100) {
       return { level: 'excellent', label: '优秀', color: 'text-green-600 dark:text-green-400', tip: '< 100ms' };
     } else if (avgResponseTime < 200) {
@@ -185,11 +209,26 @@ export default function PerformanceMonitor() {
     }
   };
 
-  // 性能评估函数 - 每请求DB查询数
-  const getDbQueriesRating = (requestsPerMinute: number, dbQueriesPerMinute: number) => {
+  // 性能评估函数 - 每请求DB查询数（区分 Cron 和普通 API）
+  const getDbQueriesRating = (requestsPerMinute: number, dbQueriesPerMinute: number, path?: string) => {
     if (requestsPerMinute === 0) return { level: 'unknown', label: '无数据', color: 'text-gray-500', tip: '' };
 
     const queriesPerRequest = dbQueriesPerMinute / requestsPerMinute;
+
+    // Cron 任务使用宽松阈值（允许更多 DB 查询）
+    if (path && isCronTask(path)) {
+      if (queriesPerRequest < 50) {
+        return { level: 'excellent', label: '优秀', color: 'text-green-600 dark:text-green-400', tip: '< 50次/请求' };
+      } else if (queriesPerRequest < 100) {
+        return { level: 'good', label: '良好', color: 'text-blue-600 dark:text-blue-400', tip: '50-100次/请求' };
+      } else if (queriesPerRequest < 200) {
+        return { level: 'fair', label: '正常', color: 'text-yellow-600 dark:text-yellow-400', tip: '100-200次/请求' };
+      } else {
+        return { level: 'poor', label: '需优化', color: 'text-red-600 dark:text-red-400', tip: '> 200次/请求' };
+      }
+    }
+
+    // 普通 API 使用严格阈值
     if (queriesPerRequest < 5) {
       return { level: 'excellent', label: '优秀', color: 'text-green-600 dark:text-green-400', tip: '< 5次/请求' };
     } else if (queriesPerRequest < 10) {
@@ -407,8 +446,8 @@ export default function PerformanceMonitor() {
           <div className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
             平均响应: {filteredStats?.avgResponseTime ?? 0}ms
             {filteredStats && (
-              <span className={`ml-2 font-semibold ${getResponseTimeRating(filteredStats.avgResponseTime).color}`}>
-                ({getResponseTimeRating(filteredStats.avgResponseTime).label})
+              <span className={`ml-2 font-semibold ${getResponseTimeRating(filteredStats.avgResponseTime, filteredStats.isCron ? '/api/cron' : undefined).color}`}>
+                ({getResponseTimeRating(filteredStats.avgResponseTime, filteredStats.isCron ? '/api/cron' : undefined).label})
               </span>
             )}
           </div>
@@ -427,8 +466,8 @@ export default function PerformanceMonitor() {
             {filteredStats && filteredStats.requestsPerMinute > 0 && (
               <>
                 平均: {(filteredStats.dbQueriesPerMinute / filteredStats.requestsPerMinute).toFixed(1)} 次/请求
-                <span className={`ml-2 font-semibold ${getDbQueriesRating(filteredStats.requestsPerMinute, filteredStats.dbQueriesPerMinute).color}`}>
-                  ({getDbQueriesRating(filteredStats.requestsPerMinute, filteredStats.dbQueriesPerMinute).label})
+                <span className={`ml-2 font-semibold ${getDbQueriesRating(filteredStats.requestsPerMinute, filteredStats.dbQueriesPerMinute, filteredStats.isCron ? '/api/cron' : undefined).color}`}>
+                  ({getDbQueriesRating(filteredStats.requestsPerMinute, filteredStats.dbQueriesPerMinute, filteredStats.isCron ? '/api/cron' : undefined).label})
                 </span>
               </>
             )}
