@@ -1226,11 +1226,54 @@ function PlayPageClient() {
     }
   };
 
+  // 获取源权重映射
+  const fetchSourceWeights = async (): Promise<Record<string, number>> => {
+    try {
+      const response = await fetch('/api/source-weights');
+      if (!response.ok) {
+        console.warn('获取源权重失败，使用默认权重');
+        return {};
+      }
+      const data = await response.json();
+      return data.weights || {};
+    } catch (error) {
+      console.warn('获取源权重失败:', error);
+      return {};
+    }
+  };
+
+  // 按权重排序源（权重高的在前）
+  const sortSourcesByWeight = (sources: SearchResult[], weights: Record<string, number>): SearchResult[] => {
+    return [...sources].sort((a, b) => {
+      const weightA = weights[a.source] ?? 50;
+      const weightB = weights[b.source] ?? 50;
+      return weightB - weightA; // 降序排列，权重高的在前
+    });
+  };
+
+  // 设置可用源列表（先按权重排序）
+  const setAvailableSourcesWithWeight = async (sources: SearchResult[]): Promise<SearchResult[]> => {
+    if (sources.length <= 1) {
+      setAvailableSources(sources);
+      return sources;
+    }
+    const weights = await fetchSourceWeights();
+    const sortedSources = sortSourcesByWeight(sources, weights);
+    console.log('按权重排序可用源:', sortedSources.map(s => `${s.source_name}(${weights[s.source] ?? 50})`).slice(0, 5), '...');
+    setAvailableSources(sortedSources);
+    return sortedSources;
+  };
+
   // 播放源优选函数（针对旧iPad做极端保守优化）
   const preferBestSource = async (
     sources: SearchResult[]
   ): Promise<SearchResult> => {
     if (sources.length === 1) return sources[0];
+
+    // 🎯 获取源权重并按权重排序
+    const weights = await fetchSourceWeights();
+    const weightedSources = sortSourcesByWeight(sources, weights);
+    console.log('按权重排序后的源:', weightedSources.map(s => `${s.source_name}(${weights[s.source] ?? 50})`));
 
     // 使用全局统一的设备检测结果
     const _isIPad = /iPad/i.test(userAgent) || (userAgent.includes('Macintosh') && navigator.maxTouchPoints >= 1);
@@ -1242,12 +1285,21 @@ function PlayPageClient() {
     if (isIOS13) {
       console.log('检测到iPad/iOS13+设备，使用无测速优选策略避免崩溃');
 
-      // 简单的源名称优先级排序，不进行实际测速
+      // 直接返回权重最高的源（已按权重排序）
+      // 同时保留原来的源名称优先级作为备用排序
       const sourcePreference = [
         'ok', 'niuhu', 'ying', 'wasu', 'mgtv', 'iqiyi', 'youku', 'qq'
       ];
 
-      const sortedSources = sources.sort((a, b) => {
+      const sortedSources = weightedSources.sort((a, b) => {
+        // 首先按权重排序（已经排好了）
+        const weightA = weights[a.source] ?? 50;
+        const weightB = weights[b.source] ?? 50;
+        if (weightA !== weightB) {
+          return weightB - weightA;
+        }
+
+        // 权重相同时，按源名称优先级排序
         const aIndex = sourcePreference.findIndex(name =>
           a.source_name?.toLowerCase().includes(name)
         );
@@ -1255,15 +1307,12 @@ function PlayPageClient() {
           b.source_name?.toLowerCase().includes(name)
         );
 
-        // 如果都在优先级列表中，按优先级排序
         if (aIndex !== -1 && bIndex !== -1) {
           return aIndex - bIndex;
         }
-        // 如果只有一个在优先级列表中，优先选择它
         if (aIndex !== -1) return -1;
         if (bIndex !== -1) return 1;
 
-        // 都不在优先级列表中，保持原始顺序
         return 0;
       });
 
@@ -1274,15 +1323,15 @@ function PlayPageClient() {
     // 移动设备使用轻量级测速（仅ping，不创建HLS）
     if (isMobile) {
       console.log('移动设备使用轻量级优选');
-      return await lightweightPreference(sources);
+      return await lightweightPreference(weightedSources, weights);
     }
 
     // 桌面设备使用原来的测速方法（控制并发）
-    return await fullSpeedTest(sources);
+    return await fullSpeedTest(weightedSources, weights);
   };
 
   // 轻量级优选：仅测试连通性，不创建video和HLS
-  const lightweightPreference = async (sources: SearchResult[]): Promise<SearchResult> => {
+  const lightweightPreference = async (sources: SearchResult[], weights: Record<string, number> = {}): Promise<SearchResult> => {
     console.log('开始轻量级测速，仅测试连通性');
 
     // 初始化测速进度
@@ -1297,6 +1346,7 @@ function PlayPageClient() {
       source: SearchResult;
       pingTime: number;
       available: boolean;
+      weight: number;
     }> = [];
 
     // 逐个测速以实时更新进度
@@ -1312,7 +1362,7 @@ function PlayPageClient() {
 
       try {
         if (!source.episodes || source.episodes.length === 0) {
-          results.push({ source, pingTime: 9999, available: false });
+          results.push({ source, pingTime: 9999, available: false, weight: weights[source.source] ?? 50 });
 
           // 更新结果列表
           setSpeedTestProgress(prev => ({
@@ -1347,7 +1397,8 @@ function PlayPageClient() {
         results.push({
           source,
           pingTime,
-          available: true
+          available: true,
+          weight: weights[source.source] ?? 50
         });
 
         // 更新结果列表
@@ -1366,7 +1417,7 @@ function PlayPageClient() {
         }));
       } catch (error) {
         console.warn(`轻量级测速失败: ${source.source_name}`, error);
-        results.push({ source, pingTime: 9999, available: false });
+        results.push({ source, pingTime: 9999, available: false, weight: weights[source.source] ?? 50 });
 
         // 更新结果列表
         setSpeedTestProgress(prev => ({
@@ -1385,10 +1436,17 @@ function PlayPageClient() {
       }
     }
 
-    // 按可用性和响应时间排序
+    // 按权重分组，在同权重组内按ping时间排序
     const sortedResults = results
       .filter(r => r.available)
-      .sort((a, b) => a.pingTime - b.pingTime);
+      .sort((a, b) => {
+        // 首先按权重降序
+        if (a.weight !== b.weight) {
+          return b.weight - a.weight;
+        }
+        // 同权重按ping时间升序
+        return a.pingTime - b.pingTime;
+      });
 
     if (sortedResults.length === 0) {
       console.warn('所有源都不可用，返回第一个');
@@ -1396,25 +1454,27 @@ function PlayPageClient() {
     }
 
     console.log('轻量级优选结果:', sortedResults.map(r =>
-      `${r.source.source_name}: ${r.pingTime}ms`
+      `${r.source.source_name}: ${r.pingTime}ms (权重: ${r.weight})`
     ));
 
     return sortedResults[0].source;
   };
 
   // 完整测速（桌面设备）
-  const fullSpeedTest = async (sources: SearchResult[]): Promise<SearchResult> => {
+  const fullSpeedTest = async (sources: SearchResult[], weights: Record<string, number> = {}): Promise<SearchResult> => {
+    // 桌面设备使用小批量并发，避免创建过多实例
+    const concurrency = 3;
     // 限制最大测试数量为20个源（平衡速度和覆盖率）
     const maxTestCount = 20;
-    const topPriorityCount = 5; // 前5个优先级最高的源
+    const topPriorityCount = 5; // 前5个优先级最高的源（已按权重排序）
 
-    // 🎯 混合策略：前5个 + 随机15个
+    // 🎯 混合策略：前5个（高权重）+ 随机15个
     let sourcesToTest: SearchResult[];
     if (sources.length <= maxTestCount) {
       // 如果源总数不超过20个，全部测试
       sourcesToTest = sources;
     } else {
-      // 保留前5个（搜索结果通常已按相关性/质量排序）
+      // 保留前5个（已按权重排序，权重最高的在前）
       const prioritySources = sources.slice(0, topPriorityCount);
 
       // 从剩余源中随机选择15个
@@ -1425,7 +1485,7 @@ function PlayPageClient() {
       sourcesToTest = [...prioritySources, ...randomSources];
     }
 
-    console.log(`开始测速: 共${sources.length}个源，将测试前${topPriorityCount}个 + 随机${sourcesToTest.length - Math.min(topPriorityCount, sources.length)}个 = ${sourcesToTest.length}个`);
+    console.log(`开始测速: 共${sources.length}个源，将测试前${topPriorityCount}个高权重源 + 随机${sourcesToTest.length - Math.min(topPriorityCount, sources.length)}个 = ${sourcesToTest.length}个`);
 
     // 初始化测速进度
     setSpeedTestProgress({
@@ -1435,8 +1495,6 @@ function PlayPageClient() {
       results: [],
     });
 
-    // 桌面设备使用小批量并发，避免创建过多实例
-    const concurrency = 3;
     const allResults: Array<{
       source: SearchResult;
       testResult: { quality: string; loadSpeed: string; pingTime: number };
@@ -1611,26 +1669,36 @@ function PlayPageClient() {
     const minPing = validPings.length > 0 ? Math.min(...validPings) : 50;
     const maxPing = validPings.length > 0 ? Math.max(...validPings) : 1000;
 
-    // 计算每个结果的评分
-    const resultsWithScore = successfulResults.map((result) => ({
-      ...result,
-      score: calculateSourceScore(
+    // 计算每个结果的评分（结合测速结果和权重）
+    const resultsWithScore = successfulResults.map((result) => {
+      const testScore = calculateSourceScore(
         result.testResult,
         maxSpeed,
         minPing,
         maxPing
-      ),
-    }));
+      );
+      const weight = weights[result.source.source] ?? 50;
+      // 权重加成：权重每增加10分，总分增加5%
+      // 例如：权重100的源比权重50的源，总分高出25%
+      const weightBonus = 1 + (weight - 50) * 0.005;
+      const finalScore = testScore * weightBonus;
+      return {
+        ...result,
+        score: finalScore,
+        testScore,
+        weight,
+      };
+    });
 
     // 按综合评分排序，选择最佳播放源
     resultsWithScore.sort((a, b) => b.score - a.score);
 
-    console.log('播放源评分排序结果:');
+    console.log('播放源评分排序结果（含权重加成）:');
     resultsWithScore.forEach((result, index) => {
       console.log(
         `${index + 1}. ${result.source.source_name
-        } - 评分: ${result.score.toFixed(2)} (${result.testResult.quality}, ${result.testResult.loadSpeed
-        }, ${result.testResult.pingTime}ms)`
+        } - 总分: ${result.score.toFixed(2)} (测速分: ${result.testScore.toFixed(2)}, 权重: ${result.weight}) [${result.testResult.quality}, ${result.testResult.loadSpeed
+        }, ${result.testResult.pingTime}ms]`
       );
     });
 
@@ -2473,9 +2541,10 @@ function PlayPageClient() {
       }
 
       const finalResults = bestResults.length > 0 ? bestResults : allResults;
-      setAvailableSources(finalResults);
+      // 按权重排序后设置可用源列表
+      const sortedResults = await setAvailableSourcesWithWeight(finalResults);
 
-      if (finalResults.length === 0) {
+      if (sortedResults.length === 0) {
         setSourceSearchError('未找到匹配结果');
       } else {
         console.log(`刷新成功，找到 ${finalResults.length} 个播放源`);
@@ -2703,8 +2772,9 @@ function PlayPageClient() {
         }
 
         console.log(`智能搜索完成，最终返回 ${finalResults.length} 个结果`);
-        setAvailableSources(finalResults);
-        return finalResults;
+        // 按权重排序后设置可用源列表
+        const sortedResults = await setAvailableSourcesWithWeight(finalResults);
+        return sortedResults;
       } catch (err) {
         console.error('智能搜索失败:', err);
         setSourceSearchError(err instanceof Error ? err.message : '搜索失败');
@@ -2736,7 +2806,7 @@ function PlayPageClient() {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
         // 只有当短剧源有有效数据时才设置可用源列表
         if (sourcesInfo.length > 0 && sourcesInfo[0].episodes && sourcesInfo[0].episodes.length > 0) {
-          setAvailableSources(sourcesInfo);
+          await setAvailableSourcesWithWeight(sourcesInfo);
         } else {
           console.log('⚠️ 短剧源没有有效数据，不设置可用源列表');
           setAvailableSources([]);
@@ -2750,10 +2820,10 @@ function PlayPageClient() {
         const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
         if (shortdramaSource.length > 0) {
           sourcesInfo = shortdramaSource;
-          setAvailableSources(sourcesInfo);
+          await setAvailableSourcesWithWeight(sourcesInfo);
 
           // 后台异步搜索其他源（不阻塞播放）
-          fetchSourcesData(searchTitle || videoTitle).then((otherSources) => {
+          fetchSourcesData(searchTitle || videoTitle).then(async (otherSources) => {
             if (otherSources.length > 0) {
               // 合并短剧源和其他源，短剧源放在前面
               const merged = [...shortdramaSource];
@@ -2762,7 +2832,7 @@ function PlayPageClient() {
                   merged.push(s);
                 }
               });
-              setAvailableSources(merged);
+              await setAvailableSourcesWithWeight(merged);
               console.log(`后台搜索完成，共找到 ${merged.length} 个可用源`);
             }
           }).catch((err) => {
@@ -2807,8 +2877,8 @@ function PlayPageClient() {
               );
               if (!existingShortdrama) {
                 sourcesInfo.push(...shortdramaSource);
-                // 重新设置 availableSources 以包含短剧源
-                setAvailableSources(sourcesInfo);
+                // 重新设置 availableSources 以包含短剧源（按权重排序）
+                sourcesInfo = await setAvailableSourcesWithWeight(sourcesInfo);
                 console.log('✅ 短剧源已添加到换源列表');
               } else {
                 console.log('⚠️ 短剧源已存在，跳过添加');
