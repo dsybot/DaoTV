@@ -260,6 +260,8 @@ function ContinueWatching({ className }: ContinueWatchingProps) {
             const { source, id } = parseKey(record.key);
             const newEpisodesCount = getNewEpisodesCount(record);
             const latestTotalEpisodes = getLatestTotalEpisodes(record);
+            // 优先使用播放记录中保存的 type，否则根据集数判断
+            const cardType = record.type || (latestTotalEpisodes > 1 ? 'tv' : '');
             return (
               <div
                 key={record.key}
@@ -283,8 +285,9 @@ function ContinueWatching({ className }: ContinueWatchingProps) {
                         prev.filter((r) => r.key !== record.key)
                       )
                     }
-                    type={record.media_type || (latestTotalEpisodes > 1 ? 'tv' : '')}
+                    type={cardType}
                     remarks={record.remarks}
+                    priority={index < 4}
                     douban_id={record.douban_id}
                   />
                 </div>

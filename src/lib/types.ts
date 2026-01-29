@@ -15,6 +15,7 @@ export interface PlayRecord {
   search_title: string; // 搜索时使用的标题
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   douban_id?: number; // 豆瓣ID（用于获取详情）
+  type?: string; // 内容类型（anime/tv/movie）用于继续播放时正确请求详情
   media_type?: 'movie' | 'tv'; // 影片类型（电影/电视剧）
 }
 
