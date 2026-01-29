@@ -320,42 +320,42 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                   访问Token
                 </label>
                 <div className='space-y-2'>
-                  {/* Token 输入框 */}
-                  <div className='flex gap-2'>
+                  {/* Token 输入框 - 移动端堆叠 */}
+                  <div className='flex flex-col sm:flex-row gap-2'>
                     <input
                       type={showToken ? 'text' : 'password'}
                       value={securitySettings.token}
                       onChange={(e) => setSecuritySettings(prev => ({ ...prev, token: e.target.value }))}
-                      className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm break-all'
+                      className='w-full sm:flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm'
                     />
                     <button
                       type="button"
                       onClick={() => setShowToken(!showToken)}
-                      className='px-3 py-2 text-sm bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg whitespace-nowrap'
+                      className='w-full sm:w-auto px-3 py-2 text-sm bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg whitespace-nowrap flex-shrink-0'
                     >
                       {showToken ? '隐藏' : '显示'}
                     </button>
                   </div>
-                  
+
                   {/* 操作按钮 - 响应式布局 */}
-                  <div className='flex flex-col sm:flex-row gap-2'>
+                  <div className='grid grid-cols-2 sm:flex sm:flex-row gap-2'>
                     <button
                       type="button"
                       onClick={copyToken}
-                      className='flex-1 sm:flex-none px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                      className='px-3 sm:px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors'
                     >
-                      <Copy className='h-4 w-4' />
-                      复制Token
+                      <Copy className='h-4 w-4 flex-shrink-0' />
+                      <span className='truncate'>复制</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSecuritySettings(prev => ({ ...prev, token: generateToken() }))}
-                      className='flex-1 sm:flex-none px-4 py-2 text-sm bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                      className='px-3 sm:px-4 py-2 text-sm bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors'
                     >
-                      <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <svg className='h-4 w-4 flex-shrink-0' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
                       </svg>
-                      重新生成
+                      <span className='truncate'>重新生成</span>
                     </button>
                   </div>
                 </div>
@@ -542,42 +542,42 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
           </h3>
           <div className='space-y-2'>
             {/* URL显示区域 */}
-            <div className='bg-white dark:bg-gray-800 px-3 py-2 rounded border'>
+            <div className='bg-white dark:bg-gray-800 px-3 py-2 rounded border overflow-x-auto'>
               <code className='block text-sm text-gray-900 dark:text-gray-100 break-all leading-relaxed'>
                 {generateExampleURL()}
               </code>
             </div>
-            
-            {/* 操作按钮 */}
-            <div className='flex flex-col sm:flex-row gap-2'>
+
+            {/* 操作按钮 - 移动端使用grid布局 */}
+            <div className='grid grid-cols-3 sm:flex sm:flex-row gap-2'>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(generateExampleURL());
                   showMessage('success', 'URL已复制到剪贴板');
                 }}
-                className='flex-1 sm:flex-none px-4 py-2 text-sm bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                className='px-2 sm:px-4 py-2 text-xs sm:text-sm bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-300 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition-colors'
               >
-                <Copy className='h-4 w-4' />
-                复制URL
+                <Copy className='h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0' />
+                <span className='truncate'>复制</span>
               </button>
               <a
                 href={generateExampleURL()}
                 target='_blank'
                 rel='noopener noreferrer'
-                className='flex-1 sm:flex-none px-4 py-2 text-sm bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                className='px-2 sm:px-4 py-2 text-xs sm:text-sm bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition-colors'
               >
-                <ExternalLink className='h-4 w-4' />
-                测试访问
+                <ExternalLink className='h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0' />
+                <span className='truncate'>测试</span>
               </a>
               <button
                 onClick={handleDiagnose}
                 disabled={isDiagnosing}
-                className='flex-1 sm:flex-none px-4 py-2 text-sm bg-purple-100 dark:bg-purple-800 hover:bg-purple-200 dark:hover:bg-purple-700 disabled:opacity-50 text-purple-700 dark:text-purple-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                className='px-2 sm:px-4 py-2 text-xs sm:text-sm bg-purple-100 dark:bg-purple-800 hover:bg-purple-200 dark:hover:bg-purple-700 disabled:opacity-50 text-purple-700 dark:text-purple-300 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition-colors'
               >
-                <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <svg className='h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
                 </svg>
-                {isDiagnosing ? '诊断中...' : '诊断配置'}
+                <span className='truncate'>{isDiagnosing ? '诊断中' : '诊断'}</span>
               </button>
             </div>
           </div>
