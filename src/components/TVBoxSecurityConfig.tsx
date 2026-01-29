@@ -267,10 +267,10 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
   };
 
   return (
-    <div className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6'>
+    <div className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 overflow-hidden'>
       <div className='flex items-center gap-3 mb-6'>
-        <Shield className='h-6 w-6 text-blue-600' />
-        <h2 className='text-xl font-bold text-gray-900 dark:text-gray-100'>
+        <Shield className='h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0' />
+        <h2 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100'>
           TVBox 安全配置
         </h2>
       </div>
@@ -293,16 +293,16 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
       <div className='space-y-6'>
         {/* Token验证 */}
         <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
+          <div className='flex items-start sm:items-center justify-between gap-3 mb-4'>
+            <div className='min-w-0 flex-1'>
+              <h3 className='text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100'>
                 Token 验证
               </h3>
-              <p className='text-sm text-gray-600 dark:text-gray-400'>
+              <p className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
                 要求TVBox在URL中携带token参数才能访问
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer'>
+            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
               <input
                 type='checkbox'
                 checked={securitySettings.enableAuth}
@@ -366,16 +366,16 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
 
         {/* IP白名单 */}
         <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
+          <div className='flex items-start sm:items-center justify-between gap-3 mb-4'>
+            <div className='min-w-0 flex-1'>
+              <h3 className='text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100'>
                 IP 白名单
               </h3>
-              <p className='text-sm text-gray-600 dark:text-gray-400'>
+              <p className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
                 只允许指定IP地址访问TVBox接口
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer'>
+            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
               <input
                 type='checkbox'
                 checked={securitySettings.enableIpWhitelist}
@@ -388,7 +388,7 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
 
           {securitySettings.enableIpWhitelist && (
             <div className='space-y-3'>
-              <div className='flex gap-2'>
+              <div className='flex flex-col sm:flex-row gap-2'>
                 <input
                   type='text'
                   value={newIP}
@@ -400,20 +400,20 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 <button
                   type="button"
                   onClick={addIP}
-                  className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg'
+                  className='w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg whitespace-nowrap'
                 >
                   添加
                 </button>
               </div>
-              
+
               {securitySettings.allowedIPs.length > 0 && (
                 <div className='space-y-2'>
                   {securitySettings.allowedIPs.map((ip, index) => (
-                    <div key={index} className='flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded'>
-                      <span className='text-gray-900 dark:text-gray-100'>{ip}</span>
+                    <div key={index} className='flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded'>
+                      <span className='text-gray-900 dark:text-gray-100 break-all min-w-0 flex-1 text-sm'>{ip}</span>
                       <button
                         onClick={() => removeIP(index)}
-                        className='text-red-600 hover:text-red-800 text-sm'
+                        className='text-red-600 hover:text-red-800 text-sm flex-shrink-0'
                       >
                         删除
                       </button>
@@ -431,16 +431,16 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
 
         {/* 频率限制 */}
         <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
+          <div className='flex items-start sm:items-center justify-between gap-3 mb-4'>
+            <div className='min-w-0 flex-1'>
+              <h3 className='text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100'>
                 访问频率限制
               </h3>
-              <p className='text-sm text-gray-600 dark:text-gray-400'>
+              <p className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
                 限制每个IP每分钟的访问次数，防止滥用
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer'>
+            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
               <input
                 type='checkbox'
                 checked={securitySettings.enableRateLimit}
@@ -473,16 +473,16 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
 
         {/* CDN代理配置 */}
         <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
-                Cloudflare Worker 代理（TVBox专用）
+          <div className='flex items-start sm:items-center justify-between gap-3 mb-4'>
+            <div className='min-w-0 flex-1'>
+              <h3 className='text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100'>
+                Cloudflare Worker 代理
               </h3>
-              <p className='text-sm text-gray-600 dark:text-gray-400'>
-                为TVBox配置启用Cloudflare全球CDN加速，提升访问速度和稳定性
+              <p className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
+                为TVBox配置启用Cloudflare全球CDN加速
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer'>
+            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
               <input
                 type='checkbox'
                 checked={proxySettings.enabled}
@@ -611,15 +611,15 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
 
             <div className='space-y-2 text-sm'>
               {/* 基本信息 */}
-              <div className='grid grid-cols-2 gap-2'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1'>
                 <div className='text-gray-600 dark:text-gray-400'>状态码:</div>
-                <div className='text-gray-900 dark:text-gray-100'>{diagnoseResult.status}</div>
+                <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>{diagnoseResult.status}</div>
 
                 <div className='text-gray-600 dark:text-gray-400'>Content-Type:</div>
-                <div className='text-gray-900 dark:text-gray-100 text-xs'>{diagnoseResult.contentType || 'N/A'}</div>
+                <div className='text-gray-900 dark:text-gray-100 text-xs break-all mb-1 sm:mb-0'>{diagnoseResult.contentType || 'N/A'}</div>
 
                 <div className='text-gray-600 dark:text-gray-400'>JSON解析:</div>
-                <div className='text-gray-900 dark:text-gray-100'>
+                <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>
                   {diagnoseResult.hasJson ? (
                     <span className='text-green-600 dark:text-green-400'>✓ 成功</span>
                   ) : (
@@ -628,24 +628,24 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 </div>
 
                 <div className='text-gray-600 dark:text-gray-400'>接收到的Token:</div>
-                <div className='text-gray-900 dark:text-gray-100'>{diagnoseResult.receivedToken || 'none'}</div>
+                <div className='text-gray-900 dark:text-gray-100 break-all mb-1 sm:mb-0'>{diagnoseResult.receivedToken || 'none'}</div>
 
                 <div className='text-gray-600 dark:text-gray-400'>配置大小:</div>
-                <div className='text-gray-900 dark:text-gray-100'>{diagnoseResult.size} 字节</div>
+                <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>{diagnoseResult.size} 字节</div>
 
                 <div className='text-gray-600 dark:text-gray-400'>影视源数量:</div>
-                <div className='text-gray-900 dark:text-gray-100'>{diagnoseResult.sitesCount}</div>
+                <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>{diagnoseResult.sitesCount}</div>
 
                 <div className='text-gray-600 dark:text-gray-400'>直播源数量:</div>
-                <div className='text-gray-900 dark:text-gray-100'>{diagnoseResult.livesCount}</div>
+                <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>{diagnoseResult.livesCount}</div>
 
                 <div className='text-gray-600 dark:text-gray-400'>解析源数量:</div>
-                <div className='text-gray-900 dark:text-gray-100'>{diagnoseResult.parsesCount}</div>
+                <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>{diagnoseResult.parsesCount}</div>
 
                 {diagnoseResult.privateApis !== undefined && (
                   <>
                     <div className='text-gray-600 dark:text-gray-400'>私网API数量:</div>
-                    <div className='text-gray-900 dark:text-gray-100'>
+                    <div className='text-gray-900 dark:text-gray-100 mb-1 sm:mb-0'>
                       {diagnoseResult.privateApis > 0 ? (
                         <span className='text-yellow-600 dark:text-yellow-400'>{diagnoseResult.privateApis}</span>
                       ) : (
