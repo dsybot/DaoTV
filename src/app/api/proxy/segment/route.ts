@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
   const source = searchParams.get('moontv-source');
-  
+
   if (!url) {
     segmentStats.errors++;
     segmentStats.activeStreams--;
@@ -87,13 +87,13 @@ export async function GET(request: Request) {
 
     if (!response.ok) {
       segmentStats.errors++;
-      return NextResponse.json({ 
-        error: `Failed to fetch segment: ${response.status} ${response.statusText}` 
+      return NextResponse.json({
+        error: `Failed to fetch segment: ${response.status} ${response.statusText}`
       }, { status: response.status >= 500 ? 500 : response.status });
     }
 
     const headers = new Headers();
-    
+
     // 设置内容类型 - 更精确的类型判断
     const originalContentType = response?.headers.get('Content-Type');
     if (originalContentType) {
@@ -101,16 +101,16 @@ export async function GET(request: Request) {
     } else {
       headers.set('Content-Type', 'video/mp2t');
     }
-    
+
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Range, Origin, Accept, User-Agent');
     headers.set('Accept-Ranges', 'bytes');
     headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Content-Type, Accept-Ranges');
     headers.set('Cache-Control', 'public, max-age=300'); // 5分钟缓存
-    
-    // 复制原始响应的重要头部
-    const importantHeaders = ['Content-Length', 'Content-Range', 'Last-Modified', 'ETag'];
+
+    // 复制原始响应的重要头部（不转发 Content-Length，因为流式传输使用 chunked encoding，两者冲突）
+    const importantHeaders = ['Content-Range', 'Last-Modified', 'ETag'];
     importantHeaders.forEach(header => {
       const value = response?.headers.get(header);
       if (value) {
@@ -146,14 +146,14 @@ export async function GET(request: Request) {
             if (done) {
               controller.close();
               cleanup();
-              
+
               // 更新统计信息
               const responseTime = Date.now() - startTime;
-              segmentStats.avgResponseTime = 
+              segmentStats.avgResponseTime =
                 (segmentStats.avgResponseTime * (segmentStats.requests - 1) + responseTime) / segmentStats.requests;
               segmentStats.totalBytes += bytesTransferred;
               segmentStats.activeStreams--;
-              
+
               return;
             }
 
@@ -170,7 +170,7 @@ export async function GET(request: Request) {
               cleanup();
               return;
             }
-            
+
             pump();
           }).catch((error) => {
             if (!isCancelled) {
@@ -215,7 +215,7 @@ export async function GET(request: Request) {
             // 忽略取消时的错误
           }
         }
-        
+
         segmentStats.activeStreams--;
       }
     }, {
@@ -227,12 +227,12 @@ export async function GET(request: Request) {
     });
 
     return new Response(stream, { headers });
-    
+
   } catch (error: any) {
     segmentStats.errors++;
     segmentStats.activeStreams--;
     clearTimeout(timeoutId);
-    
+
     // 确保在错误情况下也释放资源
     if (reader) {
       try {
@@ -254,7 +254,7 @@ export async function GET(request: Request) {
     if (error.name === 'AbortError') {
       return NextResponse.json({ error: 'Segment request timeout' }, { status: 408 });
     }
-    
+
     if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       return NextResponse.json({ error: 'Network connection failed' }, { status: 503 });
     }
@@ -262,14 +262,14 @@ export async function GET(request: Request) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Segment proxy error:', error);
     }
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to fetch segment',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }, { status: 500 });
-    
+
   } finally {
     clearTimeout(timeoutId);
-    
+
     // 定期打印统计信息
     if (segmentStats.requests % 500 === 0 && process.env.NODE_ENV === 'development') {
       console.log(`Segment Proxy Stats - Requests: ${segmentStats.requests}, Active: ${segmentStats.activeStreams}, Errors: ${segmentStats.errors}, Avg Time: ${segmentStats.avgResponseTime.toFixed(2)}ms, Total: ${(segmentStats.totalBytes / 1024 / 1024).toFixed(2)}MB`);
