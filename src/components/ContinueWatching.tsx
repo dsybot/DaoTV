@@ -256,7 +256,7 @@ function ContinueWatching({ className }: ContinueWatchingProps) {
             </div>
           ))
           : // 显示真实数据
-          playRecords.map((record) => {
+          playRecords.map((record, index) => {
             const { source, id } = parseKey(record.key);
             const newEpisodesCount = getNewEpisodesCount(record);
             const latestTotalEpisodes = getLatestTotalEpisodes(record);
