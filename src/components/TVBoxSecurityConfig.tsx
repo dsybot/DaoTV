@@ -718,10 +718,10 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                       <div className='font-medium text-blue-800 dark:text-blue-200 mb-1'>Spider Jar 状态:</div>
                       <div className='space-y-0.5 text-blue-700 dark:text-blue-300'>
                         {(diagnoseResult as any).spider_url && (
-                          <div>• 来源: {(diagnoseResult as any).spider_url}</div>
+                          <div className='break-all'>• 来源: {(diagnoseResult as any).spider_url}</div>
                         )}
                         {(diagnoseResult as any).spider_md5 && (
-                          <div>• MD5: {(diagnoseResult as any).spider_md5}</div>
+                          <div className='break-all'>• MD5: {(diagnoseResult as any).spider_md5}</div>
                         )}
                         {(diagnoseResult as any).spider_cached !== undefined && (
                           <div>• 缓存: {(diagnoseResult as any).spider_cached ? '✓ 是' : '✗ 否（实时下载）'}</div>
