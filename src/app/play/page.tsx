@@ -456,9 +456,10 @@ function PlayPageClient() {
         return;
       }
 
-      // 检测是否为bangumi ID
-      if (isBangumiId(videoDoubanId)) {
-        // 加载bangumi详情
+      // 检测是否为bangumi ID 或 动漫类型（stype=anime）
+      const isAnimeType = searchType === 'anime';
+      if (isBangumiId(videoDoubanId) || isAnimeType) {
+        // 优先加载bangumi详情
         if (loadingBangumiDetails || bangumiDetails) {
           return;
         }
@@ -468,9 +469,26 @@ function PlayPageClient() {
           const bangumiData = await fetchBangumiDetails(videoDoubanId);
           if (bangumiData) {
             setBangumiDetails(bangumiData);
+          } else if (isAnimeType && !isBangumiId(videoDoubanId)) {
+            // anime 类型但 bangumi 无数据，fallback 到豆瓣
+            const response = await getDoubanDetails(videoDoubanId.toString());
+            if (response.code === 200 && response.data && response.data.title) {
+              setMovieDetails(response.data);
+            }
           }
         } catch (error) {
           console.error('Failed to load bangumi details:', error);
+          // anime 类型 bangumi 失败时，fallback 到豆瓣
+          if (isAnimeType && !isBangumiId(videoDoubanId)) {
+            try {
+              const response = await getDoubanDetails(videoDoubanId.toString());
+              if (response.code === 200 && response.data && response.data.title) {
+                setMovieDetails(response.data);
+              }
+            } catch (doubanError) {
+              console.error('Failed to load douban details as fallback:', doubanError);
+            }
+          }
         } finally {
           setLoadingBangumiDetails(false);
         }
@@ -509,7 +527,7 @@ function PlayPageClient() {
     };
 
     loadMovieDetails();
-  }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails, lastMovieDetailsFetchTime]);
+  }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails, lastMovieDetailsFetchTime, searchType]);
 
   // 加载豆瓣短评
   useEffect(() => {
@@ -518,8 +536,8 @@ function PlayPageClient() {
         return;
       }
 
-      // 跳过bangumi ID
-      if (isBangumiId(videoDoubanId)) {
+      // 跳过bangumi ID 或 anime 类型（已使用bangumi详情）
+      if (isBangumiId(videoDoubanId) || (searchType === 'anime' && bangumiDetails)) {
         return;
       }
 
