@@ -4,6 +4,129 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 
+// 信任网络配置缓存（从 API 获取）
+let trustedNetworkCache: { enabled: boolean; trustedIPs: string[] } | null = null;
+let trustedNetworkCacheTime = 0;
+const CACHE_TTL = 60000; // 1 分钟缓存
+
+// 从环境变量获取信任网络配置（优先）
+function getTrustedNetworkFromEnv(): { enabled: boolean; trustedIPs: string[] } | null {
+  const trustedIPs = process.env.TRUSTED_NETWORK_IPS;
+  if (!trustedIPs) return null;
+
+  return {
+    enabled: true,
+    trustedIPs: trustedIPs.split(',').map(ip => ip.trim()).filter(Boolean),
+  };
+}
+
+// 获取客户端 IP
+function getClientIP(request: NextRequest): string {
+  // 按优先级获取客户端 IP
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  return (
+    request.headers.get('x-real-ip') ||
+    request.headers.get('cf-connecting-ip') ||
+    'unknown'
+  );
+}
+
+// 简化的 IP/CIDR 匹配（Edge Runtime 兼容）
+function isIPInCIDR(clientIP: string, cidr: string): boolean {
+  // 处理通配符
+  if (cidr === '*') return true;
+
+  // 检测 IPv6
+  const isClientIPv6 = clientIP.includes(':');
+  const isCIDRIPv6 = cidr.includes(':');
+
+  // IPv4 和 IPv6 不能互相匹配
+  if (isClientIPv6 !== isCIDRIPv6) return false;
+
+  if (isClientIPv6) {
+    // IPv6 简化匹配：只支持精确匹配和简单前缀匹配
+    if (cidr.includes('/')) {
+      const [network] = cidr.split('/');
+      // 简化：检查是否以相同前缀开始
+      return clientIP.toLowerCase().startsWith(network.toLowerCase().replace(/:+$/, ''));
+    }
+    return clientIP.toLowerCase() === cidr.toLowerCase();
+  }
+
+  // IPv4 CIDR 匹配
+  if (cidr.includes('/')) {
+    const [network, maskStr] = cidr.split('/');
+    const mask = parseInt(maskStr, 10);
+
+    const networkParts = network.split('.').map(Number);
+    const clientParts = clientIP.split('.').map(Number);
+
+    if (clientParts.length !== 4 || networkParts.length !== 4) return false;
+    if (clientParts.some(p => isNaN(p)) || networkParts.some(p => isNaN(p))) return false;
+
+    // 转换为 32 位整数
+    const networkInt = (networkParts[0] << 24) | (networkParts[1] << 16) | (networkParts[2] << 8) | networkParts[3];
+    const clientInt = (clientParts[0] << 24) | (clientParts[1] << 16) | (clientParts[2] << 8) | clientParts[3];
+
+    // 生成掩码
+    const maskInt = mask === 0 ? 0 : (~0 << (32 - mask)) >>> 0;
+
+    return (networkInt & maskInt) === (clientInt & maskInt);
+  }
+
+  // 精确 IP 匹配
+  return clientIP === cidr;
+}
+
+// 检查 IP 是否在信任网络中
+function isIPTrusted(clientIP: string, trustedIPs: string[]): boolean {
+  return trustedIPs.some(trustedIP => isIPInCIDR(clientIP, trustedIP.trim()));
+}
+
+// 生成信任网络的自动登录 cookie
+function generateTrustedAuthCookie(request: NextRequest): NextResponse {
+  const response = NextResponse.next();
+
+  const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
+  const username = process.env.USERNAME || 'admin';
+
+  if (storageType === 'localstorage') {
+    // localstorage 模式：设置密码 cookie
+    const authInfo = {
+      password: process.env.PASSWORD,
+      loginTime: Date.now(),
+    };
+    response.cookies.set('user_auth', JSON.stringify(authInfo), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 天
+    });
+  } else {
+    // 数据库模式：生成签名 cookie（需要异步，这里简化处理）
+    // 在信任网络模式下，我们设置一个特殊的信任标记
+    const authInfo = {
+      username,
+      trustedNetwork: true,
+      timestamp: Date.now(),
+      loginTime: Date.now(),
+      role: 'owner',
+    };
+    response.cookies.set('user_auth', JSON.stringify(authInfo), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 天
+    });
+  }
+
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestId = Math.random().toString(36).substring(7);
@@ -60,6 +183,26 @@ async function handleAuthentication(
   requestId: string,
   response?: NextResponse
 ) {
+  // 🔥 检查信任网络模式
+  const trustedNetworkConfig = getTrustedNetworkFromEnv();
+  if (trustedNetworkConfig?.enabled && trustedNetworkConfig.trustedIPs.length > 0) {
+    const clientIP = getClientIP(request);
+    console.log(`[Middleware ${requestId}] Trusted network check - Client IP:`, clientIP);
+
+    if (isIPTrusted(clientIP, trustedNetworkConfig.trustedIPs)) {
+      console.log(`[Middleware ${requestId}] IP is in trusted network, auto-login`);
+
+      // 检查是否已经有有效的认证 cookie
+      const existingAuth = getAuthInfoFromCookie(request);
+      if (existingAuth && (existingAuth.password || existingAuth.trustedNetwork || existingAuth.signature)) {
+        console.log(`[Middleware ${requestId}] Already authenticated, allowing access`);
+        return response || NextResponse.next();
+      }
+
+      // 没有认证 cookie，自动生成并设置
+      return generateTrustedAuthCookie(request);
+    }
+  }
 
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
   console.log(`[Middleware ${requestId}] Storage type:`, storageType);
@@ -96,7 +239,13 @@ async function handleAuthentication(
     return response || NextResponse.next();
   }
 
-  // 其他模式：只验证签名
+  // 其他模式：验证签名或信任网络标记
+  // 🔥 信任网络模式：检查 trustedNetwork 标记
+  if (authInfo.trustedNetwork) {
+    console.log(`[Middleware ${requestId}] Trusted network auth, allowing access`);
+    return response || NextResponse.next();
+  }
+
   // 检查是否有用户名（非localStorage模式下密码不存储在cookie中）
   if (!authInfo.username || !authInfo.signature) {
     console.log(`[Middleware ${requestId}] Missing username or signature:`, {
