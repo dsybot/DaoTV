@@ -7,7 +7,7 @@ import { getAuthInfoFromCookie } from '@/lib/auth';
 // 信任网络配置缓存（从 API 获取）
 let trustedNetworkCache: { enabled: boolean; trustedIPs: string[] } | null = null;
 let trustedNetworkCacheTime = 0;
-const CACHE_TTL = 60000; // 1 分钟缓存
+const CACHE_TTL = 30000; // 30 秒缓存
 
 // 从环境变量获取信任网络配置（优先）
 function getTrustedNetworkFromEnv(): { enabled: boolean; trustedIPs: string[] } | null {
@@ -18,6 +18,53 @@ function getTrustedNetworkFromEnv(): { enabled: boolean; trustedIPs: string[] } 
     enabled: true,
     trustedIPs: trustedIPs.split(',').map(ip => ip.trim()).filter(Boolean),
   };
+}
+
+// 从 API 获取信任网络配置（数据库）
+async function getTrustedNetworkFromAPI(request: NextRequest): Promise<{ enabled: boolean; trustedIPs: string[] } | null> {
+  // 检查缓存是否有效
+  const now = Date.now();
+  if (trustedNetworkCache && (now - trustedNetworkCacheTime) < CACHE_TTL) {
+    return trustedNetworkCache;
+  }
+
+  try {
+    // 构建内部 API URL
+    const url = new URL('/api/server-config', request.url);
+    url.searchParams.set('key', 'TrustedNetworkConfig');
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'x-internal-request': 'true',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.TrustedNetworkConfig) {
+        trustedNetworkCache = {
+          enabled: data.TrustedNetworkConfig.enabled ?? false,
+          trustedIPs: data.TrustedNetworkConfig.trustedIPs || [],
+        };
+        trustedNetworkCacheTime = now;
+        return trustedNetworkCache;
+      }
+    }
+  } catch (error) {
+    console.error('[Middleware] Failed to fetch trusted network config:', error);
+  }
+
+  return null;
+}
+
+// 获取信任网络配置（环境变量优先，然后数据库）
+async function getTrustedNetworkConfig(request: NextRequest): Promise<{ enabled: boolean; trustedIPs: string[] } | null> {
+  // 环境变量优先
+  const envConfig = getTrustedNetworkFromEnv();
+  if (envConfig) return envConfig;
+
+  // 尝试从数据库获取
+  return await getTrustedNetworkFromAPI(request);
 }
 
 // 获取客户端 IP
@@ -183,8 +230,8 @@ async function handleAuthentication(
   requestId: string,
   response?: NextResponse
 ) {
-  // 🔥 检查信任网络模式
-  const trustedNetworkConfig = getTrustedNetworkFromEnv();
+  // 🔥 检查信任网络模式（环境变量优先，然后数据库，30秒缓存）
+  const trustedNetworkConfig = await getTrustedNetworkConfig(request);
   if (trustedNetworkConfig?.enabled && trustedNetworkConfig.trustedIPs.length > 0) {
     const clientIP = getClientIP(request);
     console.log(`[Middleware ${requestId}] Trusted network check - Client IP:`, clientIP);
