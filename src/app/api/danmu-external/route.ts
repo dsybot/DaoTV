@@ -52,7 +52,7 @@ async function getDanmuApiConfig(): Promise<DanmuApiConfig> {
         enabled: true,
         apiUrl: config.customApiUrl.replace(/\/$/, ''),
         token: config.customToken || '',
-        timeout: config.timeout || 15,
+        timeout: config.timeout || 30,
       };
     }
 
@@ -61,7 +61,7 @@ async function getDanmuApiConfig(): Promise<DanmuApiConfig> {
       enabled: true,
       apiUrl: DEFAULT_DANMU_API_URL,
       token: DEFAULT_DANMU_API_TOKEN,
-      timeout: config?.timeout || 15,
+      timeout: config?.timeout || 30,
     };
   } catch {
     // 配置获取失败，使用默认值
@@ -69,7 +69,7 @@ async function getDanmuApiConfig(): Promise<DanmuApiConfig> {
       enabled: true,
       apiUrl: DEFAULT_DANMU_API_URL,
       token: DEFAULT_DANMU_API_TOKEN,
-      timeout: 15,
+      timeout: 30,
     };
   }
 }
@@ -190,10 +190,12 @@ async function fetchDanmuFromCustomAPI(
 
     const commentData = await commentResponse.json();
 
-    // API 返回格式: { errorCode: 0, count: 1953, comments: [...] }
-    // errorCode === 0 表示成功
-    if (commentData.errorCode !== 0 || !commentData.comments || commentData.comments.length === 0) {
-      console.log(`📭 [弹幕API] 无弹幕数据 (errorCode: ${commentData.errorCode}, count: ${commentData.count || 0})`);
+    // API 返回格式有两种:
+    // 1. 搜索/详情: { success: true, ... } 或 { errorCode: 0, ... }
+    // 2. 弹幕数据: { count: 31217, comments: [...] } - 没有 errorCode 字段
+    // 检测有效弹幕的逻辑：有 comments 数组且不为空
+    if (!commentData.comments || !Array.isArray(commentData.comments) || commentData.comments.length === 0) {
+      console.log(`📭 [弹幕API] 无弹幕数据 (count: ${commentData.count || 0})`);
       return null;
     }
 
