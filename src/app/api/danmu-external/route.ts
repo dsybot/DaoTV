@@ -190,8 +190,10 @@ async function fetchDanmuFromCustomAPI(
 
     const commentData = await commentResponse.json();
 
-    if (!commentData.success || !commentData.comments || commentData.comments.length === 0) {
-      console.log(`📭 [弹幕API] 无弹幕数据`);
+    // API 返回格式: { errorCode: 0, count: 1953, comments: [...] }
+    // errorCode === 0 表示成功
+    if (commentData.errorCode !== 0 || !commentData.comments || commentData.comments.length === 0) {
+      console.log(`📭 [弹幕API] 无弹幕数据 (errorCode: ${commentData.errorCode}, count: ${commentData.count || 0})`);
       return null;
     }
 
