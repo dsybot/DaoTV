@@ -50,8 +50,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage,
       EnableTMDBActorSearch,
       TMDBWorkerProxy,
-      DanmuApiEndpoint,
-      DanmuApiToken,
       LoginBgDesktop,
       LoginBgMobile,
       cronConfig,
@@ -75,8 +73,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
       TMDBWorkerProxy?: string;
-      DanmuApiEndpoint?: string;
-      DanmuApiToken?: string;
       LoginBgDesktop?: string;
       LoginBgMobile?: string;
       cronConfig?: {
@@ -142,8 +138,6 @@ export async function POST(request: NextRequest) {
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
       TMDBWorkerProxy: TMDBWorkerProxy || '',
-      DanmuApiEndpoint: DanmuApiEndpoint || '',
-      DanmuApiToken: DanmuApiToken || '',
       LoginBgDesktop: LoginBgDesktop || '',
       LoginBgMobile: LoginBgMobile || '',
     };

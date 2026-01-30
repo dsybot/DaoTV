@@ -35,6 +35,7 @@ import {
   ExternalLink,
   FileText,
   FolderOpen,
+  MessageSquare,
   Send,
   Settings,
   Shield,
@@ -66,6 +67,7 @@ import ShortDramaConfig from '@/components/ShortDramaConfig';
 import DownloadConfig from '@/components/OfflineDownloadConfig';
 import CustomAdFilterConfig from '@/components/CustomAdFilterConfig';
 import WatchRoomConfig from '@/components/WatchRoomConfig';
+import DanmuApiConfig from '@/components/DanmuApiConfig';
 import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
 import PageLayout from '@/components/PageLayout';
 
@@ -7482,6 +7484,21 @@ function AdminPageClient() {
               onToggle={() => toggleTab('watchRoomConfig')}
             >
               <WatchRoomConfig config={config} refreshConfig={fetchConfig} />
+            </CollapsibleTab>
+
+            {/* 弹幕API配置标签 */}
+            <CollapsibleTab
+              title='弹幕API配置'
+              icon={
+                <MessageSquare
+                  size={20}
+                  className='text-gray-600 dark:text-gray-400'
+                />
+              }
+              isExpanded={expandedTabs.danmuApiConfig}
+              onToggle={() => toggleTab('danmuApiConfig')}
+            >
+              <DanmuApiConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
             {/* TVBox安全配置标签 */}
