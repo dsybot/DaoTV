@@ -91,9 +91,8 @@ async function fetchDanmuFromCustomAPI(
   const timeoutId = setTimeout(() => controller.abort(), config.timeout * 1000);
 
   try {
-    // 第一步：搜索动漫/视频
-    const searchQuery = year ? `${title} ${year}` : title;
-    const searchUrl = `${config.apiUrl}/${config.token}/api/v2/search/anime?keyword=${encodeURIComponent(searchQuery)}`;
+    // 第一步：搜索动漫/视频（只用标题搜索，不带年份，年份用于后续匹配筛选）
+    const searchUrl = `${config.apiUrl}/${config.token}/api/v2/search/anime?keyword=${encodeURIComponent(title)}`;
     console.log(`🔍 [弹幕API] 搜索: ${searchUrl}`);
 
     const searchResponse = await fetch(searchUrl, {
@@ -117,14 +116,21 @@ async function fetchDanmuFromCustomAPI(
 
     console.log(`🎬 [弹幕API] 找到 ${searchData.animes.length} 个匹配结果`);
 
-    // 选择最佳匹配（优先完全匹配标题）
+    // 选择最佳匹配（优先年份匹配，再匹配标题）
     let bestMatch = searchData.animes[0];
     for (const anime of searchData.animes) {
       const animeTitle = anime.animeTitle?.toLowerCase() || '';
       const searchTitle = title.toLowerCase();
-      if (animeTitle.includes(searchTitle) || searchTitle.includes(animeTitle.split('(')[0].trim())) {
+      const titleMatches = animeTitle.includes(searchTitle) || searchTitle.includes(animeTitle.split('(')[0].trim());
+
+      // 如果有年份参数，优先选择年份匹配的结果
+      if (year && animeTitle.includes(year) && titleMatches) {
         bestMatch = anime;
         break;
+      }
+      if (titleMatches) {
+        bestMatch = anime;
+        if (!year) break; // 没有年份参数时，找到标题匹配就停止
       }
     }
 
