@@ -96,22 +96,21 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
     }
   }, [isCollapsed]);
 
-  const [active, setActive] = useState(activePath);
+  const [active, setActive] = useState(() => {
+    // 初始化时使用 pathname，不依赖 activePath prop
+    if (typeof window !== 'undefined') {
+      const queryString = new URLSearchParams(window.location.search).toString();
+      return queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+    }
+    return activePath || '/';
+  });
 
   useEffect(() => {
-    // 优先使用传入的 activePath
-    if (activePath) {
-      setActive(activePath);
-    } else {
-      // 否则使用当前路径
-      const getCurrentFullPath = () => {
-        const queryString = searchParams.toString();
-        return queryString ? `${pathname}?${queryString}` : pathname;
-      };
-      const fullPath = getCurrentFullPath();
-      setActive(fullPath);
-    }
-  }, [activePath, pathname, searchParams]);
+    // 只监听路由变化，不监听 activePath prop
+    const queryString = searchParams.toString();
+    const fullPath = queryString ? `${pathname}?${queryString}` : pathname;
+    setActive(fullPath);
+  }, [pathname, searchParams]);
 
   const handleToggle = useCallback(() => {
     const newState = !isCollapsed;

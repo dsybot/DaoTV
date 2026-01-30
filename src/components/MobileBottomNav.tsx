@@ -33,8 +33,22 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // 构建完整的当前路径（包含查询参数）
-  const currentFullPath = activePath ?? (searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname);
+  // 独立管理 active 状态，不依赖 activePath prop
+  const [active, setActive] = useState(() => {
+    // 初始化时使用当前路由
+    if (typeof window !== 'undefined') {
+      const queryString = new URLSearchParams(window.location.search).toString();
+      return queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+    }
+    return activePath || '/';
+  });
+
+  // 监听路由变化，自动更新 active 状态
+  useEffect(() => {
+    const queryString = searchParams.toString();
+    const fullPath = queryString ? `${pathname}?${queryString}` : pathname;
+    setActive(fullPath);
+  }, [pathname, searchParams]);
 
   // 更多菜单状态
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -153,6 +167,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   // 处理下拉菜单项点击
   const handleDropdownItemClick = useCallback((href: string) => {
+    setActive(href);  // 立即更新 active 状态
     setShowDesktopDropdown(false);
     router.push(href);
   }, [router]);
@@ -160,7 +175,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const isActive = useCallback(
     (href: string) => {
       const typeMatch = href.match(/type=([^&]+)/)?.[1];
-      const decodedActive = decodeURIComponent(currentFullPath);
+      const decodedActive = decodeURIComponent(active);
       const decodedItemHref = decodeURIComponent(href);
 
       if (decodedActive.startsWith('/detail') || decodedActive.startsWith('/play')) {
@@ -175,7 +190,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         (href === '/shortdrama' && decodedActive.startsWith('/shortdrama'))
       );
     },
-    [currentFullPath]
+    [active]
   );
 
   // 计算桌面端可见项和隐藏项
@@ -293,7 +308,10 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                       key={item.href}
                       href={item.href}
                       useTransitionNav
-                      onClick={() => setShowMoreMenu(false)}
+                      onClick={() => {
+                        setActive(item.href);
+                        setShowMoreMenu(false);
+                      }}
                       className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 active:scale-95 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
                     >
                       <div
@@ -338,6 +356,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                     <FastLink
                       href={item.href}
                       useTransitionNav
+                      onClick={() => setActive(item.href)}
                       className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
                     >
                       <item.icon
@@ -376,6 +395,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
                   <FastLink
                     href={item.href}
                     useTransitionNav
+                    onClick={() => setActive(item.href)}
                     className="group flex flex-col items-center justify-center min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200"
                   >
                     <item.icon
