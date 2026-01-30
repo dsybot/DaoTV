@@ -162,10 +162,11 @@ const DanmuApiConfig = ({ config, refreshConfig }: DanmuApiConfigProps) => {
 
       {message && (
         <div
-          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${message.type === 'success'
+          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
+            message.type === 'success'
               ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
               : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-            }`}
+          }`}
         >
           {message.type === 'success' ? (
             <CheckCircle className='h-5 w-5' />
@@ -355,10 +356,11 @@ const DanmuApiConfig = ({ config, refreshConfig }: DanmuApiConfigProps) => {
 
                 {testResult && (
                   <div
-                    className={`mt-3 p-3 rounded-lg flex items-center gap-2 ${testResult.success
+                    className={`mt-3 p-3 rounded-lg flex items-center gap-2 ${
+                      testResult.success
                         ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                         : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                      }`}
+                    }`}
                   >
                     {testResult.success ? (
                       <CheckCircle className='h-4 w-4 flex-shrink-0' />
