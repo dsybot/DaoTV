@@ -218,10 +218,19 @@ async function fetchDanmuFromCustomAPI(
     }).filter((item: DanmuItem) =>
       item.text.length > 0 &&
       item.text.length <= 100 &&
-      item.time >= 0
+      item.time >= 0 &&
+      // 过滤掉占位弹幕
+      !item.text.includes('弹幕正在赶来') &&
+      !item.text.includes('观影愉快')
     );
 
     console.log(`✅ [弹幕API] 处理后 ${danmuList.length} 条弹幕`);
+
+    // 如果弹幕太少（少于10条），可能是聚合源没有实际弹幕，返回null让备用方案接管
+    if (danmuList.length < 10) {
+      console.log(`⚠️ [弹幕API] 弹幕数量过少 (${danmuList.length}条)，尝试备用方案`);
+      return null;
+    }
 
     return {
       danmu: danmuList,
