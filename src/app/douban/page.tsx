@@ -51,9 +51,9 @@ function DoubanPageClient() {
   const [useVirtualization, setUseVirtualization] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('useDoubanVirtualization');
-      return saved !== null ? JSON.parse(saved) : false; // 默认关闭
+      return saved !== null ? JSON.parse(saved) : true; // 默认启用
     }
-    return false;
+    return true;
   });
 
   // 用于存储最新参数值的 refs
