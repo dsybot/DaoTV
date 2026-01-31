@@ -88,7 +88,6 @@ async function fetchFromFallbackApi(size: number) {
 
   const response = await fetch(apiUrl, {
     headers: {
-      'User-Agent': DEFAULT_USER_AGENT,
       'Accept': 'application/json',
     },
     signal: AbortSignal.timeout(10000),
@@ -99,24 +98,21 @@ async function fetchFromFallbackApi(size: number) {
   }
 
   const data = await response.json();
-
-  // 乱短剧API 返回的数据格式可能是数组或对象
-  const items = Array.isArray(data) ? data : (data.list || data.data || []);
+  const items = data.items || [];
 
   console.log(`✅ 备用API返回 ${items.length} 条数据`);
 
   return items.slice(0, size).map((item: any) => ({
-    id: item.id,
-    name: item.name,
-    cover: item.cover || '',
-    update_time: item.update_time || new Date().toISOString(),
-    score: parseFloat(item.score) || 0,
-    episode_count: parseInt(item.episode_count || '1'),
-    description: item.description || '',
-    author: item.author || '',
-    backdrop: item.backdrop || item.cover || '',
-    vote_average: parseFloat(item.score) || 0,
-    // 标记来源
+    id: item.vod_id,
+    name: item.vod_name,
+    cover: item.vod_pic || '',
+    update_time: new Date().toISOString(),
+    score: parseFloat(item.vod_score) || 0,
+    episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+    description: '',
+    author: '',
+    backdrop: item.vod_pic || '',
+    vote_average: parseFloat(item.vod_score) || 0,
     _source: 'fallback_api',
   }));
 }

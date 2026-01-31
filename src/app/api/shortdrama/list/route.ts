@@ -88,20 +88,18 @@ async function fetchListFromSource(
   };
 }
 
-// 从备用 API（乱短剧API）获取列表数据 - 使用 /vod/latest
+// 从备用 API（乱短剧API）获取列表数据 - 使用 /vod/list
 async function fetchListFromFallbackApi(
   categoryId: number,
   page: number,
   size: number
 ) {
-  console.log('🔄 尝试备用API列表: 乱短剧API /vod/latest');
+  console.log('🔄 尝试备用API列表: 乱短剧API /vod/list');
 
-  // 使用 /vod/latest 接口获取最新剧集列表
-  const apiUrl = `${FALLBACK_API_BASE}/vod/latest?page=${page}`;
+  const apiUrl = `${FALLBACK_API_BASE}/vod/list?categoryId=${categoryId}&page=${page}`;
 
   const response = await fetch(apiUrl, {
     headers: {
-      'User-Agent': DEFAULT_USER_AGENT,
       'Accept': 'application/json',
     },
     signal: AbortSignal.timeout(10000),
@@ -112,7 +110,7 @@ async function fetchListFromFallbackApi(
   }
 
   const data = await response.json();
-  const items = Array.isArray(data) ? data : (data.list || data.data || []);
+  const items = data.list || [];
 
   console.log(`✅ 备用API列表返回 ${items.length} 条数据`);
 
@@ -122,18 +120,17 @@ async function fetchListFromFallbackApi(
     cover: item.cover || '',
     update_time: item.update_time || new Date().toISOString(),
     score: parseFloat(item.score) || 0,
-    episode_count: parseInt(item.episode_count || '1'),
+    episode_count: parseInt(String(item.episode_count || '1').replace(/[^\d]/g, '') || '1'),
     description: item.description || '',
     author: item.author || '',
-    backdrop: item.backdrop || item.cover || '',
+    backdrop: item.cover || '',
     vote_average: parseFloat(item.score) || 0,
-    // 标记来源
     _source: 'fallback_api',
   }));
 
   return {
     list,
-    hasMore: data.currentPage ? data.currentPage < data.totalPages : items.length >= size,
+    hasMore: data.currentPage < data.totalPages,
   };
 }
 
