@@ -898,6 +898,12 @@ You can also enter specific content like "Harry Potter", which works the same as
 | `NEXT_PUBLIC_DOUBAN_IMAGE_PROXY`        | Custom image proxy       | Empty       | URL prefix                 |
 | `NEXT_PUBLIC_DISABLE_YELLOW_FILTER`     | Disable adult filter     | `false`     | `true` / `false`           |
 | `NEXT_PUBLIC_FLUID_SEARCH`              | Streaming search output  | `true`      | `true` / `false`           |
+| `DISABLE_HERO_TRAILER`                  | Disable hero trailer     | `false`     | `true` / `false`           |
+
+> 💡 **DISABLE_HERO_TRAILER**: Hero banner trailers consume significant bandwidth.
+> - **Vercel**: Automatically disabled (no configuration needed)
+> - **Docker/VPS (with persistent volumes)**: No need to disable, videos are cached locally (`VIDEO_CACHE_DIR`), only downloaded once
+> - **ClawCloud and other non-persistent platforms**: Recommend setting `DISABLE_HERO_TRAILER=true`, otherwise trailers must be re-downloaded after each restart
 
 ### Douban Proxy Options
 

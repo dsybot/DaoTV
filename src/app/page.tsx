@@ -804,7 +804,7 @@ function HomeClient() {
               autoPlayInterval={8000}
               showControls={true}
               showIndicators={true}
-              enableVideo={!(window as any).RUNTIME_CONFIG?.IS_VERCEL}
+              enableVideo={!(window as any).RUNTIME_CONFIG?.DISABLE_HERO_TRAILER}
             />
           </div>
         )}

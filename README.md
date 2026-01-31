@@ -887,6 +887,12 @@ Zeabur 是一站式云端部署平台，使用预构建的 Docker 镜像可以�
 | `NEXT_PUBLIC_DOUBAN_IMAGE_PROXY`    | 自定义图片代理       | 空          | URL prefix                |
 | `NEXT_PUBLIC_DISABLE_YELLOW_FILTER` | 关闭色情内容过滤     | `false`     | `true` / `false`          |
 | `NEXT_PUBLIC_FLUID_SEARCH`          | 流式搜索输出         | `true`      | `true` / `false`          |
+| `DISABLE_HERO_TRAILER`              | 禁用首页预告片       | `false`     | `true` / `false`          |
+
+> 💡 **DISABLE_HERO_TRAILER**：首页 HeroBanner 预告片会消耗较多流量。
+> - **Vercel**：自动禁用（无需设置）
+> - **Docker/VPS（可挂载持久化卷）**：无需禁用，视频会缓存到本地（`VIDEO_CACHE_DIR`），只需下载一次
+> - **ClawCloud 等无持久化平台**：建议设置 `DISABLE_HERO_TRAILER=true`，否则每次重启都要重新下载预告片
 
 ### 豆瓣代理说明
 
