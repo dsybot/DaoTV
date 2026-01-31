@@ -57,8 +57,10 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
     // 内部 API 已经处理好格式
     const result: ShortDramaCategory[] = data;
 
-    // 缓存结果
-    await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.categories);
+    // 只缓存非空结果，避免缓存错误/空数据
+    if (Array.isArray(result) && result.length > 0) {
+      await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.categories);
+    }
     return result;
   } catch (error) {
     console.error('获取短剧分类失败:', error);
@@ -94,8 +96,10 @@ export async function getRecommendedShortDramas(
 
     const result = await response.json();
 
-    // 缓存结果
-    await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.recommends);
+    // 只缓存非空结果，避免缓存错误/空数据
+    if (Array.isArray(result) && result.length > 0) {
+      await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.recommends);
+    }
     return result;
   } catch (error) {
     console.error('获取推荐短剧失败:', error);
@@ -129,9 +133,11 @@ export async function getShortDramaList(
 
     const result = await response.json();
 
-    // 缓存结果 - 第一页缓存时间更长
-    const cacheTime = page === 1 ? SHORTDRAMA_CACHE_EXPIRE.lists * 2 : SHORTDRAMA_CACHE_EXPIRE.lists;
-    await setCache(cacheKey, result, cacheTime);
+    // 只缓存非空结果，避免缓存错误/空数据
+    if (result.list && Array.isArray(result.list) && result.list.length > 0) {
+      const cacheTime = page === 1 ? SHORTDRAMA_CACHE_EXPIRE.lists * 2 : SHORTDRAMA_CACHE_EXPIRE.lists;
+      await setCache(cacheKey, result, cacheTime);
+    }
     return result;
   } catch (error) {
     console.error('获取短剧列表失败:', error);
