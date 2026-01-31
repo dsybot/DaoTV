@@ -105,37 +105,26 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
 
   // 覆盖 CustomCategories
   const customCategoriesFromFile = fileConfig.custom_category || [];
-  const customCategoriesFromFileKeys = new Set(
-    customCategoriesFromFile.map((c) => c.query + c.type)
+
+  // 保留所有现有自定义分类（包括 custom 和 config），以便保留用户的手动修改
+  const currentCustomCategories = new Map(
+    (adminConfig.CustomCategories || [])
+      .map((c) => [c.query + c.type, c])
   );
 
-  // 🔥 修复：保留现有分类的顺序和属性
-  const existingCategoriesMap = new Map(
-    (adminConfig.CustomCategories || []).map((c) => [c.query + c.type, c])
-  );
-
-  const updatedCategories = (adminConfig.CustomCategories || []).map((category) => {
-    if (category.from === 'config') {
-      const key = category.query + category.type;
-      const fileCategory = customCategoriesFromFile.find((c) => c.query + c.type === key);
-      if (fileCategory) {
-        return {
-          ...category,
-          name: fileCategory.name,
-          query: fileCategory.query,
-          type: fileCategory.type,
-          // 保留 disabled 等用户设置
-        };
-      }
-    }
-    return category;
-  });
-
-  // 添加订阅中新增的分类
+  // 添加或更新订阅中的所有自定义分类
   customCategoriesFromFile.forEach((category) => {
     const key = category.query + category.type;
-    if (!existingCategoriesMap.has(key)) {
-      updatedCategories.push({
+    const existedCategory = currentCustomCategories.get(key);
+    if (existedCategory) {
+      // 如果分类已存在，更新基本信息但保留用户手动设置的字段
+      existedCategory.name = category.name;
+      existedCategory.query = category.query;
+      existedCategory.type = category.type;
+      // 保留用户手动设置的 from、disabled 等字段
+    } else {
+      // 添加新的订阅分类
+      currentCustomCategories.set(key, {
         name: category.name,
         type: category.type,
         query: category.query,
@@ -145,41 +134,30 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 移除订阅中已删除的 from='config' 分类
-  adminConfig.CustomCategories = updatedCategories.filter((category) => {
-    if (category.from === 'custom') return true;
-    return customCategoriesFromFileKeys.has(category.query + category.type);
-  });
+  // 将 Map 转换回数组
+  adminConfig.CustomCategories = Array.from(currentCustomCategories.values());
 
-  // 🔥 修复：直播源也保留顺序和属性
   const livesFromFile = Object.entries(fileConfig.lives || []);
-  const livesFromFileKeys = new Set(livesFromFile.map(([key]) => key));
 
-  const existingLivesMap = new Map(
-    (adminConfig.LiveConfig || []).map((l) => [l.key, l])
+  // 保留所有现有直播源（包括 custom 和 config），以便保留用户的手动修改
+  const currentLives = new Map(
+    (adminConfig.LiveConfig || [])
+      .map((l) => [l.key, l])
   );
 
-  const updatedLives = (adminConfig.LiveConfig || []).map((live) => {
-    if (live.from === 'config' && livesFromFileKeys.has(live.key)) {
-      const fileLive = livesFromFile.find(([key]) => key === live.key)?.[1];
-      if (fileLive) {
-        return {
-          ...live,
-          name: fileLive.name,
-          url: fileLive.url,
-          ua: fileLive.ua,
-          epg: fileLive.epg,
-          // 保留 disabled, channelNumber 等用户设置
-        };
-      }
-    }
-    return live;
-  });
-
-  // 添加订阅中新增的直播源
+  // 添加或更新订阅中的所有直播源
   livesFromFile.forEach(([key, site]) => {
-    if (!existingLivesMap.has(key)) {
-      updatedLives.push({
+    const existingLive = currentLives.get(key);
+    if (existingLive) {
+      // 如果直播源已存在，更新基本信息但保留用户手动设置的字段
+      existingLive.name = site.name;
+      existingLive.url = site.url;
+      existingLive.ua = site.ua;
+      existingLive.epg = site.epg;
+      // 保留用户手动设置的 from、disabled、channelNumber 等字段
+    } else {
+      // 添加新的订阅直播源
+      currentLives.set(key, {
         key,
         name: site.name,
         url: site.url,
@@ -192,11 +170,8 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 移除订阅中已删除的 from='config' 直播源
-  adminConfig.LiveConfig = updatedLives.filter((live) => {
-    if (live.from === 'custom') return true;
-    return livesFromFileKeys.has(live.key);
-  });
+  // 将 Map 转换回数组
+  adminConfig.LiveConfig = Array.from(currentLives.values());
 
   return adminConfig;
 }
