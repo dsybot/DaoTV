@@ -876,6 +876,14 @@ You can also enter specific content like "Harry Potter", which works the same as
 | `UPSTASH_URL`     | Upstash endpoint       | `https://xxx.upstash.io`       |
 | `UPSTASH_TOKEN`   | Upstash Token          | `AxxxxxxxxxxxxxxxxxxxxxxxxxxxQ==` |
 
+> 💡 **Redis-Compatible Services**: `REDIS_URL` supports all Redis protocol compatible services, including:
+> - Self-hosted Redis / KVRocks
+> - [Redis Cloud](https://redis.io/cloud/) - Official cloud service, free 30MB
+> - [Aiven Valkey](https://aiven.io/valkey) - Free 1GB, Redis 7.2 compatible
+> - [Northflank](https://northflank.com/dbaas/managed-redis) - Free 256MB
+>
+> ⚠️ **Use Upstash for Vercel deployments**: Vercel Serverless functions are stateless and may cold-start new instances on each request. TCP-based Redis services (Redis Cloud, Aiven, Northflank, etc.) will experience connection pool failures, high cold-start latency, and connection exhaustion in this environment. Upstash uses HTTP REST API, which is naturally suited for Serverless environments and is the only recommended storage for Vercel deployments.
+
 ### Optional Configuration
 
 | Variable                                | Description              | Default     | Options                    |

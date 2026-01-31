@@ -865,6 +865,14 @@ Zeabur 是一站式云端部署平台，使用预构建的 Docker 镜像可以�
 | `UPSTASH_URL`     | Upstash 端点          | `https://xxx.upstash.io`        |
 | `UPSTASH_TOKEN`   | Upstash Token         | `AxxxxxxxxxxxxxxxxxxxxxxxxxxxQ==`|
 
+> 💡 **Redis 兼容服务**：`REDIS_URL` 支持所有 Redis 协议兼容的服务，包括：
+> - 自建 Redis / KVRocks
+> - [Redis Cloud](https://redis.io/cloud/) - 官方云服务，免费 30MB
+> - [Aiven Valkey](https://aiven.io/valkey) - 免费 1GB，Redis 7.2 兼容
+> - [Northflank](https://northflank.com/dbaas/managed-redis) - 免费 256MB
+>
+> ⚠️ **Vercel 部署请使用 Upstash**：Vercel Serverless 函数是无状态的，每次请求可能冷启动新实例。TCP 长连接的 Redis 服务（Redis Cloud、Aiven、Northflank 等）在此环境下会遇到连接池失效、冷启动延迟高、连接数耗尽等问题。Upstash 基于 HTTP REST API，天然适配 Serverless 环境，是 Vercel 部署的唯一推荐存储方案。
+
 ### 可选配置
 
 | 变量                                | 说明                 | 默认值      | 可选值                    |
