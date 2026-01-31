@@ -804,7 +804,7 @@ function HomeClient() {
               autoPlayInterval={8000}
               showControls={true}
               showIndicators={true}
-              enableVideo={true}
+              enableVideo={!(window as any).RUNTIME_CONFIG?.IS_VERCEL}
             />
           </div>
         )}
