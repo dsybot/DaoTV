@@ -381,9 +381,9 @@ function ShortDramaCard({
             </div>
           )}
 
-          {/* 评分徽章 - 动态颜色（右上角倾斜丝带，与 VideoCard 保持一致） */}
-          {drama.score > 0 && (() => {
-            const badgeStyle = getRatingBadgeStyle(drama.score);
+          {/* 评分徽章 - 动态颜色（右上角倾斜丝带，与 VideoCard 保持一致） - 只在评分大于0时显示 */}
+          {Number(drama.vote_average) > 0 && (() => {
+            const badgeStyle = getRatingBadgeStyle(Number(drama.vote_average));
             return (
               <div
                 className={`absolute top-[10px] right-[-35px] z-30 w-[120px] ${badgeStyle.bgColor} ${badgeStyle.ringColor} ${badgeStyle.shadowColor} ${badgeStyle.textColor} ${badgeStyle.glowClass} text-[10px] font-bold py-0.5 sm:py-1 flex items-center justify-center gap-0.5 sm:gap-1 transition-all duration-300 ease-out group-hover:scale-105 rotate-45 pointer-events-none`}
@@ -394,7 +394,7 @@ function ShortDramaCard({
                 } as React.CSSProperties}
               >
                 <Star size={10} className="fill-current" />
-                <span className="font-extrabold leading-none">{formatScore(drama.score)}</span>
+                <span className="font-extrabold leading-none">{drama.vote_average.toFixed(1)}</span>
               </div>
             );
           })()}
