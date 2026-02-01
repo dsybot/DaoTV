@@ -162,11 +162,10 @@ const DanmuApiConfig = ({ config, refreshConfig }: DanmuApiConfigProps) => {
 
       {message && (
         <div
-          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
-            message.type === 'success'
+          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${message.type === 'success'
               ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
               : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-          }`}
+            }`}
         >
           {message.type === 'success' ? (
             <CheckCircle className='h-5 w-5' />
@@ -356,11 +355,10 @@ const DanmuApiConfig = ({ config, refreshConfig }: DanmuApiConfigProps) => {
 
                 {testResult && (
                   <div
-                    className={`mt-3 p-3 rounded-lg flex items-center gap-2 ${
-                      testResult.success
+                    className={`mt-3 p-3 rounded-lg flex items-center gap-2 ${testResult.success
                         ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                         : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                    }`}
+                      }`}
                   >
                     {testResult.success ? (
                       <CheckCircle className='h-4 w-4 flex-shrink-0' />
@@ -373,20 +371,20 @@ const DanmuApiConfig = ({ config, refreshConfig }: DanmuApiConfigProps) => {
               </div>
 
               {/* 默认 API 信息 */}
-              <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3'>
+              <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 overflow-hidden'>
                 <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2'>
                   默认弹幕服务
                 </h4>
                 <div className='text-xs text-blue-800 dark:text-blue-300 space-y-1'>
-                  <div>
-                    <span className='font-medium'>API地址：</span>
-                    <code className='ml-1 bg-blue-100 dark:bg-blue-800/50 px-1 rounded'>
+                  <div className='flex flex-col sm:flex-row sm:items-center gap-1'>
+                    <span className='font-medium shrink-0'>API地址：</span>
+                    <code className='bg-blue-100 dark:bg-blue-800/50 px-1 rounded break-all'>
                       {DEFAULT_DANMU_API_URL}
                     </code>
                   </div>
-                  <div>
-                    <span className='font-medium'>Token：</span>
-                    <code className='ml-1 bg-blue-100 dark:bg-blue-800/50 px-1 rounded'>
+                  <div className='flex flex-col sm:flex-row sm:items-center gap-1'>
+                    <span className='font-medium shrink-0'>Token：</span>
+                    <code className='bg-blue-100 dark:bg-blue-800/50 px-1 rounded break-all'>
                       {DEFAULT_DANMU_API_TOKEN}
                     </code>
                   </div>
