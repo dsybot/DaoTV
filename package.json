@@ -41,6 +41,7 @@
     "cheerio": "^1.2.0",
     "clsx": "^2.0.0",
     "crypto-js": "^4.2.0",
+    "flv.js": "^1.6.2",
     "framer-motion": "^12.18.1",
     "he": "^1.2.0",
     "ipaddr.js": "^2.3.0",
