@@ -1552,30 +1552,36 @@ function LivePageClient() {
       // 重置不支持的类型
       setUnsupportedType(null);
 
+      // 检测 URL 类型（FLV 或 M3U8）- 在选择代理模式之前检测
+      const isFlvUrl = videoUrl.toLowerCase().includes('.flv') ||
+        videoUrl.toLowerCase().includes('/flv') ||
+        videoUrl.includes('/douyu/') ||    // 斗鱼源
+        videoUrl.includes('/huya/') ||     // 虎牙源
+        videoUrl.includes('/bilibili/') || // B站源
+        videoUrl.includes('/yy/');         // YY源
+
       // 🚀 智能选择直连或代理模式
-      const useDirect = await shouldUseDirectPlayback(videoUrl);
-      const targetUrl = useDirect
-        ? videoUrl  // 直连模式：直接使用原始 URL
-        : `/api/proxy/m3u8?url=${encodeURIComponent(videoUrl)}&moontv-source=${currentSourceRef.current?.key || ''}`;  // 代理模式
+      // FLV 流强制使用直连，不走代理
+      let targetUrl: string;
+      if (isFlvUrl) {
+        targetUrl = videoUrl;  // FLV 直连
+        console.log(`🎬 播放模式: ⚡ FLV直连 | URL: ${targetUrl.substring(0, 100)}...`);
+      } else {
+        const useDirect = await shouldUseDirectPlayback(videoUrl);
+        targetUrl = useDirect
+          ? videoUrl  // 直连模式：直接使用原始 URL
+          : `/api/proxy/m3u8?url=${encodeURIComponent(videoUrl)}&moontv-source=${currentSourceRef.current?.key || ''}`;  // 代理模式
+        console.log(`🎬 播放模式: ${useDirect ? '⚡ 直连' : '🔄 代理'} | URL: ${targetUrl.substring(0, 100)}...`);
+      }
 
-      console.log(`🎬 播放模式: ${useDirect ? '⚡ 直连' : '🔄 代理'} | URL: ${targetUrl.substring(0, 100)}...`);
-
-      // 检测 URL 类型（FLV 或 M3U8）
-      const isFlvUrl = targetUrl.toLowerCase().includes('.flv') ||
-        targetUrl.toLowerCase().includes('/flv') ||
-        targetUrl.includes('/douyu/') ||    // 斗鱼源
-        targetUrl.includes('/huya/') ||     // 虎牙源
-        targetUrl.includes('/bilibili/') || // B站源
-        targetUrl.includes('/yy/');         // YY源
+      // 根据 URL 类型选择播放器类型
+      const playerType = isFlvUrl ? 'flv' : 'm3u8';
+      console.log(`📺 播放器类型: ${playerType} | FLV检测: ${isFlvUrl}`);
 
       const customType = {
         m3u8: m3u8Loader,
         flv: flvLoader,
       };
-
-      // 根据 URL 类型选择播放器类型
-      const playerType = isFlvUrl ? 'flv' : 'm3u8';
-      console.log(`📺 播放器类型: ${playerType} | FLV检测: ${isFlvUrl}`);
 
       try {
         // 使用动态导入的 Artplayer
