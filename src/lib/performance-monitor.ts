@@ -122,16 +122,40 @@ export function collectSystemMetrics(): SystemMetrics {
   const os = require('os');
 
   // 初始化 CPU 跟踪变量（延迟初始化，避免在模块加载时执行）
+  // 第一次调用时只初始化基线，返回 0%，从第二次调用开始才能准确计算
   if (lastCpuUsage === null || lastCpuTime === null) {
     if (typeof process.cpuUsage === 'function' && process.hrtime && typeof process.hrtime.bigint === 'function') {
       lastCpuUsage = process.cpuUsage();
       lastCpuTime = process.hrtime.bigint();
+
+      // 第一次调用返回 0%，因为没有时间间隔可以测量
+      const numberOfCores = os.cpus().length;
+      const totalSystemMemory = os.totalmem();
+      const freeSystemMemory = os.freemem();
+      const usedSystemMemory = totalSystemMemory - freeSystemMemory;
+
+      return {
+        timestamp: Date.now(),
+        cpuUsage: 0,
+        cpuCores: numberOfCores,
+        cpuModel: os.cpus()[0]?.model || 'Unknown',
+        memoryUsage: {
+          heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024 * 100) / 100,
+          heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024 * 100) / 100,
+          rss: Math.round(memUsage.rss / 1024 / 1024 * 100) / 100,
+          external: Math.round(memUsage.external / 1024 / 1024 * 100) / 100,
+          systemTotal: Math.round(totalSystemMemory / 1024 / 1024 * 100) / 100,
+          systemUsed: Math.round(usedSystemMemory / 1024 / 1024 * 100) / 100,
+          systemFree: Math.round(freeSystemMemory / 1024 / 1024 * 100) / 100,
+        },
+        eventLoopDelay: 0,
+      };
     } else {
       throw new Error('process.cpuUsage or process.hrtime is not available');
     }
   }
 
-  // ✅ 正确的 CPU 使用率计算
+  // ✅ 正确的 CPU 使用率计算（从第二次调用开始）
   const currentCpuUsage = process.cpuUsage(lastCpuUsage);
   const currentTime = process.hrtime.bigint();
 
