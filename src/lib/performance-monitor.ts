@@ -27,8 +27,8 @@ let dbQueryCount = 0;
 let lastDbQueryReset = Date.now();
 
 // CPU 使用率跟踪（用于计算百分比）
-let lastCpuUsage = process.cpuUsage();
-let lastCpuTime = process.hrtime.bigint();
+let lastCpuUsage: NodeJS.CpuUsage | null = null;
+let lastCpuTime: bigint | null = null;
 
 // 标记是否已加载
 let dataLoaded = false;
@@ -115,6 +115,12 @@ export function getAndResetDbQueryCount(): number {
 export function collectSystemMetrics(): SystemMetrics {
   const memUsage = process.memoryUsage();
   const os = require('os');
+
+  // 初始化 CPU 跟踪变量（延迟初始化，避免在模块加载时执行）
+  if (lastCpuUsage === null || lastCpuTime === null) {
+    lastCpuUsage = process.cpuUsage();
+    lastCpuTime = process.hrtime.bigint();
+  }
 
   // ✅ 正确的 CPU 使用率计算
   const currentCpuUsage = process.cpuUsage(lastCpuUsage);
