@@ -113,13 +113,22 @@ export function getAndResetDbQueryCount(): number {
  * 获取当前系统资源使用情况
  */
 export function collectSystemMetrics(): SystemMetrics {
+  // 环境检测：确保在 Node.js 环境中运行
+  if (typeof process === 'undefined' || !process.versions?.node) {
+    throw new Error('collectSystemMetrics() can only be called in Node.js environment');
+  }
+
   const memUsage = process.memoryUsage();
   const os = require('os');
 
   // 初始化 CPU 跟踪变量（延迟初始化，避免在模块加载时执行）
   if (lastCpuUsage === null || lastCpuTime === null) {
-    lastCpuUsage = process.cpuUsage();
-    lastCpuTime = process.hrtime.bigint();
+    if (typeof process.cpuUsage === 'function' && process.hrtime && typeof process.hrtime.bigint === 'function') {
+      lastCpuUsage = process.cpuUsage();
+      lastCpuTime = process.hrtime.bigint();
+    } else {
+      throw new Error('process.cpuUsage or process.hrtime is not available');
+    }
   }
 
   // ✅ 正确的 CPU 使用率计算
