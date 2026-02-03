@@ -4659,6 +4659,23 @@ function PlayPageClient() {
             if (fullscreenElement) {
               setPortalContainer(fullscreenElement as HTMLElement);
             }
+
+            // 🔧 修复：进入全屏后自动隐藏控制栏
+            // 模拟鼠标移动事件来触发ArtPlayer的自动隐藏逻辑
+            setTimeout(() => {
+              if (artPlayerRef.current) {
+                // 显示控制栏
+                artPlayerRef.current.controls.show = true;
+                // 然后让ArtPlayer的自动隐藏机制接管（通常3秒后隐藏）
+                // 通过触发一个假的鼠标移动事件来启动自动隐藏计时器
+                const event = new MouseEvent('mousemove', {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window
+                });
+                artPlayerRef.current.template.$player.dispatchEvent(event);
+              }
+            }, 100);
           } else {
             // 非全屏时，使用 body
             setPortalContainer(document.body);
