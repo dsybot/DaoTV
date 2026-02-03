@@ -899,7 +899,8 @@ export async function GET(request: NextRequest) {
     // 根据format参数返回不同格式
     if (format === 'base64' || format === 'txt') {
       // 返回base64编码的配置（TVBox常用格式）
-      const configStr = JSON.stringify(tvboxConfig, null, 2);
+      // 使用紧凑格式减小文件大小，提升网络传输成功率
+      const configStr = JSON.stringify(tvboxConfig, null, 0);
       const base64Config = Buffer.from(configStr).toString('base64');
 
       return new NextResponse(base64Config, {
@@ -908,18 +909,33 @@ export async function GET(request: NextRequest) {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Content-Type',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          // 🚨 严格禁止缓存，确保影视仓等客户端每次获取最新配置（解决电信网络缓存问题）
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
     } else {
       // 返回JSON格式（使用 text/plain 提高 TVBox 分支兼容性）
-      return new NextResponse(JSON.stringify(tvboxConfig), {
+      // 确保数字类型字段为数字，提升兼容性
+      const responseContent = JSON.stringify(tvboxConfig, (key, value) => {
+        // 数字类型的字段确保为数字
+        if (['type', 'searchable', 'quickSearch', 'filterable'].includes(key)) {
+          return typeof value === 'string' ? parseInt(value) || 0 : value;
+        }
+        return value;
+      }, 0); // 紧凑格式，不使用缩进，减小文件大小
+
+      return new NextResponse(responseContent, {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Content-Type',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          // 🚨 严格禁止缓存，确保影视仓等客户端每次获取最新配置（解决电信网络缓存问题）
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
     }
