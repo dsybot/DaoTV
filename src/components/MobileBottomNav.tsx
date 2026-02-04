@@ -418,7 +418,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
             })}
 
             {/* 桌面端更多下拉菜单按钮 */}
-            {hasHiddenItems && onLayoutModeChange && (
+            {hasHiddenItems && (
               <li
                 className="hidden md:flex shrink-0 relative"
                 ref={dropdownRef}

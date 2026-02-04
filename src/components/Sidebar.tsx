@@ -52,7 +52,6 @@ const Logo = () => {
 interface SidebarProps {
   onToggle?: (collapsed: boolean) => void;
   activePath?: string;
-  onLayoutModeChange?: (mode: 'sidebar' | 'top') => void;
 }
 
 // 在浏览器环境下通过全局变量缓存折叠状态，避免组件重新挂载时出现初始值闪烁
@@ -62,7 +61,7 @@ declare global {
   }
 }
 
-const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProps) => {
+const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -345,29 +344,6 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
                 })}
               </div>
             </div>
-
-            {/* 底部切换布局按钮 */}
-            {onLayoutModeChange && (
-              <div className='px-2 pb-4 pt-2 border-t border-gray-200/50 dark:border-gray-700/50'>
-                <button
-                  onClick={() => onLayoutModeChange('top')}
-                  className='group relative flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-linear-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-600 transition-colors duration-150 min-h-[40px] dark:text-gray-300 dark:hover:from-indigo-500/10 dark:hover:to-purple-500/10 dark:hover:text-indigo-400 w-full gap-3 justify-start'
-                  title='切换到顶栏模式'
-                >
-                  <div className='w-4 h-4 flex items-center justify-center relative z-10'>
-                    <svg className='h-4 w-4 text-gray-500 group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400 transition-all duration-200 group-hover:scale-110' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                      <rect x='3' y='3' width='18' height='18' rx='2' ry='2'></rect>
-                      <line x1='3' y1='9' x2='21' y2='9'></line>
-                    </svg>
-                  </div>
-                  {!isCollapsed && (
-                    <span className='whitespace-nowrap transition-opacity duration-200 opacity-100 relative z-10'>
-                      切换到顶栏
-                    </span>
-                  )}
-                </button>
-              </div>
-            )}
           </div>
         </aside>
         <div
