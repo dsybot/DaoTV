@@ -4713,6 +4713,12 @@ function PlayPageClient() {
         artPlayerRef.current.on('fullscreenWeb', (isFullscreenWebNow: boolean) => {
           console.log('Fullscreen Web state changed:', isFullscreenWebNow);
 
+          // 🎬 控制顶部标题层的显示
+          const titleLayer = artPlayerRef.current?.layers['fullscreen-title'];
+          if (titleLayer) {
+            titleLayer.style.display = isFullscreenWebNow ? 'block' : 'none';
+          }
+
           if (isFullscreenWebNow) {
             // 🔧 修复：进入网页全屏后自动隐藏控制栏
             // 模拟鼠标移动事件来触发ArtPlayer的自动隐藏逻辑
@@ -4956,6 +4962,11 @@ function PlayPageClient() {
               /* 当控制栏显示时，标题也显示 */
               .art-control-show .fullscreen-title-container {
                 opacity: 1;
+              }
+
+              /* 当控制栏被锁定时（移动端锁定按钮），标题不显示 */
+              .art-lock .fullscreen-title-container {
+                opacity: 0 !important;
               }
 
               /* 标题内容 */
