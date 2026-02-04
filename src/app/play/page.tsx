@@ -366,6 +366,27 @@ function PlayPageClient() {
     availableSources,
   ]);
 
+  // 更新全屏标题层（当集数变化时）
+  useEffect(() => {
+    if (!artPlayerRef.current) return;
+
+    const titleLayer = artPlayerRef.current.layers['fullscreen-title'];
+    if (!titleLayer) return;
+
+    const episodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
+    const hasEpisodes = detail?.episodes && detail.episodes.length > 0;
+
+    // 更新标题层的HTML内容
+    titleLayer.innerHTML = `
+      <div class="fullscreen-title-container">
+        <div class="fullscreen-title-content">
+          <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
+          ${hasEpisodes && episodeName ? `<span class="fullscreen-episode-text">${episodeName}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }, [currentEpisodeIndex, detail]);
+
   // 获取自定义去广告代码
   useEffect(() => {
     const fetchAdFilterCode = async () => {
