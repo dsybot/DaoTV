@@ -195,7 +195,6 @@ function HomeClient() {
     showAnnouncement,
   } = state;
 
-  const [layoutMode, setLayoutMode] = useState<'sidebar' | 'top'>('top');
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
 
   // 🚀 Web Worker引用
@@ -243,22 +242,6 @@ function HomeClient() {
       }
     }
 
-    // 读取布局模式
-    if (typeof window !== 'undefined') {
-      const savedLayout = localStorage.getItem('layoutMode');
-      // 兼容旧版本的 'bottom' 值
-      if (savedLayout === 'bottom') {
-        setLayoutMode('top');
-        localStorage.setItem('layoutMode', 'top');
-      } else if (savedLayout === 'sidebar' || savedLayout === 'top') {
-        setLayoutMode(savedLayout as 'sidebar' | 'top');
-      } else {
-        // 如果没有保存过布局模式，设置默认值为顶栏模式
-        setLayoutMode('top');
-        localStorage.setItem('layoutMode', 'top');
-      }
-    }
-
     // 检查公告弹窗状态
     if (typeof window !== 'undefined' && announcement) {
       const hasSeenAnnouncement = localStorage.getItem('hasSeenAnnouncement');
@@ -269,30 +252,6 @@ function HomeClient() {
       }
     }
   }, [announcement]);
-
-  // 监听布局模式变化（仅跨标签页）
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'layoutMode') {
-        // 兼容旧版本的 'bottom' 值
-        if (e.newValue === 'bottom') {
-          setLayoutMode('top');
-          localStorage.setItem('layoutMode', 'top');
-        } else if (e.newValue === 'sidebar' || e.newValue === 'top') {
-          setLayoutMode(e.newValue as 'sidebar' | 'top');
-        }
-      }
-    };
-
-    // 监听 storage 事件（跨标签页）
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
 
   // 欢迎提示窗 - 每次打开网站时显示一次（关闭浏览器标签页后重新打开才再次显示）
   useEffect(() => {
@@ -756,7 +715,7 @@ function HomeClient() {
 
         {/* 轮播图 - 在所有tab显示 */}
         {!loading && (hotMovies.length > 0 || hotTvShows.length > 0 || hotVarietyShows.length > 0 || hotShortDramas.length > 0) && (
-          <div className={`mt-8 sm:mt-12 mb-8 ${layoutMode === 'top' ? 'md:-mt-4' : ''}`}>
+          <div className='mt-8 sm:mt-12 mb-8 md:-mt-4'>
             <HeroBanner
               items={[
                 // 豆瓣电影

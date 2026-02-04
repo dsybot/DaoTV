@@ -10,7 +10,6 @@ import {
   Globe,
   Home,
   MoreHorizontal,
-  PanelLeft,
   PlaySquare,
   Radio,
   Search,
@@ -25,10 +24,9 @@ import { FastLink } from './FastLink';
 
 interface MobileBottomNavProps {
   activePath?: string;
-  onLayoutModeChange?: (mode: 'sidebar' | 'top') => void;
 }
 
-const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProps) => {
+const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -67,8 +65,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const ITEM_WIDTH = 76; // px
   // 更多按钮宽度
   const MORE_BUTTON_WIDTH = 76;
-  // 分隔线和侧边栏按钮宽度
-  const EXTRA_BUTTONS_WIDTH = 150;
   // 导航栏内边距
   const NAV_PADDING = 32;
 
@@ -110,8 +106,6 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
 
   // 动态计算可见项数量
   useEffect(() => {
-    if (!onLayoutModeChange) return; // 只在桌面端顶栏模式下计算
-
     const calculateVisibleCount = () => {
       // 获取左侧标题和右侧按钮组元素
       const titleEl = document.getElementById('nav-title');
@@ -122,14 +116,14 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
         const buttonsRect = buttonsEl.getBoundingClientRect();
         // 可用宽度 = 右侧按钮左边 - 左侧标题右边 - 间距
         const availableWidth = buttonsRect.left - titleRect.right - 48; // 48px 为两侧间距
-        // 计算能放下多少个导航项（预留更多按钮和侧边栏按钮的位置）
-        const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH - EXTRA_BUTTONS_WIDTH) / ITEM_WIDTH);
+        // 计算能放下多少个导航项（预留更多按钮的位置）
+        const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH) / ITEM_WIDTH);
         setMaxVisibleCount(Math.max(3, count)); // 至少显示3个
       } else {
         // 降级方案：使用视口宽度
         const viewportWidth = window.innerWidth;
         const availableWidth = viewportWidth - 400; // 预留左右元素空间
-        const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH - EXTRA_BUTTONS_WIDTH) / ITEM_WIDTH);
+        const count = Math.floor((availableWidth - MORE_BUTTON_WIDTH) / ITEM_WIDTH);
         setMaxVisibleCount(Math.max(3, count));
       }
     };
@@ -141,7 +135,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       clearTimeout(timer);
       window.removeEventListener('resize', calculateVisibleCount);
     };
-  }, [onLayoutModeChange]);
+  }, []);
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
@@ -344,8 +338,7 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
       )}
 
       <nav
-        className={`fixed left-0 right-0 z-600 flex justify-center pointer-events-none ${onLayoutModeChange ? 'bottom-0 md:top-4 md:bottom-auto' : 'bottom-0'
-          }`}
+        className='fixed left-0 right-0 z-600 flex justify-center pointer-events-none bottom-0 md:top-4 md:bottom-auto'
       >
         <div
           ref={navContainerRef}
@@ -396,13 +389,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               return (
                 <li
                   key={item.href}
-                  className={`hidden md:flex shrink-0 ${onLayoutModeChange ? 'md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0' : ''
-                    }`}
-                  style={
-                    onLayoutModeChange
-                      ? { animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards` }
-                      : undefined
-                  }
+                  className='hidden md:flex shrink-0 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
+                  style={{ animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards` }}
                 >
                   <FastLink
                     href={item.href}
@@ -474,45 +462,12 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
               </button>
             </li>
 
-            {/* 分隔线 */}
-            {onLayoutModeChange && (
-              <li
-                className="hidden md:flex items-center px-2"
-                style={{
-                  animation: `slideInFromBottom 0.3s ease-out ${(visibleItems.length + (hasHiddenItems ? 1 : 0)) * 0.05}s forwards`,
-                }}
-              >
-                <div className="w-px h-8 bg-linear-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600"></div>
-              </li>
-            )}
-
-            {/* 切换到侧边栏按钮 */}
-            {onLayoutModeChange && (
-              <li
-                className="hidden md:flex shrink-0"
-                style={{
-                  animation: `slideInFromBottom 0.3s ease-out ${(visibleItems.length + (hasHiddenItems ? 2 : 1)) * 0.05}s forwards`,
-                }}
-              >
-                <button
-                  onClick={() => onLayoutModeChange('sidebar')}
-                  className="group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 text-gray-700 hover:text-indigo-600 dark:text-gray-200 dark:hover:text-indigo-400 transition-all duration-200"
-                  title="切换到侧边栏"
-                >
-                  <PanelLeft
-                    className="h-6 w-6 group-hover:scale-110 transition-all duration-200"
-                    style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
-                  />
-                  <span style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>侧边栏</span>
-                </button>
-              </li>
-            )}
           </ul>
         </div>
       </nav>
 
       {/* 桌面端下拉菜单 - 放在nav外面避免被裁剪 */}
-      {showDesktopDropdown && hasHiddenItems && onLayoutModeChange && (
+      {showDesktopDropdown && hasHiddenItems && (
         <div
           ref={dropdownMenuRef}
           className="hidden md:block fixed z-[800] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px] pointer-events-auto"
