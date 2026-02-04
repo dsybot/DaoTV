@@ -4650,6 +4650,12 @@ function PlayPageClient() {
           console.log('Fullscreen state changed:', isFullscreenNow);
           setIsFullscreen(isFullscreenNow);
 
+          // 🎬 控制顶部标题层的显示
+          const titleLayer = artPlayerRef.current?.layers['fullscreen-title'];
+          if (titleLayer) {
+            titleLayer.style.display = isFullscreenNow ? 'block' : 'none';
+          }
+
           // 更新 Portal 容器：全屏时使用播放器容器，非全屏时使用 body
           if (isFullscreenNow) {
             // 全屏时，使用 ArtPlayer 的容器元素
@@ -4682,6 +4688,30 @@ function PlayPageClient() {
           }
         });
 
+        // 🔧 监听网页全屏状态变化
+        artPlayerRef.current.on('fullscreenWeb', (isFullscreenWebNow: boolean) => {
+          console.log('Fullscreen Web state changed:', isFullscreenWebNow);
+
+          if (isFullscreenWebNow) {
+            // 🔧 修复：进入网页全屏后自动隐藏控制栏
+            // 模拟鼠标移动事件来触发ArtPlayer的自动隐藏逻辑
+            setTimeout(() => {
+              if (artPlayerRef.current) {
+                // 显示控制栏
+                artPlayerRef.current.controls.show = true;
+                // 然后让ArtPlayer的自动隐藏机制接管（通常3秒后隐藏）
+                // 通过触发一个假的鼠标移动事件来启动自动隐藏计时器
+                const event = new MouseEvent('mousemove', {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window
+                });
+                artPlayerRef.current.template.$player.dispatchEvent(event);
+              }
+            }, 100);
+          }
+        });
+
         // 监听播放器事件
         artPlayerRef.current.on('ready', async () => {
           setError(null);
@@ -4689,6 +4719,29 @@ function PlayPageClient() {
 
           // 使用ArtPlayer layers API添加分辨率徽章（带渐变和发光效果）
           const video = artPlayerRef.current.video as HTMLVideoElement;
+
+          // 🎬 添加顶部标题层（全屏/网页全屏时显示）
+          artPlayerRef.current.layers.add({
+            name: 'fullscreen-title',
+            html: `
+              <div class="fullscreen-title-container">
+                <div class="fullscreen-title-content">
+                  <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
+                  ${detail?.episodes && detail.episodes[currentEpisodeIndex] ? `<span class="fullscreen-episode-text">第${currentEpisodeIndex + 1}集</span>` : ''}
+                </div>
+              </div>
+            `,
+            style: {
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              right: '0',
+              height: '80px',
+              display: 'none', // 默认隐藏，只在全屏时显示
+              pointerEvents: 'none',
+              zIndex: '20',
+            },
+          });
 
           // 添加分辨率徽章layer
           artPlayerRef.current.layers.add({
@@ -4856,6 +4909,86 @@ function PlayPageClient() {
 
           // 应用CSS优化
           optimizeDanmukuControlsCSS();
+
+          // 🎬 添加全屏顶部标题样式
+          const addFullscreenTitleStyles = () => {
+            if (document.getElementById('fullscreen-title-styles')) return;
+
+            const style = document.createElement('style');
+            style.id = 'fullscreen-title-styles';
+            style.textContent = `
+              /* 全屏顶部标题容器 */
+              .fullscreen-title-container {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 70%, transparent 100%);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+              }
+
+              /* 当控制栏显示时，标题也显示 */
+              .art-control-show .fullscreen-title-container {
+                opacity: 1;
+              }
+
+              /* 标题内容 */
+              .fullscreen-title-content {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 0 20px;
+              }
+
+              /* 标题文字 */
+              .fullscreen-title-text {
+                font-size: 24px;
+                font-weight: 600;
+                color: white;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+                margin: 0;
+                max-width: 800px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+
+              /* 集数文字 */
+              .fullscreen-episode-text {
+                font-size: 18px;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.9);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 6px 16px;
+                border-radius: 20px;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+                white-space: nowrap;
+              }
+
+              /* 移动端适配 */
+              @media (max-width: 768px) {
+                .fullscreen-title-text {
+                  font-size: 18px;
+                  max-width: 60vw;
+                }
+
+                .fullscreen-episode-text {
+                  font-size: 14px;
+                  padding: 4px 12px;
+                }
+
+                .fullscreen-title-content {
+                  gap: 12px;
+                }
+              }
+            `;
+            document.head.appendChild(style);
+          };
+
+          addFullscreenTitleStyles();
 
           // 精确解决弹幕菜单与进度条拖拽冲突 - 基于ArtPlayer原生拖拽逻辑
           const fixDanmakuProgressConflict = () => {
@@ -5587,6 +5720,13 @@ function PlayPageClient() {
 
       // 检查是否是网页全屏
       const isWebFullscreen = artPlayerRef.current?.fullscreenWeb || false;
+
+      // 🎬 控制顶部标题层的显示（全屏或网页全屏时显示）
+      const titleLayer = artPlayerRef.current?.layers['fullscreen-title'];
+      if (titleLayer) {
+        const shouldShowTitle = isFullscreen || isWebFullscreen;
+        titleLayer.style.display = shouldShowTitle ? 'block' : 'none';
+      }
 
       // 显示条件：全屏 OR 网页全屏 OR 隐藏了选集面板
       const shouldShow = isFullscreen || isWebFullscreen || isEpisodeSelectorCollapsed;
