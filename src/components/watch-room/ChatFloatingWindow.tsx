@@ -1,7 +1,7 @@
 // 观影室聊天悬浮窗和房间信息
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import { MessageCircle, X, Send, Smile, Info, Users, LogOut, Mic, MicOff, Volume2, VolumeX, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
@@ -233,7 +233,10 @@ export default function ChatFloatingWindow() {
                   }
                   params.set('prefer', 'true');
 
-                  router.push(`/play?${params.toString()}`);
+                  // 使用 startTransition 优化导航性能
+                  startTransition(() => {
+                    router.push(`/play?${params.toString()}`);
+                  });
                   setShowRoomInfo(false);
                 }}
               />
@@ -293,11 +296,10 @@ export default function ChatFloatingWindow() {
           {/* 麦克风开关 */}
           <button
             onClick={() => setIsMicEnabled(!isMicEnabled)}
-            className={`rounded-lg p-1.5 sm:p-2 transition-colors ${
-              isMicEnabled
-                ? 'bg-green-500 text-white hover:bg-green-600'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+            className={`rounded-lg p-1.5 sm:p-2 transition-colors ${isMicEnabled
+              ? 'bg-green-500 text-white hover:bg-green-600'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
             title={isMicEnabled ? '关闭麦克风' : '打开麦克风'}
           >
             {isMicEnabled ? <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
@@ -305,11 +307,10 @@ export default function ChatFloatingWindow() {
           {/* 扬声器开关 */}
           <button
             onClick={() => setIsSpeakerEnabled(!isSpeakerEnabled)}
-            className={`rounded-lg p-1.5 sm:p-2 transition-colors ${
-              isSpeakerEnabled
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+            className={`rounded-lg p-1.5 sm:p-2 transition-colors ${isSpeakerEnabled
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
             title={isSpeakerEnabled ? '关闭扬声器' : '打开扬声器'}
           >
             {isSpeakerEnabled ? <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
@@ -332,11 +333,10 @@ export default function ChatFloatingWindow() {
               <span className="text-[10px] sm:text-xs text-gray-400 shrink-0">{formatTime(msg.timestamp)}</span>
             </div>
             <div
-              className={`rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 ${
-                msg.type === 'emoji'
-                  ? 'text-2xl sm:text-3xl'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base break-words'
-              }`}
+              className={`rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 ${msg.type === 'emoji'
+                ? 'text-2xl sm:text-3xl'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base break-words'
+                }`}
             >
               {msg.content}
             </div>

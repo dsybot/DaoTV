@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { startTransition } from 'react';
 
 interface PlayErrorDisplayProps {
   error: string;
@@ -53,11 +54,16 @@ export default function PlayErrorDisplay({ error, videoTitle }: PlayErrorDisplay
         {/* 操作按钮 */}
         <div className='space-y-3'>
           <button
-            onClick={() =>
-              videoTitle
-                ? router.push(`/search?q=${encodeURIComponent(videoTitle)}`)
-                : router.back()
-            }
+            onClick={() => {
+              if (videoTitle) {
+                // 使用 startTransition 优化导航性能
+                startTransition(() => {
+                  router.push(`/search?q=${encodeURIComponent(videoTitle)}`);
+                });
+              } else {
+                router.back();
+              }
+            }}
             className='w-full px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl'
           >
             {videoTitle ? '🔍 返回搜索' : '← 返回上页'}

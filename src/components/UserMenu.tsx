@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
@@ -658,31 +658,46 @@ export const UserMenu: React.FC = () => {
   const handleAdminPanel = () => {
     setIsOpen(false);
     router.refresh();
-    router.push('/admin');
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push('/admin');
+    });
   };
 
   const handlePlayStats = () => {
     setIsOpen(false);
     router.refresh();
-    router.push('/play-stats');
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push('/play-stats');
+    });
   };
 
   const handleTVBoxConfig = () => {
     setIsOpen(false);
     router.refresh();
-    router.push('/tvbox');
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push('/tvbox');
+    });
   };
 
   const handleWatchRoom = () => {
     setIsOpen(false);
     router.refresh();
-    router.push('/watch-room');
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push('/watch-room');
+    });
   };
 
   const handleReleaseCalendar = () => {
     setIsOpen(false);
     router.refresh();
-    router.push('/release-calendar');
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push('/release-calendar');
+    });
   };
 
   const handleWatchingUpdates = () => {

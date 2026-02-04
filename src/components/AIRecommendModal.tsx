@@ -4,7 +4,7 @@
 
 import { Brain, Send, Sparkles, X, Play, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useOptimistic, useTransition, useMemo, useCallback, memo } from 'react';
+import { useEffect, useRef, useState, useOptimistic, useTransition, useMemo, useCallback, memo, startTransition } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -620,13 +620,19 @@ export default function AIRecommendModal({ isOpen, onClose, context, welcomeMess
   const handleTitleClick = useCallback((title: string) => {
     const cleanTitle = cleanMovieTitle(title);
     const searchUrl = generateSearchUrl(cleanTitle);
-    router.push(searchUrl);
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push(searchUrl);
+    });
     onClose();
   }, [router, onClose]);
 
   const handleMovieSelect = useCallback((movie: MovieRecommendation) => {
     const searchQuery = encodeURIComponent(movie.title);
-    router.push(`/search?q=${searchQuery}`);
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push(`/search?q=${searchQuery}`);
+    });
     onClose();
   }, [router, onClose]);
 

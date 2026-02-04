@@ -13,6 +13,7 @@ import {
   useEffect,
   useLayoutEffect,
   useState,
+  startTransition,
 } from 'react';
 
 import { useSite } from './SiteProvider';
@@ -123,7 +124,10 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
   }, [isCollapsed, onToggle]);
 
   const handleSearchClick = useCallback(() => {
-    router.push('/search');
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push('/search');
+    });
   }, [router]);
 
   const contextValue = {

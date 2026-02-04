@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, startTransition } from 'react';
 
 import { FastLink } from './FastLink';
 
@@ -169,7 +169,10 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   const handleDropdownItemClick = useCallback((href: string) => {
     setActive(href);  // 立即更新 active 状态
     setShowDesktopDropdown(false);
-    router.push(href);
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push(href);
+    });
   }, [router]);
 
   const isActive = useCallback(

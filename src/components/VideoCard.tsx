@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import React, {
   forwardRef,
   memo,
+  startTransition,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -346,7 +347,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       if (isOnPlayPage) {
         window.location.href = url;
       } else {
-        router.push(url);
+        // 使用 startTransition 优化导航性能
+        startTransition(() => {
+          router.push(url);
+        });
       }
     };
 
@@ -399,7 +403,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       if (isOnPlayPage) {
         window.location.href = url;
       } else {
-        router.push(url);
+        // 使用 startTransition 优化导航性能
+        startTransition(() => {
+          router.push(url);
+        });
       }
     };
 

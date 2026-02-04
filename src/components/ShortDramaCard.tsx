@@ -4,7 +4,7 @@
 
 import { Play, Star, Heart, ExternalLink, PlayCircle, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { memo, useEffect, useState, useCallback } from 'react';
+import { memo, useEffect, useState, useCallback, startTransition } from 'react';
 
 import { useLongPress } from '@/hooks/useLongPress';
 import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
@@ -241,7 +241,10 @@ function ShortDramaCard({
 
   // 处理点击事件（跳转到播放页面）
   const handleClick = useCallback(() => {
-    router.push(`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`);
+    // 使用 startTransition 优化导航性能
+    startTransition(() => {
+      router.push(`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`);
+    });
   }, [router, drama.name, drama.id]);
 
   // 处理播放（在操作面板中使用）

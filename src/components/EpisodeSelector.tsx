@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  startTransition,
 } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -947,9 +948,12 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                   <button
                     onClick={() => {
                       if (videoTitle) {
-                        router.push(
-                          `/search?q=${encodeURIComponent(videoTitle)}`
-                        );
+                        // 使用 startTransition 优化导航性能
+                        startTransition(() => {
+                          router.push(
+                            `/search?q=${encodeURIComponent(videoTitle)}`
+                          );
+                        });
                       }
                     }}
                     className='w-full text-center text-xs text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors py-2'
