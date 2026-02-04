@@ -4721,13 +4721,16 @@ function PlayPageClient() {
           const video = artPlayerRef.current.video as HTMLVideoElement;
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）
+          const episodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
+          const hasEpisodes = detail?.episodes && detail.episodes.length > 0;
+
           artPlayerRef.current.layers.add({
             name: 'fullscreen-title',
             html: `
               <div class="fullscreen-title-container">
                 <div class="fullscreen-title-content">
                   <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
-                  ${detail?.episodes && detail.episodes[currentEpisodeIndex] ? `<span class="fullscreen-episode-text">第${currentEpisodeIndex + 1}集</span>` : ''}
+                  ${hasEpisodes && episodeName ? `<span class="fullscreen-episode-text">${episodeName}</span>` : ''}
                 </div>
               </div>
             `,
@@ -4970,18 +4973,45 @@ function PlayPageClient() {
 
               /* 移动端适配 */
               @media (max-width: 768px) {
+                .fullscreen-title-container {
+                  height: 60px;
+                }
+
                 .fullscreen-title-text {
-                  font-size: 18px;
-                  max-width: 60vw;
+                  font-size: 16px;
+                  max-width: 55vw;
                 }
 
                 .fullscreen-episode-text {
-                  font-size: 14px;
-                  padding: 4px 12px;
+                  font-size: 13px;
+                  padding: 4px 10px;
                 }
 
                 .fullscreen-title-content {
-                  gap: 12px;
+                  gap: 10px;
+                  padding: 0 15px;
+                }
+              }
+
+              /* 超小屏幕适配 */
+              @media (max-width: 480px) {
+                .fullscreen-title-container {
+                  height: 50px;
+                }
+
+                .fullscreen-title-text {
+                  font-size: 14px;
+                  max-width: 50vw;
+                }
+
+                .fullscreen-episode-text {
+                  font-size: 12px;
+                  padding: 3px 8px;
+                }
+
+                .fullscreen-title-content {
+                  gap: 8px;
+                  padding: 0 12px;
                 }
               }
             `;
