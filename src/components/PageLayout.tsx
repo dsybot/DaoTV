@@ -114,19 +114,15 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
       {/* 导航栏 - 移动端在底部显示，桌面端在顶部显示 */}
       <MobileBottomNav activePath={activePath} />
-        />
-    </div>
 
-      {/* AI推荐模态框 - 全局显示 */ }
-  {
-    shouldShowAIButton && (
-      <AIRecommendModal
-        isOpen={showAIRecommendModal}
-        onClose={() => setShowAIRecommendModal(false)}
-      />
-    )
-  }
-    </div >
+      {/* AI推荐模态框 - 全局显示 */}
+      {shouldShowAIButton && (
+        <AIRecommendModal
+          isOpen={showAIRecommendModal}
+          onClose={() => setShowAIRecommendModal(false)}
+        />
+      )}
+    </div>
   );
 };
 
