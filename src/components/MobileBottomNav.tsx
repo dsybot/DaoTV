@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, startTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, startTransition, useMemo } from 'react';
 
 import { FastLink } from './FastLink';
 
@@ -72,7 +72,8 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
   // 导航栏内边距
   const NAV_PADDING = 32;
 
-  const [navItems, setNavItems] = useState([
+  // 使用 useMemo 优化 navItems，避免每次渲染都创建新数组
+  const baseNavItems = useMemo(() => [
     { icon: Home, label: '首页', href: '/' },
     { icon: Search, label: '搜索', href: '/search', desktopOnly: true },
     { icon: Globe, label: '源浏览', href: '/source-browser' },
@@ -82,22 +83,30 @@ const MobileBottomNav = ({ activePath, onLayoutModeChange }: MobileBottomNavProp
     { icon: Cat, label: '动漫', href: '/douban?type=anime' },
     { icon: Clover, label: '综艺', href: '/douban?type=show' },
     { icon: Radio, label: '直播', href: '/live' },
-  ]);
+  ], []);
+
+  const [hasCustomCategories, setHasCustomCategories] = useState(false);
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      // 只添加一个"自定义"按钮，不管有多少个自定义分类
-      setNavItems((prevItems) => [
-        ...prevItems,
+      setHasCustomCategories(true);
+    }
+  }, []);
+
+  const navItems = useMemo(() => {
+    if (hasCustomCategories) {
+      return [
+        ...baseNavItems,
         {
           icon: Star,
           label: '自定义',
           href: '/douban?type=custom',
         },
-      ]);
+      ];
     }
-  }, []);
+    return baseNavItems;
+  }, [baseNavItems, hasCustomCategories]);
 
   // 动态计算可见项数量
   useEffect(() => {

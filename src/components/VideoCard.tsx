@@ -32,6 +32,28 @@ import MobileActionSheet from '@/components/MobileActionSheet';
 import { useSite } from '@/components/SiteProvider';
 import AIRecommendModal from '@/components/AIRecommendModal';
 
+// 🚀 性能优化：将重复的样式对象提取到组件外部，避免每次渲染都创建新对象
+const USER_SELECT_NONE_STYLE: React.CSSProperties = {
+  WebkitUserSelect: 'none',
+  userSelect: 'none',
+  WebkitTouchCallout: 'none',
+};
+
+const CARD_CONTAINER_STYLE: React.CSSProperties = {
+  WebkitUserSelect: 'none',
+  userSelect: 'none',
+  WebkitTouchCallout: 'none',
+  WebkitTapHighlightColor: 'transparent',
+  touchAction: 'manipulation',
+  pointerEvents: 'auto',
+};
+
+const SHIMMER_STYLE: React.CSSProperties = {
+  background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+  backgroundSize: '200% 100%',
+  animation: 'cover-shimmer 2.5s ease-in-out infinite',
+};
+
 export interface VideoCardProps {
   id?: string;
   source?: string;
@@ -789,16 +811,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             handleGoToDetail();
           }
         }}
-        style={{
-          // 禁用所有默认的长按和选择效果
-          WebkitUserSelect: 'none',
-          userSelect: 'none',
-          WebkitTouchCallout: 'none',
-          WebkitTapHighlightColor: 'transparent',
-          touchAction: 'manipulation',
-          // 禁用右键菜单和长按菜单
-          pointerEvents: 'auto',
-        } as React.CSSProperties}
+        style={CARD_CONTAINER_STYLE}
         onContextMenu={(e) => {
           // 阻止默认右键菜单
           e.preventDefault();
@@ -824,11 +837,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         {/* 海报容器 */}
         <div
           className={`relative aspect-[2/3] overflow-hidden rounded-lg ${origin === 'live' ? 'ring-1 ring-gray-300/80 dark:ring-gray-600/80' : ''}`}
-          style={{
-            WebkitUserSelect: 'none',
-            userSelect: 'none',
-            WebkitTouchCallout: 'none',
-          } as React.CSSProperties}
+          style={USER_SELECT_NONE_STYLE}
           onContextMenu={(e) => {
             e.preventDefault();
             return false;
@@ -837,11 +846,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 渐变光泽动画层 - 循环扫过效果 */}
           <div
             className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
-            style={{
-              background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
-              backgroundSize: '200% 100%',
-              animation: 'cover-shimmer 2.5s ease-in-out infinite',
-            }}
+            style={SHIMMER_STYLE}
           />
 
           {/* 骨架屏 */}

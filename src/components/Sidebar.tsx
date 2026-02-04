@@ -14,6 +14,7 @@ import {
   useLayoutEffect,
   useState,
   startTransition,
+  useMemo,
 } from 'react';
 
 import { useSite } from './SiteProvider';
@@ -130,11 +131,12 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
     });
   }, [router]);
 
-  const contextValue = {
+  const contextValue = useMemo(() => ({
     isCollapsed,
-  };
+  }), [isCollapsed]);
 
-  const [menuItems, setMenuItems] = useState([
+  // 使用 useMemo 优化 menuItems，避免每次渲染都创建新数组
+  const baseMenuItems = useMemo(() => [
     {
       icon: Globe,
       label: '源浏览器',
@@ -170,22 +172,30 @@ const Sidebar = ({ onToggle, activePath = '/', onLayoutModeChange }: SidebarProp
       label: '直播',
       href: '/live',
     },
-  ]);
+  ], []);
+
+  const [hasCustomCategories, setHasCustomCategories] = useState(false);
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      // 只添加一个"自定义"按钮
-      setMenuItems((prevItems) => [
-        ...prevItems,
+      setHasCustomCategories(true);
+    }
+  }, []);
+
+  const menuItems = useMemo(() => {
+    if (hasCustomCategories) {
+      return [
+        ...baseMenuItems,
         {
           icon: Star,
           label: '自定义',
           href: '/douban?type=custom',
         },
-      ]);
+      ];
     }
-  }, []);
+    return baseMenuItems;
+  }, [baseMenuItems, hasCustomCategories]);
 
   return (
     <SidebarContext.Provider value={contextValue}>
