@@ -867,6 +867,7 @@ function PlayPageClient() {
     danmuList, // 弹幕列表state（用于显示弹幕数量）
     loading: danmuLoading, // 加载状态（state）
     loadMeta: danmuLoadMeta, // 加载元数据
+    error: danmuError, // 错误状态
     loadExternalDanmu,
     handleDanmuOperationOptimized,
     externalDanmuEnabledRef,
@@ -6052,6 +6053,7 @@ function PlayPageClient() {
           danmuCount={danmuList.length} // 使用state而不是ref，确保React能追踪变化
           loading={danmuLoading}
           loadMeta={danmuLoadMeta}
+          error={danmuError}
           onReload={async () => {
             // 重新加载外部弹幕（强制刷新）
             const result = await loadExternalDanmu({ force: true });
