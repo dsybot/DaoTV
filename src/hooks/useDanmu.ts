@@ -46,7 +46,7 @@ export interface UseDanmuReturn {
   loadMeta: DanmuLoadMeta; // 加载元数据
 
   // 方法
-  loadExternalDanmu: (options?: { force?: boolean }) => Promise<number>;
+  loadExternalDanmu: (options?: { force?: boolean }) => Promise<{ count: number; data: any[] }>;
   handleDanmuOperationOptimized: (nextState: boolean) => void;
 
   // Refs（供外部访问）
@@ -193,12 +193,13 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
 
   // ==================== 加载外部弹幕 ====================
 
-  const loadExternalDanmu = useCallback(async (options?: { force?: boolean }): Promise<number> => {
+  const loadExternalDanmu = useCallback(async (options?: { force?: boolean }): Promise<{ count: number; data: any[] }> => {
     const force = options?.force === true;
+    const emptyResult = { count: 0, data: [] };
 
     if (!externalDanmuEnabledRef.current) {
       console.log('外部弹幕开关已关闭');
-      return 0;
+      return emptyResult;
     }
 
     // 生成当前请求的唯一标识
@@ -216,7 +217,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
     // 防止重复请求（除非强制刷新）
     if (!force && loadingState?.loading && isSameRequest && !isStuckLoad) {
       console.log('⏳ 弹幕正在加载中，跳过重复请求');
-      return danmuList.length;
+      return { count: danmuList.length, data: danmuList };
     }
 
     // 强制重置卡住的加载状态
@@ -258,7 +259,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
         danmuLoadingRef.current = false;
         setLoading(false);
         setLoadMeta({ source: 'empty', loadedAt: Date.now(), count: 0 });
-        return 0;
+        return emptyResult;
       }
 
       // 生成缓存键
@@ -279,7 +280,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
             loadedAt: cached.timestamp,
             count: cached.data.length,
           });
-          return cached.data.length;
+          return { count: cached.data.length, data: cached.data };
         }
       }
 
@@ -294,7 +295,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
         danmuLoadingRef.current = false;
         setLoading(false);
         setLoadMeta({ source: 'error', loadedAt: Date.now(), count: 0 });
-        return 0;
+        return emptyResult;
       }
 
       const data = await response.json();
@@ -314,16 +315,16 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
         loadedAt: Date.now(),
         count: finalDanmu.length,
       });
-      return finalDanmu.length;
+      return { count: finalDanmu.length, data: finalDanmu };
     } catch (error) {
       console.error('加载外部弹幕失败:', error);
       setLoadMeta({ source: 'error', loadedAt: Date.now(), count: 0 });
-      return 0;
+      return emptyResult;
     } finally {
       danmuLoadingRef.current = false;
       setLoading(false);
     }
-  }, [videoTitle, videoYear, videoDoubanId, currentEpisodeIndex, currentSource, danmuList.length]);
+  }, [videoTitle, videoYear, videoDoubanId, currentEpisodeIndex, currentSource, danmuList]);
 
   // ==================== 智能自动重试 ====================
   // 首次加载弹幕为空时，自动延迟 900ms 后重试一次
@@ -343,9 +344,10 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
       if (danmuLoadingRef.current?.loading) return;
       console.log('🔄 弹幕首次为空，自动重试...');
       try {
-        const count = await loadExternalDanmu({ force: true });
-        if (count > 0 && artPlayerRef.current) {
-          artPlayerRef.current.notice.show = `已自动重试并加载 ${count} 条弹幕`;
+        const result = await loadExternalDanmu({ force: true });
+        if (result.count > 0 && artPlayerRef.current) {
+          artPlayerRef.current.plugins?.artplayerPluginDanmuku?.load(result.data);
+          artPlayerRef.current.notice.show = `已自动重试并加载 ${result.count} 条弹幕`;
         }
       } catch {
         // 忽略自动重试错误
@@ -393,16 +395,16 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
           if (nextState) {
             // 开启弹幕
             console.log('🚀 优化后开启外部弹幕...');
-            const count = await loadExternalDanmu();
+            const result = await loadExternalDanmu();
 
             // 二次确认状态
             if (externalDanmuEnabledRef.current && artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-              plugin.load(danmuList);
+              plugin.load(result.data);
               plugin.show();
-              console.log('✅ 外部弹幕已优化加载:', count, '条');
+              console.log('✅ 外部弹幕已优化加载:', result.count, '条');
 
-              if (artPlayerRef.current && count > 0) {
-                artPlayerRef.current.notice.show = `已加载 ${count} 条弹幕`;
+              if (artPlayerRef.current && result.count > 0) {
+                artPlayerRef.current.notice.show = `已加载 ${result.count} 条弹幕`;
               }
             }
           } else {
@@ -416,7 +418,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
         console.error('弹幕操作失败:', error);
       }
     }, 300); // 300ms 防抖
-  }, [loadExternalDanmu, danmuList, artPlayerRef]);
+  }, [loadExternalDanmu, artPlayerRef]);
 
   // ==================== 返回值 ====================
 
