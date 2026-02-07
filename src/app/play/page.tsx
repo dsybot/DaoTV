@@ -4507,6 +4507,8 @@ function PlayPageClient() {
             // 其他浏览器：不显示 Chromecast（不支持 Cast API）
             ...(isChrome && !isIOS ? [
               artplayerPluginChromecast({
+                title: videoTitle ? `${videoTitle}${currentEpisodeIndex >= 0 ? ` - 第${currentEpisodeIndex + 1}集` : ''}` : undefined,
+                poster: videoCover || undefined,
                 onStateChange: (state) => {
                   console.log('Chromecast state changed:', state);
                 },
@@ -4515,6 +4517,9 @@ function PlayPageClient() {
                 },
                 onCastStart: () => {
                   console.log('Chromecast started');
+                },
+                onCastEnd: () => {
+                  console.log('Chromecast ended');
                 },
                 onError: (error) => {
                   console.error('Chromecast error:', error);
