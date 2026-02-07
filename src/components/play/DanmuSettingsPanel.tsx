@@ -17,6 +17,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 // ============================================================================
 
 interface DanmuSettings {
+  enabled: boolean; // 启用弹幕主开关
   fontSize: number;
   speed: number;
   opacity: number;
@@ -24,6 +25,11 @@ interface DanmuSettings {
   modes: Array<0 | 1 | 2>;
   antiOverlap: boolean;
   visible: boolean;
+}
+
+interface DanmuMatchInfo {
+  animeTitle: string;
+  episodeTitle: string;
 }
 
 interface DanmuSettingsPanelProps {
@@ -41,6 +47,8 @@ interface DanmuSettingsPanelProps {
   loading?: boolean;
   /** 重新加载回调 */
   onReload?: () => void;
+  /** 匹配信息（显示片名） */
+  matchInfo?: DanmuMatchInfo | null;
 }
 
 // ============================================================================
@@ -94,6 +102,7 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
   danmuCount = 0,
   loading = false,
   onReload,
+  matchInfo,
 }: DanmuSettingsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -294,295 +303,347 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
 
       {/* 内容区域 - 零滚动设计 */}
       <div className='px-5 py-4 space-y-4 overflow-hidden'>
-        {/* 快捷开关行 - 并排紧凑设计 */}
-        <div className='grid grid-cols-2 gap-3'>
-          {/* 显示开关 */}
+        {/* 匹配信息标签 - 显示片名（只要有matchInfo就显示，不要求danmuCount>0） */}
+        {matchInfo && settings.enabled && (
           <div
-            className='flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer'
+            className='px-3 py-2 rounded-xl backdrop-blur-sm'
             style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
             }}
           >
-            <Eye className='w-3.5 h-3.5 text-gray-400 shrink-0 transition-colors group-hover:text-gray-300' />
-            <span className='text-xs text-gray-300 font-medium'>显示</span>
-            <button
-              onClick={() => handleUpdate('visible', !settings.visible)}
-              className={`ml-auto relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 active:scale-90`}
-              style={{
-                background: settings.visible
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : '#4b5563',
-                boxShadow: settings.visible
-                  ? '0 0 16px rgba(16, 185, 129, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
-                  : 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
-                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
+            <p
+              className='text-xs text-green-300 font-medium whitespace-nowrap overflow-hidden text-ellipsis'
+              title={`${matchInfo.animeTitle} - ${matchInfo.episodeTitle}`}
             >
-              <span
-                className='inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-all duration-300'
-                style={{
-                  transform: settings.visible ? 'translateX(18px)' : 'translateX(2px)',
-                  transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-                }}
-              />
-            </button>
+              ✨ {matchInfo.animeTitle}
+            </p>
+            <p className='text-[11px] text-green-400/70 mt-0.5 truncate'>
+              {matchInfo.episodeTitle}
+            </p>
           </div>
+        )}
 
-          {/* 防重叠开关 */}
-          <div
-            className='flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer'
+        {/* 启用弹幕主开关 */}
+        <div className='flex items-center justify-between py-1'>
+          <span className='text-sm font-medium text-gray-200'>启用弹幕</span>
+          <button
+            onClick={() => handleUpdate('enabled', !settings.enabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 active:scale-90`}
             style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+              background: settings.enabled
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : '#4b5563',
+              boxShadow: settings.enabled
+                ? '0 0 16px rgba(16, 185, 129, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
+                : 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+              transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
-            <Shield className='w-3.5 h-3.5 text-gray-400 shrink-0 transition-colors group-hover:text-gray-300' />
-            <span className='text-xs text-gray-300 font-medium'>防重叠</span>
-            <button
-              onClick={() => handleUpdate('antiOverlap', !settings.antiOverlap)}
-              className={`ml-auto relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 active:scale-90`}
+            <span
+              className='inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-all duration-300'
               style={{
-                background: settings.antiOverlap
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : '#4b5563',
-                boxShadow: settings.antiOverlap
-                  ? '0 0 16px rgba(16, 185, 129, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
-                  : 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+                transform: settings.enabled ? 'translateX(22px)' : 'translateX(2px)',
                 transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
-            >
-              <span
-                className='inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-all duration-300'
-                style={{
-                  transform: settings.antiOverlap ? 'translateX(18px)' : 'translateX(2px)',
-                  transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-                }}
-              />
-            </button>
-          </div>
+            />
+          </button>
         </div>
 
-        {/* 滑块设置 - 渐变轨道 */}
-        <div className='space-y-3.5'>
-          {/* 字号 */}
-          <div className='flex items-center gap-3'>
-            <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
-              <Type className='w-3.5 h-3.5 text-gray-400' />
-              <span className="font-medium">字号</span>
-            </div>
-            <div className="relative flex-1">
-              <input
-                type='range'
-                min={12}
-                max={48}
-                step={1}
-                value={sliderFontSize}
-                onChange={(e) => setSliderFontSize(parseFloat(e.target.value))}
-                onMouseUp={commitFontSize}
-                onTouchEnd={commitFontSize}
-                onBlur={commitFontSize}
-                className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
+        {/* 只有启用弹幕后才显示其他设置 */}
+        {settings.enabled && (
+          <>
+            {/* 快捷开关行 - 并排紧凑设计 */}
+            <div className='grid grid-cols-2 gap-3'>
+              {/* 显示开关 */}
+              <div
+                className='flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer'
                 style={{
-                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${((sliderFontSize - 12) / (48 - 12)) * 100}%, rgba(75, 85, 99, 0.5) ${((sliderFontSize - 12) / (48 - 12)) * 100}%, rgba(75, 85, 99, 0.5) 100%)`,
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
                 }}
-              />
-            </div>
-            <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
-              <AnimatedNumber value={sliderFontSize} />
-            </span>
-          </div>
-
-          {/* 速度 */}
-          <div className='flex items-center gap-3'>
-            <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
-              <Gauge className='w-3.5 h-3.5 text-gray-400' />
-              <span className="font-medium">速度</span>
-            </div>
-            <div className="relative flex-1">
-              <input
-                type='range'
-                min={1}
-                max={10}
-                step={1}
-                value={sliderSpeed}
-                onChange={(e) => setSliderSpeed(parseFloat(e.target.value))}
-                onMouseUp={commitSpeed}
-                onTouchEnd={commitSpeed}
-                onBlur={commitSpeed}
-                className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
-                style={{
-                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${((sliderSpeed - 1) / (10 - 1)) * 100}%, rgba(75, 85, 99, 0.5) ${((sliderSpeed - 1) / (10 - 1)) * 100}%, rgba(75, 85, 99, 0.5) 100%)`,
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 }}
-              />
-            </div>
-            <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
-              <AnimatedNumber value={sliderSpeed} />
-            </span>
-          </div>
-
-          {/* 透明度 */}
-          <div className='flex items-center gap-3'>
-            <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
-              <Eye className='w-3.5 h-3.5 text-gray-400' />
-              <span className="font-medium">透明</span>
-            </div>
-            <div className="relative flex-1">
-              <input
-                type='range'
-                min={0.1}
-                max={1}
-                step={0.1}
-                value={sliderOpacity}
-                onChange={(e) => setSliderOpacity(parseFloat(e.target.value))}
-                onMouseUp={commitOpacity}
-                onTouchEnd={commitOpacity}
-                onBlur={commitOpacity}
-                className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
-                style={{
-                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${((sliderOpacity - 0.1) / (1 - 0.1)) * 100}%, rgba(75, 85, 99, 0.5) ${((sliderOpacity - 0.1) / (1 - 0.1)) * 100}%, rgba(75, 85, 99, 0.5) 100%)`,
-                }}
-              />
-            </div>
-            <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
-              {(sliderOpacity * 100).toFixed(0)}%
-            </span>
-          </div>
-
-          {/* 上边距 - LunaTV独有功能！ */}
-          <div className='flex items-center gap-3'>
-            <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
-              <svg className='w-3.5 h-3.5 text-gray-400' viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M4 4h16M4 8h16" strokeWidth="2" strokeLinecap="round" />
-                <path d="M12 12v8" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2" />
-              </svg>
-              <span className="font-medium">上距</span>
-            </div>
-            <div className="relative flex-1">
-              <input
-                type='range'
-                min={0}
-                max={100}
-                step={5}
-                value={typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0]}
-                onChange={(e) => {
-                  const topValue = Math.round(parseFloat(e.target.value) / 5) * 5;
-                  const topMargin = topValue === 0 ? 10 : `${topValue}%`;
-                  handleUpdate('margin', [topMargin, settings.margin[1]]);
-                }}
-                className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
-                style={{
-                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${(typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0])}%, rgba(75, 85, 99, 0.5) ${(typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0])}%, rgba(75, 85, 99, 0.5) 100%)`,
-                }}
-              />
-            </div>
-            <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
-              {typeof settings.margin[0] === 'string' ? settings.margin[0] : settings.margin[0] === 10 ? '无' : `${settings.margin[0]}%`}
-            </span>
-          </div>
-
-          {/* 下边距 - LunaTV独有功能！ */}
-          <div className='flex items-center gap-3'>
-            <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
-              <svg className='w-3.5 h-3.5 text-gray-400' viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M4 20h16M4 16h16" strokeWidth="2" strokeLinecap="round" />
-                <path d="M12 4v8" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2" />
-              </svg>
-              <span className="font-medium">下距</span>
-            </div>
-            <div className="relative flex-1">
-              <input
-                type='range'
-                min={0}
-                max={100}
-                step={5}
-                value={typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1]}
-                onChange={(e) => {
-                  const bottomValue = Math.round(parseFloat(e.target.value) / 5) * 5;
-                  const bottomMargin = bottomValue === 0 ? 10 : `${bottomValue}%`;
-                  handleUpdate('margin', [settings.margin[0], bottomMargin]);
-                }}
-                className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
-                style={{
-                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${(typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1])}%, rgba(75, 85, 99, 0.5) ${(typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1])}%, rgba(75, 85, 99, 0.5) 100%)`,
-                }}
-              />
-            </div>
-            <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
-              {typeof settings.margin[1] === 'string' ? settings.margin[1] : settings.margin[1] === 10 ? '无' : `${settings.margin[1]}%`}
-            </span>
-          </div>
-        </div>
-
-        {/* 弹幕类型 - 3D卡片效果 */}
-        <div>
-          <div className='flex items-center gap-1.5 text-xs text-gray-300 mb-3'>
-            <Layers className='w-3.5 h-3.5 text-gray-400' />
-            <span className="font-medium">弹幕类型</span>
-          </div>
-          <div className='grid grid-cols-3 gap-2'>
-            {[
-              { value: 0 as const, label: '滚动', icon: '→' },
-              { value: 1 as const, label: '顶部', icon: '↑' },
-              { value: 2 as const, label: '底部', icon: '↓' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  const modes = settings.modes.includes(option.value)
-                    ? settings.modes.length > 1
-                      ? settings.modes.filter((m) => m !== option.value)
-                      : settings.modes
-                    : [...settings.modes, option.value];
-                  handleUpdate('modes', modes as Array<0 | 1 | 2>);
-                }}
-                className={`relative py-2 px-2 rounded-xl text-xs font-semibold transition-all duration-300 active:scale-95 overflow-hidden group`}
-                style={{
-                  background: settings.modes.includes(option.value)
-                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: settings.modes.includes(option.value)
-                    ? '1px solid rgba(16, 185, 129, 0.5)'
-                    : '1px solid rgba(255, 255, 255, 0.05)',
-                  boxShadow: settings.modes.includes(option.value)
-                    ? '0 4px 16px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                    : 'none',
-                  color: settings.modes.includes(option.value) ? '#fff' : '#9ca3af',
-                  transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
                 }}
               >
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-base">{option.icon}</span>
-                  <span>{option.label}</span>
-                </div>
-                {settings.modes.includes(option.value) && (
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                <Eye className='w-3.5 h-3.5 text-gray-400 shrink-0 transition-colors group-hover:text-gray-300' />
+                <span className='text-xs text-gray-300 font-medium'>显示</span>
+                <button
+                  onClick={() => handleUpdate('visible', !settings.visible)}
+                  className={`ml-auto relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 active:scale-90`}
+                  style={{
+                    background: settings.visible
+                      ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                      : '#4b5563',
+                    boxShadow: settings.visible
+                      ? '0 0 16px rgba(16, 185, 129, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
+                      : 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+                    transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}
+                >
+                  <span
+                    className='inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-all duration-300'
                     style={{
-                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%)',
+                      transform: settings.visible ? 'translateX(18px)' : 'translateX(2px)',
+                      transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}
                   />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+                </button>
+              </div>
+
+              {/* 防重叠开关 */}
+              <div
+                className='flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer'
+                style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                }}
+              >
+                <Shield className='w-3.5 h-3.5 text-gray-400 shrink-0 transition-colors group-hover:text-gray-300' />
+                <span className='text-xs text-gray-300 font-medium'>防重叠</span>
+                <button
+                  onClick={() => handleUpdate('antiOverlap', !settings.antiOverlap)}
+                  className={`ml-auto relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 active:scale-90`}
+                  style={{
+                    background: settings.antiOverlap
+                      ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                      : '#4b5563',
+                    boxShadow: settings.antiOverlap
+                      ? '0 0 16px rgba(16, 185, 129, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
+                      : 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+                    transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}
+                >
+                  <span
+                    className='inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-all duration-300'
+                    style={{
+                      transform: settings.antiOverlap ? 'translateX(18px)' : 'translateX(2px)',
+                      transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    }}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* 滑块设置 - 渐变轨道 */}
+            <div className='space-y-3.5'>
+              {/* 字号 */}
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
+                  <Type className='w-3.5 h-3.5 text-gray-400' />
+                  <span className="font-medium">字号</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type='range'
+                    min={12}
+                    max={48}
+                    step={1}
+                    value={sliderFontSize}
+                    onChange={(e) => setSliderFontSize(parseFloat(e.target.value))}
+                    onMouseUp={commitFontSize}
+                    onTouchEnd={commitFontSize}
+                    onBlur={commitFontSize}
+                    className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${((sliderFontSize - 12) / (48 - 12)) * 100}%, rgba(75, 85, 99, 0.5) ${((sliderFontSize - 12) / (48 - 12)) * 100}%, rgba(75, 85, 99, 0.5) 100%)`,
+                    }}
+                  />
+                </div>
+                <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
+                  <AnimatedNumber value={sliderFontSize} />
+                </span>
+              </div>
+
+              {/* 速度 */}
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
+                  <Gauge className='w-3.5 h-3.5 text-gray-400' />
+                  <span className="font-medium">速度</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type='range'
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={sliderSpeed}
+                    onChange={(e) => setSliderSpeed(parseFloat(e.target.value))}
+                    onMouseUp={commitSpeed}
+                    onTouchEnd={commitSpeed}
+                    onBlur={commitSpeed}
+                    className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${((sliderSpeed - 1) / (10 - 1)) * 100}%, rgba(75, 85, 99, 0.5) ${((sliderSpeed - 1) / (10 - 1)) * 100}%, rgba(75, 85, 99, 0.5) 100%)`,
+                    }}
+                  />
+                </div>
+                <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
+                  <AnimatedNumber value={sliderSpeed} />
+                </span>
+              </div>
+
+              {/* 透明度 */}
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
+                  <Eye className='w-3.5 h-3.5 text-gray-400' />
+                  <span className="font-medium">透明</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type='range'
+                    min={0.1}
+                    max={1}
+                    step={0.1}
+                    value={sliderOpacity}
+                    onChange={(e) => setSliderOpacity(parseFloat(e.target.value))}
+                    onMouseUp={commitOpacity}
+                    onTouchEnd={commitOpacity}
+                    onBlur={commitOpacity}
+                    className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${((sliderOpacity - 0.1) / (1 - 0.1)) * 100}%, rgba(75, 85, 99, 0.5) ${((sliderOpacity - 0.1) / (1 - 0.1)) * 100}%, rgba(75, 85, 99, 0.5) 100%)`,
+                    }}
+                  />
+                </div>
+                <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
+                  {(sliderOpacity * 100).toFixed(0)}%
+                </span>
+              </div>
+
+              {/* 上边距 - LunaTV独有功能！ */}
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
+                  <svg className='w-3.5 h-3.5 text-gray-400' viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M4 4h16M4 8h16" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M12 12v8" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2" />
+                  </svg>
+                  <span className="font-medium">上距</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type='range'
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0]}
+                    onChange={(e) => {
+                      const topValue = Math.round(parseFloat(e.target.value) / 5) * 5;
+                      const topMargin = topValue === 0 ? 10 : `${topValue}%`;
+                      handleUpdate('margin', [topMargin, settings.margin[1]]);
+                    }}
+                    className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${(typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0])}%, rgba(75, 85, 99, 0.5) ${(typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0])}%, rgba(75, 85, 99, 0.5) 100%)`,
+                    }}
+                  />
+                </div>
+                <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
+                  {typeof settings.margin[0] === 'string' ? settings.margin[0] : settings.margin[0] === 10 ? '无' : `${settings.margin[0]}%`}
+                </span>
+              </div>
+
+              {/* 下边距 - LunaTV独有功能！ */}
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-1.5 text-xs text-gray-300 w-16 shrink-0'>
+                  <svg className='w-3.5 h-3.5 text-gray-400' viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M4 20h16M4 16h16" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M12 4v8" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2" />
+                  </svg>
+                  <span className="font-medium">下距</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type='range'
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1]}
+                    onChange={(e) => {
+                      const bottomValue = Math.round(parseFloat(e.target.value) / 5) * 5;
+                      const bottomMargin = bottomValue === 0 ? 10 : `${bottomValue}%`;
+                      handleUpdate('margin', [settings.margin[0], bottomMargin]);
+                    }}
+                    className='w-full h-2 rounded-full appearance-none cursor-pointer transition-all'
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${(typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1])}%, rgba(75, 85, 99, 0.5) ${(typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1])}%, rgba(75, 85, 99, 0.5) 100%)`,
+                    }}
+                  />
+                </div>
+                <span className='text-xs text-green-400 w-12 text-right font-mono font-semibold tabular-nums'>
+                  {typeof settings.margin[1] === 'string' ? settings.margin[1] : settings.margin[1] === 10 ? '无' : `${settings.margin[1]}%`}
+                </span>
+              </div>
+            </div>
+
+            {/* 弹幕类型 - 3D卡片效果 */}
+            <div>
+              <div className='flex items-center gap-1.5 text-xs text-gray-300 mb-3'>
+                <Layers className='w-3.5 h-3.5 text-gray-400' />
+                <span className="font-medium">弹幕类型</span>
+              </div>
+              <div className='grid grid-cols-3 gap-2'>
+                {[
+                  { value: 0 as const, label: '滚动', icon: '→' },
+                  { value: 1 as const, label: '顶部', icon: '↑' },
+                  { value: 2 as const, label: '底部', icon: '↓' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      const modes = settings.modes.includes(option.value)
+                        ? settings.modes.length > 1
+                          ? settings.modes.filter((m) => m !== option.value)
+                          : settings.modes
+                        : [...settings.modes, option.value];
+                      handleUpdate('modes', modes as Array<0 | 1 | 2>);
+                    }}
+                    className={`relative py-2 px-2 rounded-xl text-xs font-semibold transition-all duration-300 active:scale-95 overflow-hidden group`}
+                    style={{
+                      background: settings.modes.includes(option.value)
+                        ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                        : 'rgba(255, 255, 255, 0.03)',
+                      border: settings.modes.includes(option.value)
+                        ? '1px solid rgba(16, 185, 129, 0.5)'
+                        : '1px solid rgba(255, 255, 255, 0.05)',
+                      boxShadow: settings.modes.includes(option.value)
+                        ? '0 4px 16px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                        : 'none',
+                      color: settings.modes.includes(option.value) ? '#fff' : '#9ca3af',
+                      transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    }}
+                  >
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-base">{option.icon}</span>
+                      <span>{option.label}</span>
+                    </div>
+                    {settings.modes.includes(option.value) && (
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%)',
+                        }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 底部装饰条 */}

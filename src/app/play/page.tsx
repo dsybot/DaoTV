@@ -864,6 +864,7 @@ function PlayPageClient() {
   const {
     externalDanmuEnabled,
     setExternalDanmuEnabled,
+    danmuList, // 弹幕列表state（用于显示弹幕数量）
     loadExternalDanmu,
     handleDanmuOperationOptimized,
     externalDanmuEnabledRef,
@@ -5975,6 +5976,7 @@ function PlayPageClient() {
           isOpen={isDanmuSettingsPanelOpen}
           onClose={() => setIsDanmuSettingsPanelOpen(false)}
           settings={{
+            enabled: externalDanmuEnabled, // 启用弹幕主开关
             fontSize: parseInt(localStorage.getItem('danmaku_fontSize') || '25'),
             speed: parseFloat(localStorage.getItem('danmaku_speed') || '5'),
             opacity: parseFloat(localStorage.getItem('danmaku_opacity') || '0.8'),
@@ -5985,7 +5987,20 @@ function PlayPageClient() {
               : true, // 默认开启防重叠
             visible: localStorage.getItem('danmaku_visible') !== 'false',
           }}
+          matchInfo={
+            detail?.title && currentEpisodeIndex >= 0
+              ? {
+                animeTitle: detail.title,
+                episodeTitle: `第 ${currentEpisodeIndex + 1} 集`,
+              }
+              : null
+          }
           onSettingsChange={(newSettings) => {
+            // 更新启用状态
+            if (newSettings.enabled !== undefined) {
+              handleDanmuOperationOptimized(newSettings.enabled);
+            }
+
             // 更新 localStorage
             if (newSettings.fontSize !== undefined) {
               localStorage.setItem('danmaku_fontSize', String(newSettings.fontSize));
@@ -6027,7 +6042,7 @@ function PlayPageClient() {
             setIsDanmuSettingsPanelOpen(false);
             setTimeout(() => setIsDanmuSettingsPanelOpen(true), 50);
           }}
-          danmuCount={artPlayerRef.current?.plugins?.artplayerPluginDanmuku?.danmuku?.length || 0}
+          danmuCount={danmuList.length} // 使用state而不是ref，确保React能追踪变化
           loading={danmuLoadingRef.current?.loading || false}
           onReload={async () => {
             // 重新加载外部弹幕
