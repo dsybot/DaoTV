@@ -37,7 +37,7 @@ function VideoInfoSection(props: VideoInfoSectionProps) {
 
   return (
     <div className='md:col-span-3'>
-      <div className='p-6 flex flex-col min-h-0'>
+      <div className='p-3 md:p-6 flex flex-col min-h-0'>
         {/* 标题 */}
         <div className='mb-4 shrink-0'>
           <div className='flex flex-col md:flex-row md:items-center gap-3'>
@@ -344,7 +344,7 @@ function VideoInfoSection(props: VideoInfoSectionProps) {
 
         {/* 推荐影片 */}
         {movieDetails?.recommendations && movieDetails.recommendations.length > 0 && (
-          <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
+          <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6 -mx-3 md:mx-0 px-3 md:px-0'>
             <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
               <span>💡</span>
               <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>

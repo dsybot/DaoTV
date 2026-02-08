@@ -27,7 +27,7 @@ const CommentSection = memo(function CommentSection({
   }
 
   return (
-    <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
+    <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6 -mx-3 md:mx-0 px-3 md:px-0'>
       <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
         <span>💬</span>
         <span>豆瓣短评</span>

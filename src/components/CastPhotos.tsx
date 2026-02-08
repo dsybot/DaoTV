@@ -248,8 +248,8 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
   const selectedActor = actors[selectedIndex];
 
   return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="mt-4 -mx-3 md:mx-0">
+      <div className="flex items-center justify-between mb-3 px-3 md:px-0">
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
           主演
         </h4>
@@ -336,7 +336,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
       </div>
 
       {/* 演员作品区域 */}
-      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+      <div className="mt-4 p-3 md:p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl mx-3 md:mx-0">
         {/* 标题和类型切换 */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
