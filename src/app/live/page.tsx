@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import Hls from 'hls.js';
 import { Heart, Menu, Radio, RefreshCw, Search, Tv, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -1112,7 +1112,7 @@ function LivePageClient() {
   };
 
   // 新增：检测频道健康状态
-  const checkChannelHealth = async (
+  const checkChannelHealth = useCallback(async (
     channel: LiveChannel,
     options?: { force?: boolean },
   ): Promise<ChannelHealthInfo> => {
@@ -1217,7 +1217,7 @@ function LivePageClient() {
     } finally {
       healthCheckingRef.current.delete(cacheKey);
     }
-  };
+  }, [currentSource]);
 
   // 新增：持久化最近访问分组
   const persistRecentGroups = (nextGroups: string[]) => {
@@ -1460,6 +1460,7 @@ function LivePageClient() {
     currentSource,
     filteredChannels,
     isSwitchingSource,
+    checkChannelHealth,
   ]);
 
   // 监听收藏数据更新事件

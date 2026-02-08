@@ -20,13 +20,9 @@ export function useTabsDragScroll() {
     // Only handle left mouse button
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    // 检查是否点击在滚动按钮上
+    // Only exclude scroll buttons, allow drag on Tab buttons
     const target = event.target as HTMLElement;
-    if (
-      target.closest('.MuiTabScrollButton-root') ||
-      target.closest('button')
-    ) {
-      // 如果点击的是按钮，不启用拖拽
+    if (target.closest('.MuiTabScrollButton-root')) {
       return;
     }
 
@@ -46,8 +42,7 @@ export function useTabsDragScroll() {
       // ignore
     }
 
-    // Prevent text selection during drag
-    event.preventDefault();
+    // Don't prevent default here - let Tab clicks work if no drag happens
   }, []);
 
   const handlePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -60,9 +55,10 @@ export function useTabsDragScroll() {
 
     const deltaX = event.clientX - dragState.startX;
 
-    // If moved more than 6px, prevent click events
+    // If moved more than 6px, prevent click events and text selection
     if (Math.abs(deltaX) > 6) {
       dragState.preventClickUntil = Date.now() + 160;
+      event.preventDefault(); // Prevent text selection and Tab clicks during drag
     }
 
     // Update scroll position
