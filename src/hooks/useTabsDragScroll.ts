@@ -55,10 +55,10 @@ export function useTabsDragScroll() {
 
     const deltaX = event.clientX - dragState.startX;
 
-    // If moved more than 6px, prevent click events and text selection
+    // If moved more than 6px, mark as dragging
     if (Math.abs(deltaX) > 6) {
       dragState.preventClickUntil = Date.now() + 160;
-      event.preventDefault(); // Prevent text selection and Tab clicks during drag
+      // Don't call preventDefault here - it blocks Tab clicks
     }
 
     // Update scroll position

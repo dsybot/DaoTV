@@ -31,6 +31,7 @@ import EpgScrollableRow from '@/components/EpgScrollableRow';
 import PageLayout from '@/components/PageLayout';
 import { useLiveSync } from '@/hooks/useLiveSync';
 import { useTabsDragScroll } from '@/hooks/useTabsDragScroll';
+import { useInView } from '@/hooks/useInView';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 和 flv 属性
 declare global {
@@ -1102,6 +1103,143 @@ function LivePageClient() {
     }
   };
 
+  // 新增：频道项组件，支持滚动到可见时自动检测
+  const ChannelItem = ({ channel }: { channel: LiveChannel }) => {
+    const { ref, isInView } = useInView<HTMLButtonElement>({
+      threshold: 0.1,
+      rootMargin: '100px',
+      triggerOnce: true,
+    });
+
+    useEffect(() => {
+      if (isInView && currentSource) {
+        const healthInfo = channelHealthMap[channel.id];
+        // 只有未检测过的频道才自动检测
+        if (!healthInfo || healthInfo.status === 'unknown') {
+          void checkChannelHealth(channel);
+        }
+      }
+    }, [isInView, channel]);
+
+    const isActive = channel.id === currentChannel?.id;
+    const isDisabled = isSwitchingSource || liveSync.shouldDisableControls;
+
+    return (
+      <button
+        ref={ref}
+        key={channel.id}
+        data-channel-id={channel.id}
+        onClick={() => handleChannelChange(channel)}
+        disabled={isDisabled}
+        className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${isDisabled
+          ? 'opacity-50 cursor-not-allowed'
+          : isActive
+            ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+      >
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
+            {channel.logo ? (
+              <img
+                src={`/api/proxy/logo?url=${encodeURIComponent(channel.logo)}&source=${currentSource?.key || ''}`}
+                alt={channel.name}
+                className='w-full h-full rounded object-contain'
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('.fallback-icon')) {
+                    parent.innerHTML = `
+                      <div class="fallback-icon relative w-full h-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                        </svg>
+                        <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                        </span>
+                      </div>
+                    `;
+                  }
+                }}
+              />
+            ) : (
+              <Tv className='w-5 h-5 text-gray-500' />
+            )}
+          </div>
+          <div className='flex-1 min-w-0'>
+            <div
+              className='flex items-center gap-1 cursor-pointer select-none group'
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleChannelNameExpanded(channel.id);
+              }}
+            >
+              <div className='flex-1 min-w-0'>
+                <div className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${expandedChannels.has(channel.id) ? '' : 'line-clamp-1 md:line-clamp-2'}`}>
+                  {channel.name}
+                </div>
+              </div>
+              <div className='shrink-0 flex items-center gap-1'>
+                {expandedChannels.has(channel.id) ? (
+                  <ChevronUp className='w-4 h-4 text-blue-500 dark:text-blue-400 transition-transform duration-300' />
+                ) : (
+                  <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all duration-300' />
+                )}
+                <span className='hidden md:inline text-xs text-blue-500 dark:text-blue-400'>
+                  {expandedChannels.has(channel.id) ? '收起' : '展开'}
+                </span>
+              </div>
+            </div>
+            <div className='mt-1 flex items-center gap-1.5 flex-wrap'>
+              <span className='text-xs text-gray-500 dark:text-gray-400 truncate' title={channel.group}>
+                {channel.group}
+              </span>
+              {(() => {
+                const healthInfo = channelHealthMap[channel.id];
+                const streamType = healthInfo?.type || detectTypeFromUrl(channel.url);
+                const healthStatus = healthInfo?.status || 'unknown';
+                const healthLabel =
+                  healthStatus === 'healthy'
+                    ? '可用'
+                    : healthStatus === 'slow'
+                      ? '较慢'
+                      : healthStatus === 'unreachable'
+                        ? '异常'
+                        : healthStatus === 'checking'
+                          ? '检测中'
+                          : '未检测';
+                const latencyText =
+                  typeof healthInfo?.latencyMs === 'number'
+                    ? `${healthInfo.latencyMs}ms`
+                    : '';
+
+                return (
+                  <>
+                    <span
+                      className={`shrink-0 px-1.5 py-0.5 text-[10px] rounded-full border ${getTypeBadgeStyle(streamType)}`}
+                    >
+                      {streamType.toUpperCase()}
+                    </span>
+                    <span
+                      className={`shrink-0 px-1.5 py-0.5 text-[10px] rounded-full border ${getHealthBadgeStyle(healthStatus)}`}
+                      title={healthInfo?.message || healthLabel}
+                    >
+                      {healthLabel}
+                      {latencyText ? ` ${latencyText}` : ''}
+                    </span>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   // 新增：设置频道健康信息
   const setChannelHealth = (channelId: string, info: ChannelHealthInfo) => {
     setChannelHealthMap((prevMap) => ({
@@ -1438,30 +1576,7 @@ function LivePageClient() {
     })();
   }, [currentSource, currentChannel]);
 
-  // 新增：批量检测频道健康状态
-  useEffect(() => {
-    if (
-      !currentSource ||
-      filteredChannels.length === 0 ||
-      isSwitchingSource
-    ) {
-      return;
-    }
-
-    const probeTargets = filteredChannels.slice(0, HEALTH_CHECK_BATCH_SIZE);
-    const timer = setTimeout(() => {
-      probeTargets.forEach((channel) => {
-        checkChannelHealth(channel);
-      });
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [
-    currentSource,
-    filteredChannels,
-    isSwitchingSource,
-    checkChannelHealth,
-  ]);
+  // 批量检测已移除，改用滚动到可见时自动检测（IntersectionObserver）
 
   // 监听收藏数据更新事件
   useEffect(() => {
@@ -2781,128 +2896,9 @@ function LivePageClient() {
                     {/* 频道列表 */}
                     <div ref={channelListRef} className='flex-1 overflow-y-auto space-y-2 pb-24 md:pb-4'>
                       {filteredChannels.length > 0 ? (
-                        filteredChannels.map(channel => {
-                          const isActive = channel.id === currentChannel?.id;
-                          const isDisabled = isSwitchingSource || liveSync.shouldDisableControls;
-                          return (
-                            <button
-                              key={channel.id}
-                              data-channel-id={channel.id}
-                              onClick={() => handleChannelChange(channel)}
-                              disabled={isDisabled}
-                              className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${isDisabled
-                                ? 'opacity-50 cursor-not-allowed'
-                                : isActive
-                                  ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                }`}
-                            >
-                              <div className='flex items-center gap-3'>
-                                <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
-                                  {channel.logo ? (
-                                    <img
-                                      src={`/api/proxy/logo?url=${encodeURIComponent(channel.logo)}&source=${currentSource?.key || ''}`}
-                                      alt={channel.name}
-                                      className='w-full h-full rounded object-contain'
-                                      loading="lazy"
-                                      onError={(e) => {
-                                        // Logo 加载失败时，显示"直播中"图标（红点）
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const parent = target.parentElement;
-                                        if (parent && !parent.querySelector('.fallback-icon')) {
-                                          parent.innerHTML = `
-                                            <div class="fallback-icon relative w-full h-full flex items-center justify-center">
-                                              <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                                              </svg>
-                                              <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                                              </span>
-                                            </div>
-                                          `;
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    <Tv className='w-5 h-5 text-gray-500' />
-                                  )}
-                                </div>
-                                <div className='flex-1 min-w-0'>
-                                  {/* 频道名 - 点击展开/收起 */}
-                                  <div
-                                    className='flex items-center gap-1 cursor-pointer select-none group'
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleChannelNameExpanded(channel.id);
-                                    }}
-                                  >
-                                    <div className='flex-1 min-w-0'>
-                                      <div className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${expandedChannels.has(channel.id) ? '' : 'line-clamp-1 md:line-clamp-2'}`}>
-                                        {channel.name}
-                                      </div>
-                                    </div>
-                                    {/* Chevron图标 - 始终显示，带旋转动画 */}
-                                    <div className='shrink-0 flex items-center gap-1'>
-                                      {expandedChannels.has(channel.id) ? (
-                                        <ChevronUp className='w-4 h-4 text-blue-500 dark:text-blue-400 transition-transform duration-300' />
-                                      ) : (
-                                        <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all duration-300' />
-                                      )}
-                                      {/* 文字提示 - 仅桌面端显示 */}
-                                      <span className='hidden md:inline text-xs text-blue-500 dark:text-blue-400'>
-                                        {expandedChannels.has(channel.id) ? '收起' : '展开'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {/* 分组名和徽章 */}
-                                  <div className='mt-1 flex items-center gap-1.5 flex-wrap'>
-                                    <span className='text-xs text-gray-500 dark:text-gray-400 truncate' title={channel.group}>
-                                      {channel.group}
-                                    </span>
-                                    {(() => {
-                                      const healthInfo = channelHealthMap[channel.id];
-                                      const streamType = healthInfo?.type || detectTypeFromUrl(channel.url);
-                                      const healthStatus = healthInfo?.status || 'unknown';
-                                      const healthLabel =
-                                        healthStatus === 'healthy'
-                                          ? '可用'
-                                          : healthStatus === 'slow'
-                                            ? '较慢'
-                                            : healthStatus === 'unreachable'
-                                              ? '异常'
-                                              : healthStatus === 'checking'
-                                                ? '检测中'
-                                                : '未检测';
-                                      const latencyText =
-                                        typeof healthInfo?.latencyMs === 'number'
-                                          ? `${healthInfo.latencyMs}ms`
-                                          : '';
-
-                                      return (
-                                        <>
-                                          <span
-                                            className={`shrink-0 px-1.5 py-0.5 text-[10px] rounded-full border ${getTypeBadgeStyle(streamType)}`}
-                                          >
-                                            {streamType.toUpperCase()}
-                                          </span>
-                                          <span
-                                            className={`shrink-0 px-1.5 py-0.5 text-[10px] rounded-full border ${getHealthBadgeStyle(healthStatus)}`}
-                                            title={healthInfo?.message || healthLabel}
-                                          >
-                                            {healthLabel}
-                                            {latencyText ? ` ${latencyText}` : ''}
-                                          </span>
-                                        </>
-                                      );
-                                    })()}
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })
+                        filteredChannels.map(channel => (
+                          <ChannelItem key={channel.id} channel={channel} />
+                        ))
                       ) : (
                         <div className='flex flex-col items-center justify-center py-12 text-center'>
                           <div className='relative mb-6'>
