@@ -30,6 +30,7 @@ import { parseCustomTimeFormat } from '@/lib/time';
 import EpgScrollableRow from '@/components/EpgScrollableRow';
 import PageLayout from '@/components/PageLayout';
 import { useLiveSync } from '@/hooks/useLiveSync';
+import { useTabsDragScroll } from '@/hooks/useTabsDragScroll';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 和 flv 属性
 declare global {
@@ -455,6 +456,9 @@ function LivePageClient() {
       }
     },
   });
+
+  // 拖拽滚动功能
+  const { isDragging, dragHandlers } = useTabsDragScroll();
 
   // -----------------------------------------------------------------------------
   // 工具函数（Utils）
@@ -2709,7 +2713,10 @@ function LivePageClient() {
 
                             {/* Material UI Tabs 滚动容器 */}
                             <div className='flex-1 min-w-0'>
-                              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                              <Box
+                                sx={{ borderBottom: 1, borderColor: 'divider' }}
+                                {...dragHandlers}
+                              >
                                 <Tabs
                                   value={selectedGroup}
                                   onChange={(_event, newValue) => handleGroupChange(newValue)}
@@ -2717,6 +2724,10 @@ function LivePageClient() {
                                   scrollButtons="auto"
                                   allowScrollButtonsMobile
                                   sx={{
+                                    '& .MuiTabs-scroller': {
+                                      cursor: isDragging ? 'grabbing' : 'grab',
+                                      userSelect: 'none',
+                                    },
                                     '& .MuiTabs-indicator': {
                                       backgroundColor: '#22c55e', // green-500
                                     },
