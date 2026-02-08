@@ -20,8 +20,18 @@ export function useTabsDragScroll() {
     // Only handle left mouse button
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    const target = event.currentTarget;
-    const scrollContainer = target.querySelector('.MuiTabs-scroller') as HTMLElement;
+    // 检查是否点击在滚动按钮上
+    const target = event.target as HTMLElement;
+    if (
+      target.closest('.MuiTabScrollButton-root') ||
+      target.closest('button')
+    ) {
+      // 如果点击的是按钮，不启用拖拽
+      return;
+    }
+
+    const container = event.currentTarget;
+    const scrollContainer = container.querySelector('.MuiTabs-scroller') as HTMLElement;
     if (!scrollContainer) return;
 
     dragStateRef.current.isActive = true;
@@ -31,7 +41,7 @@ export function useTabsDragScroll() {
 
     // Capture pointer for smooth dragging
     try {
-      target.setPointerCapture(event.pointerId);
+      container.setPointerCapture(event.pointerId);
     } catch {
       // ignore
     }
