@@ -456,6 +456,39 @@ function PlayPageClient() {
       }
 
       try {
+        // 修复anime4k-webgpu库的buffer size限制问题
+        // 在全局层面patch requestAdapter，确保所有adapter都有正确的limits
+        const originalRequestAdapter = (navigator as any).gpu.requestAdapter.bind((navigator as any).gpu);
+
+        (navigator as any).gpu.requestAdapter = async (options?: any) => {
+          const adapter = await originalRequestAdapter(options);
+          if (!adapter) return adapter;
+
+          // 保存原始的requestDevice方法
+          const originalRequestDevice = adapter.requestDevice.bind(adapter);
+
+          // 重写requestDevice方法，添加必要的buffer size限制
+          adapter.requestDevice = async (descriptor?: any) => {
+            const adapterLimits = adapter.limits;
+
+            // 合并用户提供的descriptor和我们需要的limits
+            const enhancedDescriptor = {
+              ...descriptor,
+              requiredLimits: {
+                ...descriptor?.requiredLimits,
+                // 使用adapter支持的最大值，但不超过2GB
+                maxBufferSize: Math.min(adapterLimits.maxBufferSize || 2147483648, 2147483648),
+                maxStorageBufferBindingSize: Math.min(adapterLimits.maxStorageBufferBindingSize || 1073741824, 1073741824),
+              }
+            };
+
+            console.log('WebGPU设备请求配置:', enhancedDescriptor.requiredLimits);
+            return originalRequestDevice(enhancedDescriptor);
+          };
+
+          return adapter;
+        };
+
         const adapter = await (navigator as any).gpu.requestAdapter();
         if (!adapter) {
           setWebGPUSupported(false);
@@ -465,6 +498,10 @@ function PlayPageClient() {
 
         setWebGPUSupported(true);
         console.log('WebGPU支持检测：✅ 支持');
+        console.log('Adapter limits:', {
+          maxBufferSize: adapter.limits.maxBufferSize,
+          maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize
+        });
       } catch (err) {
         setWebGPUSupported(false);
         console.log('WebGPU不支持：检测失败', err);
