@@ -33,16 +33,11 @@ export function useTabsDragScroll() {
     dragStateRef.current.isActive = true;
     dragStateRef.current.startX = event.clientX;
     dragStateRef.current.startScrollLeft = scrollContainer.scrollLeft;
-    setIsDragging(true);
+    dragStateRef.current.preventClickUntil = 0;
+    setIsDragging(false); // Don't set dragging yet
 
-    // Capture pointer for smooth dragging
-    try {
-      container.setPointerCapture(event.pointerId);
-    } catch {
-      // ignore
-    }
-
-    // Don't prevent default here - let Tab clicks work if no drag happens
+    // Don't capture pointer - it blocks Tab clicks
+    // Don't prevent default - let Tab clicks work
   }, []);
 
   const handlePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -55,10 +50,10 @@ export function useTabsDragScroll() {
 
     const deltaX = event.clientX - dragState.startX;
 
-    // If moved more than 6px, mark as dragging
+    // If moved more than 6px, mark as dragging and prevent clicks
     if (Math.abs(deltaX) > 6) {
       dragState.preventClickUntil = Date.now() + 160;
-      // Don't call preventDefault here - it blocks Tab clicks
+      setIsDragging(true);
     }
 
     // Update scroll position
@@ -66,17 +61,7 @@ export function useTabsDragScroll() {
   }, []);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const target = event.currentTarget;
-
-    // Release pointer capture
-    if (target.hasPointerCapture(event.pointerId)) {
-      try {
-        target.releasePointerCapture(event.pointerId);
-      } catch {
-        // ignore
-      }
-    }
-
+    // No need to release pointer capture since we don't capture it
     dragStateRef.current.isActive = false;
     setIsDragging(false);
   }, []);
