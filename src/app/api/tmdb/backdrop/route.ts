@@ -595,8 +595,8 @@ export async function GET(request: NextRequest) {
         if (searchType === 'tv') {
           try {
 
-            // 获取指定季的分集
-            const seasonUrl = buildApiUrl(config, `/tv/${mediaId}/season/${season}`, {
+            // 获取指定季的分集（使用匹配到的季号）
+            const seasonUrl = buildApiUrl(config, `/tv/${mediaId}/season/${detectedSeason}`, {
               api_key: apiKey,
               language: language
             });
