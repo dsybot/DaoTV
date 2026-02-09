@@ -425,35 +425,54 @@ export async function GET(request: NextRequest) {
         // 搜索所有可能的标题变体
         let allCandidates: any[] = [];
         for (const t of titlesToTry) {
-          const searchResult = await searchByTitle(config, t, '', type, apiKey, language);
-          if (searchResult) {
-            // 获取该剧的所有季信息
-            try {
-              const detailUrl = buildApiUrl(config, `/tv/${searchResult.id}`, {
-                api_key: apiKey,
-                language: language
-              });
-              const detailResponse = await fetch(detailUrl, {
-                headers: { 'Accept': 'application/json' },
-                cache: 'no-store',
-              });
-              if (detailResponse.ok) {
-                const detailData = await detailResponse.json();
-                const seasons = (detailData.seasons || []).filter((s: any) => s.season_number > 0);
+          // 搜索该标题的所有结果（不只是第一个）
+          const params: Record<string, string> = {
+            api_key: apiKey,
+            language: language,
+            query: t
+          };
+          const searchUrl = buildApiUrl(config, `/search/tv`, params);
+          const searchResponse = await fetch(searchUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+          });
 
-                // 将每一季作为候选项
-                for (const s of seasons) {
-                  allCandidates.push({
-                    ...searchResult,
-                    season_number: s.season_number,
-                    season_name: s.name,
-                    season_air_date: s.air_date,
-                    tv_id: searchResult.id
-                  });
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            const searchResults = searchData.results || [];
+
+            console.log(`[TMDB] 搜索 "${t}" 找到 ${searchResults.length} 个结果`);
+
+            // 对每个搜索结果，获取其所有季信息
+            for (const searchResult of searchResults.slice(0, 5)) { // 只处理前5个结果
+              try {
+                const detailUrl = buildApiUrl(config, `/tv/${searchResult.id}`, {
+                  api_key: apiKey,
+                  language: language
+                });
+                const detailResponse = await fetch(detailUrl, {
+                  headers: { 'Accept': 'application/json' },
+                  cache: 'no-store',
+                });
+                if (detailResponse.ok) {
+                  const detailData = await detailResponse.json();
+                  const seasons = (detailData.seasons || []).filter((s: any) => s.season_number > 0);
+
+                  // 将每一季作为候选项
+                  for (const s of seasons) {
+                    allCandidates.push({
+                      ...searchResult,
+                      season_number: s.season_number,
+                      season_name: s.name,
+                      season_air_date: s.air_date,
+                      tv_id: searchResult.id,
+                      tv_name: searchResult.name || searchResult.title
+                    });
+                  }
                 }
+              } catch (e) {
+                console.error(`[TMDB] 获取剧集 ${searchResult.id} 的季信息失败:`, e);
               }
-            } catch (e) {
-              console.error('[TMDB] 获取季信息失败:', e);
             }
           }
         }
@@ -468,9 +487,14 @@ export async function GET(request: NextRequest) {
             }))
             .sort((a, b) => a.dateDiff - b.dateDiff);
 
+          console.log(`[TMDB] 找到 ${candidatesWithDateDiff.length} 个有开播日期的候选季，前3个:`);
+          candidatesWithDateDiff.slice(0, 3).forEach((item, index) => {
+            console.log(`  ${index + 1}. "${item.candidate.tv_name}" - ${item.candidate.season_name} (开播: ${item.candidate.season_air_date}), 日期差异: ${item.dateDiff}天`);
+          });
+
           if (candidatesWithDateDiff.length > 0) {
             const best = candidatesWithDateDiff[0];
-            console.log(`[TMDB] 根据开播日期匹配到: "${best.candidate.season_name}" (第${best.candidate.season_number}季), 日期差异: ${best.dateDiff}天`);
+            console.log(`[TMDB] 根据开播日期匹配到: "${best.candidate.tv_name}" - ${best.candidate.season_name} (第${best.candidate.season_number}季), 日期差异: ${best.dateDiff}天`);
             result = best.candidate;
             detectedSeason = best.candidate.season_number;
           }
