@@ -626,6 +626,7 @@ export async function GET(request: NextRequest) {
         logo,
         title: result.title || result.name,
         id: mediaId,
+        matched_season: detectedSeason, // 新增：返回实际匹配到的季号
         // 基本信息（优先使用详情数据，降级到搜索结果）
         overview: result.overview || '',
         vote_average: result.vote_average || 0,

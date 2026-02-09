@@ -704,71 +704,9 @@ function PlayPageClient() {
           }
           // 获取分集信息（仅电视剧）
           if (searchType === 'tv' && data.episodes && data.episodes.length > 0 && tmdbEpisodes.length === 0) {
-            // 如果标题中有特殊季名变体，尝试匹配对应的季
-            let finalEpisodes = data.episodes;
-            if (data.seasons && data.seasons.length > 0 && detectedSeason === 1) {
-              let seasonKeyword = '';
-              let detectedSeasonNumber = 0;
-
-              // 提取"第X部分"格式
-              const partMatch = videoTitle.match(/第([零一二三四五六七八九十百]+|\d+)部分?$/);
-              if (partMatch) {
-                const partStr = partMatch[1];
-                detectedSeasonNumber = /^\d+$/.test(partStr) ? parseInt(partStr) : parseSeasonFromTitle(`第${partStr}季`);
-              }
-
-              // 提取季名后缀（如"花儿与少年 同心季" -> "同心季"）
-              if (!detectedSeasonNumber) {
-                const seasonNameMatch = videoTitle.match(/\s+([^\s]+季)$/);
-                if (seasonNameMatch) {
-                  seasonKeyword = seasonNameMatch[1];
-                }
-              }
-
-              // 提取"之XXX"格式的后缀
-              if (!seasonKeyword && !detectedSeasonNumber) {
-                const zhiMatch = videoTitle.match(/之([^之]+)$/);
-                if (zhiMatch) {
-                  seasonKeyword = zhiMatch[1];
-                }
-              }
-
-              // 提取冒号后的内容
-              if (!seasonKeyword && !detectedSeasonNumber) {
-                const colonMatch = videoTitle.match(/[：:]([^：:]+)$/);
-                if (colonMatch) {
-                  seasonKeyword = colonMatch[1];
-                }
-              }
-
-              // 如果检测到了季数，重新获取对应季的分集
-              if (detectedSeasonNumber > 0 && detectedSeasonNumber <= data.seasons.length) {
-                console.log(`[Play] 根据"第X部分"格式匹配到第 ${detectedSeasonNumber} 季`);
-                const seasonResponse = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeasonNumber}&details=true`);
-                if (seasonResponse.ok) {
-                  const seasonData = await seasonResponse.json();
-                  if (seasonData.episodes && seasonData.episodes.length > 0) {
-                    finalEpisodes = seasonData.episodes;
-                  }
-                }
-              } else if (seasonKeyword) {
-                // 在季数列表中查找匹配的季名
-                const matchedSeason = data.seasons.find((s: { seasonNumber: number; name: string }) =>
-                  s.name && s.name.includes(seasonKeyword)
-                );
-                if (matchedSeason) {
-                  console.log(`[Play] 根据关键词 "${seasonKeyword}" 匹配到第 ${matchedSeason.seasonNumber} 季: ${matchedSeason.name}`);
-                  const seasonResponse = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${matchedSeason.seasonNumber}&details=true`);
-                  if (seasonResponse.ok) {
-                    const seasonData = await seasonResponse.json();
-                    if (seasonData.episodes && seasonData.episodes.length > 0) {
-                      finalEpisodes = seasonData.episodes;
-                    }
-                  }
-                }
-              }
-            }
-            setTmdbEpisodes(finalEpisodes);
+            // 直接使用API返回的分集信息（API已经通过日期匹配找到了正确的季）
+            console.log(`[TMDB] 使用匹配到的第 ${data.matched_season || detectedSeason} 季的分集信息`);
+            setTmdbEpisodes(data.episodes);
           }
         }
       } catch (error) {
