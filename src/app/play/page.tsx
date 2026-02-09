@@ -670,8 +670,22 @@ function PlayPageClient() {
         const type = searchType === 'movie' ? 'movie' : 'tv';
         // 从标题解析季数
         const detectedSeason = parseSeasonFromTitle(videoTitle);
-        console.log(`[TMDB] 开始获取演员数据: ${videoTitle}, type: ${type}, season: ${detectedSeason}`);
-        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true`);
+
+        // 获取开播日期（从豆瓣或bangumi详情中）
+        let airDate = '';
+        if (movieDetails?.first_aired) {
+          // 豆瓣详情中的首播日期，格式可能是 "2024-01-15(中国大陆)"，需要提取日期部分
+          const dateMatch = movieDetails.first_aired.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (dateMatch) {
+            airDate = dateMatch[1];
+          }
+        } else if (bangumiDetails?.air_date) {
+          airDate = bangumiDetails.air_date;
+        }
+
+        console.log(`[TMDB] 开始获取演员数据: ${videoTitle}, type: ${type}, season: ${detectedSeason}, airDate: ${airDate || '未提供'}`);
+        const airDateParam = airDate ? `&air_date=${encodeURIComponent(airDate)}` : '';
+        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true${airDateParam}`);
         console.log(`[TMDB] API响应状态: ${response.status}`);
         if (response.ok) {
           const data = await response.json();
@@ -762,7 +776,7 @@ function PlayPageClient() {
       }
     };
     fetchTmdbData();
-  }, [videoTitle, videoYear, searchType, tmdbCast.length, tmdbEpisodes.length, parseSeasonFromTitle]);
+  }, [videoTitle, videoYear, searchType, tmdbCast.length, tmdbEpisodes.length, parseSeasonFromTitle, movieDetails, bangumiDetails]);
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {

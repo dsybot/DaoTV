@@ -203,6 +203,73 @@ async function findByImdbId(config: any, imdbId: string, apiKey: string, type: s
   return null;
 }
 
+// 提取日期（从日期字符串或结果对象）
+function extractDate(result: any, searchType: string): string | null {
+  return searchType === 'movie' ? result.release_date : result.first_air_date;
+}
+
+// 计算日期差异（天数）
+function calculateDateDiff(date1: string, date2: string): number {
+  if (!date1 || !date2) return Infinity;
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return Infinity;
+  return Math.abs(Math.floor((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+// 计算匹配分数（用于排序多个候选结果）
+function calculateMatchScore(result: any, searchQuery: string, targetYear: string, searchType: string): number {
+  let score = 0;
+  const resultName = result.name || result.title || '';
+  const resultOriginalName = result.original_name || result.original_title || '';
+
+  // 1. 名称匹配（最高优先级）
+  const isExactMatch = resultName === searchQuery || resultOriginalName === searchQuery;
+  const isNameContains = resultName.includes(searchQuery) || searchQuery.includes(resultName);
+  const isOriginalNameContains = resultOriginalName.includes(searchQuery) || searchQuery.includes(resultOriginalName);
+
+  if (isExactMatch) {
+    score += 100; // 完全匹配
+  } else if (isNameContains) {
+    score += 50; // 部分匹配
+  } else if (isOriginalNameContains) {
+    score += 40; // 原始名称部分匹配
+  }
+
+  // 2. 年份匹配（重要）
+  if (targetYear) {
+    const resultDate = extractDate(result, searchType);
+    if (resultDate) {
+      const resultYear = parseInt(resultDate.substring(0, 4));
+      const yearDiff = Math.abs(resultYear - parseInt(targetYear));
+      if (yearDiff === 0) {
+        score += 50; // 年份完全匹配
+      } else if (yearDiff === 1) {
+        score += 20; // 年份相差1年
+      } else if (yearDiff > 5) {
+        score -= 30; // 年份相差超过5年，降低分数
+      }
+    }
+  }
+
+  // 3. 人气和评分（用于区分重名作品）
+  const popularity = result.popularity || 0;
+  const voteCount = result.vote_count || 0;
+
+  if (popularity > 20) score += 10;
+  else if (popularity > 10) score += 5;
+
+  if (voteCount > 1000) score += 10;
+  else if (voteCount > 100) score += 5;
+  else if (voteCount < 10) score -= 10;
+
+  // 4. 有背景图
+  if (result.backdrop_path) score += 5;
+
+  return score;
+}
+
+
 // 通过标题搜索TMDB
 async function searchByTitle(config: any, searchQuery: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
   const searchType = type === 'movie' ? 'movie' : 'tv';
@@ -213,13 +280,15 @@ async function searchByTitle(config: any, searchQuery: string, year: string, typ
     query: searchQuery
   };
 
-  if (year) {
-    if (searchType === 'movie') {
-      params.year = year;
-    } else {
-      params.first_air_date_year = year;
-    }
-  }
+  // 注意：不在搜索时限制年份，而是在结果中筛选
+  // 这样可以避免因年份不准确而漏掉正确结果
+  // if (year) {
+  //   if (searchType === 'movie') {
+  //     params.year = year;
+  //   } else {
+  //     params.first_air_date_year = year;
+  //   }
+  // }
 
   const searchUrl = buildApiUrl(config, `/search/${searchType}`, params);
 
@@ -230,23 +299,56 @@ async function searchByTitle(config: any, searchQuery: string, year: string, typ
   if (response.ok) {
     const data = await response.json();
     if (data.results && data.results.length > 0) {
-      // 优先选择名字与搜索关键词完全匹配的结果
-      const exactMatch = data.results.find((r: any) =>
-        (r.name === searchQuery || r.title === searchQuery || r.original_name === searchQuery || r.original_title === searchQuery)
-      );
-      if (exactMatch) {
-        console.log(`[TMDB] 找到完全匹配: "${exactMatch.name || exactMatch.title}" (搜索: "${searchQuery}")`);
-        return exactMatch;
+      // 过滤掉明显不相关的结果
+      let candidates = data.results.filter((r: any) => {
+        // 必须有基本信息
+        if (!r.name && !r.title) return false;
+
+        // 如果提供了年份，过滤掉年份相差超过5年的结果（避免匹配到完全不同年代的同名作品）
+        if (year) {
+          const resultDate = extractDate(r, searchType);
+          if (resultDate) {
+            const resultYear = parseInt(resultDate.substring(0, 4));
+            const yearDiff = Math.abs(resultYear - parseInt(year));
+            if (yearDiff > 5) {
+              console.log(`[TMDB] 过滤掉年份不匹配的结果: "${r.name || r.title}" (${resultYear}), 目标年份: ${year}`);
+              return false;
+            }
+          }
+        }
+
+        return true;
+      });
+
+      if (candidates.length === 0) {
+        console.log(`[TMDB] 年份过滤后无结果，使用原始结果`);
+        candidates = data.results;
       }
 
-      // 其次选择有背景图的结果
-      const withBackdrop = data.results.find((r: any) => r.backdrop_path);
-      if (withBackdrop) {
-        return withBackdrop;
-      }
+      // 计算每个候选结果的匹配分数
+      const scoredResults = candidates.map((r: any) => ({
+        result: r,
+        score: calculateMatchScore(r, searchQuery, year, searchType)
+      }));
 
-      // 最后返回第一个结果
-      return data.results[0];
+      // 按分数排序
+      scoredResults.sort((a, b) => b.score - a.score);
+
+      // 输出前3个候选结果的分数（用于调试）
+      console.log(`[TMDB] 搜索 "${searchQuery}" (年份: ${year || '未指定'}) 的候选结果:`);
+      scoredResults.slice(0, 3).forEach((item, index) => {
+        const r = item.result;
+        const resultDate = extractDate(r, searchType);
+        const resultYear = resultDate ? resultDate.substring(0, 4) : '未知年份';
+        console.log(`  ${index + 1}. "${r.name || r.title}" (${resultYear}) - 分数: ${item.score}, 人气: ${r.popularity?.toFixed(1)}, 评分数: ${r.vote_count}`);
+      });
+
+      // 返回分数最高的结果
+      if (scoredResults.length > 0) {
+        const bestMatch = scoredResults[0].result;
+        console.log(`[TMDB] 选择最佳匹配: "${bestMatch.name || bestMatch.title}" (分数: ${scoredResults[0].score})`);
+        return bestMatch;
+      }
     }
   }
   return null;
@@ -261,6 +363,7 @@ export async function GET(request: NextRequest) {
     const season = searchParams.get('season') || '1';
     const includeDetails = searchParams.get('details') === 'true';
     const imdbId = searchParams.get('imdb_id') || '';
+    const airDate = searchParams.get('air_date') || ''; // 新增：开播日期参数（格式：YYYY-MM-DD）
 
     if (!title) {
       return NextResponse.json({ error: '缺少标题参数' }, { status: 400 });
@@ -278,13 +381,11 @@ export async function GET(request: NextRequest) {
 
     let result: any = null;
     let detectedSeason = parseInt(season) || 1;
-    let usedImdbMatch = false;
 
     // 1. 优先通过IMDb ID精确匹配
     if (imdbId) {
       result = await findByImdbId(config, imdbId, apiKey, type, language);
       if (result) {
-        usedImdbMatch = true;
         // 对于电视剧，验证IMDb匹配的结果是否有效（检查是否有季数信息）
         if (searchType === 'tv') {
           try {
@@ -303,7 +404,6 @@ export async function GET(request: NextRequest) {
               if (validSeasons.length === 0) {
                 console.log(`[TMDB] IMDb匹配的结果 "${result.name}" 没有季数信息，回退到标题搜索`);
                 result = null;
-                usedImdbMatch = false;
               }
             }
           } catch (e) {
@@ -317,35 +417,98 @@ export async function GET(request: NextRequest) {
     if (!result) {
       const { titles: titlesToTry, seasonNumber } = cleanTitle(title);
       detectedSeason = seasonNumber; // 使用从标题中检测到的季数
-      for (const t of titlesToTry) {
-        // 用当前搜索关键词匹配，优先选择名字完全一致的结果
-        result = await searchByTitle(config, t, year, type, apiKey, language);
-        if (result) {
-          console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
-          break;
-        }
-        // 如果带年份搜索不到，尝试不带年份
-        if (year && !result) {
-          result = await searchByTitle(config, t, '', type, apiKey, language);
-          if (result) {
-            console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
-            break;
+
+      // 如果提供了开播日期，使用日期匹配
+      if (airDate && searchType === 'tv') {
+        console.log(`[TMDB] 使用开播日期匹配: ${airDate}`);
+
+        // 搜索所有可能的标题变体
+        let allCandidates: any[] = [];
+        for (const t of titlesToTry) {
+          const searchResult = await searchByTitle(config, t, '', type, apiKey, language);
+          if (searchResult) {
+            // 获取该剧的所有季信息
+            try {
+              const detailUrl = buildApiUrl(config, `/tv/${searchResult.id}`, {
+                api_key: apiKey,
+                language: language
+              });
+              const detailResponse = await fetch(detailUrl, {
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store',
+              });
+              if (detailResponse.ok) {
+                const detailData = await detailResponse.json();
+                const seasons = (detailData.seasons || []).filter((s: any) => s.season_number > 0);
+
+                // 将每一季作为候选项
+                for (const s of seasons) {
+                  allCandidates.push({
+                    ...searchResult,
+                    season_number: s.season_number,
+                    season_name: s.name,
+                    season_air_date: s.air_date,
+                    tv_id: searchResult.id
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('[TMDB] 获取季信息失败:', e);
+            }
           }
         }
-        // 如果指定类型搜索不到，尝试另一种类型
-        if (!result) {
-          const alternateType = type === 'movie' ? 'tv' : 'movie';
-          result = await searchByTitle(config, t, year, alternateType, apiKey, language);
+
+        // 根据开播日期选择最接近的季
+        if (allCandidates.length > 0) {
+          const candidatesWithDateDiff = allCandidates
+            .filter(c => c.season_air_date) // 只保留有开播日期的
+            .map(c => ({
+              candidate: c,
+              dateDiff: calculateDateDiff(airDate, c.season_air_date)
+            }))
+            .sort((a, b) => a.dateDiff - b.dateDiff);
+
+          if (candidatesWithDateDiff.length > 0) {
+            const best = candidatesWithDateDiff[0];
+            console.log(`[TMDB] 根据开播日期匹配到: "${best.candidate.season_name}" (第${best.candidate.season_number}季), 日期差异: ${best.dateDiff}天`);
+            result = best.candidate;
+            detectedSeason = best.candidate.season_number;
+          }
+        }
+      }
+
+      // 如果没有提供日期或日期匹配失败，使用原有的匹配逻辑
+      if (!result) {
+        for (const t of titlesToTry) {
+          // 用当前搜索关键词匹配，优先选择名字完全一致的结果
+          result = await searchByTitle(config, t, year, type, apiKey, language);
           if (result) {
-            console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}) 找到: ${result.name || result.title} (ID: ${result.id})`);
+            console.log(`[TMDB] 搜索 "${t}" 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
             break;
           }
-          // 不带年份再试一次
+          // 如果带年份搜索不到，尝试不带年份
           if (year && !result) {
-            result = await searchByTitle(config, t, '', alternateType, apiKey, language);
+            result = await searchByTitle(config, t, '', type, apiKey, language);
             if (result) {
-              console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}, 无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
+              console.log(`[TMDB] 搜索 "${t}" (无年份) 找到: ${result.name || result.title} (ID: ${result.id}), 检测季数: ${detectedSeason}`);
               break;
+            }
+          }
+          // 如果指定类型搜索不到，尝试另一种类型
+          if (!result) {
+            const alternateType = type === 'movie' ? 'tv' : 'movie';
+            result = await searchByTitle(config, t, year, alternateType, apiKey, language);
+            if (result) {
+              console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}) 找到: ${result.name || result.title} (ID: ${result.id})`);
+              break;
+            }
+            // 不带年份再试一次
+            if (year && !result) {
+              result = await searchByTitle(config, t, '', alternateType, apiKey, language);
+              if (result) {
+                console.log(`[TMDB] 搜索 "${t}" (类型: ${alternateType}, 无年份) 找到: ${result.name || result.title} (ID: ${result.id})`);
+                break;
+              }
             }
           }
         }
