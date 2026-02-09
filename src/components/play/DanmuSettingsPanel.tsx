@@ -161,13 +161,16 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
   );
 
   // 滑块 UI 状态与底层引擎设置隔离
+  // Note: use margin[0] and margin[1] as primitive deps, not settings.margin (new array ref each render)
+  const marginTop = settings.margin[0];
+  const marginBottom = settings.margin[1];
   useEffect(() => {
     setSliderFontSize(settings.fontSize);
     setSliderSpeed(settings.speed);
     setSliderOpacity(settings.opacity);
-    setSliderMarginTop(typeof settings.margin[0] === 'string' ? parseFloat(settings.margin[0]) : settings.margin[0]);
-    setSliderMarginBottom(typeof settings.margin[1] === 'string' ? parseFloat(settings.margin[1]) : settings.margin[1]);
-  }, [settings.fontSize, settings.speed, settings.opacity, settings.margin]);
+    setSliderMarginTop(typeof marginTop === 'string' ? parseFloat(marginTop) : marginTop);
+    setSliderMarginBottom(typeof marginBottom === 'string' ? parseFloat(marginBottom) : marginBottom);
+  }, [settings.fontSize, settings.speed, settings.opacity, marginTop, marginBottom]);
 
   const commitFontSize = useCallback(() => {
     if (sliderFontSize !== settings.fontSize) {
