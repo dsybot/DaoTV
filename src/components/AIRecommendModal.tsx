@@ -266,7 +266,7 @@ const MessageItem = memo(({
                   <div className="flex items-start gap-3">
                     <div className="relative">
                       <img src={video.thumbnail} alt={video.title} className="w-16 h-12 object-cover rounded shrink-0" />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
                         <div className="bg-red-600 text-white rounded-full p-1">
                           <Play className="w-3 h-3" />
                         </div>
