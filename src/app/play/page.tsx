@@ -677,6 +677,15 @@ function PlayPageClient() {
         airDate = bangumiDetails.air_date;
       }
 
+      // 调试日志
+      console.log('[TMDB] 详情状态:', {
+        hasMovieDetails: !!movieDetails,
+        hasBangumiDetails: !!bangumiDetails,
+        first_aired: movieDetails?.first_aired,
+        air_date: bangumiDetails?.air_date,
+        extractedAirDate: airDate
+      });
+
       // 必须有开播日期才进行匹配
       if (!airDate) {
         console.log('[TMDB] 等待开播日期加载...');
