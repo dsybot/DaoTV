@@ -1765,7 +1765,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 配置用户采集源权限弹窗 */}
       {showConfigureApisModal && selectedUser && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowConfigureApisModal(false);
           setSelectedUser(null);
           setSelectedApis([]);
@@ -1924,7 +1924,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 添加用户组弹窗 */}
       {showAddUserGroupForm && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowAddUserGroupForm(false);
           setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
         }}>
@@ -2152,7 +2152,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 编辑用户组弹窗 */}
       {showEditUserGroupForm && editingUserGroup && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowEditUserGroupForm(false);
           setEditingUserGroup(null);
         }}>
@@ -2364,7 +2364,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 配置用户组弹窗 */}
       {showConfigureUserGroupModal && selectedUserForGroup && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowConfigureUserGroupModal(false);
           setSelectedUserForGroup(null);
           setSelectedUserGroups([]);
@@ -2460,7 +2460,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 删除用户组确认弹窗 */}
       {showDeleteUserGroupModal && deletingUserGroup && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowDeleteUserGroupModal(false);
           setDeletingUserGroup(null);
         }}>
@@ -2560,7 +2560,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 删除用户确认弹窗 */}
       {showDeleteUserModal && deletingUser && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           // 删除中禁止关闭弹窗
           if (isLoading(`deleteUser_${deletingUser}`)) return;
           setShowDeleteUserModal(false);
@@ -2650,7 +2650,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
       {/* 批量设置用户组弹窗 */}
       {showBatchUserGroupModal && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowBatchUserGroupModal(false);
           setSelectedUserGroup('');
         }}>
@@ -3999,8 +3999,8 @@ const VideoSourceConfig = ({
               onClick={() => setShowValidationModal(true)}
               disabled={isValidating}
               className={`group px-4 py-2 text-sm rounded-xl font-medium flex items-center space-x-2 ${isValidating
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-br from-purple-600 via-indigo-500 to-purple-500 hover:from-purple-700 hover:via-indigo-600 hover:to-purple-600 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 backdrop-blur-sm border border-white/10'
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-br from-purple-600 via-indigo-500 to-purple-500 hover:from-purple-700 hover:via-indigo-600 hover:to-purple-600 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 backdrop-blur-sm border border-white/10'
                 } transition-all duration-300`}
             >
               {isValidating ? (
@@ -4046,8 +4046,8 @@ const VideoSourceConfig = ({
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className={`group px-4 py-2 text-sm rounded-xl font-medium flex items-center space-x-2 transition-all duration-300 backdrop-blur-sm border border-white/10 ${showAddForm
-                  ? 'bg-gradient-to-br from-gray-500 via-gray-600 to-gray-500 hover:from-gray-600 hover:via-gray-700 hover:to-gray-600 text-white shadow-lg shadow-gray-500/30 hover:shadow-xl hover:shadow-gray-600/40'
-                  : 'bg-gradient-to-br from-emerald-600 via-green-500 to-teal-500 hover:from-emerald-700 hover:via-green-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-green-500/40'
+                ? 'bg-gradient-to-br from-gray-500 via-gray-600 to-gray-500 hover:from-gray-600 hover:via-gray-700 hover:to-gray-600 text-white shadow-lg shadow-gray-500/30 hover:shadow-xl hover:shadow-gray-600/40'
+                : 'bg-gradient-to-br from-emerald-600 via-green-500 to-teal-500 hover:from-emerald-700 hover:via-green-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-green-500/40'
                 } hover:-translate-y-0.5 active:scale-95`}
             >
               {showAddForm ? (
@@ -4399,7 +4399,7 @@ const VideoSourceConfig = ({
 
       {/* 有效性检测弹窗 */}
       {showValidationModal && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' onClick={() => setShowValidationModal(false)}>
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50' onClick={() => setShowValidationModal(false)}>
           <div className='bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4' onClick={(e) => e.stopPropagation()}>
             <h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-4'>
               视频源有效性检测
@@ -4450,7 +4450,7 @@ const VideoSourceConfig = ({
 
       {/* 批量操作确认弹窗 */}
       {confirmModal.isOpen && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={confirmModal.onCancel}>
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={confirmModal.onCancel}>
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full' onClick={(e) => e.stopPropagation()}>
             <div className='p-6'>
               <div className='flex items-center justify-between mb-4'>
@@ -7715,7 +7715,7 @@ function AdminPageClient() {
 
       {/* 重置配置确认弹窗 */}
       {showResetConfigModal && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => setShowResetConfigModal(false)}>
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4' onClick={() => setShowResetConfigModal(false)}>
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full' onClick={(e) => e.stopPropagation()}>
             <div className='p-6'>
               <div className='flex items-center justify-between mb-6'>
