@@ -56,9 +56,8 @@ function CustomSelect<T extends string>({
       >
         <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''
+            }`}
           fill='none'
           stroke='currentColor'
           viewBox='0 0 24 24'
@@ -78,11 +77,10 @@ function CustomSelect<T extends string>({
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  option.value === value
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${option.value === value
                     ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
                     : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
-                }`}
+                  }`}
               >
                 <div className='flex items-center gap-2'>
                   {option.value === value && (
@@ -209,19 +207,19 @@ async function testSource(
     // 转换结果格式为 SearchResult
     const results: SearchResult[] = Array.isArray(data.results)
       ? data.results.map((item: any) => ({
-          id: item.vod_id || item.id || '',
-          title: item.vod_name || item.title || '未知标题',
-          poster: item.vod_pic || item.poster || '',
-          year: item.vod_year || item.year || '',
-          episodes: item.vod_play_url ? item.vod_play_url.split('$$$') : [],
-          episodes_titles: [],
-          source: sourceKey,
-          source_name: data.sourceName || sourceKey,
-          class: item.type_name || item.type || '',
-          desc: item.vod_content || item.desc || '',
-          type_name: item.type_name || item.type || '',
-          douban_id: item.vod_douban_id || item.douban_id,
-        }))
+        id: item.vod_id || item.id || '',
+        title: item.vod_name || item.title || '未知标题',
+        poster: item.vod_pic || item.poster || '',
+        year: item.vod_year || item.year || '',
+        episodes: item.vod_play_url ? item.vod_play_url.split('$$$') : [],
+        episodes_titles: [],
+        source: sourceKey,
+        source_name: data.sourceName || sourceKey,
+        class: item.type_name || item.type || '',
+        desc: item.vod_content || item.desc || '',
+        type_name: item.type_name || item.type || '',
+        douban_id: item.vod_douban_id || item.douban_id,
+      }))
       : [];
 
     return {
@@ -761,9 +759,8 @@ export default function SourceTestModule() {
               title='切换升序/降序'
             >
               <svg
-                className={`w-4 h-4 transition-transform duration-300 ${
-                  sortOrder === 'desc' ? 'rotate-180' : ''
-                }`}
+                className={`w-4 h-4 transition-transform duration-300 ${sortOrder === 'desc' ? 'rotate-180' : ''
+                  }`}
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'
@@ -781,11 +778,10 @@ export default function SourceTestModule() {
             return (
               <div
                 key={source.key}
-                className={`border rounded-lg p-4 transition-all hover:shadow-md ${
-                  source.disabled
+                className={`border rounded-lg p-4 transition-all hover:shadow-md ${source.disabled
                     ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
                     : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
-                }`}
+                  }`}
               >
                 <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
                   <div className='flex items-center gap-3 flex-1'>
@@ -796,11 +792,10 @@ export default function SourceTestModule() {
                     <div className='flex-1 min-w-0'>
                       <div className='flex items-center gap-2 flex-wrap'>
                         <span
-                          className={`font-medium ${
-                            source.disabled
+                          className={`font-medium ${source.disabled
                               ? 'text-gray-500 dark:text-gray-400'
                               : 'text-gray-900 dark:text-white'
-                          }`}
+                            }`}
                         >
                           {source.name}
                         </span>
@@ -872,26 +867,24 @@ export default function SourceTestModule() {
                     <button
                       onClick={() => handleTestSingle(source.key)}
                       disabled={result?.status === 'testing'}
-                      className={`px-3 py-2 sm:py-1 text-sm rounded-lg disabled:cursor-not-allowed transition-colors whitespace-nowrap ${
-                        source.disabled
+                      className={`px-3 py-2 sm:py-1 text-sm rounded-lg disabled:cursor-not-allowed transition-colors whitespace-nowrap ${source.disabled
                           ? 'bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-400'
                           : 'bg-gray-600 text-white hover:bg-gray-700 disabled:bg-gray-400'
-                      }`}
+                        }`}
                     >
                       {result?.status === 'testing'
                         ? '测试中'
                         : source.disabled
-                        ? '测试禁用源'
-                        : '单独测试'}
+                          ? '测试禁用源'
+                          : '单独测试'}
                     </button>
 
                     <button
                       onClick={() => toggleSource(source)}
-                      className={`px-3 py-2 sm:py-1 text-sm rounded-lg transition-colors ${
-                        source.disabled
+                      className={`px-3 py-2 sm:py-1 text-sm rounded-lg transition-colors ${source.disabled
                           ? 'bg-green-600 hover:bg-green-700 text-white'
                           : 'bg-red-600 hover:bg-red-700 text-white'
-                      }`}
+                        }`}
                     >
                       {source.disabled ? '启用' : '禁用'}
                     </button>
@@ -949,7 +942,7 @@ export default function SourceTestModule() {
 
       {/* 结果详情弹窗 - 使用 Portal 渲染到 body */}
       {isMounted && showResultsModal && createPortal(
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999 p-4'>
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-9999 p-4'>
           <div className='bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden'>
             <div className='flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700'>
               <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>

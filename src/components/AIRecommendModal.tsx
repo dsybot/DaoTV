@@ -252,7 +252,7 @@ const MessageItem = memo(({
                   </div>
                   <button
                     onClick={() => setPlayingVideoId(null)}
-                    className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-opacity"
+                    className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-opacity"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -316,7 +316,7 @@ const MessageItem = memo(({
                       </div>
                       <button
                         onClick={() => setPlayingVideoId(null)}
-                        className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-opacity"
+                        className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-opacity"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -329,7 +329,7 @@ const MessageItem = memo(({
                           alt={video.title}
                           className="w-20 h-15 object-cover rounded"
                         />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
                           <div className="bg-red-600 text-white rounded-full p-2">
                             <Play className="w-4 h-4" />
                           </div>
