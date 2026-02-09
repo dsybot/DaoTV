@@ -660,32 +660,51 @@ function PlayPageClient() {
   }, []);
 
   // 获取TMDB演员数据和分集信息
+  // 获取TMDB演员数据和分集信息
   useEffect(() => {
     const fetchTmdbData = async () => {
       if (!videoTitle) return;
-      // 如果演员数据已获取，且不是电视剧或分集信息已获取，则跳过
-      if (tmdbCast.length > 0 && (searchType !== 'tv' || tmdbEpisodes.length > 0)) return;
+
+      // 获取开播日期（从豆瓣或bangumi详情中）
+      let airDate = '';
+      if (movieDetails?.first_aired) {
+        // 豆瓣详情中的首播日期，格式可能是 "2024-01-15(中国大陆)"，需要提取日期部分
+        const dateMatch = movieDetails.first_aired.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          airDate = dateMatch[1];
+        }
+      } else if (bangumiDetails?.air_date) {
+        airDate = bangumiDetails.air_date;
+      }
+
+      // 必须有开播日期才进行匹配
+      if (!airDate) {
+        console.log('[TMDB] 等待开播日期加载...');
+        return;
+      }
+
+      // 生成缓存键（基于标题、年份、类型、季数、开播日期）
+      const type = searchType === 'movie' ? 'movie' : 'tv';
+      const detectedSeason = parseSeasonFromTitle(videoTitle);
+      const cacheKey = `tmdb_${videoTitle}_${videoYear}_${type}_${detectedSeason}_${airDate}`;
+
+      // 检查 sessionStorage 缓存
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const data = JSON.parse(cached);
+          console.log('[TMDB] 使用会话缓存数据');
+          if (data.cast) setTmdbCast(data.cast);
+          if (data.episodes) setTmdbEpisodes(data.episodes);
+          return;
+        }
+      } catch (e) {
+        console.warn('[TMDB] 读取缓存失败:', e);
+      }
 
       try {
-        const type = searchType === 'movie' ? 'movie' : 'tv';
-        // 从标题解析季数
-        const detectedSeason = parseSeasonFromTitle(videoTitle);
-
-        // 获取开播日期（从豆瓣或bangumi详情中）
-        let airDate = '';
-        if (movieDetails?.first_aired) {
-          // 豆瓣详情中的首播日期，格式可能是 "2024-01-15(中国大陆)"，需要提取日期部分
-          const dateMatch = movieDetails.first_aired.match(/^(\d{4}-\d{2}-\d{2})/);
-          if (dateMatch) {
-            airDate = dateMatch[1];
-          }
-        } else if (bangumiDetails?.air_date) {
-          airDate = bangumiDetails.air_date;
-        }
-
-        console.log(`[TMDB] 开始获取演员数据: ${videoTitle}, type: ${type}, season: ${detectedSeason}, airDate: ${airDate || '未提供'}`);
-        const airDateParam = airDate ? `&air_date=${encodeURIComponent(airDate)}` : '';
-        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true${airDateParam}`);
+        console.log(`[TMDB] 开始获取演员数据: ${videoTitle}, type: ${type}, season: ${detectedSeason}, airDate: ${airDate}`);
+        const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true&air_date=${encodeURIComponent(airDate)}`);
         console.log(`[TMDB] API响应状态: ${response.status}`);
         if (response.ok) {
           const data = await response.json();
@@ -695,15 +714,26 @@ function PlayPageClient() {
             hasEpisodes: !!data.episodes,
             episodesLength: data.episodes?.length || 0,
           });
+
+          // 保存到 sessionStorage
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              cast: data.cast || [],
+              episodes: data.episodes || []
+            }));
+          } catch (e) {
+            console.warn('[TMDB] 保存缓存失败:', e);
+          }
+
           // 获取演员数据
-          if (data.cast && data.cast.length > 0 && tmdbCast.length === 0) {
+          if (data.cast && data.cast.length > 0) {
             console.log(`[TMDB] 设置演员数据: ${data.cast.length} 个演员`);
             setTmdbCast(data.cast);
           } else if (!data.cast || data.cast.length === 0) {
             console.warn(`[TMDB] 未获取到演员数据`);
           }
           // 获取分集信息（仅电视剧）
-          if (searchType === 'tv' && data.episodes && data.episodes.length > 0 && tmdbEpisodes.length === 0) {
+          if (searchType === 'tv' && data.episodes && data.episodes.length > 0) {
             // 直接使用API返回的分集信息（API已经通过日期匹配找到了正确的季）
             console.log(`[TMDB] 使用匹配到的第 ${data.matched_season || detectedSeason} 季的分集信息`);
             setTmdbEpisodes(data.episodes);
@@ -714,7 +744,7 @@ function PlayPageClient() {
       }
     };
     fetchTmdbData();
-  }, [videoTitle, videoYear, searchType, tmdbCast.length, tmdbEpisodes.length, parseSeasonFromTitle, movieDetails, bangumiDetails]);
+  }, [videoTitle, videoYear, searchType, parseSeasonFromTitle, movieDetails, bangumiDetails]);
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {
