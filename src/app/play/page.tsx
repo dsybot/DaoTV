@@ -372,25 +372,29 @@ function PlayPageClient() {
   ]);
 
   // 更新全屏标题层（当集数变化时）
+  // 🎬 更新全屏标题层内容（集数变化时）
+  // portalContainer 作为依赖确保 ArtPlayer 初始化后再执行
   useEffect(() => {
     if (!artPlayerRef.current) return;
-
     const titleLayer = artPlayerRef.current.layers['fullscreen-title'];
     if (!titleLayer) return;
 
     const episodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
-    const hasEpisodes = detail?.episodes && detail.episodes.length > 0;
+    const hasEpisodes = detail?.episodes && detail.episodes.length > 1;
 
-    // 更新标题层的HTML内容
     titleLayer.innerHTML = `
       <div class="fullscreen-title-container">
         <div class="fullscreen-title-content">
           <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
-          ${hasEpisodes && episodeName ? `<span class="fullscreen-episode-text">${episodeName}</span>` : ''}
+          ${hasEpisodes && episodeName
+        ? `<span class="fullscreen-episode-text">${episodeName}</span>`
+        : hasEpisodes
+          ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
+          : ''}
         </div>
       </div>
     `;
-  }, [currentEpisodeIndex, detail]);
+  }, [currentEpisodeIndex, detail, portalContainer]);
 
   // 获取自定义去广告代码
   useEffect(() => {
@@ -4634,8 +4638,8 @@ function PlayPageClient() {
           const video = artPlayerRef.current.video as HTMLVideoElement;
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）
-          const episodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
-          const hasEpisodes = detail?.episodes && detail.episodes.length > 0;
+          const fsEpisodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
+          const fsHasEpisodes = detail?.episodes && detail.episodes.length > 1;
 
           artPlayerRef.current.layers.add({
             name: 'fullscreen-title',
@@ -4643,7 +4647,11 @@ function PlayPageClient() {
               <div class="fullscreen-title-container">
                 <div class="fullscreen-title-content">
                   <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
-                  ${hasEpisodes && episodeName ? `<span class="fullscreen-episode-text">${episodeName}</span>` : ''}
+                  ${fsHasEpisodes && fsEpisodeName
+                ? `<span class="fullscreen-episode-text">${fsEpisodeName}</span>`
+                : fsHasEpisodes
+                  ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
+                  : ''}
                 </div>
               </div>
             `,
@@ -4825,118 +4833,6 @@ function PlayPageClient() {
 
           // 应用CSS优化
           optimizeDanmukuControlsCSS();
-
-          // 🎬 添加全屏顶部标题样式
-          const addFullscreenTitleStyles = () => {
-            if (document.getElementById('fullscreen-title-styles')) return;
-
-            const style = document.createElement('style');
-            style.id = 'fullscreen-title-styles';
-            style.textContent = `
-              /* 全屏顶部标题容器 */
-              .fullscreen-title-container {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 70%, transparent 100%);
-                opacity: 0;
-                transition: opacity 0.3s ease;
-              }
-
-              /* 当控制栏显示时，标题也显示 */
-              .art-control-show .fullscreen-title-container {
-                opacity: 1;
-              }
-
-              /* 当控制栏被锁定时（移动端锁定按钮），标题不显示 */
-              .art-lock .fullscreen-title-container {
-                opacity: 0 !important;
-              }
-
-              /* 标题内容 */
-              .fullscreen-title-content {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                padding: 0 20px;
-              }
-
-              /* 标题文字 */
-              .fullscreen-title-text {
-                font-size: 24px;
-                font-weight: 600;
-                color: white;
-                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-                margin: 0;
-                max-width: 800px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              }
-
-              /* 集数文字 */
-              .fullscreen-episode-text {
-                font-size: 18px;
-                font-weight: 500;
-                color: rgba(255, 255, 255, 0.9);
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 6px 16px;
-                border-radius: 20px;
-                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-                white-space: nowrap;
-              }
-
-              /* 移动端适配 */
-              @media (max-width: 768px) {
-                .fullscreen-title-container {
-                  height: 60px;
-                }
-
-                .fullscreen-title-text {
-                  font-size: 16px;
-                  max-width: 55vw;
-                }
-
-                .fullscreen-episode-text {
-                  font-size: 13px;
-                  padding: 4px 10px;
-                }
-
-                .fullscreen-title-content {
-                  gap: 10px;
-                  padding: 0 15px;
-                }
-              }
-
-              /* 超小屏幕适配 */
-              @media (max-width: 480px) {
-                .fullscreen-title-container {
-                  height: 50px;
-                }
-
-                .fullscreen-title-text {
-                  font-size: 14px;
-                  max-width: 50vw;
-                }
-
-                .fullscreen-episode-text {
-                  font-size: 12px;
-                  padding: 3px 8px;
-                }
-
-                .fullscreen-title-content {
-                  gap: 8px;
-                  padding: 0 12px;
-                }
-              }
-            `;
-            document.head.appendChild(style);
-          };
-
-          addFullscreenTitleStyles();
 
           // 精确解决弹幕菜单与进度条拖拽冲突 - 基于ArtPlayer原生拖拽逻辑
           const fixDanmakuProgressConflict = () => {
