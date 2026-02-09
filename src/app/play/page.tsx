@@ -371,31 +371,6 @@ function PlayPageClient() {
     availableSources,
   ]);
 
-  // 更新全屏标题层（当集数变化时）
-  // 🎬 更新全屏标题层内容（集数变化时）
-  // portalContainer 作为依赖确保 ArtPlayer 初始化后再执行
-  useEffect(() => {
-    if (!artPlayerRef.current) return;
-    const titleLayer = artPlayerRef.current.layers['fullscreen-title'];
-    if (!titleLayer) return;
-
-    const episodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
-    const hasEpisodes = detail?.episodes && detail.episodes.length > 1;
-
-    titleLayer.innerHTML = `
-      <div class="fullscreen-title-container">
-        <div class="fullscreen-title-content">
-          <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
-          ${hasEpisodes && episodeName
-        ? `<span class="fullscreen-episode-text">${episodeName}</span>`
-        : hasEpisodes
-          ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
-          : ''}
-        </div>
-      </div>
-    `;
-  }, [currentEpisodeIndex, detail, portalContainer]);
-
   // 获取自定义去广告代码
   useEffect(() => {
     const fetchAdFilterCode = async () => {
@@ -867,6 +842,30 @@ function PlayPageClient() {
   const [showEpisodePopup, setShowEpisodePopup] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+
+  // 🎬 更新全屏标题层内容（集数变化时）
+  // portalContainer 作为依赖确保 ArtPlayer 初始化后再执行
+  useEffect(() => {
+    if (!artPlayerRef.current) return;
+    const titleLayer = artPlayerRef.current.layers['fullscreen-title'];
+    if (!titleLayer) return;
+
+    const episodeName = detail?.episodes_titles?.[currentEpisodeIndex] || '';
+    const hasEpisodes = detail?.episodes && detail.episodes.length > 1;
+
+    titleLayer.innerHTML = `
+      <div class="fullscreen-title-container">
+        <div class="fullscreen-title-content">
+          <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
+          ${hasEpisodes && episodeName
+        ? `<span class="fullscreen-episode-text">${episodeName}</span>`
+        : hasEpisodes
+          ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
+          : ''}
+        </div>
+      </div>
+    `;
+  }, [currentEpisodeIndex, detail, portalContainer]);
 
   // 换源加载状态
   const [isVideoLoading, setIsVideoLoading] = useState(true);
