@@ -199,13 +199,18 @@ export const WebSRSettingsPanel = memo(function WebSRSettingsPanel({
         </div>
         <button
           onClick={(e) => {
+            console.log('WebSR X button onClick triggered!');
             e.preventDefault();
             e.stopPropagation();
             onClose();
           }}
           onMouseDown={(e) => {
+            console.log('WebSR X button onMouseDown triggered!');
             e.preventDefault();
             e.stopPropagation();
+          }}
+          onMouseEnter={() => {
+            console.log('WebSR X button onMouseEnter triggered!');
           }}
           className='p-2 hover:bg-white/10 rounded-xl transition-all duration-200 group active:scale-95'
           style={{
