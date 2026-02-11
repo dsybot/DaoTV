@@ -22,21 +22,18 @@ export function GlassmorphismEffect({
       saturate: 200,
       contrast: 120,
       brightness: 110,
-      bgOpacity: 0.1,
     },
     medium: {
       blur: 28,
       saturate: 240,
       contrast: 120,
       brightness: 110,
-      bgOpacity: 0.15,
     },
     strong: {
       blur: 35,
       saturate: 280,
       contrast: 130,
       brightness: 115,
-      bgOpacity: 0.2,
     },
   };
 
@@ -48,18 +45,9 @@ export function GlassmorphismEffect({
       style={{
         position: 'relative',
         overflow: 'hidden',
-        // 基础背景
-        background: `rgba(255, 255, 255, ${config.bgOpacity})`,
         // 背景模糊和滤镜
         backdropFilter: `blur(${config.blur}px) saturate(${config.saturate}%) contrast(${config.contrast}%) brightness(${config.brightness}%)`,
         WebkitBackdropFilter: `blur(${config.blur}px) saturate(${config.saturate}%) contrast(${config.contrast}%) brightness(${config.brightness}%)`,
-        // 渐变边框效果
-        backgroundImage: `
-          linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1)),
-          linear-gradient(rgba(255, 255, 255, ${config.bgOpacity}), rgba(255, 255, 255, ${config.bgOpacity}))
-        `,
-        backgroundOrigin: 'border-box',
-        backgroundClip: 'padding-box, border-box',
         border: '0.5px solid transparent',
         // 阴影
         boxShadow: `
@@ -73,6 +61,15 @@ export function GlassmorphismEffect({
         willChange: 'transform, filter',
       }}
     >
+      {/* 基础背景层 - 使用 Tailwind 深色模式 */}
+      <div
+        className="absolute inset-0 bg-white/15 dark:bg-gray-900/40"
+        style={{
+          pointerEvents: 'none',
+          borderRadius: 'inherit',
+        }}
+      />
+
       {/* 液态流动效果 */}
       {animated && (
         <div
