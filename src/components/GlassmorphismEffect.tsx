@@ -129,7 +129,7 @@ export function GlassmorphismEffect({
       />
 
       {/* 内容 */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
+      <div style={{ position: 'relative', zIndex: 1, display: 'contents' }}>
         {children}
       </div>
 
