@@ -63,7 +63,7 @@ export function GlassmorphismEffect({
     >
       {/* 基础背景层 - 使用 Tailwind 深色模式 */}
       <div
-        className="absolute inset-0 bg-white/15 dark:bg-gray-900/40"
+        className="absolute inset-0 bg-white/50 dark:bg-gray-900/40"
         style={{
           pointerEvents: 'none',
           borderRadius: 'inherit',
