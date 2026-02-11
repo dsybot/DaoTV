@@ -197,28 +197,17 @@ export const WebSRSettingsPanel = memo(function WebSRSettingsPanel({
             </span>
           )}
         </div>
-        <button
-          onClick={(e) => {
-            console.log('WebSR X button onClick triggered!');
-            e.preventDefault();
-            e.stopPropagation();
-            onClose();
-          }}
-          onMouseDown={(e) => {
-            console.log('WebSR X button onMouseDown triggered!');
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onMouseEnter={() => {
-            console.log('WebSR X button onMouseEnter triggered!');
-          }}
-          className='p-2 hover:bg-white/10 rounded-xl transition-all duration-200 group active:scale-95'
-          style={{
-            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}
-        >
-          <X className='w-4 h-4 text-gray-400 transition-colors group-hover:text-white' />
-        </button>
+        <div className='relative flex items-center gap-1'>
+          <button
+            onClick={onClose}
+            className='p-2 hover:bg-white/10 rounded-xl transition-all duration-200 group active:scale-95'
+            style={{
+              transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            <X className='w-4 h-4 text-gray-400 transition-colors group-hover:text-white' />
+          </button>
+        </div>
       </div>
 
       {/* 内容区域 */}
