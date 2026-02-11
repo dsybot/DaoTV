@@ -71,19 +71,18 @@ const MobileHeader = ({ showBackButton = false, showAIButton = false, onAIClick 
           <ThemeToggle />
           <UserMenu />
         </div>
-      </div>
 
-      {/* 中间：Logo（绝对居中） */}
-      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10'>
-        <Link
-          href='/'
-          className='text-2xl font-bold text-green-600 dark:text-green-400 tracking-tight hover:opacity-80 transition-opacity'
-        >
-          {siteName}
-        </Link>
-      </div>
-    </GlassmorphismEffect>
-    </header >
+        {/* 中间：Logo（绝对居中） */}
+        <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10'>
+          <Link
+            href='/'
+            className='text-2xl font-bold text-green-600 dark:text-green-400 tracking-tight hover:opacity-80 transition-opacity'
+          >
+            {siteName}
+          </Link>
+        </div>
+      </GlassmorphismEffect>
+    </header>
   );
 };
 
