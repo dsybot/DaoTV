@@ -198,7 +198,15 @@ export const WebSRSettingsPanel = memo(function WebSRSettingsPanel({
           )}
         </div>
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           className='p-2 hover:bg-white/10 rounded-xl transition-all duration-200 group active:scale-95'
           style={{
             transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
