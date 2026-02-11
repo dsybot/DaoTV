@@ -343,7 +343,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       >
         <GlassmorphismEffect
           intensity="medium"
-          animated={true}
+          animated={false}
           className="pointer-events-auto w-full md:w-auto md:max-w-[calc(100vw-2rem)] border border-white/20 dark:border-gray-700/20 md:rounded-full rounded-2xl overflow-visible md:mx-4"
         >
           <div ref={navContainerRef} className="relative">

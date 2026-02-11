@@ -80,8 +80,8 @@ export function GlassmorphismEffect({
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.13) 50%, transparent 70%)',
-            animation: 'liquidFlow 3s ease-in-out infinite',
+            background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%)',
+            animation: 'liquidFlow 6s ease-in-out infinite',
             pointerEvents: 'none',
             borderRadius: 'inherit',
           }}
