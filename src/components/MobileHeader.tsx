@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { BackButton } from './BackButton';
+import { GlassmorphismEffect } from './GlassmorphismEffect';
 import { useSite } from './SiteProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
@@ -16,8 +17,12 @@ interface MobileHeaderProps {
 const MobileHeader = ({ showBackButton = false, showAIButton = false, onAIClick }: MobileHeaderProps) => {
   const { siteName } = useSite();
   return (
-    <header className='md:hidden fixed top-0 left-0 right-0 z-999 w-full bg-white/90 backdrop-blur-md border-b border-gray-200/50 shadow-sm dark:bg-gray-900/90 dark:border-gray-700/50'>
-      <div className='h-12 flex items-center justify-between px-4'>
+    <header className='md:hidden fixed top-0 left-0 right-0 z-999 w-full'>
+      <GlassmorphismEffect
+        intensity="light"
+        animated={true}
+        className='h-12 flex items-center justify-between px-4 border-b border-white/20 dark:border-gray-700/20'
+      >
         {/* 左侧：搜索按钮、AI按钮、返回按钮 */}
         <div className='flex items-center gap-2'>
           <Link
@@ -69,15 +74,16 @@ const MobileHeader = ({ showBackButton = false, showAIButton = false, onAIClick 
       </div>
 
       {/* 中间：Logo（绝对居中） */}
-      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10'>
         <Link
           href='/'
-          className='text-2xl font-bold text-green-600 tracking-tight hover:opacity-80 transition-opacity'
+          className='text-2xl font-bold text-green-600 dark:text-green-400 tracking-tight hover:opacity-80 transition-opacity'
         >
           {siteName}
         </Link>
       </div>
-    </header>
+    </GlassmorphismEffect>
+    </header >
   );
 };
 

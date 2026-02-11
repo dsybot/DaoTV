@@ -21,6 +21,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, startTransition, useMemo } from 'react';
 
 import { FastLink } from './FastLink';
+import { GlassmorphismEffect } from './GlassmorphismEffect';
 
 interface MobileBottomNavProps {
   activePath?: string;
@@ -340,37 +341,75 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       <nav
         className='fixed left-0 right-0 z-600 flex justify-center pointer-events-none bottom-0 md:top-4 md:bottom-auto'
       >
-        <div
-          ref={navContainerRef}
-          className="pointer-events-auto w-full md:w-auto md:max-w-[calc(100vw-2rem)] bg-white/30 backdrop-blur-2xl border border-gray-200/20 dark:bg-gray-900/20 dark:border-gray-700/20 shadow-2xl shadow-black/10 dark:shadow-black/30 md:rounded-full rounded-2xl overflow-visible md:mx-4 relative"
+        <GlassmorphismEffect
+          intensity="medium"
+          animated={true}
+          className="pointer-events-auto w-full md:w-auto md:max-w-[calc(100vw-2rem)] border border-white/20 dark:border-gray-700/20 md:rounded-full rounded-2xl overflow-visible md:mx-4"
         >
-          <ul
-            className="flex items-center overflow-x-auto scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2"
-            style={{ minHeight: '3.5rem' }}
-          >
-            {/* 移动端：显示前4个非desktopOnly项目 */}
-            {navItems
-              .filter((item: any) => !item.desktopOnly)
-              .slice(0, 4)
-              .map((item: any) => {
+          <div ref={navContainerRef} className="relative">
+            <ul
+              className="flex items-center overflow-x-auto scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2"
+              style={{ minHeight: '3.5rem' }}
+            >
+              {/* 移动端：显示前4个非desktopOnly项目 */}
+              {navItems
+                .filter((item: any) => !item.desktopOnly)
+                .slice(0, 4)
+                .map((item: any) => {
+                  const active = isActive(item.href);
+                  const theme = getColorTheme(item.href);
+
+                  return (
+                    <li key={item.href} className="flex-1 shrink-0 md:hidden">
+                      <FastLink
+                        href={item.href}
+                        useTransitionNav
+                        onClick={() => setActive(item.href)}
+                        className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
+                      >
+                        <item.icon
+                          className={`h-6 w-6 transition-all duration-200 ${active ? theme.active : 'text-gray-700 dark:text-gray-200'
+                            }`}
+                          style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
+                        />
+                        <span
+                          className={`text-[10px] transition-all duration-200 ${active ? `${theme.active} font-semibold` : 'text-gray-700 dark:text-gray-200'
+                            }`}
+                          style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
+                        >
+                          {item.label}
+                        </span>
+                      </FastLink>
+                    </li>
+                  );
+                })}
+
+              {/* 桌面端：根据maxVisibleCount显示 */}
+              {visibleItems.map((item: any, index: number) => {
                 const active = isActive(item.href);
                 const theme = getColorTheme(item.href);
 
                 return (
-                  <li key={item.href} className="flex-1 shrink-0 md:hidden">
+                  <li
+                    key={item.href}
+                    className='hidden md:flex shrink-0 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
+                    style={{ animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards` }}
+                  >
                     <FastLink
                       href={item.href}
                       useTransitionNav
                       onClick={() => setActive(item.href)}
-                      className="group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
+                      className="group flex flex-col items-center justify-center min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200"
                     >
                       <item.icon
-                        className={`h-6 w-6 transition-all duration-200 ${active ? theme.active : 'text-gray-700 dark:text-gray-200'
+                        className={`h-6 w-6 transition-all duration-200 ${active
+                          ? `${theme.active} scale-110`
+                          : `text-gray-700 dark:text-gray-200 ${theme.hover} group-hover:scale-110`
                           }`}
                         style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
                       />
                       <span
-                        className={`text-[10px] transition-all duration-200 ${active ? `${theme.active} font-semibold` : 'text-gray-700 dark:text-gray-200'
+                        className={`text-xs transition-all duration-200 ${active ? `${theme.active} font-semibold` : `text-gray-700 dark:text-gray-200 ${theme.hover}`
                           }`}
                         style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
                       >
@@ -381,89 +420,54 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
                 );
               })}
 
-            {/* 桌面端：根据maxVisibleCount显示 */}
-            {visibleItems.map((item: any, index: number) => {
-              const active = isActive(item.href);
-              const theme = getColorTheme(item.href);
-
-              return (
+              {/* 桌面端更多下拉菜单按钮 */}
+              {hasHiddenItems && (
                 <li
-                  key={item.href}
-                  className='hidden md:flex shrink-0 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
-                  style={{ animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards` }}
+                  className="hidden md:flex shrink-0 relative"
+                  ref={dropdownRef}
+                  style={{ animation: `slideInFromBottom 0.3s ease-out ${visibleItems.length * 0.05}s forwards` }}
                 >
-                  <FastLink
-                    href={item.href}
-                    useTransitionNav
-                    onClick={() => setActive(item.href)}
-                    className="group flex flex-col items-center justify-center min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200"
+                  <button
+                    onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
+                    className={`group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200 ${hasActiveHiddenItem ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-200'
+                      }`}
                   >
-                    <item.icon
-                      className={`h-6 w-6 transition-all duration-200 ${active
-                        ? `${theme.active} scale-110`
-                        : `text-gray-700 dark:text-gray-200 ${theme.hover} group-hover:scale-110`
-                        }`}
-                      style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
-                    />
-                    <span
-                      className={`text-xs transition-all duration-200 ${active ? `${theme.active} font-semibold` : `text-gray-700 dark:text-gray-200 ${theme.hover}`
-                        }`}
-                      style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
-                    >
-                      {item.label}
-                    </span>
-                  </FastLink>
+                    <div className="relative">
+                      <ChevronDown
+                        className={`h-6 w-6 transition-all duration-200 group-hover:scale-110 ${showDesktopDropdown ? 'rotate-180' : ''}`}
+                        style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
+                      />
+                      {hasActiveHiddenItem && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full"></span>
+                      )}
+                    </div>
+                    <span style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>更多</span>
+                  </button>
                 </li>
-              );
-            })}
+              )}
 
-            {/* 桌面端更多下拉菜单按钮 */}
-            {hasHiddenItems && (
-              <li
-                className="hidden md:flex shrink-0 relative"
-                ref={dropdownRef}
-                style={{ animation: `slideInFromBottom 0.3s ease-out ${visibleItems.length * 0.05}s forwards` }}
-              >
+              {/* 更多按钮 - 仅在移动端显示 */}
+              <li className="flex-1 md:hidden shrink-0">
                 <button
-                  onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
-                  className={`group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200 ${hasActiveHiddenItem ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-200'
-                    }`}
+                  onClick={() => setShowMoreMenu(true)}
+                  className="flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
                 >
-                  <div className="relative">
-                    <ChevronDown
-                      className={`h-6 w-6 transition-all duration-200 group-hover:scale-110 ${showDesktopDropdown ? 'rotate-180' : ''}`}
-                      style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
-                    />
-                    {hasActiveHiddenItem && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full"></span>
-                    )}
-                  </div>
-                  <span style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>更多</span>
+                  <MoreHorizontal
+                    className="h-6 w-6 text-gray-700 dark:text-gray-200 transition-all duration-200"
+                    style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
+                  />
+                  <span
+                    className="text-[10px] text-gray-700 dark:text-gray-200 transition-all duration-200"
+                    style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
+                  >
+                    更多
+                  </span>
                 </button>
               </li>
-            )}
 
-            {/* 更多按钮 - 仅在移动端显示 */}
-            <li className="flex-1 md:hidden shrink-0">
-              <button
-                onClick={() => setShowMoreMenu(true)}
-                className="flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200"
-              >
-                <MoreHorizontal
-                  className="h-6 w-6 text-gray-700 dark:text-gray-200 transition-all duration-200"
-                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }}
-                />
-                <span
-                  className="text-[10px] text-gray-700 dark:text-gray-200 transition-all duration-200"
-                  style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
-                >
-                  更多
-                </span>
-              </button>
-            </li>
-
-          </ul>
-        </div>
+            </ul>
+          </div>
+        </GlassmorphismEffect>
       </nav>
 
       {/* 桌面端下拉菜单 - 放在nav外面避免被裁剪 */}
