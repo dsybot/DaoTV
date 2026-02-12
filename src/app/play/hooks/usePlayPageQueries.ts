@@ -79,7 +79,11 @@ export function useDoubanDetailsQuery(
     queryFn: async () => {
       if (!doubanId) throw new Error('Douban ID is required');
       const result = await getDoubanDetails(String(doubanId));
-      return result;
+      // ✅ 返回 data 对象，保持与原代码一致
+      if (result.code === 200 && result.data && result.data.title) {
+        return result.data;
+      }
+      return null;
     },
     enabled: enabled !== undefined ? enabled : !!doubanId,
     staleTime: 30 * 60 * 1000, // 30分钟 - 外部 API 数据变化很少
@@ -127,7 +131,11 @@ export function useDoubanCommentsQuery(
         limit: 10,
         sort: 'new_score',
       });
-      return result;
+      // ✅ 返回 comments 数组，保持与原代码一致
+      if (result.code === 200 && result.data) {
+        return result.data.comments;
+      }
+      return [];
     },
     enabled: enabled !== undefined ? enabled : !!doubanId,
     staleTime: 5 * 60 * 1000, // 5分钟 - 评论更新较频繁
