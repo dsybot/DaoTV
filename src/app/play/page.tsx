@@ -37,6 +37,10 @@ import {
   useSaveFavoriteMutation,
   useDeleteFavoriteMutation,
 } from './hooks/usePlayPageMutations';
+import {
+  useDoubanDetailsQuery,
+  useDoubanCommentsQuery,
+} from './hooks/usePlayPageQueries';
 
 import AcgSearch from '@/components/AcgSearch';
 import CastPhotos from '@/components/CastPhotos';
@@ -123,16 +127,6 @@ function PlayPageClient() {
 
   // 收藏状态
   const [favorited, setFavorited] = useState(false);
-
-  // 豆瓣详情状态
-  const [movieDetails, setMovieDetails] = useState<any>(null);
-  const [loadingMovieDetails, setLoadingMovieDetails] = useState(false);
-  const [lastMovieDetailsFetchTime, setLastMovieDetailsFetchTime] = useState<number>(0); // 记录上次请求时间
-
-  // 豆瓣短评状态
-  const [movieComments, setMovieComments] = useState<any[]>([]);
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [commentsError, setCommentsError] = useState<string | null>(null);
 
   // 返回顶部按钮显示状态
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -303,6 +297,24 @@ function PlayPageClient() {
   const [videoDoubanId, setVideoDoubanId] = useState(
     parseInt(searchParams.get('douban_id') || '0') || 0
   );
+
+  // TanStack Query queries - 豆瓣详情和评论（依赖 videoDoubanId）
+  const {
+    data: movieDetails,
+    status: movieDetailsStatus,
+    error: movieDetailsError,
+  } = useDoubanDetailsQuery(videoDoubanId);
+
+  const {
+    data: movieComments,
+    status: commentsStatus,
+    error: commentsError,
+  } = useDoubanCommentsQuery(videoDoubanId);
+
+  // 兼容旧代码的 loading 状态
+  const loadingMovieDetails = movieDetailsStatus === 'pending';
+  const loadingComments = commentsStatus === 'pending';
+
   // 当前源和ID
   const [currentSource, setCurrentSource] = useState(
     searchParams.get('source') || ''
@@ -578,85 +590,14 @@ function PlayPageClient() {
         } finally {
           setLoadingBangumiDetails(false);
         }
-      } else {
-        // 加载豆瓣详情
-        if (loadingMovieDetails || movieDetails) {
-          return;
-        }
-
-        // 🎯 防止频繁重试：如果上次请求在1分钟内，则跳过
-        const now = Date.now();
-        const oneMinute = 60 * 1000; // 1分钟 = 60秒 = 60000毫秒
-        if (lastMovieDetailsFetchTime > 0 && now - lastMovieDetailsFetchTime < oneMinute) {
-          console.log(`⏱️ 距离上次请求不足1分钟，跳过重试（${Math.floor((now - lastMovieDetailsFetchTime) / 1000)}秒前）`);
-          return;
-        }
-
-        setLoadingMovieDetails(true);
-        setLastMovieDetailsFetchTime(now); // 记录本次请求时间
-        try {
-          const response = await getDoubanDetails(videoDoubanId.toString());
-          // 🎯 只有在数据有效（title 存在）时才设置 movieDetails
-          if (response.code === 200 && response.data && response.data.title) {
-            setMovieDetails(response.data);
-          } else if (response.code === 200 && response.data && !response.data.title) {
-            console.warn('⚠️ Douban 返回空数据（缺少标题），1分钟后将自动重试');
-            setMovieDetails(null);
-          }
-        } catch (error) {
-          console.error('Failed to load movie details:', error);
-          setMovieDetails(null);
-        } finally {
-          setLoadingMovieDetails(false);
-        }
       }
+      // 🚀 TanStack Query 会自动加载豆瓣详情和评论，无需手动 useEffect
     };
 
     loadMovieDetails();
-  }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails, lastMovieDetailsFetchTime]);
+  }, [videoDoubanId, loadingBangumiDetails, bangumiDetails]);
 
-  // 加载豆瓣短评
-  useEffect(() => {
-    const loadComments = async () => {
-      if (!videoDoubanId || videoDoubanId === 0 || detail?.source === 'shortdrama') {
-        return;
-      }
-
-      // 跳过bangumi ID
-      if (isBangumiId(videoDoubanId)) {
-        return;
-      }
-
-      // 如果已经加载过短评，不重复加载
-      if (loadingComments || movieComments.length > 0) {
-        return;
-      }
-
-      setLoadingComments(true);
-      setCommentsError(null);
-      try {
-        const response = await getDoubanComments({
-          id: videoDoubanId.toString(),
-          start: 0,
-          limit: 10,
-          sort: 'new_score'
-        });
-
-        if (response.code === 200 && response.data) {
-          setMovieComments(response.data.comments);
-        } else {
-          setCommentsError(response.message);
-        }
-      } catch (error) {
-        console.error('Failed to load comments:', error);
-        setCommentsError('加载短评失败');
-      } finally {
-        setLoadingComments(false);
-      }
-    };
-
-    loadComments();
-  }, [videoDoubanId, loadingComments, movieComments.length, detail?.source]);
+  // 🚀 豆瓣评论由 useDoubanCommentsQuery 自动加载，无需手动 useEffect
 
   // 从标题中解析季数（复用详情页逻辑）
   const parseSeasonFromTitle = useCallback((t: string): number => {
@@ -5916,7 +5857,7 @@ function PlayPageClient() {
               bangumiDetails={bangumiDetails}
               shortdramaDetails={shortdramaDetails}
               movieComments={movieComments}
-              commentsError={commentsError}
+              commentsError={commentsError?.message || null}
               loadingMovieDetails={loadingMovieDetails}
               loadingBangumiDetails={loadingBangumiDetails}
               loadingComments={loadingComments}
