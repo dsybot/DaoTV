@@ -142,7 +142,6 @@ export const WebSRSettingsPanel = memo(function WebSRSettingsPanel({
         } ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
         }`}
       style={{
-        pointerEvents: 'auto',
         boxShadow: `
           0 2px 8px rgba(0, 0, 0, 0.1),
           0 8px 32px rgba(0, 0, 0, 0.2),
