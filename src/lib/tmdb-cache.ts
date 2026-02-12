@@ -46,7 +46,13 @@ async function setCache(key: string, data: any, expireSeconds: number): Promise<
 async function cleanExpiredCache(): Promise<void> {
   try {
     // 清理数据库中的过期缓存
-    await db.clearExpiredCache('tmdb-');
+    // 静默处理错误，避免在没有数据时产生401错误
+    try {
+      await db.clearExpiredCache('tmdb-');
+    } catch (e) {
+      // 静默处理：如果缓存为空或请求失败，不影响应用运行
+      // 这是正常情况，不需要警告
+    }
   } catch (e) {
     console.warn('清理TMDB过期缓存失败:', e);
   }
