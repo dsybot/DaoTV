@@ -6030,7 +6030,7 @@ function PlayPageClient() {
         {isWebSRSettingsPanelOpen && portalContainer && createPortal(
           <div style={{ all: 'initial', fontFamily: 'Inter, system-ui, sans-serif', position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9999 }}>
             <style>{`.websr-iso svg { fill: none !important; }`}</style>
-            <div className="websr-iso" style={{ pointerEvents: 'auto' }}>
+            <div className="websr-iso">
               <WebSRSettingsPanel
                 isOpen={isWebSRSettingsPanelOpen}
                 onClose={() => setIsWebSRSettingsPanelOpen(false)}

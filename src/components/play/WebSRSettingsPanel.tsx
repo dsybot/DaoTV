@@ -137,11 +137,12 @@ export const WebSRSettingsPanel = memo(function WebSRSettingsPanel({
     <div
       ref={panelRef}
       className={`fixed right-4 bottom-20 z-[9999] w-80 overflow-hidden transition-all ${prefersReducedMotion
-          ? 'duration-0'
-          : 'duration-500'
+        ? 'duration-0'
+        : 'duration-500'
         } ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
         }`}
       style={{
+        pointerEvents: 'auto',
         boxShadow: `
           0 2px 8px rgba(0, 0, 0, 0.1),
           0 8px 32px rgba(0, 0, 0, 0.2),
