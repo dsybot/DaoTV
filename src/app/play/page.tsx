@@ -32,6 +32,11 @@ import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
 import { useWatchRoomSync } from './hooks/useWatchRoomSync';
+import {
+  useSavePlayRecordMutation,
+  useSaveFavoriteMutation,
+  useDeleteFavoriteMutation,
+} from './hooks/usePlayPageMutations';
 
 import AcgSearch from '@/components/AcgSearch';
 import CastPhotos from '@/components/CastPhotos';
@@ -78,6 +83,11 @@ function PlayPageClient() {
   const searchParams = useSearchParams();
   const { createTask, setShowDownloadPanel } = useDownload();
   const watchRoom = useWatchRoomContextSafe();
+
+  // TanStack Query mutations
+  const savePlayRecordMutation = useSavePlayRecordMutation();
+  const saveFavoriteMutation = useSaveFavoriteMutation();
+  const deleteFavoriteMutation = useDeleteFavoriteMutation();
 
   // 下载功能启用状态
   const [downloadEnabled, setDownloadEnabled] = useState(true);
@@ -3525,28 +3535,26 @@ function PlayPageClient() {
       );
       const remarksToSave = sourceFromList?.remarks || detailRef.current?.remarks;
 
-      await savePlayRecord(currentSourceRef.current, currentIdRef.current, {
-        title: videoTitleRef.current,
-        source_name: detailRef.current?.source_name || '',
-        year: detailRef.current?.year,
-        cover: detailRef.current?.poster || '',
-        index: currentEpisodeIndexRef.current + 1, // 转换为1基索引
-        total_episodes: currentTotalEpisodes,
-        // 🔑 关键：不要在这里设置 original_episodes
-        // 让 savePlayRecord 自己处理：
-        // - 首次保存时会自动设置为 total_episodes
-        // - 后续保存时会从数据库读取并保持不变
-        // - 只有当用户看了新集数时才会更新
-        // 这样避免了播放器传入错误的 original_episodes（可能是更新后的值）
-        original_episodes: existingRecord?.original_episodes, // 只传递已有值，不自动填充
-        play_time: Math.floor(currentTime),
-        total_time: Math.floor(duration),
-        save_time: Date.now(),
-        search_title: searchTitle,
-        remarks: remarksToSave, // 优先使用搜索结果的 remarks，因为详情接口可能没有
-        douban_id: videoDoubanIdRef.current || detailRef.current?.douban_id || undefined, // 添加豆瓣ID
-        type: searchType || undefined, // 保存内容类型（anime/tv/movie）用于继续播放时正确请求详情
-        media_type: searchType === 'movie' ? 'movie' : (searchType === 'tv' ? 'tv' : (currentTotalEpisodes === 1 ? 'movie' : 'tv')), // 保存影片类型
+      savePlayRecordMutation.mutate({
+        source: currentSourceRef.current,
+        id: currentIdRef.current,
+        record: {
+          title: videoTitleRef.current,
+          source_name: detailRef.current?.source_name || '',
+          year: detailRef.current?.year,
+          cover: detailRef.current?.poster || '',
+          index: currentEpisodeIndexRef.current + 1,
+          total_episodes: currentTotalEpisodes,
+          original_episodes: existingRecord?.original_episodes,
+          play_time: Math.floor(currentTime),
+          total_time: Math.floor(duration),
+          save_time: Date.now(),
+          search_title: searchTitle,
+          remarks: remarksToSave,
+          douban_id: videoDoubanIdRef.current || detailRef.current?.douban_id || undefined,
+          type: searchType || undefined,
+          media_type: searchType === 'movie' ? 'movie' : (searchType === 'tv' ? 'tv' : (currentTotalEpisodes === 1 ? 'movie' : 'tv')),
+        },
       });
 
       lastSaveTimeRef.current = Date.now();
@@ -3723,18 +3731,22 @@ function PlayPageClient() {
             contentType = 'shortdrama';
           }
 
-          await saveFavorite(favSource, favId, {
-            title: videoTitleRef.current || detail.title || favoriteToUpdate.title,
-            source_name: detail.source_name || favoriteToUpdate.source_name || '',
-            year: detail.year || favoriteToUpdate.year || '',
-            cover: detail.poster || favoriteToUpdate.cover || '',
-            total_episodes: realEpisodes,
-            save_time: favoriteToUpdate.save_time || Date.now(),
-            search_title: favoriteToUpdate.search_title || searchTitle,
-            origin: favoriteToUpdate.origin, // 保留原有的来源类型
-            type: contentType,
-            releaseDate: favoriteToUpdate.releaseDate,
-            remarks: favoriteToUpdate.remarks,
+          saveFavoriteMutation.mutate({
+            source: favSource,
+            id: favId,
+            favorite: {
+              title: videoTitleRef.current || detail.title || favoriteToUpdate.title,
+              source_name: detail.source_name || favoriteToUpdate.source_name || '',
+              year: detail.year || favoriteToUpdate.year || '',
+              cover: detail.poster || favoriteToUpdate.cover || '',
+              total_episodes: realEpisodes,
+              save_time: favoriteToUpdate.save_time || Date.now(),
+              search_title: favoriteToUpdate.search_title || searchTitle,
+              origin: favoriteToUpdate.origin,
+              type: contentType,
+              releaseDate: favoriteToUpdate.releaseDate,
+              remarks: favoriteToUpdate.remarks,
+            },
           });
 
           console.log('✅ 收藏数据更新成功');
@@ -3757,47 +3769,68 @@ function PlayPageClient() {
     )
       return;
 
-    try {
-      if (favorited) {
-        // 如果已收藏，删除收藏
-        await deleteFavorite(currentSourceRef.current, currentIdRef.current);
-        setFavorited(false);
-      } else {
-        // 根据 type_name 推断内容类型
-        const inferType = (typeName?: string): string | undefined => {
-          if (!typeName) return undefined;
-          const lowerType = typeName.toLowerCase();
-          if (lowerType.includes('短剧') || lowerType.includes('shortdrama') || lowerType.includes('short-drama') || lowerType.includes('short drama')) return 'shortdrama';
-          if (lowerType.includes('综艺') || lowerType.includes('variety')) return 'variety';
-          if (lowerType.includes('电影') || lowerType.includes('movie')) return 'movie';
-          if (lowerType.includes('电视剧') || lowerType.includes('剧集') || lowerType.includes('tv') || lowerType.includes('series')) return 'tv';
-          if (lowerType.includes('动漫') || lowerType.includes('动画') || lowerType.includes('anime')) return 'anime';
-          if (lowerType.includes('纪录片') || lowerType.includes('documentary')) return 'documentary';
-          return undefined;
-        };
-
-        // 根据 source 或 type_name 确定内容类型
-        let contentType = inferType(detailRef.current?.type_name);
-        // 如果 type_name 无法推断类型，检查 source 是否为 shortdrama
-        if (!contentType && currentSourceRef.current === 'shortdrama') {
-          contentType = 'shortdrama';
+    if (favorited) {
+      // 如果已收藏，删除收藏
+      deleteFavoriteMutation.mutate(
+        {
+          source: currentSourceRef.current,
+          id: currentIdRef.current,
+        },
+        {
+          onSuccess: () => {
+            setFavorited(false);
+          },
+          onError: (err) => {
+            console.error('删除收藏失败:', err);
+          },
         }
+      );
+    } else {
+      // 根据 type_name 推断内容类型
+      const inferType = (typeName?: string): string | undefined => {
+        if (!typeName) return undefined;
+        const lowerType = typeName.toLowerCase();
+        if (lowerType.includes('短剧') || lowerType.includes('shortdrama') || lowerType.includes('short-drama') || lowerType.includes('short drama')) return 'shortdrama';
+        if (lowerType.includes('综艺') || lowerType.includes('variety')) return 'variety';
+        if (lowerType.includes('电影') || lowerType.includes('movie')) return 'movie';
+        if (lowerType.includes('电视剧') || lowerType.includes('剧集') || lowerType.includes('tv') || lowerType.includes('series')) return 'tv';
+        if (lowerType.includes('动漫') || lowerType.includes('动画') || lowerType.includes('anime')) return 'anime';
+        if (lowerType.includes('纪录片') || lowerType.includes('documentary')) return 'documentary';
+        return undefined;
+      };
 
-        // 如果未收藏，添加收藏
-        await saveFavorite(currentSourceRef.current, currentIdRef.current, {
-          title: videoTitleRef.current,
-          source_name: detailRef.current?.source_name || '',
-          year: detailRef.current?.year,
-          cover: detailRef.current?.poster || '',
-          total_episodes: detailRef.current?.episodes.length || 1,
-          save_time: Date.now(),
-          search_title: searchTitle,
-          type: contentType,
-        });
-        setFavorited(true);
+      // 根据 source 或 type_name 确定内容类型
+      let contentType = inferType(detailRef.current?.type_name);
+      // 如果 type_name 无法推断类型，检查 source 是否为 shortdrama
+      if (!contentType && currentSourceRef.current === 'shortdrama') {
+        contentType = 'shortdrama';
       }
-    } catch (err) {
-      console.error('切换收藏失败:', err);
+
+      // 如果未收藏，添加收藏
+      saveFavoriteMutation.mutate(
+        {
+          source: currentSourceRef.current,
+          id: currentIdRef.current,
+          favorite: {
+            title: videoTitleRef.current,
+            source_name: detailRef.current?.source_name || '',
+            year: detailRef.current?.year,
+            cover: detailRef.current?.poster || '',
+            total_episodes: detailRef.current?.episodes.length || 1,
+            save_time: Date.now(),
+            search_title: searchTitle,
+            type: contentType,
+          },
+        },
+        {
+          onSuccess: () => {
+            setFavorited(true);
+          },
+          onError: (err) => {
+            console.error('添加收藏失败:', err);
+          },
+        }
+      );
     }
   };
 
