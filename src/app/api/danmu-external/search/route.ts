@@ -99,8 +99,6 @@ function normalizeAnimes(data: any): SearchAnimeItem[] {
       }
     }
 
-    if (episodes.length === 0) continue;
-
     result.push({
       animeId,
       animeTitle: readString(item.animeTitle) || `animeId:${animeId}`,
