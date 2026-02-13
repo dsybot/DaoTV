@@ -12,7 +12,9 @@ import { createPortal } from 'react-dom';
 
 import { useDownload } from '@/contexts/DownloadContext';
 import { useDanmu } from '@/hooks/useDanmu';
+import type { DanmuManualOverride } from '@/hooks/useDanmu';
 import DownloadEpisodeSelector from '@/components/download/DownloadEpisodeSelector';
+import DanmuManualMatchModal, { type DanmuManualSelection } from '@/components/DanmuManualMatchModal';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import { ClientCache } from '@/lib/client-cache';
@@ -171,7 +173,10 @@ function PlayPageClient() {
 
   // 弹幕设置面板状态
   const [isDanmuSettingsPanelOpen, setIsDanmuSettingsPanelOpen] = useState(false);
+  const [isDanmuManualModalOpen, setIsDanmuManualModalOpen] = useState(false);
+  const [manualDanmuOverrides, setManualDanmuOverrides] = useState<Record<string, DanmuManualSelection>>({});
   const [, setDanmuSettingsVersion] = useState(0);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
 
   // WebSR 设置面板状态
   const [isWebSRSettingsPanelOpen, setIsWebSRSettingsPanelOpen] = useState(false);
@@ -850,7 +855,6 @@ function PlayPageClient() {
   // 选集浮层状态（用于底栏快捷访问）
   const [showEpisodePopup, setShowEpisodePopup] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
 
   // 🎬 更新全屏标题层内容（集数变化时）
   // portalContainer 作为依赖确保 ArtPlayer 初始化后再执行
@@ -902,6 +906,9 @@ function PlayPageClient() {
   const artRef = useRef<HTMLDivElement | null>(null);
 
   // 🚀 使用 useDanmu Hook 管理弹幕
+  const danmuScopeKey = `${videoTitle}_${videoYear}_${videoDoubanId}_${currentEpisodeIndex + 1}`;
+  const activeManualDanmuOverride: DanmuManualOverride | null = manualDanmuOverrides[danmuScopeKey] || null;
+
   const {
     externalDanmuEnabled,
     setExternalDanmuEnabled,
@@ -922,6 +929,7 @@ function PlayPageClient() {
     currentEpisodeIndex,
     currentSource,
     artPlayerRef,
+    manualOverride: activeManualDanmuOverride,
   });
 
 
@@ -6034,11 +6042,60 @@ function PlayPageClient() {
                   }
                   return result.count;
                 }}
+                isManualOverridden={!!activeManualDanmuOverride}
+                onManualMatch={() => {
+                  setIsDanmuSettingsPanelOpen(false);
+                  setIsDanmuManualModalOpen(true);
+                }}
+                onClearManualMatch={async () => {
+                  setManualDanmuOverrides((prev) => {
+                    const next = { ...prev };
+                    delete next[danmuScopeKey];
+                    return next;
+                  });
+                  // Reload with auto matching
+                  const result = await loadExternalDanmu({ force: true, manualOverride: null });
+                  if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+                    artPlayerRef.current.plugins.artplayerPluginDanmuku.load(result.data);
+                    artPlayerRef.current.notice.show = result.count > 0
+                      ? `已恢复自动匹配，加载 ${result.count} 条弹幕`
+                      : '已恢复自动匹配，暂无弹幕';
+                  }
+                }}
               />
             </div>
           </div>,
           portalContainer
         )}
+
+        {/* 手动匹配弹幕弹窗 */}
+        <DanmuManualMatchModal
+          isOpen={isDanmuManualModalOpen}
+          defaultKeyword={videoTitle}
+          currentEpisode={currentEpisodeIndex + 1}
+          onClose={() => setIsDanmuManualModalOpen(false)}
+          onApply={async (selection) => {
+            setManualDanmuOverrides((prev) => ({
+              ...prev,
+              [danmuScopeKey]: selection,
+            }));
+            setIsDanmuManualModalOpen(false);
+
+            const override: DanmuManualOverride = {
+              animeId: selection.animeId,
+              episodeId: selection.episodeId,
+              animeTitle: selection.animeTitle,
+              episodeTitle: selection.episodeTitle,
+            };
+            const result = await loadExternalDanmu({ force: true, manualOverride: override });
+            if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+              artPlayerRef.current.plugins.artplayerPluginDanmuku.load(result.data);
+              artPlayerRef.current.notice.show = result.count > 0
+                ? `已手动匹配: ${selection.animeTitle} · ${selection.episodeTitle} (${result.count} 条)`
+                : `已手动匹配，但该集暂无弹幕`;
+            }
+          }}
+        />
 
         {/* WebSR 设置面板 */}
         {isWebSRSettingsPanelOpen && portalContainer && createPortal(
