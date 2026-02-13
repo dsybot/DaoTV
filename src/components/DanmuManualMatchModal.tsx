@@ -243,15 +243,24 @@ export default function DanmuManualMatchModal({
                       <div className='h-14 w-10 shrink-0 overflow-hidden rounded bg-slate-800/80'>
                         {anime.imageUrl ? (
                           <img
-                            src={anime.imageUrl}
+                            src={anime.imageUrl.replace(/^http:\/\//, 'https://')}
                             alt={anime.animeTitle}
                             className='h-full w-full object-cover'
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              if (target.nextElementSibling) {
+                                (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                              }
+                            }}
                           />
-                        ) : (
-                          <div className='flex h-full w-full items-center justify-center text-[10px] text-slate-400'>
-                            无封面
-                          </div>
-                        )}
+                        ) : null}
+                        <div
+                          className='h-full w-full items-center justify-center text-[10px] text-slate-400'
+                          style={{ display: anime.imageUrl ? 'none' : 'flex' }}
+                        >
+                          无封面
+                        </div>
                       </div>
                       <div className='min-w-0 flex-1'>
                         <p className='truncate text-sm font-medium text-white'>
