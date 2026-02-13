@@ -4247,114 +4247,6 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
-            // 🚀 B站风格弹幕开关按钮（Web端和移动端都显示）- 使用和弹幕插件完全一致的SVG图标
-            {
-              position: 'right',
-              index: 9,
-              tooltip: externalDanmuEnabled ? '关闭弹幕' : '开启弹幕',
-              html: `<div class="danmaku-toggle-btn" style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                <!-- 弹幕开启状态图标 - 和插件apd-toggle-on完全一致 -->
-                <svg class="danmaku-icon-on" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display: ${externalDanmuEnabled ? 'block' : 'none'};">
-                  <path fill-rule="evenodd" d="M11.989 4.828q-.705 0-1.515.012l-1.71-2.566a1.008 1.008 0 0 0-1.678 1.118l.999 1.5q-1.022.027-2.164.068a4.01 4.01 0 0 0-3.83 3.44q-.246 1.725-.245 4.185-.001 2.947.35 5.116a4.01 4.01 0 0 0 3.763 3.363l.906.046c1.205.063 1.808.095 3.607.095a.988.988 0 0 0 0-1.975c-1.758 0-2.339-.03-3.501-.092l-.915-.047a2.04 2.04 0 0 1-1.91-1.708q-.325-1.987-.325-4.798 0-2.344.225-3.904c.14-.977.96-1.713 1.945-1.747q3.666-.13 6.063-.131 2.398 0 6.064.13c.96.034 1.71.81 1.855 1.814.075.524.113 1.962.141 3.065v.002c.01.342.017.65.025.88a.987.987 0 1 0 1.974-.068c-.008-.226-.016-.523-.025-.856v-.027c-.03-1.118-.073-2.663-.16-3.276-.273-1.906-1.783-3.438-3.74-3.507q-1.35-.048-2.531-.078l1.05-1.46a1.008 1.008 0 0 0-1.638-1.177l-1.862 2.59q-.571-.006-1.088-.007Zm.521 4.775h-1.32v4.631h2.222v.847h-2.618v1.078h2.618l.003.678c.36.026.714.163 1.01.407h.11v-1.085h2.694v-1.078h-2.695v-.847H16.8v-4.63h-1.276a8.6 8.6 0 0 0 .748-1.42L15.183 7.8a14 14 0 0 1-.814 1.804h-1.518l.693-.308a9 9 0 0 0-.814-1.408l-1.045.352c.297.396.572.847.825 1.364Zm-4.18 3.564.154-1.485h1.98V8.294h-3.2v.98H9.33v1.43H7.472l-.308 3.453h2.277c0 1.166-.044 1.925-.12 2.277-.078.352-.386.528-.936.528-.308 0-.616-.022-.902-.055l.297 1.067.062.005c.285.02.551.04.818.04 1.001-.067 1.562-.419 1.694-1.057.11-.638.176-1.903.176-3.795Zm7.458.11v-.858h-1.254v.858Zm-2.376-.858v.858h-1.199v-.858h1.2Zm-1.199-.946h1.2v-.902h-1.2Zm2.321 0v-.902h1.254v.902Z" clip-rule="evenodd"/>
-                  <path fill="#00aeec" fill-rule="evenodd" d="M22.846 14.627a1 1 0 0 0-1.412.075l-5.091 5.703-2.216-2.275-.097-.086-.008-.005a1 1 0 0 0-1.322 1.493l2.963 3.041.093.083.007.005a1 1 0 0 0 1.354-.124l5.81-6.505.08-.102.005-.008a1 1 0 0 0-.166-1.295" clip-rule="evenodd"/>
-                </svg>
-                <!-- 弹幕关闭状态图标 - 和插件apd-toggle-off完全一致 -->
-                <svg class="danmaku-icon-off" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display: ${externalDanmuEnabled ? 'none' : 'block'};">
-                  <path fill-rule="evenodd" d="m8.085 4.891-.999-1.499a1.008 1.008 0 0 1 1.679-1.118l1.709 2.566q.81-.012 1.515-.012h.13q.517 0 1.088.007l1.862-2.59a1.008 1.008 0 0 1 1.637 1.177l-1.049 1.46q1.182.03 2.53.078c1.958.069 3.468 1.6 3.74 3.507.088.613.13 2.158.16 3.276l.001.027c.01.333.017.63.025.856a.987.987 0 0 1-1.974.069c-.008-.23-.016-.539-.025-.881v-.002c-.028-1.103-.066-2.541-.142-3.065-.143-1.004-.895-1.78-1.854-1.813a179 179 0 0 0-6.064-.131q-2.397 0-6.063.13a2.04 2.04 0 0 0-1.945 1.748q-.225 1.56-.225 3.904.001 2.811.325 4.798c.154.949.95 1.66 1.91 1.708a98 98 0 0 0 5.416.139.988.988 0 0 1 0 1.975 100 100 0 0 1-5.513-.141A4.01 4.01 0 0 1 2.197 17.7q-.353-2.169-.351-5.116-.001-2.46.245-4.184A4.01 4.01 0 0 1 5.92 4.96q1.142-.04 2.164-.069Zm4.436 4.707h-1.32v4.63h2.222v.848h-2.618v1.078h2.431a5.01 5.01 0 0 1 3.575-3.115V9.598h-1.276a8.6 8.6 0 0 0 .748-1.42l-1.089-.384a14 14 0 0 1-.814 1.804h-1.518l.693-.308a9 9 0 0 0-.814-1.408l-1.045.352c.297.396.572.847.825 1.364m-4.18 3.564.154-1.485h1.98V8.289h-3.2v.979h2.067v1.43H7.483l-.308 3.454h2.277c0 1.166-.044 1.925-.12 2.277-.078.352-.386.528-.936.528-.308 0-.616-.022-.902-.055l.297 1.067.062.004c.285.02.551.04.818.04 1.001-.066 1.562-.418 1.694-1.056.11-.638.176-1.903.176-3.795Zm7.458.11v-.858h-1.254v.858H15.8Zm-2.376-.858v.858h-1.199v-.858h1.2Zm-1.199-.946h1.2v-.902h-1.2Zm2.321 0v-.902H15.8v.902h-1.254Zm3.517 10.594a4 4 0 1 0 0-8 4 4 0 0 0 0 8m-.002-1.502a2.5 2.5 0 0 1-2.217-3.657l3.326 3.398a2.5 2.5 0 0 1-1.109.259m2.5-2.5c0 .42-.103.815-.286 1.162l-3.328-3.401a2.5 2.5 0 0 1 3.614 2.239" clip-rule="evenodd"/>
-                </svg>
-              </div>`,
-              click: function (this: any) {
-                const nextState = !externalDanmuEnabledRef.current;
-                handleDanmuOperationOptimized(nextState);
-
-                // 更新按钮UI - 切换开启/关闭图标
-                const wrapper = document.querySelector('.danmaku-toggle-btn');
-                const iconOn = wrapper?.querySelector('.danmaku-icon-on') as HTMLElement;
-                const iconOff = wrapper?.querySelector('.danmaku-icon-off') as HTMLElement;
-                if (iconOn && iconOff) {
-                  iconOn.style.display = nextState ? 'block' : 'none';
-                  iconOff.style.display = nextState ? 'none' : 'block';
-                }
-                // 更新ArtPlayer的tooltip文本
-                if (this.tooltip) {
-                  this.tooltip = nextState ? '关闭弹幕' : '开启弹幕';
-                }
-              },
-            },
-            // 🚀 B站风格弹幕输入框（仅Web端显示）
-            ...(isMobile ? [] : [{
-              position: 'right',
-              index: 10,
-              html: `<div class="danmaku-input-wrapper" style="display: flex; align-items: center; height: 28px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
-                <input type="text" class="danmaku-input" placeholder="发送弹幕..." maxlength="50" style="
-                  width: 160px;
-                  height: 100%;
-                  padding: 0 10px;
-                  border: none;
-                  background: transparent;
-                  color: rgba(255,255,255,0.9);
-                  font-size: 13px;
-                  outline: none;
-                " />
-                <button class="danmaku-send-btn" style="
-                  height: 100%;
-                  padding: 0 14px;
-                  border: none;
-                  border-left: 1px solid rgba(255,255,255,0.15);
-                  background: rgba(255,255,255,0.1);
-                  color: rgba(255,255,255,0.9);
-                  font-size: 13px;
-                  cursor: pointer;
-                  transition: background 0.15s ease;
-                  white-space: nowrap;
-                " onmouseover="this.style.background='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.1)';">发送</button>
-              </div>`,
-              mounted: function (element: HTMLElement) {
-                const input = element.querySelector('.danmaku-input') as HTMLInputElement;
-                const btn = element.querySelector('.danmaku-send-btn') as HTMLButtonElement;
-                const wrapper = element.querySelector('.danmaku-input-wrapper') as HTMLElement;
-
-                const sendDanmaku = () => {
-                  if (!input || !artPlayerRef.current?.plugins?.artplayerPluginDanmuku) return;
-                  const text = input.value.trim();
-                  if (text) {
-                    artPlayerRef.current.plugins.artplayerPluginDanmuku.emit({
-                      text: text,
-                      time: artPlayerRef.current.currentTime,
-                      color: '#FFFFFF',
-                      mode: 0,
-                    });
-                    input.value = '';
-                  }
-                };
-
-                // 输入框聚焦效果
-                input?.addEventListener('focus', () => {
-                  if (wrapper) wrapper.style.borderColor = 'rgba(255,255,255,0.4)';
-                });
-                input?.addEventListener('blur', () => {
-                  if (wrapper) wrapper.style.borderColor = 'rgba(255,255,255,0.2)';
-                });
-
-                // 点击发送按钮
-                btn?.addEventListener('click', (e) => {
-                  e.stopPropagation();
-                  sendDanmaku();
-                });
-
-                // 回车发送
-                input?.addEventListener('keydown', (e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    sendDanmaku();
-                  }
-                });
-
-                // 阻止输入框的点击事件冒泡（防止触发播放器暂停）
-                input?.addEventListener('click', (e) => e.stopPropagation());
-              },
-            }]),
             // 🚀 选集菜单按钮（仅在全屏/网页全屏/隐藏选集面板时显示）
             {
               name: 'episodeSelector',
@@ -4402,7 +4294,7 @@ function PlayPageClient() {
                   modes: JSON.parse(localStorage.getItem('danmaku_modes') || '[0, 1, 2]') as Array<0 | 1 | 2>,
                   margin: JSON.parse(localStorage.getItem('danmaku_margin') || '[10, "75%"]') as [number | `${number}%`, number | `${number}%`],
                   visible: localStorage.getItem('danmaku_visible') !== 'false',
-                  emitter: false,
+                  emitter: true,  // 启用插件原生的开关和输入框
                   maxLength: 50,
                   lockTime: 1, // 🎯 进一步减少锁定时间，提升进度跳转响应
                   theme: 'dark' as const,
@@ -4789,40 +4681,27 @@ function PlayPageClient() {
             const style = document.createElement('style');
             style.id = 'danmuku-controls-optimize';
             style.textContent = `
-            /* 隐藏弹幕开关按钮和发射器 */
-            .artplayer-plugin-danmuku .apd-toggle {
-              display: none !important;
-            }
-
-            .artplayer-plugin-danmuku .apd-emitter {
-              display: none !important;
-            }
-
             /* 🎯 统一弹幕按钮图标大小 */
             .artplayer-plugin-danmuku .apd-config svg,
-            .artplayer-plugin-danmuku .apd-style svg {
+            .artplayer-plugin-danmuku .apd-style svg,
+            .artplayer-plugin-danmuku .apd-toggle svg {
               width: 24px !important;
               height: 24px !important;
             }
 
+            /* 隐藏插件原生的配置面板（使用自定义设置面板代替） */
+            .artplayer-plugin-danmuku .apd-config-panel {
+              display: none !important;
+            }
+            
+            /* 隐藏插件原生的样式面板（可选，如果你想保留可以删除这行） */
+            .artplayer-plugin-danmuku .apd-style-panel {
+              display: none !important;
+            }
             
             /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
             .artplayer-plugin-danmuku .apd-config {
               position: relative;
-            }
-            
-            .artplayer-plugin-danmuku .apd-config-panel {
-              /* 使用绝对定位而不是fixed，让ArtPlayer的动态定位生效 */
-              position: absolute !important;
-              /* 保持ArtPlayer原版的默认left: 0，让JS动态覆盖 */
-              /* 保留z-index确保层级正确 */
-              z-index: 2147483647 !important; /* 使用最大z-index确保在全屏模式下也能显示在最顶层 */
-              /* 确保面板可以接收点击事件 */
-              pointer-events: auto !important;
-              /* 添加一些基础样式确保可见性 */
-              background: rgba(0, 0, 0, 0.8);
-              border-radius: 6px;
-              backdrop-filter: blur(10px);
             }
             
             /* 全屏模式下的特殊优化 */
@@ -4996,13 +4875,14 @@ function PlayPageClient() {
           // 启用精确修复
           fixDanmakuProgressConflict();
 
-          // 移动端弹幕配置按钮点击切换支持 - 修改为打开弹幕设置面板
+          // 🎯 方案C：使用插件原生UI + 自定义设置面板
           const addMobileDanmakuToggle = () => {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             setTimeout(() => {
               const configButton = document.querySelector('.artplayer-plugin-danmuku .apd-config');
               const configPanel = document.querySelector('.artplayer-plugin-danmuku .apd-config-panel');
+              const toggleButton = document.querySelector('.artplayer-plugin-danmuku .apd-toggle');
 
               if (!configButton || !configPanel) {
                 console.warn('弹幕配置按钮或面板未找到');
@@ -5011,24 +4891,51 @@ function PlayPageClient() {
 
               console.log('设备类型:', isMobile ? '移动端' : '桌面端');
 
-              // 🎯 修改：桌面端和移动端都改为打开弹幕设置面板
-              console.log('配置弹幕按钮：点击打开弹幕设置面板');
-
-              // 隐藏原生的配置面板（但保留样式面板的功能）
+              // 🎯 隐藏原生的配置面板（使用自定义设置面板代替）
               (configPanel as HTMLElement).style.display = 'none';
               (configPanel as HTMLElement).style.pointerEvents = 'none';
 
-              // 添加点击事件监听器 - 打开弹幕设置面板
+              // 🎯 配置按钮点击打开自定义设置面板
               configButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-
-                // 打开弹幕设置面板
                 setIsDanmuSettingsPanelOpen(true);
-                console.log('打开弹幕设置面板');
+                console.log('打开自定义弹幕设置面板');
               });
 
-              console.log('弹幕配置按钮已配置为打开弹幕设置面板');
+              // 🎯 监听插件原生开关的点击，同步状态到 externalDanmuEnabled
+              if (toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                  // 延迟读取插件状态，确保插件已更新
+                  setTimeout(() => {
+                    if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+                      const plugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                      const isHidden = plugin.isHide;
+                      const newState = !isHidden;
+
+                      // 同步到自定义状态
+                      setExternalDanmuEnabled(newState);
+                      localStorage.setItem('enable_external_danmu', String(newState));
+
+                      console.log('🔄 插件原生开关状态已同步:', newState);
+
+                      // 如果开启弹幕，加载外部弹幕数据
+                      if (newState && externalDanmuEnabledRef.current !== newState) {
+                        loadExternalDanmu().then(result => {
+                          if (result.count > 0 && artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+                            const danmuPlugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                            danmuPlugin.load(); // 清空已有弹幕
+                            danmuPlugin.load(result.data); // 加载新弹幕
+                            console.log('✅ 外部弹幕已加载:', result.count, '条');
+                          }
+                        });
+                      }
+                    }
+                  }, 50);
+                });
+              }
+
+              console.log('✅ 弹幕按钮已配置完成（方案C）');
             }, 2000); // 延迟2秒确保弹幕插件完全初始化
           };
 
@@ -5914,9 +5821,32 @@ function PlayPageClient() {
                     : null
                 }
                 onSettingsChange={(newSettings) => {
-                  // 更新启用状态
+                  // 🎯 方案C：不再通过 handleDanmuOperationOptimized 控制开关
+                  // 插件原生开关会自己管理弹幕的显示/隐藏
+                  // 这里只需要同步状态到 localStorage 和更新插件配置
+
+                  // 更新启用状态（同步到 localStorage 和 state）
                   if (newSettings.enabled !== undefined) {
-                    handleDanmuOperationOptimized(newSettings.enabled);
+                    setExternalDanmuEnabled(newSettings.enabled);
+                    localStorage.setItem('enable_external_danmu', String(newSettings.enabled));
+
+                    // 同步到插件原生开关
+                    if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+                      const plugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                      if (newSettings.enabled) {
+                        plugin.show();
+                        // 加载外部弹幕数据
+                        loadExternalDanmu().then(result => {
+                          if (result.count > 0) {
+                            plugin.load(); // 清空已有弹幕
+                            plugin.load(result.data); // 加载新弹幕
+                            console.log('✅ 外部弹幕已加载:', result.count, '条');
+                          }
+                        });
+                      } else {
+                        plugin.hide();
+                      }
+                    }
                   }
 
                   // 更新 localStorage
