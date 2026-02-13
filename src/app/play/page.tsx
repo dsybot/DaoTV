@@ -240,12 +240,14 @@ function PlayPageClient() {
     canvas: HTMLCanvasElement | null;
     weightsCache: Map<string, any>;
     isActive: boolean;
+    renderLoopActive: boolean;
   }>({
     instance: null,
     gpu: null,
     canvas: null,
     weightsCache: new Map(),
     isActive: false,
+    renderLoopActive: false,
   });
 
   const websrEnabledRef = useRef(websrEnabled);
@@ -2178,7 +2180,6 @@ function PlayPageClient() {
       const networkName = getWebsrNetworkName(websrModeRef.current, websrNetworkSizeRef.current);
 
       const websr = new WebSR({
-        source: video,
         canvas: canvas,
         weights: weights,
         network_name: networkName,
@@ -2188,9 +2189,23 @@ function PlayPageClient() {
       websrRef.current.instance = websr;
       websrRef.current.canvas = canvas;
       websrRef.current.isActive = true;
+      websrRef.current.renderLoopActive = true;
 
-      // 启动渲染
-      await websr.start();
+      // 使用 requestVideoFrameCallback 手动渲染循环
+      const renderFrame = () => {
+        if (!websrRef.current.renderLoopActive || !websrRef.current.instance) return;
+        websrRef.current.instance.render(video).then(() => {
+          if (websrRef.current.renderLoopActive) {
+            video.requestVideoFrameCallback(renderFrame);
+          }
+        }).catch((err: any) => {
+          console.warn('WebSR render error:', err);
+          if (websrRef.current.renderLoopActive) {
+            video.requestVideoFrameCallback(renderFrame);
+          }
+        });
+      };
+      video.requestVideoFrameCallback(renderFrame);
 
       // 隐藏原始视频
       video.style.opacity = '0';
@@ -2228,6 +2243,7 @@ function PlayPageClient() {
   const destroyWebSR = async () => {
     const ref = websrRef.current;
     ref.isActive = false;
+    ref.renderLoopActive = false;
 
     try {
       if (ref.instance) {
