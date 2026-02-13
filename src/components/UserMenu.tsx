@@ -1235,21 +1235,23 @@ export const UserMenu: React.FC = () => {
                 setShowDownloadPanel(true);
                 handleCloseMenu();
               }}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
             >
               <Download className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>下载管理</span>
-              {tasks.length > 0 && (
-                <span
-                  className={`ml-auto px-1.5 py-0.5 text-xs rounded-full ${tasks.some((t) => t.status === 'downloading')
-                    ? 'bg-blue-500 text-white animate-pulse'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                >
-                  {tasks.some((t) => t.status === 'downloading')
-                    ? tasks.filter((t) => t.status === 'downloading').length
-                    : tasks.length}
+              {tasks.filter(t => t.status === 'downloading').length > 0 && (
+                <span className='ml-auto flex items-center gap-1'>
+                  <span className='relative flex h-2 w-2'>
+                    <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75'></span>
+                    <span className='relative inline-flex rounded-full h-2 w-2 bg-green-500'></span>
+                  </span>
+                  <span className='text-xs text-green-600 dark:text-green-400'>
+                    {tasks.filter(t => t.status === 'downloading').length}
+                  </span>
                 </span>
+              )}
+              {tasks.length > 0 && tasks.filter(t => t.status === 'downloading').length === 0 && (
+                <span className='ml-auto text-xs text-gray-400'>{tasks.length}</span>
               )}
             </button>
           )}
