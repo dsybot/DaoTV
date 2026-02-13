@@ -6021,7 +6021,11 @@ function PlayPageClient() {
                   // 重新加载外部弹幕（强制刷新）
                   const result = await loadExternalDanmu({ force: true });
                   if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-                    artPlayerRef.current.plugins.artplayerPluginDanmuku.load(result.data);
+                    const plugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                    // 🔥 关键修复：先清空再加载，避免重复弹幕累积
+                    plugin.reset(); // 清空正在显示的弹幕
+                    plugin.load(); // 清空弹幕队列
+                    plugin.load(result.data); // 加载新弹幕
                     if (result.count > 0) {
                       artPlayerRef.current.notice.show = `已加载 ${result.count} 条弹幕`;
                     } else {
