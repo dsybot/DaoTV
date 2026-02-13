@@ -432,13 +432,13 @@ export const UserMenu: React.FC = () => {
         }
       };
 
-      // 页面初始化时强制检查一次更新（绕过缓存限制）
+      // 页面初始化时检查更新（使用缓存机制）
       const forceInitialCheck = async () => {
-        console.log('页面初始化，强制检查更新...');
+        console.log('页面初始化，检查更新...');
         try {
-          // 🔧 修复：直接使用 forceRefresh=true，不再手动操作 localStorage
-          // 因为 kvrocks 模式使用内存缓存，删除 localStorage 无效
-          await checkWatchingUpdates(true);
+          // 🔧 修复：不使用强制刷新，让缓存机制生效（30分钟）
+          // 如果缓存有效，直接使用缓存；如果过期，自动重新检查
+          await checkWatchingUpdates();
 
           // 更新UI
           updateWatchingUpdates();
