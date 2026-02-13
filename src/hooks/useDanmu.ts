@@ -375,9 +375,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
         const result = await loadExternalDanmu({ force: true });
         if (result.count > 0 && artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
           const plugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
-          // 🔥 关键修复：先清空再加载，避免重复弹幕累积
-          plugin.reset(); // 清空正在显示的弹幕
-          plugin.load(); // 清空弹幕队列
+          plugin.load(); // 清空已有弹幕
           plugin.load(result.data); // 加载新弹幕
           artPlayerRef.current.notice.show = `已自动重试并加载 ${result.count} 条弹幕`;
         }
@@ -431,9 +429,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
 
             // 二次确认状态
             if (externalDanmuEnabledRef.current && artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-              // 🔥 关键修复：先清空再加载，避免重复弹幕累积
-              plugin.reset(); // 清空正在显示的弹幕
-              plugin.load(); // 清空弹幕队列
+              plugin.load(); // 清空已有弹幕
               plugin.load(result.data); // 加载新弹幕
               plugin.show();
               console.log('✅ 外部弹幕已优化加载:', result.count, '条');

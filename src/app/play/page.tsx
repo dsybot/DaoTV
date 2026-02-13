@@ -2533,6 +2533,7 @@ function PlayPageClient() {
 
             if (result.count > 0) {
               console.log('✅ 向播放器插件重新加载弹幕数据:', result.count, '条');
+              plugin.load(); // 清空已有弹幕
               plugin.load(result.data);
 
               // 恢复弹幕插件的状态
@@ -5042,9 +5043,11 @@ function PlayPageClient() {
               console.log('外部弹幕加载结果:', result.count, '条');
 
               if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
+                const danmuPlugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                danmuPlugin.load(); // 清空已有弹幕
                 if (result.count > 0) {
                   console.log('向播放器插件加载弹幕数据:', result.count, '条');
-                  artPlayerRef.current.plugins.artplayerPluginDanmuku.load(result.data);
+                  danmuPlugin.load(result.data);
                   artPlayerRef.current.notice.show = `已加载 ${result.count} 条弹幕`;
                 } else {
                   console.log('没有弹幕数据可加载');
@@ -5964,11 +5967,9 @@ function PlayPageClient() {
                   // 重新加载外部弹幕（强制刷新）
                   const result = await loadExternalDanmu({ force: true });
                   if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-                    const plugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
-                    // 🔥 关键修复：先清空再加载，避免重复弹幕累积
-                    plugin.reset(); // 清空正在显示的弹幕
-                    plugin.load(); // 清空弹幕队列
-                    plugin.load(result.data); // 加载新弹幕
+                    const danmuPlugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                    danmuPlugin.load(); // 清空已有弹幕
+                    danmuPlugin.load(result.data);
                     if (result.count > 0) {
                       artPlayerRef.current.notice.show = `已加载 ${result.count} 条弹幕`;
                     } else {
@@ -5991,7 +5992,9 @@ function PlayPageClient() {
                   // Reload with auto matching
                   const result = await loadExternalDanmu({ force: true, manualOverride: null });
                   if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-                    artPlayerRef.current.plugins.artplayerPluginDanmuku.load(result.data);
+                    const danmuPlugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+                    danmuPlugin.load(); // 清空已有弹幕
+                    danmuPlugin.load(result.data);
                     artPlayerRef.current.notice.show = result.count > 0
                       ? `已恢复自动匹配，加载 ${result.count} 条弹幕`
                       : '已恢复自动匹配，暂无弹幕';
@@ -6025,7 +6028,9 @@ function PlayPageClient() {
             };
             const result = await loadExternalDanmu({ force: true, manualOverride: override });
             if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-              artPlayerRef.current.plugins.artplayerPluginDanmuku.load(result.data);
+              const danmuPlugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+              danmuPlugin.load(); // 清空已有弹幕
+              danmuPlugin.load(result.data);
               artPlayerRef.current.notice.show = result.count > 0
                 ? `已手动匹配: ${selection.animeTitle} · ${selection.episodeTitle} (${result.count} 条)`
                 : `已手动匹配，但该集暂无弹幕`;
