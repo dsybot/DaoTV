@@ -4699,6 +4699,13 @@ function PlayPageClient() {
               display: none !important;
             }
             
+            /* 📱 移动端隐藏弹幕输入框 */
+            @media (max-width: 768px) {
+              .artplayer-plugin-danmuku .apd-emitter {
+                display: none !important;
+              }
+            }
+            
             /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
             .artplayer-plugin-danmuku .apd-config {
               position: relative;
