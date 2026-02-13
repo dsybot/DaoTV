@@ -4797,6 +4797,13 @@ function PlayPageClient() {
               display: none !important;
             }
 
+            /* 🎯 统一弹幕按钮图标大小 */
+            .artplayer-plugin-danmuku .apd-config svg,
+            .artplayer-plugin-danmuku .apd-style svg {
+              width: 24px !important;
+              height: 24px !important;
+            }
+
             
             /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
             .artplayer-plugin-danmuku .apd-config {
@@ -5006,8 +5013,9 @@ function PlayPageClient() {
               // 🎯 修改：桌面端和移动端都改为打开弹幕设置面板
               console.log('配置弹幕按钮：点击打开弹幕设置面板');
 
-              // 隐藏原生的配置面板
-              (configPanel as HTMLElement).style.display = 'none !important';
+              // 隐藏原生的配置面板（但保留样式面板的功能）
+              (configPanel as HTMLElement).style.display = 'none';
+              (configPanel as HTMLElement).style.pointerEvents = 'none';
 
               // 添加点击事件监听器 - 打开弹幕设置面板
               configButton.addEventListener('click', (e) => {
