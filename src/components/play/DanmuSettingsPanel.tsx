@@ -138,6 +138,11 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
   const [showLoadMeta, setShowLoadMeta] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
 
+  // 🎯 拖动功能状态
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0, panelX: 0, panelY: 0 });
+
   // ♿ 检测用户是否偏好减少动画
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -233,6 +238,48 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
     };
   }, [isOpen, onClose]);
 
+  // 🎯 拖动功能
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // 只在头部区域允许拖动
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-drag-handle]')) return;
+
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+      panelX: position.x,
+      panelY: position.y,
+    };
+  }, [position]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragStartPos.current.x;
+      const deltaY = e.clientY - dragStartPos.current.y;
+
+      setPosition({
+        x: dragStartPos.current.panelX + deltaX,
+        y: dragStartPos.current.panelY + deltaY,
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   // ESC 键关闭
   useEffect(() => {
     if (!isOpen) return;
@@ -252,7 +299,8 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
   return (
     <div
       ref={panelRef}
-      className={`fixed right-4 bottom-20 z-[9999] w-80 overflow-hidden transition-all ${prefersReducedMotion
+      onMouseDown={handleMouseDown}
+      className={`fixed right-4 bottom-20 z-[9999] w-80 flex flex-col transition-all ${prefersReducedMotion
         ? 'duration-0' // 无动画模式
         : 'duration-500' // Spring模拟动画
         } ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
@@ -275,6 +323,10 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         borderRadius: '20px',
         border: '1px solid rgba(255, 255, 255, 0.15)',
+        // 🎯 拖动位置
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        // 📱 移动端自适应高度
+        maxHeight: 'calc(100vh - 120px)',
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -287,8 +339,12 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
         }}
       />
 
-      {/* 头部 - 精致设计 */}
-      <div className='relative flex items-center justify-between px-5 py-4 border-b border-white/10'>
+      {/* 头部 - 精致设计 + 拖动手柄 */}
+      <div
+        className='relative flex items-center justify-between px-5 py-4 border-b border-white/10'
+        data-drag-handle
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
         <div
           className="absolute inset-0 opacity-50"
           style={{
@@ -371,11 +427,10 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
               title='手动匹配弹幕'
             >
               <Search
-                className={`w-4 h-4 transition-colors duration-300 ${
-                  isManualOverridden
-                    ? 'text-amber-400'
-                    : 'text-gray-400 group-hover:text-gray-200'
-                }`}
+                className={`w-4 h-4 transition-colors duration-300 ${isManualOverridden
+                  ? 'text-amber-400'
+                  : 'text-gray-400 group-hover:text-gray-200'
+                  }`}
               />
             </button>
           )}
@@ -432,8 +487,12 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
         </div>
       )}
 
-      {/* 内容区域 - 零滚动设计 */}
-      <div className='px-5 py-4 space-y-4 overflow-hidden'>
+      {/* 内容区域 - 可滚动设计 */}
+      <div className='px-5 py-4 space-y-4 overflow-y-auto overflow-x-hidden flex-1' style={{
+        // 自定义滚动条样式
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(16, 185, 129, 0.5) rgba(255, 255, 255, 0.1)',
+      }}>
         {/* 错误提示 */}
         {error && settings.enabled && (
           <div
@@ -830,7 +889,7 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
         }}
       />
 
-      {/* CSS样式 - 自定义滑块样式 */}
+      {/* CSS样式 - 自定义滑块样式 + 滚动条样式 */}
       <style jsx>{`
         input[type='range']::-webkit-slider-thumb {
           appearance: none;
@@ -866,6 +925,26 @@ export const DanmuSettingsPanel = memo(function DanmuSettingsPanel({
         input[type='range']::-moz-range-thumb:hover {
           transform: scale(1.2);
           box-shadow: 0 4px 16px rgba(16, 185, 129, 0.6), 0 0 0 3px rgba(255, 255, 255, 0.15);
+        }
+
+        /* 自定义滚动条样式 - Webkit */
+        div::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        div::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+
+        div::-webkit-scrollbar-thumb {
+          background: rgba(16, 185, 129, 0.5);
+          border-radius: 10px;
+          transition: background 0.2s;
+        }
+
+        div::-webkit-scrollbar-thumb:hover {
+          background: rgba(16, 185, 129, 0.7);
         }
 
         /* 尊重用户的减少动画偏好 */
