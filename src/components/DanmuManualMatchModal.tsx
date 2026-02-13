@@ -32,6 +32,7 @@ interface DanmuManualMatchModalProps {
   currentEpisode: number;
   onClose: () => void;
   onApply: (selection: DanmuManualSelection) => Promise<void> | void;
+  portalContainer?: HTMLElement | null;
 }
 
 function buildAnimeMeta(anime: DanmuSearchAnimeItem): string {
@@ -46,6 +47,7 @@ export default function DanmuManualMatchModal({
   currentEpisode,
   onClose,
   onApply,
+  portalContainer,
 }: DanmuManualMatchModalProps) {
   const [mounted, setMounted] = useState(false);
   const [keyword, setKeyword] = useState(defaultKeyword);
@@ -234,11 +236,10 @@ export default function DanmuManualMatchModal({
                       key={anime.animeId}
                       type='button'
                       onClick={() => setSelectedAnimeId(anime.animeId)}
-                      className={`flex w-full items-center gap-3 rounded-lg border px-2.5 py-2.5 text-left transition ${
-                        selectedAnimeId === anime.animeId
-                          ? 'border-green-400/70 bg-green-500/15'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
-                      }`}
+                      className={`flex w-full items-center gap-3 rounded-lg border px-2.5 py-2.5 text-left transition ${selectedAnimeId === anime.animeId
+                        ? 'border-green-400/70 bg-green-500/15'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className='h-14 w-10 shrink-0 overflow-hidden rounded bg-slate-800/80'>
                         {anime.imageUrl ? (
@@ -315,11 +316,10 @@ export default function DanmuManualMatchModal({
                             setApplyingEpisodeId(null);
                           }
                         }}
-                        className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition ${
-                          currentMark
-                            ? 'border-cyan-400/60 bg-cyan-500/10'
-                            : 'border-white/10 bg-white/5 hover:bg-white/10'
-                        } ${applyingEpisodeId !== null ? 'cursor-not-allowed opacity-70' : ''}`}
+                        className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition ${currentMark
+                          ? 'border-cyan-400/60 bg-cyan-500/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                          } ${applyingEpisodeId !== null ? 'cursor-not-allowed opacity-70' : ''}`}
                       >
                         <span className='truncate text-sm text-slate-100'>
                           {ep.episodeTitle || `第${index + 1}集`}
@@ -346,6 +346,6 @@ export default function DanmuManualMatchModal({
         </div>
       </div>
     </>,
-    document.body,
+    portalContainer || document.body,
   );
 }

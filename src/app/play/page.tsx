@@ -6073,6 +6073,7 @@ function PlayPageClient() {
           isOpen={isDanmuManualModalOpen}
           defaultKeyword={videoTitle}
           currentEpisode={currentEpisodeIndex + 1}
+          portalContainer={portalContainer}
           onClose={() => setIsDanmuManualModalOpen(false)}
           onApply={async (selection) => {
             setManualDanmuOverrides((prev) => ({
