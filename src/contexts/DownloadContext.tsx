@@ -33,7 +33,7 @@ interface DownloadContextType {
     type?: 'TS' | 'MP4',
     requestHeaders?: { referer?: string; origin?: string; userAgent?: string }
   ) => Promise<void>;
-  startTask: (taskId: string) => Promise<void>;
+  startTask: (taskId: string, taskSnapshot?: M3U8DownloadTask) => Promise<void>;
   pauseTask: (taskId: string) => void;
   cancelTask: (taskId: string) => void;
   retryFailedSegments: (taskId: string) => void;
@@ -134,11 +134,20 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
             // 恢复已下载的片段
             const downloadedSegments = await getTaskSegments(stored.id);
 
+            // 状态标准化：未完成的任务统一设为 pause（参考 DecoTV 实现）
+            const normalizedStatus =
+              stored.status === 'done' || stored.status === 'error' || stored.status === 'pause'
+                ? stored.status
+                : 'pause';
+
             return {
               ...stored.task,
               id: stored.id,
-              status: stored.status,
+              status: normalizedStatus,
               downloadedSegments,
+              // 根据已下载片段数更新 finishNum
+              finishNum: downloadedSegments.size,
+              downloadIndex: downloadedSegments.size,
             };
           })
         );
@@ -170,6 +179,12 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
     pauseController: PauseResumeController;
     abortController: AbortController;
   }>>(new Map());
+
+  // 使用 ref 保存最新的 tasks，避免 stale closure 问题
+  const tasksRef = useRef<M3U8DownloadTask[]>(tasks);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const updateTask = useCallback((taskId: string, updates: Partial<M3U8DownloadTask>) => {
     setTasks(prev => prev.map(task =>
@@ -203,8 +218,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         // 保存到 IndexedDB
         await saveTask(taskId, m3u8Task, 'ready');
 
-        // 自动开始下载
-        await startTask(taskId);
+        // 自动开始下载（传递 task snapshot 避免 stale closure）
+        await startTask(taskId, newTask);
 
         // 显示下载面板
         setShowDownloadPanel(true);
@@ -217,9 +232,12 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   );
 
   const startTask = useCallback(
-    async (taskId: string) => {
-      const task = tasks.find(t => t.id === taskId);
+    async (taskId: string, taskSnapshot?: M3U8DownloadTask) => {
+      const task = taskSnapshot || tasksRef.current.find(t => t.id === taskId);
       if (!task) return;
+
+      // 如果已经在下载中，不重复启动
+      if (taskControllers.current.has(taskId)) return;
 
       // 创建新的控制器
       const pauseController = new PauseResumeController();
@@ -270,7 +288,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         taskControllers.current.delete(taskId);
       }
     },
-    [tasks, updateTask, settings]
+    [updateTask, settings]
   );
 
   const pauseTask = useCallback(
@@ -304,7 +322,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
   const retryFailedSegments = useCallback(
     async (taskId: string) => {
-      const task = tasks.find(t => t.id === taskId);
+      const task = tasksRef.current.find(t => t.id === taskId);
       if (!task) return;
 
       // 重置错误计数
@@ -313,7 +331,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
       // 重新开始下载
       await startTask(taskId);
     },
-    [tasks, updateTask, startTask]
+    [updateTask, startTask]
   );
 
   const getProgress = useCallback((taskId: string): number => {
