@@ -145,8 +145,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
         if (restoredTasks.length > 0) {
           setTasks(restoredTasks);
-          setShowDownloadPanel(true);
-          console.log(`✅ 恢复了 ${restoredTasks.length} 个下载任务`);
+          // 不自动显示面板，保持用户上次的状态
+          console.log(`✅ 恢复了 ${restoredTasks.length} 个下载任务（面板状态已保留）`);
         }
       } catch (error) {
         console.error('恢复任务失败:', error);
