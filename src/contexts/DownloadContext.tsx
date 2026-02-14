@@ -179,10 +179,11 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         await downloadM3U8Video(
           task,
           (progress: DownloadProgress) => {
-            // 更新进度
+            // 更新进度（包含优化的消息）
             updateTask(taskId, {
               finishNum: progress.current,
               downloadIndex: progress.current,
+              progress, // 保存完整的 progress 对象
             });
           },
           abortController.signal,

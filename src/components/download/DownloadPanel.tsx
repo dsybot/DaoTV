@@ -164,7 +164,8 @@ export function DownloadPanel() {
                   <div className='mb-3'>
                     <div className='flex items-center justify-between text-xs text-gray-600 dark:text-gray-300 mb-1'>
                       <span>
-                        {task.finishNum} / {task.rangeDownload.targetSegment} 片段
+                        {/* 显示优化后的进度消息（包含速度和活跃线程） */}
+                        {task.progress?.message || `${task.finishNum} / ${task.rangeDownload.targetSegment} 片段`}
                         {timeRange ? (
                           <span className='ml-2 text-blue-600 dark:text-blue-400'>
                             {task.rangeDownload.startSegment > 1 || task.rangeDownload.endSegment < task.tsUrlList.length
