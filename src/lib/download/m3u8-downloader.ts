@@ -840,7 +840,7 @@ export async function downloadM3U8Video(
         total: totalSegments,
         percentage: Math.floor((completedCount / totalSegments) * 100),
         status: 'downloading',
-        message: `${completedCount}/${totalSegments} 片段 | ${speedMBps}MB/s | ${activeDownloads} 活跃${retryCount > 0 ? ` [重试成功]` : ''}`,
+        message: `${completedCount}/${totalSegments} 片段 | ${speedMBps}MB/s | ${activeDownloads}/${concurrency} 连接${retryCount > 0 ? ` [重试成功]` : ''}`,
       });
     } catch (error) {
       // 减少活跃下载计数（如果还没减少）
