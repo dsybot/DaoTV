@@ -4,6 +4,14 @@ import React, { createContext, useContext, useState, useCallback, useRef, useEff
 import { M3U8DownloadTask, parseM3U8, downloadM3U8Video, PauseResumeController, StreamSaverMode } from '@/lib/download';
 import type { DownloadProgress } from '@/lib/download';
 import { getBestStreamMode, detectStreamModeSupport, type StreamModeSupport } from '@/lib/download/stream-mode-detector';
+import {
+  getAllTasks,
+  saveTask,
+  deleteTask as deleteTaskFromIDB,
+  updateTaskStatus,
+  getTaskSegments,
+  isStorageBucketsSupported,
+} from '@/lib/download/download-idb';
 
 export interface DownloadSettings {
   concurrency: number; // 并发线程数
@@ -39,6 +47,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<M3U8DownloadTask[]>([]);
   const [showDownloadPanel, setShowDownloadPanel] = useState(false);
   const [isEnabled, setIsEnabled] = useState<boolean | null>(null); // null 表示加载中
+  const [isRestoring, setIsRestoring] = useState(true);
   const [streamModeSupport, setStreamModeSupport] = useState<StreamModeSupport>({
     fileSystem: false,
     serviceWorker: false,
@@ -103,7 +112,50 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       const support = detectStreamModeSupport();
       setStreamModeSupport(support);
+
+      // 输出 Storage Buckets 支持情况
+      if (isStorageBucketsSupported()) {
+        console.log('✅ Storage Buckets API enabled for optimized segment storage');
+      }
     }
+  }, []);
+
+  // 从 IndexedDB 恢复任务
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const restoreTasks = async () => {
+      try {
+        const storedTasks = await getAllTasks();
+
+        // 转换为 M3U8DownloadTask 格式
+        const restoredTasks: M3U8DownloadTask[] = await Promise.all(
+          storedTasks.map(async (stored) => {
+            // 恢复已下载的片段
+            const downloadedSegments = await getTaskSegments(stored.id);
+
+            return {
+              ...stored.task,
+              id: stored.id,
+              status: stored.status,
+              downloadedSegments,
+            };
+          })
+        );
+
+        if (restoredTasks.length > 0) {
+          setTasks(restoredTasks);
+          setShowDownloadPanel(true);
+          console.log(`✅ 恢复了 ${restoredTasks.length} 个下载任务`);
+        }
+      } catch (error) {
+        console.error('恢复任务失败:', error);
+      } finally {
+        setIsRestoring(false);
+      }
+    };
+
+    restoreTasks();
   }, []);
 
   // 保存设置到 localStorage
@@ -148,6 +200,9 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
         setTasks(prev => [...prev, newTask]);
 
+        // 保存到 IndexedDB
+        await saveTask(taskId, m3u8Task, 'ready');
+
         // 自动开始下载
         await startTask(taskId);
 
@@ -173,6 +228,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
       // 更新状态为下载中
       updateTask(taskId, { status: 'downloading' });
+      await updateTaskStatus(taskId, 'downloading');
 
       try {
         // 开始下载（使用用户设置）
@@ -190,11 +246,14 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           pauseController,
           settings.concurrency, // 使用设置的并发数
           settings.streamMode, // 使用设置的下载模式
-          settings.maxRetries // 使用设置的重试次数
+          settings.maxRetries, // 使用设置的重试次数
+          undefined, // completeStreamRef（暂不使用）
+          taskId // 传递 taskId 用于保存片段到 IndexedDB
         );
 
         // 下载完成
         updateTask(taskId, { status: 'done' });
+        await updateTaskStatus(taskId, 'done');
         console.log('下载完成:', task.title);
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') {
@@ -204,6 +263,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           // 下载错误
           console.error('下载错误:', task.title, error);
           updateTask(taskId, { status: 'error' });
+          await updateTaskStatus(taskId, 'error');
         }
       } finally {
         // 清理控制器
@@ -214,18 +274,19 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   );
 
   const pauseTask = useCallback(
-    (taskId: string) => {
+    async (taskId: string) => {
       const controllers = taskControllers.current.get(taskId);
       if (controllers) {
         controllers.pauseController.pause();
         updateTask(taskId, { status: 'pause' });
+        await updateTaskStatus(taskId, 'pause');
       }
     },
     [updateTask]
   );
 
   const cancelTask = useCallback(
-    (taskId: string) => {
+    async (taskId: string) => {
       const controllers = taskControllers.current.get(taskId);
       if (controllers) {
         controllers.abortController.abort();
@@ -234,6 +295,9 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
       // 从任务列表中移除
       setTasks(prev => prev.filter(task => task.id !== taskId));
+
+      // 从 IndexedDB 中删除
+      await deleteTaskFromIDB(taskId);
     },
     []
   );

@@ -8,6 +8,7 @@ import CryptoJS from 'crypto-js';
 
 import { StreamingTransmuxer, transmuxTSToMP4 } from './mp4-transmuxer';
 import { getRandomUserAgent, DEFAULT_USER_AGENT } from '../user-agent';
+import { saveSegment } from './download-idb';
 
 export type StreamSaverMode = 'disabled' | 'service-worker' | 'file-system';
 
@@ -521,7 +522,8 @@ export async function downloadM3U8Video(
   concurrency = 6, // 默认6个并发
   streamMode: StreamSaverMode = 'disabled', // 边下边存模式
   maxRetries = 3, // 最大重试次数
-  completeStreamRef?: { current: (() => Promise<void>) | null } // 完成流函数引用（用于边下边存模式立即保存）
+  completeStreamRef?: { current: (() => Promise<void>) | null }, // 完成流函数引用（用于边下边存模式立即保存）
+  taskId?: string // 任务 ID，用于保存片段到 IndexedDB
 ): Promise<void> {
   const { startSegment, endSegment } = task.rangeDownload;
   const totalSegments = endSegment - startSegment + 1;
@@ -743,9 +745,27 @@ export async function downloadM3U8Video(
   // 并发下载函数（带重试机制）
   const downloadSegment = async (index: number, retryCount = 0): Promise<void> => {
     const retryDelay = 1000; // 重试延迟（毫秒）
-    
+
     if (signal?.aborted) {
       throw new Error('下载已取消');
+    }
+
+    // 检查是否已经下载过（从 IndexedDB 恢复的片段）
+    if (task.downloadedSegments?.has(index)) {
+      // 片段已存在，跳过下载
+      task.finishList[index].status = 'success';
+      completedCount++;
+      task.finishNum++;
+
+      onProgress?.({
+        current: completedCount,
+        total: totalSegments,
+        percentage: Math.floor((completedCount / totalSegments) * 100),
+        status: 'downloading',
+        message: `${completedCount}/${totalSegments} 片段 | 恢复中...`,
+      });
+
+      return;
     }
 
     // 检查是否暂停，如果暂停则等待恢复
@@ -815,7 +835,17 @@ export async function downloadM3U8Video(
         }
         task.downloadedSegments.set(index, segmentData);
       }
-      
+
+      // 保存片段到 IndexedDB（支持断点续传）
+      if (taskId) {
+        try {
+          await saveSegment(taskId, index, segmentData);
+        } catch (error) {
+          // IndexedDB 保存失败不影响下载继续
+          console.warn('片段保存到 IndexedDB 失败:', index, error);
+        }
+      }
+
       // 在处理完数据后、更新状态前再次检查暂停状态
       if (pauseResumeController) {
         await pauseResumeController.waitIfPaused();
