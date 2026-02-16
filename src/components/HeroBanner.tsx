@@ -1,12 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { ChevronLeft, ChevronRight, Info, Play, Volume2, VolumeX } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Play,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { useAutoplay } from './hooks/useAutoplay';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
+// 🚀 TanStack Query Queries & Mutations
+import {
+  useRefreshedTrailerUrlsQuery,
+  useRefreshTrailerUrlMutation,
+  useClearTrailerUrlMutation,
+} from '@/hooks/useHeroBannerQueries';
 
 interface BannerItem {
   id: string | number;
@@ -44,20 +57,11 @@ function HeroBanner({
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // 存储刷新后的trailer URL（用于403自动重试，使用localStorage持久化）
-  const [refreshedTrailerUrls, setRefreshedTrailerUrls] = useState<Record<string, string>>(() => {
-    // 从 localStorage 加载已刷新的 URL
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('refreshed-trailer-urls');
-        return stored ? JSON.parse(stored) : {};
-      } catch (error) {
-        console.error('[HeroBanner] 读取localStorage失败:', error);
-        return {};
-      }
-    }
-    return {};
-  });
+  // 🚀 TanStack Query - 刷新后的trailer URL缓存
+  // 替换 useState + localStorage 手动管理
+  const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
+  const refreshTrailerMutation = useRefreshTrailerUrlMutation();
+  const clearTrailerMutation = useClearTrailerUrlMutation();
 
   // 处理图片 URL，使用代理绕过防盗链
   const getProxiedImageUrl = (url: string) => {
@@ -86,49 +90,15 @@ function HeroBanner({
     return url;
   };
 
-  // 刷新过期的trailer URL（通过后端代理调用豆瓣移动端API，绕过缓存）
-  const refreshTrailerUrl = useCallback(async (doubanId: number | string) => {
-    try {
-      console.log('[HeroBanner] 检测到trailer URL过期，重新获取:', doubanId);
-
-      // 🎯 调用专门的刷新API（不使用缓存，直接调用豆瓣移动端API）
-      const response = await fetch(`/api/douban/refresh-trailer?id=${doubanId}`);
-
-      if (!response.ok) {
-        console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
-        return null;
-      }
-
-      const data = await response.json();
-      if (data.code === 200 && data.data?.trailerUrl) {
-        console.log('[HeroBanner] 成功获取新的trailer URL');
-
-        // 更新 state 并保存到 localStorage
-        setRefreshedTrailerUrls(prev => {
-          const updated = {
-            ...prev,
-            [doubanId]: data.data.trailerUrl
-          };
-
-          // 持久化到 localStorage
-          try {
-            localStorage.setItem('refreshed-trailer-urls', JSON.stringify(updated));
-          } catch (error) {
-            console.error('[HeroBanner] 保存到localStorage失败:', error);
-          }
-
-          return updated;
-        });
-
-        return data.data.trailerUrl;
-      } else {
-        console.warn('[HeroBanner] 未能获取新的trailer URL:', data.message);
-      }
-    } catch (error) {
-      console.error('[HeroBanner] 刷新trailer URL异常:', error);
-    }
-    return null;
-  }, []);
+  // 🚀 TanStack Query - 刷新过期的trailer URL
+  // 替换手动 useCallback + setState + localStorage
+  const refreshTrailerUrl = useCallback(
+    async (doubanId: number | string) => {
+      const result = await refreshTrailerMutation.mutateAsync({ doubanId });
+      return result;
+    },
+    [refreshTrailerMutation],
+  );
 
   // 获取当前有效的trailer URL（优先使用刷新后的）
   const getEffectiveTrailerUrl = (item: BannerItem) => {
@@ -209,8 +179,15 @@ function HeroBanner({
     const checkAndRefreshMissingTrailers = async () => {
       for (const item of items) {
         // 如果有 douban_id 但没有 trailerUrl，尝试获取
-        if (item.douban_id && !item.trailerUrl && !refreshedTrailerUrls[item.douban_id]) {
-          console.log('[HeroBanner] 检测到缺失的 trailer，尝试获取:', item.title);
+        if (
+          item.douban_id &&
+          !item.trailerUrl &&
+          !refreshedTrailerUrls[item.douban_id]
+        ) {
+          console.log(
+            '[HeroBanner] 检测到缺失的 trailer，尝试获取:',
+            item.title,
+          );
           await refreshTrailerUrl(item.douban_id);
         }
       }
@@ -236,196 +213,211 @@ function HeroBanner({
     enableVideo,
   });
 
-
   return (
     <div
-      className="relative w-full aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9] overflow-hidden group rounded-xl sm:rounded-2xl md:rounded-3xl"
+      className='relative w-full aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9] overflow-hidden group rounded-xl sm:rounded-2xl md:rounded-3xl'
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...swipeHandlers}
     >
       {/* 背景图片/视频层 */}
-      <div className="absolute inset-0 bg-black">
+      <div className='absolute inset-0 bg-black'>
         {/* 只渲染当前、前一张、后一张（性能优化） */}
         {items.map((item, index) => {
           // 计算是否应该渲染此项
           const prevIndex = (currentIndex - 1 + items.length) % items.length;
           const nextIndex = (currentIndex + 1) % items.length;
-          const shouldRender = index === currentIndex || index === prevIndex || index === nextIndex;
+          const shouldRender =
+            index === currentIndex ||
+            index === prevIndex ||
+            index === nextIndex;
 
           if (!shouldRender) return null;
 
           return (
             <div
               key={item.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'
-                }`}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentIndex ? 'opacity-100' : 'opacity-0'
+              }`}
             >
               {/* 背景图片（始终显示，作为视频的占位符） */}
               <Image
-                src={getProxiedImageUrl(getHDBackdrop(item.backdrop) || item.poster)}
+                src={getProxiedImageUrl(
+                  getHDBackdrop(item.backdrop) || item.poster,
+                )}
                 alt={item.title}
                 fill
-                className="object-cover object-center"
+                className='object-cover object-center'
                 priority={index === 0}
                 quality={100}
-                sizes="100vw"
-                unoptimized={item.backdrop?.includes('/l/') || item.backdrop?.includes('/l_ratio_poster/') || false}
+                sizes='100vw'
+                unoptimized={
+                  item.backdrop?.includes('/l/') ||
+                  item.backdrop?.includes('/l_ratio_poster/') ||
+                  false
+                }
               />
 
               {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
-              {enableVideo && getEffectiveTrailerUrl(item) && index === currentIndex && (
-                <video
-                  ref={videoRef}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
+              {enableVideo &&
+                getEffectiveTrailerUrl(item) &&
+                index === currentIndex && (
+                  <video
+                    ref={videoRef}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                      videoLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
-                  autoPlay
-                  muted={isMuted}
-                  loop
-                  playsInline
-                  preload="metadata"
-                  onError={async (e) => {
-                    const video = e.currentTarget;
-                    console.error('[HeroBanner] 视频加载失败:', {
-                      title: item.title,
-                      trailerUrl: item.trailerUrl,
-                      error: e,
-                    });
+                    autoPlay
+                    muted={isMuted}
+                    loop
+                    playsInline
+                    preload='metadata'
+                    onError={async (e) => {
+                      const video = e.currentTarget;
+                      console.error('[HeroBanner] 视频加载失败:', {
+                        title: item.title,
+                        trailerUrl: item.trailerUrl,
+                        error: e,
+                      });
 
-                    // 检测是否是403错误（trailer URL过期）
-                    if (item.douban_id) {
-                      // 如果localStorage中有URL，说明之前刷新过，但现在又失败了
-                      // 需要清除localStorage中的旧URL，重新刷新
-                      if (refreshedTrailerUrls[item.douban_id]) {
-                        console.log('[HeroBanner] localStorage中的URL也过期了，清除并重新获取');
+                      // 检测是否是403错误（trailer URL过期）
+                      if (item.douban_id) {
+                        // 如果缓存中有URL，说明之前刷新过，但现在又失败了
+                        // 需要清除缓存中的旧URL，重新刷新
+                        if (refreshedTrailerUrls[item.douban_id]) {
+                          clearTrailerMutation.mutate({
+                            doubanId: item.douban_id,
+                          });
+                        }
 
-                        // 清除state和localStorage中的旧URL
-                        setRefreshedTrailerUrls(prev => {
-                          const updated = { ...prev };
-                          delete updated[item.douban_id!];
-
-                          try {
-                            localStorage.setItem('refreshed-trailer-urls', JSON.stringify(updated));
-                          } catch (error) {
-                            console.error('[HeroBanner] 清除localStorage失败:', error);
-                          }
-
-                          return updated;
-                        });
+                        // 重新刷新URL
+                        const newUrl = await refreshTrailerUrl(item.douban_id);
+                        if (newUrl) {
+                          // 重新加载视频
+                          video.load();
+                        }
                       }
-
-                      // 重新刷新URL
-                      const newUrl = await refreshTrailerUrl(item.douban_id);
-                      if (newUrl) {
-                        // 重新加载视频
-                        video.load();
-                      }
-                    }
-                  }}
-                  onLoadedData={(e) => {
-                    console.log('[HeroBanner] 视频加载成功:', item.title);
-                    setVideoLoaded(true); // 视频加载完成，淡入显示
-                    // 确保视频开始播放
-                    const video = e.currentTarget;
-                    video.play().catch((error) => {
-                      console.error('[HeroBanner] 视频自动播放失败:', error);
-                    });
-                  }}
-                >
-                  <source src={getProxiedVideoUrl(getEffectiveTrailerUrl(item) || '')} type="video/mp4" />
-                </video>
-              )}
+                    }}
+                    onLoadedData={(e) => {
+                      console.log('[HeroBanner] 视频加载成功:', item.title);
+                      setVideoLoaded(true); // 视频加载完成，淡入显示
+                      // 确保视频开始播放
+                      const video = e.currentTarget;
+                      video.play().catch((error) => {
+                        console.error('[HeroBanner] 视频自动播放失败:', error);
+                      });
+                    }}
+                  >
+                    <source
+                      src={getProxiedVideoUrl(
+                        getEffectiveTrailerUrl(item) || '',
+                      )}
+                      type='video/mp4'
+                    />
+                  </video>
+                )}
             </div>
           );
         })}
 
         {/* Netflix经典渐变遮罩：底部黑→中间透明→顶部黑 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/80" />
+        <div className='absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/80' />
         {/* 左侧额外渐变（增强文字可读性） */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+        <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent' />
       </div>
 
-
       {/* 内容叠加层 - Netflix风格：左下角 */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 sm:px-8 md:px-12 lg:px-16 xl:px-20 pb-8 sm:pb-16 md:pb-20 lg:pb-24">
-        <div className="max-w-2xl space-y-1.5 sm:space-y-4 md:space-y-5 lg:space-y-6">
+      <div className='absolute bottom-0 left-0 right-0 px-3 sm:px-8 md:px-12 lg:px-16 xl:px-20 pb-8 sm:pb-16 md:pb-20 lg:pb-24'>
+        <div className='max-w-2xl space-y-1.5 sm:space-y-4 md:space-y-5 lg:space-y-6'>
           {/* 标题 - Netflix风格：超大字体 */}
-          <h1 className="text-lg sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white drop-shadow-2xl leading-tight line-clamp-1 sm:line-clamp-2">
+          <h1 className='text-lg sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white drop-shadow-2xl leading-tight line-clamp-1 sm:line-clamp-2'>
             {currentItem.title}
           </h1>
 
           {/* 元数据 */}
-          <div className="flex items-center gap-1.5 sm:gap-4 text-xs sm:text-base md:text-lg flex-wrap">
+          <div className='flex items-center gap-1.5 sm:gap-4 text-xs sm:text-base md:text-lg flex-wrap'>
             {currentItem.rate && (
-              <div className="flex items-center gap-0.5 sm:gap-1.5 px-1 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-500/90 rounded text-[10px] sm:text-base">
-                <span className="text-white font-bold">★</span>
-                <span className="text-white font-bold">{currentItem.rate}</span>
+              <div className='flex items-center gap-0.5 sm:gap-1.5 px-1 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-500/90 rounded text-[10px] sm:text-base'>
+                <span className='text-white font-bold'>★</span>
+                <span className='text-white font-bold'>{currentItem.rate}</span>
               </div>
             )}
             {currentItem.year && (
-              <span className="text-white/90 font-semibold drop-shadow-md text-[10px] sm:text-base">
+              <span className='text-white/90 font-semibold drop-shadow-md text-[10px] sm:text-base'>
                 {currentItem.year}
               </span>
             )}
             {currentItem.type && (
-              <span className="px-1.5 sm:px-3 py-0.5 sm:py-1 bg-white/20 rounded text-white/90 font-medium border border-white/30 text-[10px] sm:text-base">
-                {currentItem.type === 'movie' ? '电影' :
-                  currentItem.type === 'tv' ? '剧集' :
-                    currentItem.type === 'variety' ? '综艺' :
-                      currentItem.type === 'shortdrama' ? '短剧' :
-                        currentItem.type === 'anime' ? '动漫' : '剧集'}
+              <span className='px-1.5 sm:px-3 py-0.5 sm:py-1 bg-white/20 rounded text-white/90 font-medium border border-white/30 text-[10px] sm:text-base'>
+                {currentItem.type === 'movie'
+                  ? '电影'
+                  : currentItem.type === 'tv'
+                    ? '剧集'
+                    : currentItem.type === 'variety'
+                      ? '综艺'
+                      : currentItem.type === 'shortdrama'
+                        ? '短剧'
+                        : currentItem.type === 'anime'
+                          ? '动漫'
+                          : '剧集'}
               </span>
             )}
           </div>
 
           {/* 描述 - 平板2行，桌面3行 */}
           {currentItem.description && (
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 line-clamp-2 md:line-clamp-3 drop-shadow-lg leading-relaxed max-w-xl">
+            <p className='text-xs sm:text-sm md:text-base lg:text-lg text-white/90 line-clamp-2 md:line-clamp-3 drop-shadow-lg leading-relaxed max-w-xl'>
               {currentItem.description}
             </p>
           )}
 
           {/* 操作按钮 - Netflix风格 */}
-          <div className="flex gap-2 sm:gap-4 pt-0.5 sm:pt-2">
+          <div className='flex gap-2 sm:gap-4 pt-0.5 sm:pt-2'>
             <Link
               href={
                 currentItem.type === 'shortdrama'
                   ? `/play?title=${encodeURIComponent(currentItem.title)}&shortdrama_id=${currentItem.id}`
                   : `/play?title=${encodeURIComponent(currentItem.title)}${currentItem.year ? `&year=${currentItem.year}` : ''}${currentItem.douban_id ? `&douban_id=${currentItem.douban_id}` : ''}${currentItem.type ? `&stype=${currentItem.type}` : ''}`
               }
-              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white text-black font-bold rounded hover:bg-white/90 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl"
+              className='flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white text-black font-bold rounded hover:bg-white/90 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl'
             >
-              <Play className="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7" fill="currentColor" />
+              <Play
+                className='w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7'
+                fill='currentColor'
+              />
               <span>播放</span>
             </Link>
             <Link
               href={
                 currentItem.type === 'shortdrama'
                   ? '/shortdrama'
-                  : `/douban?type=${currentItem.type === 'variety' ? 'show' : (currentItem.type || 'movie')
-                  }`
+                  : `/douban?type=${
+                      currentItem.type === 'variety'
+                        ? 'show'
+                        : currentItem.type || 'movie'
+                    }`
               }
-              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white/30 text-white font-bold rounded hover:bg-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl border border-white/50"
+              className='flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white/30 text-white font-bold rounded hover:bg-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl border border-white/50'
             >
-              <Info className="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+              <Info className='w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7' />
               <span>详情</span>
             </Link>
           </div>
         </div>
       </div>
 
-
       {/* 音量控制按钮（仅视频模式） */}
       {enableVideo && getEffectiveTrailerUrl(currentItem) && (
         <button
           onClick={toggleMute}
-          className="absolute bottom-10 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50"
+          className='absolute bottom-10 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50'
           aria-label={isMuted ? '取消静音' : '静音'}
         >
           {isMuted ? (
-            <VolumeX className="w-3.5 h-3.5 sm:w-6 sm:h-6" />
+            <VolumeX className='w-3.5 h-3.5 sm:w-6 sm:h-6' />
           ) : (
-            <Volume2 className="w-3.5 h-3.5 sm:w-6 sm:h-6" />
+            <Volume2 className='w-3.5 h-3.5 sm:w-6 sm:h-6' />
           )}
         </button>
       )}
@@ -435,32 +427,33 @@ function HeroBanner({
         <>
           <button
             onClick={handlePrev}
-            className="hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30"
-            aria-label="上一张"
+            className='hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30'
+            aria-label='上一张'
           >
-            <ChevronLeft className="w-7 h-7 lg:w-8 lg:h-8" />
+            <ChevronLeft className='w-7 h-7 lg:w-8 lg:h-8' />
           </button>
           <button
             onClick={handleNext}
-            className="hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30"
-            aria-label="下一张"
+            className='hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30'
+            aria-label='下一张'
           >
-            <ChevronRight className="w-7 h-7 lg:w-8 lg:h-8" />
+            <ChevronRight className='w-7 h-7 lg:w-8 lg:h-8' />
           </button>
         </>
       )}
 
       {/* 指示器 - Netflix风格：底部居中 */}
       {showIndicators && items.length > 1 && (
-        <div className="absolute bottom-2 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2">
+        <div className='absolute bottom-2 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2'>
           {items.map((_, index) => (
             <button
               key={index}
               onClick={() => handleIndicatorClick(index)}
-              className={`h-0.5 sm:h-1 rounded-full transition-all duration-300 ${index === currentIndex
-                ? 'w-5 sm:w-10 bg-white shadow-lg'
-                : 'w-1 sm:w-2 bg-white/50 hover:bg-white/75'
-                }`}
+              className={`h-0.5 sm:h-1 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? 'w-5 sm:w-10 bg-white shadow-lg'
+                  : 'w-1 sm:w-2 bg-white/50 hover:bg-white/75'
+              }`}
               aria-label={`跳转到第 ${index + 1} 张`}
             />
           ))}
@@ -468,14 +461,13 @@ function HeroBanner({
       )}
 
       {/* 页码标识 */}
-      <div className="absolute top-2 sm:top-6 md:top-8 right-2 sm:right-8 md:right-12">
-        <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/70 border border-white/70 sm:border-2 rounded text-white text-[10px] sm:text-sm font-bold">
+      <div className='absolute top-2 sm:top-6 md:top-8 right-2 sm:right-8 md:right-12'>
+        <div className='px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/70 border border-white/70 sm:border-2 rounded text-white text-[10px] sm:text-sm font-bold'>
           {currentIndex + 1} / {items.length}
         </div>
       </div>
     </div>
   );
 }
-
 
 export default memo(HeroBanner);
