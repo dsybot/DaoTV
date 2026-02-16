@@ -462,64 +462,6 @@ export default function ReleaseCalendarPage() {
     };
   }, [rawData, filters]);
 
-  // 前端过滤逻辑（可以指定过滤参数）
-  const applyClientSideFiltersWithParams = (
-    data: ReleaseCalendarResult,
-    filterParams: typeof filters,
-  ): ReleaseCalendarResult => {
-    let filteredItems = [...data.items];
-
-    if (filterParams.type) {
-      filteredItems = filteredItems.filter(
-        (item) => item.type === filterParams.type,
-      );
-    }
-
-    if (filterParams.region && filterParams.region !== '全部') {
-      filteredItems = filteredItems.filter((item) =>
-        item.region.includes(filterParams.region!),
-      );
-    }
-
-    if (filterParams.genre && filterParams.genre !== '全部') {
-      filteredItems = filteredItems.filter((item) =>
-        item.genre.includes(filterParams.genre!),
-      );
-    }
-
-    if (filterParams.dateFrom) {
-      filteredItems = filteredItems.filter(
-        (item) => item.releaseDate >= filterParams.dateFrom!,
-      );
-    }
-
-    if (filterParams.dateTo) {
-      filteredItems = filteredItems.filter(
-        (item) => item.releaseDate <= filterParams.dateTo!,
-      );
-    }
-
-    if (filterParams.search) {
-      filteredItems = filteredItems.filter(
-        (item) =>
-          item.title
-            .toLowerCase()
-            .includes(filterParams.search.toLowerCase()) ||
-          item.director
-            .toLowerCase()
-            .includes(filterParams.search.toLowerCase()) ||
-          item.actors.toLowerCase().includes(filterParams.search.toLowerCase()),
-      );
-    }
-
-    return {
-      ...data,
-      items: filteredItems,
-      total: filteredItems.length,
-      hasMore: false, // 前端分页，所以没有更多数据
-    };
-  };
-
   // 应用过滤器（filters变化时useMemo自动重新计算，只需重置页码）
   const applyFilters = () => {
     setCurrentPage(1);
