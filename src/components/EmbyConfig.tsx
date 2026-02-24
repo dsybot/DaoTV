@@ -28,6 +28,7 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
     ApiKey: '',
     Username: '',
     Password: '',
+    UserId: '',
   });
 
   // 从配置加载源列表
@@ -53,6 +54,7 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
       ApiKey: '',
       Username: '',
       Password: '',
+      UserId: '',
     });
     setEditingSource(null);
     setShowAddForm(false);
@@ -85,13 +87,40 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
 
     setIsLoading(true);
     try {
+      // 如果没有 UserId，先测试连接获取 UserId
+      let dataToSave = { ...formData };
+      if (!dataToSave.UserId) {
+        const testResponse = await fetch('/api/admin/emby', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'test',
+            ServerURL: formData.ServerURL,
+            ApiKey: formData.ApiKey,
+            Username: formData.Username,
+            Password: formData.Password,
+          }),
+        });
+
+        const testResult = await testResponse.json();
+        if (!testResult.success) {
+          showMessage('error', '连接测试失败，请检查配置: ' + (testResult.message || ''));
+          setIsLoading(false);
+          return;
+        }
+
+        if (testResult.userId) {
+          dataToSave.UserId = testResult.userId;
+        }
+      }
+
       let newSources;
       if (editingSource) {
         newSources = sources.map(s =>
-          s.key === editingSource.key ? formData : s
+          s.key === editingSource.key ? dataToSave : s
         );
       } else {
-        newSources = [...sources, formData];
+        newSources = [...sources, dataToSave];
       }
 
       const response = await fetch('/api/admin/config', {
@@ -189,6 +218,10 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
 
       const result = await response.json();
       if (result.success) {
+        // 如果测试成功且返回了 userId，更新 formData
+        if (result.userId && editingSource && editingSource.key === source.key) {
+          setFormData(prev => ({ ...prev, UserId: result.userId }));
+        }
         showMessage('success', result.message || 'Emby 连接测试成功');
       } else {
         showMessage('error', result.message || 'Emby 连接测试失败');

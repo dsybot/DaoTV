@@ -89,9 +89,19 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 获取用户信息以获取 UserId
+      let userId: string | undefined;
+      try {
+        const userInfo = await client.getCurrentUser();
+        userId = userInfo.Id;
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Emby 连接测试成功',
+        userId,
       });
     }
 
