@@ -162,6 +162,28 @@ export class EmbyClient {
   }
 
   async getCurrentUser(): Promise<{ Id: string; Name: string }> {
+    // 如果使用 API Key，需要通过 /Users 端点获取用户列表
+    if (this.apiKey) {
+      const url = `${this.serverUrl}/Users`;
+      const headers = this.getHeaders();
+
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`获取用户列表失败 (${response.status}): ${errorText}`);
+      }
+
+      const users = await response.json();
+      if (!users || users.length === 0) {
+        throw new Error('未找到任何用户');
+      }
+
+      // 返回第一个用户（通常是管理员）
+      return users[0];
+    }
+
+    // 使用 AuthToken 时可以直接调用 /Users/Me
     const url = `${this.serverUrl}/Users/Me`;
     const headers = this.getHeaders();
 
