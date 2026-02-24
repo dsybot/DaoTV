@@ -106,6 +106,10 @@ export default function PrivateLibraryPage() {
         const data = await response.json();
         if (data.sources && data.sources.length > 0) {
           setEmbySourceOptions(data.sources);
+          // 如果没有指定 embyKey，自动选择第一个源
+          if (!embyKey) {
+            setEmbyKey(data.sources[0].key);
+          }
         }
       } catch (error) {
         console.error('获取 Emby 源列表失败:', error);
@@ -113,7 +117,7 @@ export default function PrivateLibraryPage() {
     };
 
     fetchEmbySources();
-  }, [runtimeConfig.EMBY_ENABLED]);
+  }, [runtimeConfig.EMBY_ENABLED, embyKey]);
 
   // 获取 Emby 媒体库列表
   useEffect(() => {
