@@ -29,6 +29,10 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
     Username: '',
     Password: '',
     UserId: '',
+    removeEmbyPrefix: false,
+    appendMediaSourceId: false,
+    transcodeMp4: false,
+    proxyPlay: false,
   });
 
   // 从配置加载源列表
@@ -55,6 +59,10 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
       Username: '',
       Password: '',
       UserId: '',
+      removeEmbyPrefix: false,
+      appendMediaSourceId: false,
+      transcodeMp4: false,
+      proxyPlay: false,
     });
     setEditingSource(null);
     setShowAddForm(false);
@@ -430,6 +438,113 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
                   placeholder='可选'
                   className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                 />
+              </div>
+            </div>
+
+            {/* 高级选项 */}
+            <div className='space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700'>
+              <h4 className='text-sm font-medium text-gray-900 dark:text-white mb-3'>
+                高级选项
+              </h4>
+
+              {/* 选项1: 移除Emby前缀 */}
+              <div className='flex items-center justify-between'>
+                <div className='flex-1'>
+                  <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    播放链接移除/emby前缀
+                  </label>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    启用后将从播放链接中移除 /emby 前缀
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => setFormData({ ...formData, removeEmbyPrefix: !formData.removeEmbyPrefix })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    formData.removeEmbyPrefix ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.removeEmbyPrefix ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* 选项2: 拼接MediaSourceId参数 */}
+              <div className='flex items-center justify-between'>
+                <div className='flex-1'>
+                  <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    拼接MediaSourceId参数
+                  </label>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    启用后将调用 PlaybackInfo API 获取 MediaSourceId 并添加到播放链接
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => setFormData({ ...formData, appendMediaSourceId: !formData.appendMediaSourceId })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    formData.appendMediaSourceId ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.appendMediaSourceId ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* 选项3: 转码mp4 */}
+              <div className='flex items-center justify-between'>
+                <div className='flex-1'>
+                  <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    转码mp4
+                  </label>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    启用后将使用 stream.mp4 格式并移除 Static 参数
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => setFormData({ ...formData, transcodeMp4: !formData.transcodeMp4 })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    formData.transcodeMp4 ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.transcodeMp4 ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* 选项4: 视频播放代理 */}
+              <div className='flex items-center justify-between'>
+                <div className='flex-1'>
+                  <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    视频播放代理
+                  </label>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    启用后视频播放将通过服务器代理
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => setFormData({ ...formData, proxyPlay: !formData.proxyPlay })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    formData.proxyPlay ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.proxyPlay ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
 
