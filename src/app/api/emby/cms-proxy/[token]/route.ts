@@ -14,8 +14,9 @@ export const runtime = 'nodejs';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
+  const { token } = await params;
   const { searchParams } = new URL(request.url);
   const ac = searchParams.get('ac');
   const wd = searchParams.get('wd'); // 搜索关键词
@@ -30,10 +31,9 @@ export async function GET(
   }
 
   // 验证 TVBox Token
-  const requestToken = params.token;
   const subscribeToken = process.env.TVBOX_SUBSCRIBE_TOKEN;
 
-  if (!subscribeToken || requestToken !== subscribeToken) {
+  if (!subscribeToken || token !== subscribeToken) {
     return NextResponse.json({
       code: 401,
       msg: '无效的访问token',
@@ -72,7 +72,7 @@ export async function GET(
     if (wd) {
       // 搜索模式
       if (ac === 'detail') {
-        return await handleDetailBySearch(client, wd, requestToken, embyKey, request);
+        return await handleDetailBySearch(client, wd, token, embyKey, request);
       }
       return await handleSearch(client, wd);
     } else if (ids || ac === 'detail') {
@@ -88,7 +88,7 @@ export async function GET(
           list: [],
         });
       }
-      return await handleDetail(client, ids, requestToken, embyKey, request);
+      return await handleDetail(client, ids, token, embyKey, request);
     } else {
       // 列表模式
       return await handleSearch(client, '');
