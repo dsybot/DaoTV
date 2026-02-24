@@ -84,6 +84,10 @@ export default function PrivateLibraryPage() {
   const observerTarget = useRef<HTMLDivElement>(null);
   const isFetchingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // 搜索状态
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<Video[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -268,6 +272,40 @@ export default function PrivateLibraryPage() {
     setSortOrder((prev) => (prev === 'Ascending' ? 'Descending' : 'Ascending'));
   };
 
+  // Emby搜索处理函数
+  const handleEmbySearch = async () => {
+    if (!searchKeyword.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const params = new URLSearchParams({
+        keyword: searchKeyword,
+      });
+      if (embyKey) {
+        params.append('embyKey', embyKey);
+      }
+
+      const response = await fetch(`/api/emby/search?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('搜索失败');
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        setError(data.error);
+        setSearchResults([]);
+      } else {
+        setSearchResults(data.videos || []);
+      }
+    } catch (err) {
+      console.error('搜索失败:', err);
+      setError('搜索失败');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   // 处理视频卡片点击
   const handleVideoClick = (video: Video) => {
     const sourceParam = embyKey ? `emby_${embyKey}` : 'emby';
@@ -338,59 +376,100 @@ export default function PrivateLibraryPage() {
             </div>
           )}
 
-          {/* 排序选择 */}
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <button
-                ref={sortButtonRef}
-                onClick={() => {
-                  if (sortButtonRef.current) {
-                    const rect = sortButtonRef.current.getBoundingClientRect();
-                    setSortDropdownPosition({
-                      x: rect.left,
-                      y: rect.bottom + 8,
-                      width: rect.width,
-                    });
-                  }
-                  setShowSortDropdown(!showSortDropdown);
-                }}
-                className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center gap-2"
-              >
-                {sortOptions.find((opt) => opt.value === sortBy)?.label || '排序'}
-              </button>
-
-              {showSortDropdown && (
-                <div
-                  ref={sortDropdownRef}
-                  className="fixed z-50 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg py-2"
-                  style={{
-                    left: `${sortDropdownPosition.x}px`,
-                    top: `${sortDropdownPosition.y}px`,
-                    minWidth: `${sortDropdownPosition.width}px`,
+          {/* 排序选择和搜索 */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button
+                  ref={sortButtonRef}
+                  onClick={() => {
+                    if (sortButtonRef.current) {
+                      const rect = sortButtonRef.current.getBoundingClientRect();
+                      setSortDropdownPosition({
+                        x: rect.left,
+                        y: rect.bottom + 8,
+                        width: rect.width,
+                      });
+                    }
+                    setShowSortDropdown(!showSortDropdown);
                   }}
+                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center gap-2"
                 >
-                  {sortOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => {
-                        setSortBy(option.value);
-                        setShowSortDropdown(false);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+                  {sortOptions.find((opt) => opt.value === sortBy)?.label || '排序'}
+                </button>
+
+                {showSortDropdown && (
+                  <div
+                    ref={sortDropdownRef}
+                    className="fixed z-50 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg py-2"
+                    style={{
+                      left: `${sortDropdownPosition.x}px`,
+                      top: `${sortDropdownPosition.y}px`,
+                      minWidth: `${sortDropdownPosition.width}px`,
+                    }}
+                  >
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value);
+                          setShowSortDropdown(false);
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={toggleSortOrder}
+                className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700"
+              >
+                {sortOrder === 'Ascending' ? '升序' : '降序'}
+              </button>
             </div>
 
-            <button
-              onClick={toggleSortOrder}
-              className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700"
-            >
-              {sortOrder === 'Ascending' ? '升序' : '降序'}
-            </button>
+            {/* 搜索框 */}
+            <div className="relative w-full md:w-auto md:min-w-[300px]">
+              <input
+                type="text"
+                placeholder="搜索视频..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchKeyword.trim()) {
+                    handleEmbySearch();
+                  }
+                }}
+                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {searchKeyword ? (
+                <button
+                  onClick={() => {
+                    setSearchKeyword('');
+                    setSearchResults([]);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={handleEmbySearch}
+                  disabled={!searchKeyword.trim() || isSearching}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -411,8 +490,42 @@ export default function PrivateLibraryPage() {
           </div>
         )}
 
+        {/* 搜索结果 */}
+        {searchResults.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                搜索结果 ({searchResults.length})
+              </h3>
+              <button
+                onClick={() => {
+                  setSearchKeyword('');
+                  setSearchResults([]);
+                }}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                清除搜索
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {searchResults.map((video) => (
+                <div key={video.id} onClick={() => handleVideoClick(video)}>
+                  <VideoCard
+                    id={video.id}
+                    title={video.title}
+                    poster={video.poster}
+                    year={video.year}
+                    source={embyKey ? `emby_${embyKey}` : 'emby'}
+                    from="search"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 视频列表 */}
-        {!loading && videos.length > 0 && (
+        {!loading && videos.length > 0 && searchResults.length === 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {videos.map((video) => (
               <div key={video.id} onClick={() => handleVideoClick(video)}>
