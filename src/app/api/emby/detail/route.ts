@@ -22,45 +22,42 @@ export async function GET(request: NextRequest) {
     // 获取媒体详情
     const item = await client.getItem(itemId);
 
-    let episodes: any[] = [];
+    // 构建 episodes 数组（电影返回单个playUrl，电视剧返回所有剧集的playUrl）
+    let episodesUrls: string[] = [];
 
-    if (item.Type === 'Series') {
-      // 获取所有剧集
+    if (item.Type === 'Movie') {
+      // 电影：episodes数组包含一个播放URL
+      episodesUrls = [await client.getStreamUrl(item.Id)];
+    } else if (item.Type === 'Series') {
+      // 电视剧：获取所有剧集的播放URL
       const allEpisodes = await client.getEpisodes(itemId);
 
-      episodes = await Promise.all(
-        allEpisodes
-          .sort((a, b) => {
-            if (a.ParentIndexNumber !== b.ParentIndexNumber) {
-              return (a.ParentIndexNumber || 0) - (b.ParentIndexNumber || 0);
-            }
-            return (a.IndexNumber || 0) - (b.IndexNumber || 0);
-          })
-          .map(async (ep) => ({
-            id: ep.Id,
-            title: ep.Name,
-            episode: ep.IndexNumber || 0,
-            season: ep.ParentIndexNumber || 1,
-            overview: ep.Overview || '',
-            playUrl: await client.getStreamUrl(ep.Id),
-          }))
+      const sortedEpisodes = allEpisodes.sort((a, b) => {
+        if (a.ParentIndexNumber !== b.ParentIndexNumber) {
+          return (a.ParentIndexNumber || 0) - (b.ParentIndexNumber || 0);
+        }
+        return (a.IndexNumber || 0) - (b.IndexNumber || 0);
+      });
+
+      episodesUrls = await Promise.all(
+        sortedEpisodes.map(ep => client.getStreamUrl(ep.Id))
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      item: {
-        id: item.Id,
-        title: item.Name,
-        type: item.Type === 'Movie' ? 'movie' : 'tv',
-        overview: item.Overview || '',
-        poster: client.getImageUrl(item.Id, 'Primary'),
-        year: item.ProductionYear?.toString() || '',
-        rating: item.CommunityRating || 0,
-        playUrl: item.Type === 'Movie' ? await client.getStreamUrl(item.Id) : undefined,
-      },
-      episodes: item.Type === 'Series' ? episodes : [],
-    });
+    // 返回 SearchResult 格式
+    const sourceKey = embyKey ? `emby_${embyKey}` : 'emby';
+
+    return NextResponse.json([{
+      id: item.Id,
+      title: item.Name,
+      source: sourceKey,
+      source_name: 'Emby',
+      poster: client.getImageUrl(item.Id, 'Primary'),
+      year: item.ProductionYear?.toString() || '',
+      rating: item.CommunityRating || 0,
+      overview: item.Overview || '',
+      episodes: episodesUrls,
+    }]);
   } catch (error) {
     console.error('获取 Emby 详情失败:', error);
     return NextResponse.json(
