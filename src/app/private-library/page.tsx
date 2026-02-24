@@ -378,85 +378,29 @@ export default function PrivateLibraryPage() {
             </div>
           )}
 
-          {/* 排序选择和搜索 */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+          {/* 搜索栏 */}
+          <div className="mb-6">
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-all duration-300 group-focus-within:text-green-500 dark:group-focus-within:text-green-400 group-focus-within:scale-110" />
+              <input
+                type="text"
+                placeholder="搜索 Emby 视频..."
+                className="w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-11 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-green-500 transition-all duration-300"
+                value={searchKeyword}
+                onChange={(e) => handleEmbySearch(e.target.value)}
+              />
+              {searchKeyword && (
                 <button
-                  ref={sortButtonRef}
-                  onClick={() => {
-                    if (sortButtonRef.current) {
-                      const rect = sortButtonRef.current.getBoundingClientRect();
-                      setSortDropdownPosition({
-                        x: rect.left,
-                        y: rect.bottom + 8,
-                        width: rect.width,
-                      });
-                    }
-                    setShowSortDropdown(!showSortDropdown);
-                  }}
-                  className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center gap-2"
+                  onClick={() => handleEmbySearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  {sortOptions.find((opt) => opt.value === sortBy)?.label || '排序'}
+                  <X className="h-5 w-5" />
                 </button>
-
-                {showSortDropdown && (
-                  <div
-                    ref={sortDropdownRef}
-                    className="fixed z-50 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg py-2"
-                    style={{
-                      left: `${sortDropdownPosition.x}px`,
-                      top: `${sortDropdownPosition.y}px`,
-                      minWidth: `${sortDropdownPosition.width}px`,
-                    }}
-                  >
-                    {sortOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setSortBy(option.value);
-                          setShowSortDropdown(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={toggleSortOrder}
-                className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700"
-              >
-                {sortOrder === 'Ascending' ? '升序' : '降序'}
-              </button>
+              )}
             </div>
+          </div>
 
-            {/* 搜索栏 */}
-            <div className="mb-6">
-              <div className="relative group">
-                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-all duration-300 group-focus-within:text-green-500 dark:group-focus-within:text-green-400 group-focus-within:scale-110" />
-                <input
-                  type="text"
-                  placeholder="搜索 Emby 视频..."
-                  className="w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-11 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-green-500 transition-all duration-300"
-                  value={searchKeyword}
-                  onChange={(e) => handleEmbySearch(e.target.value)}
-                />
-                {searchKeyword && (
-                  <button
-                    onClick={() => handleEmbySearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* 排序选择 */}
+          {/* 排序选择 */}
             <div className="mb-6">
               <div className="flex items-center space-x-2.5 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-linear-to-br from-green-500 via-emerald-600 to-teal-500 flex items-center justify-center shadow-lg shadow-green-500/30">
@@ -522,7 +466,6 @@ export default function PrivateLibraryPage() {
                 </button>
               </div>
             </div>
-          </div>
         </div>
 
         {/* 错误提示 */}
