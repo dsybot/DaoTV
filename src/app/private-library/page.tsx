@@ -2,7 +2,7 @@
 
 'use client';
 
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, Film } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Film, Search, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -75,10 +75,6 @@ export default function PrivateLibraryPage() {
   // Emby排序状态
   const [sortBy, setSortBy] = useState<string>('SortName');
   const [sortOrder, setSortOrder] = useState<'Ascending' | 'Descending'>('Ascending');
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [sortDropdownPosition, setSortDropdownPosition] = useState<{ x: number; y: number; width: number }>({ x: 0, y: 0, width: 0 });
-  const sortButtonRef = useRef<HTMLButtonElement | null>(null);
-  const sortDropdownRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const pageSize = 20;
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -273,13 +269,19 @@ export default function PrivateLibraryPage() {
   };
 
   // Emby搜索处理函数
-  const handleEmbySearch = async () => {
-    if (!searchKeyword.trim()) return;
+  const handleEmbySearch = async (query: string) => {
+    setSearchKeyword(query);
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
 
     setIsSearching(true);
     try {
       const params = new URLSearchParams({
-        keyword: searchKeyword,
+        keyword: query,
       });
       if (embyKey) {
         params.append('embyKey', embyKey);
@@ -432,43 +434,93 @@ export default function PrivateLibraryPage() {
               </button>
             </div>
 
-            {/* 搜索框 */}
-            <div className="relative w-full md:w-auto md:min-w-[300px]">
-              <input
-                type="text"
-                placeholder="搜索视频..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchKeyword.trim()) {
-                    handleEmbySearch();
-                  }
-                }}
-                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {searchKeyword ? (
+            {/* 搜索栏 */}
+            <div className="mb-6">
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-all duration-300 group-focus-within:text-green-500 dark:group-focus-within:text-green-400 group-focus-within:scale-110" />
+                <input
+                  type="text"
+                  placeholder="搜索 Emby 视频..."
+                  className="w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-11 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-green-500 transition-all duration-300"
+                  value={searchKeyword}
+                  onChange={(e) => handleEmbySearch(e.target.value)}
+                />
+                {searchKeyword && (
+                  <button
+                    onClick={() => handleEmbySearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 排序选择 */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-2.5 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-linear-to-br from-green-500 via-emerald-600 to-teal-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                  <ArrowUpNarrowWide className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+                  排序方式
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {sortOptions.map((option, index) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => setSortBy(option.value)}
+                      className={`group relative overflow-hidden rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                        sortBy === option.value
+                          ? 'bg-linear-to-r from-green-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-green-500/40'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600 hover:shadow-md'
+                      }`}
+                      style={{
+                        animation: `fadeInUp 0.3s ease-out ${index * 0.03}s both`,
+                      }}
+                    >
+                      {/* 激活状态的光泽效果 */}
+                      {sortBy === option.value && (
+                        <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                      )}
+
+                      {/* 未激活状态的悬停背景 */}
+                      {sortBy !== option.value && (
+                        <div className="absolute inset-0 bg-linear-to-r from-green-50 via-emerald-50 to-green-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-green-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      )}
+
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        <Icon className="h-4 w-4" />
+                        {option.label}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {/* 排序顺序按钮 */}
                 <button
-                  onClick={() => {
-                    setSearchKeyword('');
-                    setSearchResults([]);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  onClick={toggleSortOrder}
+                  className="group relative overflow-hidden rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 transform hover:scale-105 bg-linear-to-r from-blue-500 via-blue-600 to-indigo-500 text-white shadow-lg shadow-blue-500/40"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {sortOrder === 'Ascending' ? (
+                      <>
+                        <ArrowUpNarrowWide className="h-4 w-4" />
+                        升序
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownWideNarrow className="h-4 w-4" />
+                        降序
+                      </>
+                    )}
+                  </span>
                 </button>
-              ) : (
-                <button
-                  onClick={handleEmbySearch}
-                  disabled={!searchKeyword.trim() || isSearching}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -498,10 +550,7 @@ export default function PrivateLibraryPage() {
                 搜索结果 ({searchResults.length})
               </h3>
               <button
-                onClick={() => {
-                  setSearchKeyword('');
-                  setSearchResults([]);
-                }}
+                onClick={() => handleEmbySearch('')}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
                 清除搜索
