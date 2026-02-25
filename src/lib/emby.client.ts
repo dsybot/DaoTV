@@ -164,17 +164,22 @@ export class EmbyClient {
   }
 
   async getCurrentUser(): Promise<{ Id: string; Name: string }> {
-    // 如果使用 API Key，使用 /Users/Me 端点（支持 API Key）
+    // 如果使用 API Key，通过 /Users 端点获取用户列表（用 query param 传 api_key）
     if (this.apiKey) {
-      const url = `${this.serverUrl}/Users/Me?api_key=${this.apiKey}`;
+      const url = `${this.serverUrl}/Users?api_key=${this.apiKey}`;
       const response = await fetch(url);
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`获取当前用户信息失败 (${response.status}): ${errorText}`);
+        throw new Error(`获取用户列表失败 (${response.status}): ${errorText}`);
       }
 
-      return await response.json();
+      const users = await response.json();
+      if (!users || users.length === 0) {
+        throw new Error('未找到任何用户');
+      }
+
+      return users[0];
     }
 
     // 使用用户名密码时，先确保已认证
@@ -182,21 +187,21 @@ export class EmbyClient {
       const authResult = await this.authenticate(this.username, this.password);
       this.authToken = authResult.AccessToken;
       this.userId = authResult.User.Id;
+      return authResult.User as { Id: string; Name: string };
     }
 
-    // 使用 AuthToken 时可以直接调用 /Users/Me
-    const url = `${this.serverUrl}/Users/Me`;
-    const headers = this.getHeaders();
-
-    const response = await fetch(url, { headers });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`获取当前用户信息失败 (${response.status}): ${errorText}`);
+    // 已有 authToken，用 userId 直接访问 /Users/{id}
+    if (this.authToken && this.userId) {
+      const url = `${this.serverUrl}/Users/${this.userId}?api_key=${this.authToken}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`获取当前用户信息失败 (${response.status}): ${errorText}`);
+      }
+      return await response.json();
     }
 
-    const data = await response.json();
-    return data;
+    throw new Error('未提供认证信息');
   }
 
   async getUserViews(): Promise<EmbyView[]> {
