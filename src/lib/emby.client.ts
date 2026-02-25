@@ -105,6 +105,13 @@ export class EmbyClient {
   }
 
   private async ensureAuthenticated(): Promise<void> {
+    // 如果有 ApiKey 但没有 userId，需要获取用户 ID
+    if (this.apiKey && !this.userId) {
+      const user = await this.getCurrentUser();
+      this.userId = user.Id;
+      return;
+    }
+
     // 如果有 ApiKey，不需要认证
     if (this.apiKey) return;
 

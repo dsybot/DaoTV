@@ -48,6 +48,7 @@ import { useDownload } from '@/contexts/DownloadContext';
 
 import { VersionPanel } from './VersionPanel';
 import VideoCard from './VideoCard';
+import { UserEmbyConfig } from './UserEmbyConfig';
 import {
   useWatchRoomConfigQuery,
   useServerConfigQuery,
@@ -1379,153 +1380,19 @@ export const UserMenu: React.FC = () => {
           <div className='space-y-6'>
             {/* Emby 配置 */}
             <div className='space-y-3'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                    Emby 配置
-                  </h4>
-                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                    配置你的私人 Emby 服务器
-                  </p>
-                </div>
-                <button
-                  onClick={handleAddEmbySource}
-                  className='px-3 py-1.5 text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors'
-                >
-                  添加源
-                </button>
+              <div>
+                <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  Emby私人影库
+                </h4>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                  配置你的私人 Emby 服务器
+                </p>
               </div>
 
-              {embyConfig.sources.length === 0 ? (
-                <div className='text-sm text-gray-500 dark:text-gray-400 text-center py-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-                  暂无 Emby 源，点击"添加源"开始配置
-                </div>
-              ) : (
-                <div className='space-y-4'>
-                  {embyConfig.sources.map((source, index) => (
-                    <div
-                      key={source.key}
-                      className='p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3'
-                    >
-                      <div className='flex items-center justify-between'>
-                        <input
-                          type='text'
-                          value={source.name}
-                          onChange={(e) => handleUpdateEmbySource(index, 'name', e.target.value)}
-                          className='flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                          placeholder='源名称'
-                        />
-                        <button
-                          onClick={() => handleRemoveEmbySource(index)}
-                          className='ml-2 px-2 py-1 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
-                        >
-                          删除
-                        </button>
-                      </div>
-
-                      <input
-                        type='text'
-                        value={source.ServerURL}
-                        onChange={(e) => handleUpdateEmbySource(index, 'ServerURL', e.target.value)}
-                        className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                        placeholder='服务器地址 (如: http://192.168.1.100:8096)'
-                      />
-
-                      <input
-                        type='text'
-                        value={source.ApiKey || ''}
-                        onChange={(e) => handleUpdateEmbySource(index, 'ApiKey', e.target.value)}
-                        className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                        placeholder='API Key (推荐)'
-                      />
-
-                      <div className='flex items-center gap-2'>
-                        <input
-                          type='text'
-                          value={source.Username || ''}
-                          onChange={(e) => handleUpdateEmbySource(index, 'Username', e.target.value)}
-                          className='flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                          placeholder='用户名 (可选)'
-                        />
-                        <input
-                          type='password'
-                          value={source.Password || ''}
-                          onChange={(e) => handleUpdateEmbySource(index, 'Password', e.target.value)}
-                          className='flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                          placeholder='密码 (可选)'
-                        />
-                      </div>
-
-                      <label className='flex items-center gap-2 text-sm'>
-                        <input
-                          type='checkbox'
-                          checked={source.enabled}
-                          onChange={(e) => handleUpdateEmbySource(index, 'enabled', e.target.checked)}
-                          className='w-4 h-4 text-green-500 border-gray-300 rounded focus:ring-green-500'
-                        />
-                        <span className='text-gray-700 dark:text-gray-300'>启用此源</span>
-                      </label>
-
-                      {/* 高级选项 */}
-                      <details className='mt-2'>
-                        <summary className='text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200'>
-                          高级选项
-                        </summary>
-                        <div className='mt-2 space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700'>
-                          <label className='flex items-center gap-2 text-xs'>
-                            <input
-                              type='checkbox'
-                              checked={source.transcodeMp4 || false}
-                              onChange={(e) => handleUpdateEmbySource(index, 'transcodeMp4', e.target.checked)}
-                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
-                            />
-                            <span className='text-gray-600 dark:text-gray-400'>转码mp4（推荐MKV格式启用）</span>
-                          </label>
-                          <label className='flex items-center gap-2 text-xs'>
-                            <input
-                              type='checkbox'
-                              checked={source.proxyPlay || false}
-                              onChange={(e) => handleUpdateEmbySource(index, 'proxyPlay', e.target.checked)}
-                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
-                            />
-                            <span className='text-gray-600 dark:text-gray-400'>视频播放代理</span>
-                          </label>
-                          <label className='flex items-center gap-2 text-xs'>
-                            <input
-                              type='checkbox'
-                              checked={source.removeEmbyPrefix || false}
-                              onChange={(e) => handleUpdateEmbySource(index, 'removeEmbyPrefix', e.target.checked)}
-                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
-                            />
-                            <span className='text-gray-600 dark:text-gray-400'>移除/emby前缀</span>
-                          </label>
-                          <label className='flex items-center gap-2 text-xs'>
-                            <input
-                              type='checkbox'
-                              checked={source.appendMediaSourceId || false}
-                              onChange={(e) => handleUpdateEmbySource(index, 'appendMediaSourceId', e.target.checked)}
-                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
-                            />
-                            <span className='text-gray-600 dark:text-gray-400'>拼接MediaSourceId参数</span>
-                          </label>
-                        </div>
-                      </details>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {embyConfig.sources.length > 0 && (
-                <button
-                  onClick={handleSaveEmbyConfig}
-                  disabled={embySaving}
-                  className='w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 rounded-lg transition-colors'
-                >
-                  {embySaving ? '保存中...' : '保存 Emby 配置'}
-                </button>
-              )}
+              <UserEmbyConfig initialConfig={embyConfig} />
             </div>
 
+            {/* 分割线 */}
             {/* 分割线 */}
             <div className='border-t border-gray-200 dark:border-gray-700'></div>
 

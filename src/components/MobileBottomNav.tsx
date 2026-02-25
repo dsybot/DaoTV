@@ -135,13 +135,27 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     }
 
     // Emby - 检查用户是否配置了 Emby
-    const hasEmbyConfig = userEmbyConfig?.sources?.some((s: any) => s.enabled && s.ServerURL);
-    if (hasEmbyConfig) {
+    const hasEmbyConfig = userEmbyConfig?.sources?.some(
+      (s: any) => s.enabled && s.ServerURL,
+    );
+    const hasEmbyInNav = items.some(
+      (item: any) => item.href === '/private-library',
+    );
+
+    if (hasEmbyConfig && !hasEmbyInNav) {
       items.push({
         icon: FolderOpen,
         label: 'Emby',
         href: '/private-library',
       });
+    } else if (!hasEmbyConfig && hasEmbyInNav) {
+      // 如果用户删除了所有 Emby 配置，移除导航项
+      const index = items.findIndex(
+        (item: any) => item.href === '/private-library',
+      );
+      if (index > -1) {
+        items.splice(index, 1);
+      }
     }
 
     return items;

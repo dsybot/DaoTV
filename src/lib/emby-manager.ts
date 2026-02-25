@@ -83,13 +83,20 @@ class EmbyManager {
   private async getSourcesForUser(username?: string): Promise<EmbySourceConfig[]> {
     // 如果提供了用户名，优先使用用户配置
     if (username) {
+      console.log(`🔍 [EmbyManager] 获取用户 ${username} 的 Emby 配置`);
       const userConfig = await dbManager.getUserEmbyConfig(username);
+      console.log(`📦 [EmbyManager] 用户配置:`, JSON.stringify(userConfig, null, 2));
+
       if (userConfig?.sources && Array.isArray(userConfig.sources)) {
+        console.log(`✅ [EmbyManager] 找到 ${userConfig.sources.length} 个用户配置的源`);
         return userConfig.sources;
+      } else {
+        console.log(`⚠️ [EmbyManager] 用户配置为空或格式错误，回退到全局配置`);
       }
     }
 
     // 回退到全局配置（向后兼容）
+    console.log(`🔄 [EmbyManager] 使用全局配置`);
     return this.getSources();
   }
 
