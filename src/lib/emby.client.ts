@@ -164,24 +164,17 @@ export class EmbyClient {
   }
 
   async getCurrentUser(): Promise<{ Id: string; Name: string }> {
-    // 如果使用 API Key，需要通过 /Users 端点获取用户列表
+    // 如果使用 API Key，使用 /Users/Me 端点（支持 API Key）
     if (this.apiKey) {
-      const url = `${this.serverUrl}/Users`;
-      const headers = this.getHeaders();
-
-      const response = await fetch(url, { headers });
+      const url = `${this.serverUrl}/Users/Me?api_key=${this.apiKey}`;
+      const response = await fetch(url);
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`获取用户列表失败 (${response.status}): ${errorText}`);
+        throw new Error(`获取当前用户信息失败 (${response.status}): ${errorText}`);
       }
 
-      const users = await response.json();
-      if (!users || users.length === 0) {
-        throw new Error('未找到任何用户');
-      }
-
-      return users[0];
+      return await response.json();
     }
 
     // 使用用户名密码时，先确保已认证
