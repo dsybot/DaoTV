@@ -2937,20 +2937,15 @@ function PlayPageClient() {
           detailResponse = await fetch(
             `/api/shortdrama/detail?id=${id}&episode=1${titleParam}`,
           );
-        } else if (source === 'emby' || source.startsWith('emby_')) {
-          // 判断是否为 Emby 源
-          const { source: apiSource, embyKey } = parseSourceForApi(source);
-          const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
-          detailResponse = await fetch(
-            `/api/emby/detail?id=${id}${embyKeyParam}`,
-          );
         } else {
+          // 所有其他源（包括 Emby）统一使用 /api/detail
           detailResponse = await fetch(`/api/detail?source=${source}&id=${id}`);
         }
 
         if (!detailResponse.ok) {
           throw new Error('获取视频详情失败');
         }
+
         const detailData = (await detailResponse.json()) as SearchResult;
 
         // 检查是否有有效的集数数据（Emby源除外，因为API已经处理好了）
@@ -2967,9 +2962,6 @@ function PlayPageClient() {
           }
         }
 
-        // 只有数据有效时才设置 availableSources
-        // 注意：这里不应该直接设置，因为后续逻辑会统一设置
-        // setAvailableSources([detailData]);
         return [detailData];
       } catch (err) {
         console.error(
@@ -3278,13 +3270,18 @@ function PlayPageClient() {
       if (currentSource && currentId) {
         // 先快速获取当前源的详情
         try {
+          console.log('[Play] 获取当前源详情:', currentSource, currentId);
           const currentSourceDetail = await fetchSourceDetail(
             currentSource,
             currentId,
           );
+          console.log('[Play] 获取到的详情:', currentSourceDetail);
           if (currentSourceDetail.length > 0) {
             detailData = currentSourceDetail[0];
             sourcesInfo = currentSourceDetail;
+            console.log('[Play] 设置 detailData 和 sourcesInfo 成功');
+          } else {
+            console.error('[Play] fetchSourceDetail 返回空数组');
           }
         } catch (err) {
           console.error('获取当前源详情失败:', err);
@@ -3328,15 +3325,25 @@ function PlayPageClient() {
       // 指定源和id且无需优选
       if (currentSource && currentId && !needPreferRef.current) {
         const target = sourcesInfo.find(
-          (source) => source.source === currentSource && source.id === currentId
+          (source) =>
+            source.source === currentSource && source.id === currentId,
         );
         if (target) {
           detailData = target;
 
           // 如果是 emby 源且 episodes 为空，需要调用 detail 接口获取完整信息
-          if ((detailData.source === 'emby' || detailData.source.startsWith('emby_')) && (!detailData.episodes || detailData.episodes.length === 0)) {
-            console.log('[Play] Emby source has no episodes, fetching detail...');
-            const detailSources = await fetchSourceDetail(currentSource, currentId);
+          if (
+            (detailData.source === 'emby' ||
+              detailData.source.startsWith('emby_')) &&
+            (!detailData.episodes || detailData.episodes.length === 0)
+          ) {
+            console.log(
+              '[Play] Emby source has no episodes, fetching detail...',
+            );
+            const detailSources = await fetchSourceDetail(
+              currentSource,
+              currentId,
+            );
             if (detailSources.length > 0) {
               detailData = detailSources[0];
             }

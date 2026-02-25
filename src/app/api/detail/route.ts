@@ -76,6 +76,106 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 特殊处理 Emby 源
+    if (sourceCode === 'emby' || sourceCode.startsWith('emby_')) {
+      const { embyManager } = await import('@/lib/emby-manager');
+
+      // 解析 embyKey
+      let embyKey: string | undefined;
+      if (sourceCode.startsWith('emby_')) {
+        embyKey = sourceCode.substring(5); // 'emby_'.length = 5
+      }
+
+      // 获取客户端
+      const client = await embyManager.getClient(embyKey);
+      const sources = await embyManager.getEnabledSources();
+      const sourceConfig = sources.find(s => s.key === embyKey);
+      const sourceName = sourceConfig?.name || 'Emby';
+
+      // 获取媒体详情
+      const item = await client.getItem(id);
+
+      let result: any;
+
+      if (item.Type === 'Movie') {
+        // 电影
+        result = {
+          source: sourceCode,
+          source_name: sourceName,
+          id: item.Id,
+          title: item.Name,
+          poster: client.getImageUrl(item.Id, 'Primary'),
+          year: item.ProductionYear?.toString() || '',
+          douban_id: 0,
+          desc: item.Overview || '',
+          episodes: [await client.getStreamUrl(item.Id)],
+          episodes_titles: [item.Name],
+          proxyMode: false,
+        };
+      } else if (item.Type === 'Series') {
+        // 剧集 - 获取所有季和集
+        const seasons = await client.getSeasons(item.Id);
+        const allEpisodes: any[] = [];
+
+        for (const season of seasons) {
+          const episodes = await client.getEpisodes(item.Id, season.Id);
+          allEpisodes.push(...episodes);
+        }
+
+        // 按季和集排序
+        allEpisodes.sort((a, b) => {
+          if (a.ParentIndexNumber !== b.ParentIndexNumber) {
+            return (a.ParentIndexNumber || 0) - (b.ParentIndexNumber || 0);
+          }
+          return (a.IndexNumber || 0) - (b.IndexNumber || 0);
+        });
+
+        result = {
+          source: sourceCode,
+          source_name: sourceName,
+          id: item.Id,
+          title: item.Name,
+          poster: client.getImageUrl(item.Id, 'Primary'),
+          year: item.ProductionYear?.toString() || '',
+          douban_id: 0,
+          desc: item.Overview || '',
+          episodes: await Promise.all(allEpisodes.map((ep) => client.getStreamUrl(ep.Id))),
+          episodes_titles: allEpisodes.map((ep) => {
+            const seasonNum = ep.ParentIndexNumber || 1;
+            const episodeNum = ep.IndexNumber || 1;
+            return `S${seasonNum.toString().padStart(2, '0')}E${episodeNum.toString().padStart(2, '0')}`;
+          }),
+          proxyMode: false,
+        };
+      } else {
+        throw new Error('不支持的媒体类型');
+      }
+
+      const responseSize = Buffer.byteLength(JSON.stringify(result), 'utf8');
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/detail',
+        statusCode: 200,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: getDbQueryCount(),
+        requestSize: 0,
+        responseSize,
+        filter: `source:${sourceCode}|id:${id}`,
+      });
+
+      return NextResponse.json(result, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+      });
+    }
+
+    // 处理普通 API 站点
     const apiSites = await getAvailableApiSites(authInfo.username);
     const apiSite = apiSites.find((site) => site.key === sourceCode);
 
