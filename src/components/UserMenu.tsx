@@ -24,6 +24,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, startTransition } from 'react';
 import { createPortal } from 'react-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { CURRENT_VERSION } from '@/lib/version';
@@ -64,6 +65,7 @@ interface AuthInfo {
 
 export const UserMenu: React.FC = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -155,9 +157,17 @@ export const UserMenu: React.FC = () => {
       ApiKey?: string;
       Username?: string;
       Password?: string;
+      // 高级选项
+      removeEmbyPrefix?: boolean;
+      appendMediaSourceId?: boolean;
+      transcodeMp4?: boolean;
+      proxyPlay?: boolean;
     }>;
   }>({ sources: [] });
   const [embySaving, setEmbySaving] = useState(false);
+  const [showEmbyToast, setShowEmbyToast] = useState(false);
+  const [embyToastMessage, setEmbyToastMessage] = useState('');
+  const [embyToastType, setEmbyToastType] = useState<'success' | 'error'>('success');
 
   // 豆瓣数据源选项
   const doubanDataSourceOptions = [
@@ -918,6 +928,13 @@ export const UserMenu: React.FC = () => {
   };
 
   // Emby 配置相关函数
+  const showEmbyNotification = (message: string, type: 'success' | 'error') => {
+    setEmbyToastMessage(message);
+    setEmbyToastType(type);
+    setShowEmbyToast(true);
+    setTimeout(() => setShowEmbyToast(false), 3000);
+  };
+
   const handleSaveEmbyConfig = async () => {
     setEmbySaving(true);
     try {
@@ -928,15 +945,15 @@ export const UserMenu: React.FC = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Emby 配置保存成功！');
-        // 刷新导航（触发 ModernNav 重新检查配置）
-        window.location.reload();
+        showEmbyNotification('Emby 配置保存成功！', 'success');
+        // 使 ModernNav 的 Emby 配置缓存失效，触发重新检查
+        queryClient.invalidateQueries({ queryKey: ['user', 'emby-config'] });
       } else {
-        alert(`保存失败: ${data.error}`);
+        showEmbyNotification(`保存失败: ${data.error}`, 'error');
       }
     } catch (err) {
       console.error('保存 Emby 配置失败:', err);
-      alert('保存失败，请重试');
+      showEmbyNotification('保存失败，请重试', 'error');
     } finally {
       setEmbySaving(false);
     }
@@ -1442,6 +1459,51 @@ export const UserMenu: React.FC = () => {
                         />
                         <span className='text-gray-700 dark:text-gray-300'>启用此源</span>
                       </label>
+
+                      {/* 高级选项 */}
+                      <details className='mt-2'>
+                        <summary className='text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200'>
+                          高级选项
+                        </summary>
+                        <div className='mt-2 space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700'>
+                          <label className='flex items-center gap-2 text-xs'>
+                            <input
+                              type='checkbox'
+                              checked={source.transcodeMp4 || false}
+                              onChange={(e) => handleUpdateEmbySource(index, 'transcodeMp4', e.target.checked)}
+                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
+                            />
+                            <span className='text-gray-600 dark:text-gray-400'>转码mp4（推荐MKV格式启用）</span>
+                          </label>
+                          <label className='flex items-center gap-2 text-xs'>
+                            <input
+                              type='checkbox'
+                              checked={source.proxyPlay || false}
+                              onChange={(e) => handleUpdateEmbySource(index, 'proxyPlay', e.target.checked)}
+                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
+                            />
+                            <span className='text-gray-600 dark:text-gray-400'>视频播放代理</span>
+                          </label>
+                          <label className='flex items-center gap-2 text-xs'>
+                            <input
+                              type='checkbox'
+                              checked={source.removeEmbyPrefix || false}
+                              onChange={(e) => handleUpdateEmbySource(index, 'removeEmbyPrefix', e.target.checked)}
+                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
+                            />
+                            <span className='text-gray-600 dark:text-gray-400'>移除/emby前缀</span>
+                          </label>
+                          <label className='flex items-center gap-2 text-xs'>
+                            <input
+                              type='checkbox'
+                              checked={source.appendMediaSourceId || false}
+                              onChange={(e) => handleUpdateEmbySource(index, 'appendMediaSourceId', e.target.checked)}
+                              className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
+                            />
+                            <span className='text-gray-600 dark:text-gray-400'>拼接MediaSourceId参数</span>
+                          </label>
+                        </div>
+                      </details>
                     </div>
                   ))}
                 </div>
@@ -2172,6 +2234,26 @@ export const UserMenu: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast 通知 */}
+      {showEmbyToast && (
+        <div className='fixed top-20 left-1/2 -translate-x-1/2 z-[1100] animate-in fade-in slide-in-from-top-2 duration-300'>
+          <div
+            className={`px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 ${
+              embyToastType === 'success'
+                ? 'bg-green-500 text-white'
+                : 'bg-red-500 text-white'
+            }`}
+          >
+            {embyToastType === 'success' ? (
+              <Check className='w-5 h-5' />
+            ) : (
+              <X className='w-5 h-5' />
+            )}
+            <span className='font-medium'>{embyToastMessage}</span>
+          </div>
+        </div>
+      )}
     </>
   );
 
