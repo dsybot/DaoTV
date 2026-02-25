@@ -2948,19 +2948,15 @@ function PlayPageClient() {
 
         const detailData = (await detailResponse.json()) as SearchResult;
 
-        // 检查是否有有效的集数数据（Emby源除外，因为API已经处理好了）
-        if (source !== 'emby' && !source.startsWith('emby_')) {
-          if (!detailData.episodes || detailData.episodes.length === 0) {
-            throw new Error('该源没有可用的集数数据');
-          }
-        }
-
-        // 对于短剧源，还需要检查 title 和 poster 是否有效
+        // 对于短剧源，检查 title 和 poster 是否有效
         if (source === 'shortdrama') {
           if (!detailData.title || !detailData.poster) {
             throw new Error('短剧源数据不完整（缺少标题或海报）');
           }
         }
+
+        // 注意：不检查episodes是否为空，因为有些源可能需要后续处理
+        // 即使episodes为空，也返回数据，让调用方决定如何处理
 
         return [detailData];
       } catch (err) {
