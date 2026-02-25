@@ -517,8 +517,10 @@ export class EmbyClient {
     if (direct) {
       // 选项3: 转码mp4 - 使用 HLS 强制音频转码
       if (this.transcodeMp4) {
+        // 生成唯一的 PlaySessionId
+        const playSessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
         // 使用 HLS 端点并强制音频转码为 AAC，避免 EAC3/TrueHD 兼容性问题
-        url = `${this.serverUrl}/Videos/${itemId}/master.m3u8?api_key=${token}&AudioCodec=aac&AudioBitrate=320000&MaxAudioChannels=6`;
+        url = `${this.serverUrl}/Videos/${itemId}/master.m3u8?api_key=${token}&AudioCodec=aac&AudioBitrate=320000&MaxAudioChannels=6&PlaySessionId=${playSessionId}`;
       } else {
         url = `${this.serverUrl}/Videos/${itemId}/stream?Static=true&api_key=${token}`;
       }
