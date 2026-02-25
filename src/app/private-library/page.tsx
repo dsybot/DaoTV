@@ -70,8 +70,19 @@ export default function PrivateLibraryPage() {
     return undefined;
   });
   const [selectedView, setSelectedView] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('SortName');
-  const [sortOrder, setSortOrder] = useState<'Ascending' | 'Descending'>('Ascending');
+  const [sortBy, setSortBy] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('emby_sortBy') ?? 'PremiereDate';
+    }
+    return 'PremiereDate';
+  });
+  const [sortOrder, setSortOrder] = useState<'Ascending' | 'Descending'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('emby_sortOrder');
+      if (saved === 'Ascending' || saved === 'Descending') return saved;
+    }
+    return 'Descending';
+  });
   const [mounted, setMounted] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -229,7 +240,11 @@ export default function PrivateLibraryPage() {
   ];
 
   const toggleSortOrder = () => {
-    setSortOrder((prev) => (prev === 'Ascending' ? 'Descending' : 'Ascending'));
+    setSortOrder((prev) => {
+      const next = prev === 'Ascending' ? 'Descending' : 'Ascending';
+      localStorage.setItem('emby_sortOrder', next);
+      return next;
+    });
   };
 
   const handleVideoClick = (video: Video) => {
@@ -339,7 +354,7 @@ export default function PrivateLibraryPage() {
                 return (
                   <button
                     key={option.value}
-                    onClick={() => setSortBy(option.value)}
+                    onClick={() => { setSortBy(option.value); localStorage.setItem('emby_sortBy', option.value); }}
                     className={`group relative overflow-hidden rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                       sortBy === option.value
                         ? 'bg-linear-to-r from-green-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-green-500/40'
