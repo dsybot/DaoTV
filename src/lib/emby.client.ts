@@ -79,6 +79,13 @@ export class EmbyClient {
   constructor(config: EmbyConfig) {
     let serverUrl = config.ServerURL.replace(/\/$/, '');
 
+    // 🔍 调试日志
+    console.log('🎬 EmbyClient 初始化配置:', {
+      transcodeMp4: config.transcodeMp4,
+      proxyPlay: config.proxyPlay,
+      key: config.key,
+    });
+
     // 存储高级选项
     this.removeEmbyPrefix = config.removeEmbyPrefix || false;
     this.appendMediaSourceId = config.appendMediaSourceId || false;
