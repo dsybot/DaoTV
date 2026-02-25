@@ -3,7 +3,7 @@
 'use client';
 
 import { Check, Plus, X } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo, useDeferredValue } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface UserEmbyConfigProps {
@@ -11,9 +11,10 @@ interface UserEmbyConfigProps {
   onClose?: () => void;
 }
 
-export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) => {
+export const UserEmbyConfig = memo(({ initialConfig, onClose }: UserEmbyConfigProps) => {
   const queryClient = useQueryClient();
   const [sources, setSources] = useState(initialConfig.sources || []);
+  const deferredSources = useDeferredValue(sources);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -194,9 +195,9 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
   return (
     <div className='space-y-4'>
       {/* 源列表 */}
-      {sources.length > 0 && !showAddForm && editingIndex === null && (
+      {deferredSources.length > 0 && !showAddForm && editingIndex === null && (
         <div className='space-y-3'>
-          {sources.map((source, index) => (
+          {deferredSources.map((source, index) => (
             <div
               key={source.key}
               className='p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50'
@@ -449,4 +450,4 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
       )}
     </div>
   );
-};
+});
