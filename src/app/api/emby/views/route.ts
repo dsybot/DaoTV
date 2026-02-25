@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCachedEmbyViews, setCachedEmbyViews } from '@/lib/emby-cache';
 import { embyManager } from '@/lib/emby-manager';
+import { getAuthInfoFromCookie } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const embyKey = searchParams.get('embyKey') || undefined;
 
+    // 从 cookie 获取用户信息
+    const authCookie = getAuthInfoFromCookie(request);
+
+    if (!authCookie?.username) {
+      return NextResponse.json(
+        { error: '未登录', success: false },
+        { status: 401 }
+      );
+    }
+
+    const username = authCookie.username;
+
     // 检查缓存（按embyKey缓存）
     const cacheKey = embyKey || 'default';
     const cached = getCachedEmbyViews(cacheKey);
@@ -19,8 +32,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cached);
     }
 
-    // 获取Emby客户端
-    const client = await embyManager.getClient(embyKey);
+    // 获取用户的Emby客户端
+    const client = await embyManager.getClientForUser(username, embyKey);
 
     // 获取媒体库列表
     const views = await client.getUserViews();

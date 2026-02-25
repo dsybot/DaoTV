@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCachedEmbyList, setCachedEmbyList } from '@/lib/emby-cache';
 import { embyManager } from '@/lib/emby-manager';
+import { getAuthInfoFromCookie } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,18 @@ export async function GET(request: NextRequest) {
   const sortOrder = searchParams.get('sortOrder') || 'Ascending';
 
   try {
+    // 从 cookie 获取用户信息
+    const authCookie = getAuthInfoFromCookie(request);
+
+    if (!authCookie?.username) {
+      return NextResponse.json(
+        { error: '未登录' },
+        { status: 401 }
+      );
+    }
+
+    const username = authCookie.username;
+
     // 判断是否是默认排序（只有默认排序才使用缓存）
     const isDefaultSort = sortBy === 'SortName' && sortOrder === 'Ascending';
 
@@ -28,8 +41,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 获取Emby客户端
-    const client = await embyManager.getClient(embyKey);
+    // 获取用户的Emby客户端
+    const client = await embyManager.getClientForUser(username, embyKey);
 
     // 获取媒体列表
     const result = await client.getItems({

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { embyManager } from '@/lib/emby-manager';
+import { getAuthInfoFromCookie } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +17,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '搜索关键词不能为空' }, { status: 400 });
     }
 
-    // 获取 Emby 客户端
-    const client = await embyManager.getClient(embyKey || undefined);
+    // 从 cookie 获取用户信息
+    const authCookie = getAuthInfoFromCookie(request);
+
+    if (!authCookie?.username) {
+      return NextResponse.json(
+        { error: '未登录' },
+        { status: 401 }
+      );
+    }
+
+    const username = authCookie.username;
+
+    // 获取用户的 Emby 客户端
+    const client = await embyManager.getClientForUser(username, embyKey || undefined);
 
     // 调用 Emby 搜索 API
     const response = await client.getItems({

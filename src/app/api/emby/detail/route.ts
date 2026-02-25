@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { embyManager } from '@/lib/emby-manager';
+import { getAuthInfoFromCookie } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -16,8 +17,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 获取Emby客户端
-    const client = await embyManager.getClient(embyKey);
+    // 从 cookie 获取用户信息
+    const authCookie = getAuthInfoFromCookie(request);
+
+    if (!authCookie?.username) {
+      return NextResponse.json(
+        { error: '未登录' },
+        { status: 401 }
+      );
+    }
+
+    const username = authCookie.username;
+
+    // 获取用户的Emby客户端
+    const client = await embyManager.getClientForUser(username, embyKey);
 
     // 获取媒体详情
     const item = await client.getItem(itemId);
