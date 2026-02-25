@@ -27,6 +27,7 @@ import {
   startTransition,
   useMemo,
 } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { FastLink } from './FastLink';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
@@ -101,15 +102,24 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
   );
 
   const [hasCustomCategories, setHasCustomCategories] = useState(false);
-  const [hasPrivateLibrary, setHasPrivateLibrary] = useState(false);
+
+  // 检查用户是否配置了 Emby
+  const { data: userEmbyConfig } = useQuery({
+    queryKey: ['user', 'emby-config'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/emby-config');
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.config;
+    },
+    staleTime: 5 * 60 * 1000, // 5分钟
+    retry: false,
+  });
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
       setHasCustomCategories(true);
-    }
-    if (runtimeConfig?.PRIVATE_LIBRARY_ENABLED) {
-      setHasPrivateLibrary(true);
     }
   }, []);
 
@@ -124,7 +134,9 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       });
     }
 
-    if (hasPrivateLibrary) {
+    // Emby - 检查用户是否配置了 Emby
+    const hasEmbyConfig = userEmbyConfig?.sources?.some((s: any) => s.enabled && s.ServerURL);
+    if (hasEmbyConfig) {
       items.push({
         icon: FolderOpen,
         label: 'Emby',
@@ -133,7 +145,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     }
 
     return items;
-  }, [baseNavItems, hasCustomCategories, hasPrivateLibrary]);
+  }, [baseNavItems, hasCustomCategories, userEmbyConfig]);
 
   // 动态计算可见项数量
   useEffect(() => {
