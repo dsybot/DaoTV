@@ -247,11 +247,6 @@ export default function PrivateLibraryPage() {
     });
   };
 
-  const handleVideoClick = (video: Video) => {
-    const sourceParam = embyKey ? `emby_${embyKey}` : 'emby';
-    router.push(`/play?source=${sourceParam}&id=${video.id}&title=${encodeURIComponent(video.title)}`);
-  };
-
   const errorMessage = isError ? (listError as Error)?.message || '获取列表失败，请稍后重试' : '';
 
   if (!mounted) return null;
@@ -435,16 +430,15 @@ export default function PrivateLibraryPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {searchResults.map((video) => (
-                <div key={video.id} onClick={() => handleVideoClick(video)}>
-                  <VideoCard
-                    id={video.id}
-                    title={video.title}
-                    poster={video.poster}
-                    year={video.year}
-                    source={embyKey ? `emby_${embyKey}` : 'emby'}
-                    from="search"
-                  />
-                </div>
+                <VideoCard
+                  key={video.id}
+                  id={video.id}
+                  title={video.title}
+                  poster={video.poster}
+                  year={video.year}
+                  source={embyKey ? `emby_${embyKey}` : 'emby'}
+                  from="search"
+                />
               ))}
             </div>
           </div>
@@ -454,16 +448,15 @@ export default function PrivateLibraryPage() {
         {!loading && videos.length > 0 && !isSearchMode && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {videos.map((video) => (
-              <div key={video.id} onClick={() => handleVideoClick(video)}>
-                <VideoCard
-                  id={video.id}
-                  title={video.title}
-                  poster={video.poster}
-                  year={video.year}
-                  source={embyKey ? `emby_${embyKey}` : 'emby'}
-                  from="search"
-                />
-              </div>
+              <VideoCard
+                key={video.id}
+                id={video.id}
+                title={video.title}
+                poster={video.poster}
+                year={video.year}
+                source={embyKey ? `emby_${embyKey}` : 'emby'}
+                from="search"
+              />
             ))}
           </div>
         )}

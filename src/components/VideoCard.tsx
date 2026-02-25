@@ -1023,7 +1023,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   }}
                 />
               )}
-              {config.showHeart && from !== 'search' && (
+              {config.showHeart && (
                 <Heart
                   onClick={handleToggleFavorite}
                   size={20}
