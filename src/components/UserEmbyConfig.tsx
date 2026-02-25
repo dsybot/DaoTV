@@ -3,7 +3,7 @@
 'use client';
 
 import { Check, Plus, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface UserEmbyConfigProps {
@@ -18,6 +18,11 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
   const [showAddForm, setShowAddForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [testingIndex, setTestingIndex] = useState<number | null>(null);
+
+  // 当 initialConfig 变化时更新 sources
+  useEffect(() => {
+    setSources(initialConfig.sources || []);
+  }, [initialConfig]);
 
   // Toast 状态
   const [showToast, setShowToast] = useState(false);
@@ -45,6 +50,11 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
+
+  // 优化：使用 useCallback 避免每次渲染都创建新函数
+  const updateFormField = useCallback((field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   const resetForm = () => {
     setFormData({
@@ -274,7 +284,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
             <input
               type='text'
               value={formData.key}
-              onChange={(e) => setFormData({ ...formData, key: e.target.value })}
+              onChange={(e) => updateFormField("key", e.target.value)}
               disabled={editingIndex !== null}
               className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50'
               placeholder='例如: wumei'
@@ -288,7 +298,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
             <input
               type='text'
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => updateFormField("name", e.target.value)}
               className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
               placeholder='例如: 无名Emby'
             />
@@ -301,7 +311,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
             <input
               type='text'
               value={formData.ServerURL}
-              onChange={(e) => setFormData({ ...formData, ServerURL: e.target.value })}
+              onChange={(e) => updateFormField("ServerURL", e.target.value)}
               className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
               placeholder='http://192.168.1.100:8096'
             />
@@ -314,7 +324,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
             <input
               type='text'
               value={formData.ApiKey}
-              onChange={(e) => setFormData({ ...formData, ApiKey: e.target.value })}
+              onChange={(e) => updateFormField("ApiKey", e.target.value)}
               className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
               placeholder='推荐使用 API Key'
             />
@@ -328,7 +338,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
               <input
                 type='text'
                 value={formData.Username}
-                onChange={(e) => setFormData({ ...formData, Username: e.target.value })}
+                onChange={(e) => updateFormField("Username", e.target.value)}
                 className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
               />
             </div>
@@ -339,7 +349,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
               <input
                 type='password'
                 value={formData.Password}
-                onChange={(e) => setFormData({ ...formData, Password: e.target.value })}
+                onChange={(e) => updateFormField("Password", e.target.value)}
                 className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
               />
             </div>
@@ -349,7 +359,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
             <input
               type='checkbox'
               checked={formData.enabled}
-              onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+              onChange={(e) => updateFormField("enabled", e.target.checked)}
               className='w-4 h-4 text-green-500 border-gray-300 rounded focus:ring-green-500'
             />
             <span className='text-gray-700 dark:text-gray-300'>启用此源</span>
@@ -374,7 +384,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
                 <input
                   type='checkbox'
                   checked={formData.proxyPlay}
-                  onChange={(e) => setFormData({ ...formData, proxyPlay: e.target.checked })}
+                  onChange={(e) => updateFormField("proxyPlay", e.target.checked)}
                   className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
                 />
                 <span className='text-gray-600 dark:text-gray-400'>视频播放代理</span>
@@ -383,7 +393,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
                 <input
                   type='checkbox'
                   checked={formData.removeEmbyPrefix}
-                  onChange={(e) => setFormData({ ...formData, removeEmbyPrefix: e.target.checked })}
+                  onChange={(e) => updateFormField("removeEmbyPrefix", e.target.checked)}
                   className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
                 />
                 <span className='text-gray-600 dark:text-gray-400'>移除/emby前缀</span>
@@ -392,7 +402,7 @@ export const UserEmbyConfig = ({ initialConfig, onClose }: UserEmbyConfigProps) 
                 <input
                   type='checkbox'
                   checked={formData.appendMediaSourceId}
-                  onChange={(e) => setFormData({ ...formData, appendMediaSourceId: e.target.checked })}
+                  onChange={(e) => updateFormField("appendMediaSourceId", e.target.checked)}
                   className='w-3 h-3 text-blue-500 border-gray-300 rounded focus:ring-blue-500'
                 />
                 <span className='text-gray-600 dark:text-gray-400'>拼接MediaSourceId参数</span>
