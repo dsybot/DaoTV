@@ -181,8 +181,14 @@ export class EmbyClient {
         throw new Error('未找到任何用户');
       }
 
-      // 返回第一个用户（通常是管理员）
       return users[0];
+    }
+
+    // 使用用户名密码时，先确保已认证
+    if (this.username && this.password && !this.authToken) {
+      const authResult = await this.authenticate(this.username, this.password);
+      this.authToken = authResult.AccessToken;
+      this.userId = authResult.User.Id;
     }
 
     // 使用 AuthToken 时可以直接调用 /Users/Me
