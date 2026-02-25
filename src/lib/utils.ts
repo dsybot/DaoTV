@@ -2,7 +2,6 @@ import { clsx, type ClassValue } from 'clsx';
 import he from 'he';
 import Hls from 'hls.js';
 import { twMerge } from 'tailwind-merge';
-import bs58 from 'bs58';
 
 /**
  * Utility function for merging Tailwind CSS classes
@@ -453,42 +452,3 @@ export function isSeriesCompleted(remarks?: string): boolean {
   return /完结|已完结|全\d+集|完(?!整)/.test(remarks);
 }
 
-/**
- * 将字符串编码为 Base58
- * @param str 要编码的字符串
- * @returns Base58 编码后的字符串
- */
-export function base58Encode(str: string): string {
-  if (!str) return '';
-
-  // 在浏览器环境中使用 TextEncoder
-  if (typeof window !== 'undefined') {
-    const encoder = new TextEncoder();
-    const bytes = encoder.encode(str);
-    return bs58.encode(bytes);
-  }
-
-  // 在 Node.js 环境中使用 Buffer
-  const buffer = Buffer.from(str, 'utf-8');
-  return bs58.encode(buffer);
-}
-
-/**
- * 将 Base58 字符串解码为原始字符串
- * @param encoded Base58 编码的字符串
- * @returns 解码后的原始字符串
- */
-export function base58Decode(encoded: string): string {
-  if (!encoded) return '';
-
-  const bytes = bs58.decode(encoded);
-
-  // 在浏览器环境中使用 TextDecoder
-  if (typeof window !== 'undefined') {
-    const decoder = new TextDecoder();
-    return decoder.decode(bytes);
-  }
-
-  // 在 Node.js 环境中使用 Buffer
-  return Buffer.from(bytes).toString('utf-8');
-}
