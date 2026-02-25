@@ -284,7 +284,7 @@ export default function PrivateLibraryPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <Film className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">私人影库功能未启用</p>
+            <p className="text-gray-500">Emby功能未启用</p>
           </div>
         </div>
       </PageLayout>
@@ -296,7 +296,7 @@ export default function PrivateLibraryPage() {
       <div className="container mx-auto px-4 py-6">
         {/* 标题和源选择 */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-4">私人影库</h1>
+          <h1 className="text-2xl font-bold mb-4">Emby</h1>
 
           {/* Emby 源选择 */}
           {embySourceOptions.length > 1 && (

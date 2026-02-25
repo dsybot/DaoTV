@@ -127,7 +127,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     if (hasPrivateLibrary) {
       items.push({
         icon: FolderOpen,
-        label: '私人影库',
+        label: 'Emby',
         href: '/private-library',
       });
     }
