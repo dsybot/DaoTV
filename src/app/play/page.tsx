@@ -370,6 +370,17 @@ function PlayPageClient() {
   );
   const [currentId, setCurrentId] = useState(searchParams.get('id') || '');
 
+  // 解析 source 参数以获取 embyKey（仅用于 API 调用）
+  const parseSourceForApi = (
+    source: string,
+  ): { source: string; embyKey?: string } => {
+    if (source.startsWith('emby_')) {
+      const key = source.substring(5);
+      return { source: 'emby', embyKey: key };
+    }
+    return { source };
+  };
+
   // 短剧ID（用于获取详情显示，不影响源搜索）
   const [shortdramaId] = useState(searchParams.get('shortdrama_id') || '');
 
@@ -3384,6 +3395,24 @@ function PlayPageClient() {
         );
         if (target) {
           detailData = target;
+
+          // 如果是 emby 源且 episodes 为空，需要调用 detail 接口获取完整信息
+          if (
+            (detailData.source === 'emby' ||
+              detailData.source.startsWith('emby_')) &&
+            (!detailData.episodes || detailData.episodes.length === 0)
+          ) {
+            console.log(
+              '[Play] Emby source has no episodes, fetching detail...',
+            );
+            const detailSources = await fetchSourceDetail(
+              currentSource,
+              currentId,
+            );
+            if (detailSources.length > 0) {
+              detailData = detailSources[0];
+            }
+          }
         } else {
           // 找不到匹配的源，报错返回
           setError('未找到匹配结果');
@@ -3400,10 +3429,44 @@ function PlayPageClient() {
         setLoadingStage('preferring');
         setLoadingMessage('⚡ 正在优选最佳播放源...');
 
-        detailData = await preferBestSource(sourcesInfo);
+        // 过滤掉 emby 源，它们不参与测速
+        const sourcesToTest = sourcesInfo.filter((s) => {
+          // 检查是否为 emby 源（包括 emby 和 emby_xxx 格式）
+          if (s.source === 'emby' || s.source.startsWith('emby_')) return false;
+          return true;
+        });
+
+        const excludedSources = sourcesInfo.filter(
+          (s) => s.source === 'emby' || s.source.startsWith('emby_'),
+        );
+
+        if (sourcesToTest.length > 0) {
+          detailData = await preferBestSource(sourcesToTest);
+        } else if (excludedSources.length > 0) {
+          // 如果只有 emby 源，直接使用第一个
+          detailData = excludedSources[0];
+        } else {
+          detailData = sourcesInfo[0];
+        }
       }
 
       console.log(detailData.source, detailData.id);
+
+      // 如果是 emby 源且 episodes 为空，需要调用 detail 接口获取完整信息
+      if (
+        (detailData.source === 'emby' ||
+          detailData.source.startsWith('emby_')) &&
+        (!detailData.episodes || detailData.episodes.length === 0)
+      ) {
+        console.log('[Play] Emby source has no episodes, fetching detail...');
+        const detailSources = await fetchSourceDetail(
+          detailData.source,
+          detailData.id,
+        );
+        if (detailSources.length > 0) {
+          detailData = detailSources[0];
+        }
+      }
 
       setNeedPrefer(false);
       setCurrentSource(detailData.source);
@@ -3578,16 +3641,41 @@ function PlayPageClient() {
         return;
       }
 
+      // 如果是 emby 源且 episodes 为空，需要调用 detail 接口获取完整信息
+      let detailToUse = newDetail;
+      if (
+        (newDetail.source === 'emby' || newDetail.source.startsWith('emby_')) &&
+        (!newDetail.episodes || newDetail.episodes.length === 0)
+      ) {
+        console.log(
+          '[Play] Emby source has no episodes after switch, fetching detail...',
+        );
+        try {
+          const detailResponse = await fetch(
+            `/api/source-detail?source=${newSource}&id=${newId}&title=${encodeURIComponent(newTitle)}`,
+          );
+          if (detailResponse.ok) {
+            const detailSources =
+              (await detailResponse.json()) as SearchResult[];
+            if (detailSources.length > 0) {
+              detailToUse = detailSources[0];
+            }
+          }
+        } catch (err) {
+          console.error('[Play] Failed to fetch Emby detail:', err);
+        }
+      }
+
       // 🔥 换源时保持当前集数不变（除非新源集数不够）
       let targetIndex = currentEpisodeIndex;
 
       // 只有当新源的集数不够时才调整到最后一集或第一集
-      if (newDetail.episodes && newDetail.episodes.length > 0) {
-        if (targetIndex >= newDetail.episodes.length) {
+      if (detailToUse.episodes && detailToUse.episodes.length > 0) {
+        if (targetIndex >= detailToUse.episodes.length) {
           // 当前集数超出新源范围，跳转到新源的最后一集
-          targetIndex = newDetail.episodes.length - 1;
+          targetIndex = detailToUse.episodes.length - 1;
           console.log(
-            `⚠️ 当前集数(${currentEpisodeIndex})超出新源范围(${newDetail.episodes.length}集)，跳转到第${targetIndex + 1}集`,
+            `⚠️ 当前集数(${currentEpisodeIndex})超出新源范围(${detailToUse.episodes.length}集)，跳转到第${targetIndex + 1}集`,
           );
           // 🔥 集数变化时，清除保存的临时进度
           const tempProgressKey = `temp_progress_${newSource}_${newId}_${currentEpisodeIndex}`;
@@ -3605,18 +3693,18 @@ function PlayPageClient() {
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('source', newSource);
       newUrl.searchParams.set('id', newId);
-      newUrl.searchParams.set('year', newDetail.year);
+      newUrl.searchParams.set('year', detailToUse.year);
       newUrl.searchParams.set('index', targetIndex.toString()); // 🔥 同步URL的index参数
       window.history.replaceState({}, '', newUrl.toString());
 
-      setVideoTitle(newDetail.title || newTitle);
-      setVideoYear(newDetail.year);
-      setVideoCover(newDetail.poster);
+      setVideoTitle(detailToUse.title || newTitle);
+      setVideoYear(detailToUse.year);
+      setVideoCover(detailToUse.poster);
       // 优先保留URL参数中的豆瓣ID，如果URL中没有则使用详情数据中的
-      setVideoDoubanId(videoDoubanIdRef.current || newDetail.douban_id || 0);
+      setVideoDoubanId(videoDoubanIdRef.current || detailToUse.douban_id || 0);
       setCurrentSource(newSource);
       setCurrentId(newId);
-      setDetail(newDetail);
+      setDetail(detailToUse);
 
       // 🔥 只有当集数确实改变时才调用 setCurrentEpisodeIndex
       // 这样可以避免触发不必要的 useEffect 和集数切换逻辑
