@@ -948,6 +948,12 @@ export const UserMenu: React.FC = () => {
         showEmbyNotification('Emby 配置保存成功！', 'success');
         // 使 ModernNav 的 Emby 配置缓存失效，触发重新检查
         queryClient.invalidateQueries({ queryKey: ['user', 'emby-config'] });
+        // 重新加载配置以确认保存成功
+        const reloadRes = await fetch('/api/user/emby-config');
+        const reloadData = await reloadRes.json();
+        if (reloadData.success && reloadData.config) {
+          setEmbyConfig(reloadData.config);
+        }
       } else {
         showEmbyNotification(`保存失败: ${data.error}`, 'error');
       }

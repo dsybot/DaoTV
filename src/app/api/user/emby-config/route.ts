@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { config } = body;
 
+    console.log('📝 保存 Emby 配置 - 用户:', username);
+    console.log('📝 接收到的配置:', JSON.stringify(config, null, 2));
+
     if (!config || !config.sources || !Array.isArray(config.sources)) {
       return NextResponse.json(
         { error: '配置格式错误' },
@@ -68,6 +71,10 @@ export async function POST(request: NextRequest) {
     }
 
     await dbManager.saveUserEmbyConfig(username, config);
+
+    // 验证保存结果
+    const savedConfig = await dbManager.getUserEmbyConfig(username);
+    console.log('✅ 保存后读取的配置:', JSON.stringify(savedConfig, null, 2));
 
     return NextResponse.json({
       success: true,
