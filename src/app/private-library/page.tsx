@@ -114,6 +114,8 @@ export default function PrivateLibraryPage() {
   });
 
   const embySourceOptions = sourcesData ?? [];
+  const currentEmbySource = embySourceOptions.find(s => s.key === embyKey);
+  const embySourceName = currentEmbySource?.name || 'Emby';
 
   // 源列表加载完成后，如果还没有选中的 key，自动选第一个
   useEffect(() => {
@@ -437,6 +439,7 @@ export default function PrivateLibraryPage() {
                   poster={video.poster}
                   year={video.year}
                   source={embyKey ? `emby_${embyKey}` : 'emby'}
+                  source_name={embySourceName}
                   from="search"
                 />
               ))}
@@ -455,6 +458,7 @@ export default function PrivateLibraryPage() {
                 poster={video.poster}
                 year={video.year}
                 source={embyKey ? `emby_${embyKey}` : 'emby'}
+                source_name={embySourceName}
                 from="search"
               />
             ))}
