@@ -143,18 +143,13 @@ export class EmbyClient {
   async authenticate(username: string, password: string): Promise<{ AccessToken: string; User: { Id: string } }> {
     const url = `${this.serverUrl}/Users/AuthenticateByName`;
 
-    const params = new URLSearchParams({
-      Username: username,
-      Pw: password,
-    });
-
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         'X-Emby-Authorization': 'MediaBrowser Client="LunaTV", Device="Web", DeviceId="lunatv-web", Version="1.0.0"',
       },
-      body: params.toString(),
+      body: JSON.stringify({ Username: username, Pw: password }),
     });
 
     if (!response.ok) {
