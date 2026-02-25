@@ -2935,6 +2935,13 @@ function PlayPageClient() {
           detailResponse = await fetch(
             `/api/shortdrama/detail?id=${id}&episode=1${titleParam}`,
           );
+        } else if (source === 'emby' || source.startsWith('emby_')) {
+          // 判断是否为 Emby 源
+          const { source: apiSource, embyKey } = parseSourceForApi(source);
+          const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
+          detailResponse = await fetch(
+            `/api/emby/detail?id=${id}${embyKeyParam}`,
+          );
         } else {
           detailResponse = await fetch(`/api/detail?source=${source}&id=${id}`);
         }
@@ -3651,8 +3658,10 @@ function PlayPageClient() {
           '[Play] Emby source has no episodes after switch, fetching detail...',
         );
         try {
+          const { source: apiSource, embyKey } = parseSourceForApi(newSource);
+          const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
           const detailResponse = await fetch(
-            `/api/source-detail?source=${newSource}&id=${newId}&title=${encodeURIComponent(newTitle)}`,
+            `/api/emby/detail?id=${newId}${embyKeyParam}`,
           );
           if (detailResponse.ok) {
             const detailSources =
