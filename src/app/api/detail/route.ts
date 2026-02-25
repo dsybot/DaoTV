@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getAvailableApiSites, getCacheTime } from '@/lib/config';
-import { getDetailFromApi } from '@/lib/downstream';
+import { searchFromApi } from '@/lib/downstream';
 import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
 
 export const runtime = 'nodejs';
@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const sourceCode = searchParams.get('source');
+  const title = searchParams.get('title') || '';
 
   if (!id || !sourceCode) {
     const errorResponse = { error: '缺少必要参数' };
@@ -199,17 +200,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(errorResponse, { status: 400 });
     }
 
-    const result = await getDetailFromApi(apiSite, id);
+    // 使用搜索API获取结果，然后精确匹配source和id
+    // 这样可以确保获取到完整的episodes数据
+    const searchResults = await searchFromApi(apiSite, title.trim());
 
-    // 视频源详情默认不缓存，确保集数信息实时更新
-    // 缓存原本是为了豆瓣/Bangumi详情设计的，视频源应该实时获取
-    console.log(`获取视频详情: ${apiSite.name} - ${id}，不设置缓存确保集数实时更新`);
+    // 从搜索结果中精确匹配 source 和 id
+    const exactMatch = searchResults.find(
+      (item: any) =>
+        item.source?.toString() === sourceCode.toString() &&
+        item.id?.toString() === id.toString()
+    );
 
-    const responseHeaders: Record<string, string> = {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    };
+    if (!exactMatch) {
+      const errorResponse = { error: '未找到匹配的视频源' };
+      const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/detail',
+        statusCode: 404,
+        duration: Date.now() - startTime,
+        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: getDbQueryCount(),
+        requestSize: 0,
+        responseSize: errorSize,
+        filter: `source:${sourceCode}|id:${id}`,
+      });
+
+      return NextResponse.json(errorResponse, { status: 404 });
+    }
+
+    const result = exactMatch;
+
+    const cacheTime = await getCacheTime();
 
     const responseSize = Buffer.byteLength(JSON.stringify(result), 'utf8');
 
@@ -227,7 +251,12 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(result, {
-      headers: responseHeaders,
+      headers: {
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+        'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Netlify-Vary': 'query',
+      },
     });
   } catch (error) {
     const errorResponse = { error: (error as Error).message };

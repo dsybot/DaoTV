@@ -2919,6 +2919,7 @@ function PlayPageClient() {
     const fetchSourceDetail = async (
       source: string,
       id: string,
+      title?: string,
       retryCount = 0,
     ): Promise<SearchResult[]> => {
       const maxRetries = 2; // 最多重试2次
@@ -2939,7 +2940,11 @@ function PlayPageClient() {
           );
         } else {
           // 所有其他源（包括 Emby）统一使用 /api/detail
-          detailResponse = await fetch(`/api/detail?source=${source}&id=${id}`);
+          // 添加 title 参数用于搜索匹配
+          const titleParam = title ? `&title=${encodeURIComponent(title)}` : '';
+          detailResponse = await fetch(
+            `/api/detail?source=${source}&id=${id}${titleParam}`,
+          );
         }
 
         if (!detailResponse.ok) {
@@ -2969,7 +2974,7 @@ function PlayPageClient() {
           await new Promise((resolve) =>
             setTimeout(resolve, 1000 * (retryCount + 1)),
           );
-          return fetchSourceDetail(source, id, retryCount + 1);
+          return fetchSourceDetail(source, id, title, retryCount + 1);
         }
         return [];
       } finally {
@@ -3270,6 +3275,7 @@ function PlayPageClient() {
           const currentSourceDetail = await fetchSourceDetail(
             currentSource,
             currentId,
+            searchTitle || videoTitle,
           );
           console.log('[Play] 获取到的详情:', currentSourceDetail);
           if (currentSourceDetail.length > 0) {
@@ -3339,6 +3345,7 @@ function PlayPageClient() {
             const detailSources = await fetchSourceDetail(
               currentSource,
               currentId,
+              searchTitle || videoTitle,
             );
             if (detailSources.length > 0) {
               detailData = detailSources[0];
@@ -3398,6 +3405,7 @@ function PlayPageClient() {
         const detailSources = await fetchSourceDetail(
           detailData.source,
           detailData.id,
+          detailData.title || videoTitleRef.current,
         );
         if (detailSources.length > 0) {
           detailData = detailSources[0];
