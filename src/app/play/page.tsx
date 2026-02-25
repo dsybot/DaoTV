@@ -914,6 +914,8 @@ function PlayPageClient() {
   const [sourceSearchError, setSourceSearchError] = useState<string | null>(
     null,
   );
+  const [backgroundSourcesLoading, setBackgroundSourcesLoading] =
+    useState(false);
 
   // 优选和测速开关
   const [optimizationEnabled] = useState<boolean>(() => {
@@ -3289,6 +3291,7 @@ function PlayPageClient() {
         }
 
         // 异步获取其他源信息，不阻塞播放
+        setBackgroundSourcesLoading(true);
         fetchSourcesData(searchTitle || videoTitle)
           .then((sources) => {
             // 合并当前源和搜索到的其他源
@@ -3302,9 +3305,11 @@ function PlayPageClient() {
               }
             });
             setAvailableSources(allSources);
+            setBackgroundSourcesLoading(false);
           })
           .catch((err) => {
             console.error('异步获取其他源失败:', err);
+            setBackgroundSourcesLoading(false);
           });
       } else {
         // 没有source和id，正常搜索流程
@@ -3321,7 +3326,13 @@ function PlayPageClient() {
         detailData = sourcesInfo[0];
       }
 
-      // 未指定源和 id 或需要优选，且开启优选开关
+      if (!detailData) {
+        setError('未找到匹配结果');
+        setLoading(false);
+        return;
+      }
+
+      console.log(detailData.source, detailData.id);
       if (
         (!currentSource || !currentId || needPreferRef.current) &&
         optimizationEnabled
