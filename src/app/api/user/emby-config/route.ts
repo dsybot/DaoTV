@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { dbManager } from '@/lib/db';
+import { embyManager } from '@/lib/emby-manager';
 
 // GET - 获取用户 Emby 配置
 export async function GET(request: NextRequest) {
@@ -72,6 +73,10 @@ export async function POST(request: NextRequest) {
 
     await dbManager.saveUserEmbyConfig(username, config);
 
+    // 清除用户的 EmbyClient 缓存，使新配置立即生效
+    embyManager.clearUserCache(username);
+    console.log('🔄 已清除用户 Emby 客户端缓存');
+
     // 验证保存结果
     const savedConfig = await dbManager.getUserEmbyConfig(username);
     console.log('✅ 保存后读取的配置:', JSON.stringify(savedConfig, null, 2));
@@ -104,6 +109,10 @@ export async function DELETE(request: NextRequest) {
 
     const username = authCookie.username;
     await dbManager.deleteUserEmbyConfig(username);
+
+    // 清除用户的 EmbyClient 缓存
+    embyManager.clearUserCache(username);
+    console.log('🔄 已清除用户 Emby 客户端缓存');
 
     return NextResponse.json({
       success: true,
