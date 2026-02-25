@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
         embyKey = sourceCode.substring(5); // 'emby_'.length = 5
       }
 
-      // 获取客户端
-      const client = await embyManager.getClient(embyKey);
-      const sources = await embyManager.getEnabledSources();
+      // 获取客户端 - 使用用户配置
+      const client = await embyManager.getClientForUser(authInfo.username, embyKey);
+      const sources = await embyManager.getEnabledSourcesForUser(authInfo.username);
       const sourceConfig = sources.find(s => s.key === embyKey);
       const sourceName = sourceConfig?.name || 'Emby';
 
