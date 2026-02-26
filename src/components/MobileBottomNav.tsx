@@ -138,21 +138,17 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     const hasEmbyConfig = userEmbyConfig?.sources?.some(
       (s: any) => s.enabled && s.ServerURL,
     );
-    const hasEmbyInNav = items.some(
-      (item: any) => item.href === '/private-library',
-    );
+    const hasEmbyInNav = items.some((item: any) => item.href === '/emby');
 
     if (hasEmbyConfig && !hasEmbyInNav) {
       items.push({
         icon: FolderOpen,
         label: 'Emby',
-        href: '/private-library',
+        href: '/emby',
       });
     } else if (!hasEmbyConfig && hasEmbyInNav) {
       // 如果用户删除了所有 Emby 配置，移除导航项
-      const index = items.findIndex(
-        (item: any) => item.href === '/private-library',
-      );
+      const index = items.findIndex((item: any) => item.href === '/emby');
       if (index > -1) {
         items.splice(index, 1);
       }
