@@ -280,12 +280,19 @@ export default function PrivateLibraryPage() {
         {/* 标题和源选择 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Emby</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">Emby</h1>
+              {!loading && listData && listData.pages[0]?.total > 0 && !isSearchMode && (
+                <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full">
+                  共 {listData.pages[0].total} 部
+                </span>
+              )}
+            </div>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               title="刷新列表"
-              className={`group relative flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 transform hover:scale-105
+              className={`group relative overflow-hidden flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 transform hover:scale-105
                 ${isRefreshing
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                   : 'bg-linear-to-r from-emerald-500 via-green-500 to-teal-500 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50'
@@ -475,20 +482,27 @@ export default function PrivateLibraryPage() {
 
         {/* 视频列表 */}
         {!loading && videos.length > 0 && !isSearchMode && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {videos.map((video) => (
-              <VideoCard
-                key={video.id}
-                id={video.id}
-                title={video.title}
-                poster={video.poster}
-                year={video.year}
-                source={embyKey ? `emby_${embyKey}` : 'emby'}
-                source_name={embySourceName}
-                from="search"
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                已加载 {videos.length} / {listData?.pages[0]?.total ?? 0} 部
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {videos.map((video) => (
+                <VideoCard
+                  key={video.id}
+                  id={video.id}
+                  title={video.title}
+                  poster={video.poster}
+                  year={video.year}
+                  source={embyKey ? `emby_${embyKey}` : 'emby'}
+                  source_name={embySourceName}
+                  from="search"
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {/* 空状态 */}
