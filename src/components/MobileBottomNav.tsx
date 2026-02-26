@@ -112,7 +112,19 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       const data = await res.json();
       return data.config;
     },
-    staleTime: 5 * 60 * 1000, // 5分钟
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  // 检查管理员是否设置了公共源
+  const { data: publicSourcesData } = useQuery({
+    queryKey: ['emby', 'public-sources'],
+    queryFn: async () => {
+      const res = await fetch('/api/emby/public-sources');
+      if (!res.ok) return { sources: [] };
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
@@ -134,10 +146,12 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       });
     }
 
-    // Emby - 检查用户是否配置了 Emby
-    const hasEmbyConfig = userEmbyConfig?.sources?.some(
+    // Emby - 用户有私人源 OR 管理员有公共源，都显示导航
+    const hasUserEmby = userEmbyConfig?.sources?.some(
       (s: any) => s.enabled && s.ServerURL,
     );
+    const hasPublicEmby = (publicSourcesData?.sources?.length ?? 0) > 0;
+    const hasEmbyConfig = hasUserEmby || hasPublicEmby;
     const hasEmbyInNav = items.some((item: any) => item.href === '/emby');
 
     if (hasEmbyConfig && !hasEmbyInNav) {
@@ -155,7 +169,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     }
 
     return items;
-  }, [baseNavItems, hasCustomCategories, userEmbyConfig]);
+  }, [baseNavItems, hasCustomCategories, userEmbyConfig, publicSourcesData]);
 
   // 动态计算可见项数量
   useEffect(() => {
