@@ -60,7 +60,7 @@ const CapsuleSwitch: React.FC<CapsuleSwitchProps> = ({
   }, [activeIndex]);
 
   return (
-    <div className="w-full overflow-x-auto scrollbar-hide">
+    <div className="max-w-full overflow-x-auto scrollbar-hide">
     <div
       ref={containerRef}
       className={`relative inline-flex bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-full p-1 shadow-lg ${className || ''
