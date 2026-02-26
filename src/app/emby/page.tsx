@@ -316,7 +316,7 @@ export default function PrivateLibraryPage() {
                   const newKey = e.target.value || undefined;
                   setEmbyKey(newKey);
                   const sourceParam = newKey ? `emby:${newKey}` : 'emby';
-                  router.push(`/private-library?source=${sourceParam}`);
+                  router.push(`/emby?source=${sourceParam}`);
                 }}
                 className="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700"
               >
