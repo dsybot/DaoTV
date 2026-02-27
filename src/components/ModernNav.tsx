@@ -32,11 +32,11 @@ import { useQuery } from '@tanstack/react-query';
 import { FastLink } from './FastLink';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
 
-interface MobileBottomNavProps {
+interface ModernNavProps {
   activePath?: string;
 }
 
-const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
+const ModernNav = ({ activePath }: ModernNavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -96,12 +96,12 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
       { icon: PlaySquare, label: '短剧', href: '/shortdrama' },
       { icon: Cat, label: '动漫', href: '/douban?type=anime' },
       { icon: Clover, label: '综艺', href: '/douban?type=show' },
-      { icon: Radio, label: '直播', href: '/live' },
     ],
     [],
   );
 
   const [hasCustomCategories, setHasCustomCategories] = useState(false);
+  const [enableWebLive, setEnableWebLive] = useState(false);
 
   // 检查用户是否配置了 Emby
   const { data: userEmbyConfig } = useQuery({
@@ -133,10 +133,21 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
       setHasCustomCategories(true);
     }
+    if (runtimeConfig?.ENABLE_WEB_LIVE) {
+      setEnableWebLive(true);
+    }
   }, []);
 
   const navItems = useMemo(() => {
     const items = [...baseNavItems];
+
+    if (enableWebLive) {
+      items.push({
+        icon: Radio,
+        label: '直播',
+        href: '/live',
+      });
+    }
 
     if (hasCustomCategories) {
       items.push({
@@ -169,7 +180,13 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     }
 
     return items;
-  }, [baseNavItems, hasCustomCategories, userEmbyConfig, publicSourcesData]);
+  }, [
+    baseNavItems,
+    hasCustomCategories,
+    enableWebLive,
+    userEmbyConfig,
+    publicSourcesData,
+  ]);
 
   // 动态计算可见项数量
   useEffect(() => {
@@ -619,4 +636,4 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
   );
 };
 
-export default MobileBottomNav;
+export default ModernNav;
