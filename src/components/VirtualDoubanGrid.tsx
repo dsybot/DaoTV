@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useImperativeHandle, useMemo, useRef } from 'react';
-import { VirtuosoGrid } from 'react-virtuoso';
+import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 
 import { DoubanItem } from '@/lib/types';
 import { useImagePreload } from '@/hooks/useImagePreload';
@@ -29,10 +29,30 @@ interface VirtualDoubanGridProps {
 const INITIAL_PRIORITY_COUNT = 30;
 const skeletonData = Array.from({ length: 25 }, (_, i) => i);
 
-const gridListClass =
-  'justify-start grid grid-cols-3 gap-x-2 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8';
+// List 容器：flex wrap，对应原来的 grid class
+const ListContainer = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ style, children, ...props }, ref) => (
+    <div
+      ref={ref}
+      {...props}
+      style={style}
+      className='flex flex-wrap px-0 sm:px-2'
+    >
+      {children}
+    </div>
+  ),
+);
+ListContainer.displayName = 'ListContainer';
 
-const gridItemClass = 'pb-12 sm:pb-20';
+// Item 容器：每个卡片的宽度，对应原来的 grid column
+const ItemContainer = ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    {...props}
+    className='w-1/3 sm:w-[calc(100%/4)] md:w-[calc(100%/5)] lg:w-[calc(100%/6)] xl:w-[calc(100%/7)] 2xl:w-[calc(100%/8)] px-1 sm:px-4 pb-12 sm:pb-20 box-border'
+  >
+    {children}
+  </div>
+);
 
 export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualDoubanGridProps>(
   (
@@ -50,9 +70,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     },
     ref,
   ) => {
-    const virtuosoRef = useRef<any>(null);
+    const virtuosoRef = useRef<VirtuosoGridHandle>(null);
 
-    // 预加载首屏图片
     const imagesToPreload = useMemo(() => {
       return doubanData
         .slice(0, Math.min(30, doubanData.length))
@@ -70,9 +89,11 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
 
     if (loading) {
       return (
-        <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20'>
+        <div className='flex flex-wrap px-0 sm:px-2'>
           {skeletonData.map((i) => (
-            <DoubanCardSkeleton key={i} />
+            <div key={i} className='w-1/3 sm:w-[calc(100%/4)] md:w-[calc(100%/5)] lg:w-[calc(100%/6)] xl:w-[calc(100%/7)] 2xl:w-[calc(100%/8)] px-1 sm:px-4 pb-12 sm:pb-20 box-border'>
+              <DoubanCardSkeleton />
+            </div>
           ))}
         </div>
       );
@@ -106,101 +127,95 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     }
 
     return (
-      <>
-        <VirtuosoGrid
-          ref={virtuosoRef}
-          useWindowScroll
-          data={doubanData}
-          endReached={() => {
-            if (hasMore && !isLoadingMore) onLoadMore();
-          }}
-          overscan={600}
-          listClassName={gridListClass}
-          itemClassName={gridItemClass}
-          itemContent={(index, item) => (
-            <VideoCard
-              from='douban'
-              source='douban'
-              id={item.id}
-              source_name='豆瓣'
-              title={item.title}
-              poster={item.poster}
-              douban_id={Number(item.id)}
-              rate={item.rate}
-              year={item.year}
-              type={
-                type === 'movie'
-                  ? 'movie'
-                  : type === 'show'
-                    ? 'variety'
-                    : type === 'tv'
-                      ? 'tv'
-                      : type === 'anime'
-                        ? 'anime'
-                        : ''
-              }
-              isBangumi={isBangumi}
-              priority={index < INITIAL_PRIORITY_COUNT}
-              aiEnabled={aiEnabled}
-              aiCheckComplete={aiCheckComplete}
-            />
-          )}
-          components={{
-            Footer: () =>
-              isLoadingMore ? (
-                <div className='flex justify-center mt-8 py-8'>
-                  <div className='relative px-8 py-4 rounded-2xl bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-green-200/50 dark:border-green-700/50 shadow-lg overflow-hidden'>
-                    <div className='absolute inset-0 bg-gradient-to-r from-green-400/10 via-emerald-400/10 to-teal-400/10 animate-pulse'></div>
-                    <div className='relative flex items-center gap-3'>
-                      <div className='relative'>
-                        <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-green-200 dark:border-green-800'></div>
-                        <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-green-500 dark:border-t-green-400'></div>
-                      </div>
-                      <div className='flex items-center gap-1'>
-                        <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>加载中</span>
-                        <span className='flex gap-0.5'>
-                          <span className='animate-bounce' style={{ animationDelay: '0ms' }}>.</span>
-                          <span className='animate-bounce' style={{ animationDelay: '150ms' }}>.</span>
-                          <span className='animate-bounce' style={{ animationDelay: '300ms' }}>.</span>
-                        </span>
-                      </div>
+      <VirtuosoGrid
+        ref={virtuosoRef}
+        useWindowScroll
+        data={doubanData}
+        overscan={1200}
+        endReached={() => {
+          if (hasMore && !isLoadingMore) onLoadMore();
+        }}
+        components={{
+          List: ListContainer,
+          Item: ItemContainer,
+          Footer: () =>
+            isLoadingMore ? (
+              <div className='flex justify-center mt-8 py-8'>
+                <div className='relative px-8 py-4 rounded-2xl bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-green-200/50 dark:border-green-700/50 shadow-lg overflow-hidden'>
+                  <div className='absolute inset-0 bg-gradient-to-r from-green-400/10 via-emerald-400/10 to-teal-400/10 animate-pulse'></div>
+                  <div className='relative flex items-center gap-3'>
+                    <div className='relative'>
+                      <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-green-200 dark:border-green-800'></div>
+                      <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-green-500 dark:border-t-green-400'></div>
+                    </div>
+                    <div className='flex items-center gap-1'>
+                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>加载中</span>
+                      <span className='flex gap-0.5'>
+                        <span className='animate-bounce' style={{ animationDelay: '0ms' }}>.</span>
+                        <span className='animate-bounce' style={{ animationDelay: '150ms' }}>.</span>
+                        <span className='animate-bounce' style={{ animationDelay: '300ms' }}>.</span>
+                      </span>
                     </div>
                   </div>
                 </div>
-              ) : !hasMore && doubanData.length > 0 ? (
-                <div className='flex justify-center mt-8 py-8'>
-                  <div className='relative px-8 py-5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg overflow-hidden'>
-                    <div className='absolute inset-0 bg-gradient-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
-                    <div className='relative flex flex-col items-center gap-2'>
-                      <div className='relative'>
-                        <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
-                          {isBangumi ? (
-                            <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'></path>
-                            </svg>
-                          ) : (
-                            <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 13l4 4L19 7'></path>
-                            </svg>
-                          )}
-                        </div>
-                        <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+              </div>
+            ) : !hasMore && doubanData.length > 0 ? (
+              <div className='flex justify-center mt-8 py-8'>
+                <div className='relative px-8 py-5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg overflow-hidden'>
+                  <div className='absolute inset-0 bg-gradient-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
+                  <div className='relative flex flex-col items-center gap-2'>
+                    <div className='relative'>
+                      <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
+                        {isBangumi ? (
+                          <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'></path>
+                          </svg>
+                        ) : (
+                          <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 13l4 4L19 7'></path>
+                          </svg>
+                        )}
                       </div>
-                      <div className='text-center'>
-                        <p className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-1'>
-                          {isBangumi ? '本日番剧已全部显示' : '已加载全部内容'}
-                        </p>
-                        <p className='text-xs text-gray-600 dark:text-gray-400'>
-                          {isBangumi ? `今日共 ${doubanData.length} 部` : `共 ${doubanData.length} 项`}
-                        </p>
-                      </div>
+                      <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+                    </div>
+                    <div className='text-center'>
+                      <p className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-1'>
+                        {isBangumi ? '本日番剧已全部显示' : '已加载全部内容'}
+                      </p>
+                      <p className='text-xs text-gray-600 dark:text-gray-400'>
+                        {isBangumi ? `今日共 ${doubanData.length} 部` : `共 ${doubanData.length} 项`}
+                      </p>
                     </div>
                   </div>
                 </div>
-              ) : null,
-          }}
-        />
-      </>
+              </div>
+            ) : null,
+        }}
+        itemContent={(index, item) => (
+          <VideoCard
+            from='douban'
+            source='douban'
+            id={item.id}
+            source_name='豆瓣'
+            title={item.title}
+            poster={item.poster}
+            douban_id={Number(item.id)}
+            rate={item.rate}
+            year={item.year}
+            type={
+              type === 'movie' ? 'movie'
+              : type === 'show' ? 'variety'
+              : type === 'tv' ? 'tv'
+              : type === 'anime' ? 'anime'
+              : ''
+            }
+            isBangumi={isBangumi}
+            priority={index < INITIAL_PRIORITY_COUNT}
+            aiEnabled={aiEnabled}
+            aiCheckComplete={aiCheckComplete}
+          />
+        )}
+      />
     );
   },
 );
