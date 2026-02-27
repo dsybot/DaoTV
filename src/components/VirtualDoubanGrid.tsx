@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
@@ -108,7 +108,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     const checkContainer = () => {
       const element = containerRef.current;
       const actualWidth = element?.offsetWidth || 0;
-
+      
       console.log('VirtualDoubanGrid container debug:', {
         actualWidth,
         containerWidth,
@@ -118,7 +118,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
         element: !!element
       });
     };
-
+    
     checkContainer();
   }, [containerWidth]);
 
@@ -214,14 +214,14 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
       return <div style={{ ...style, visibility: 'hidden' }} />;
     }
 
-    // 🎯 图片加载优化：首屏卡片使用 priority 预加载
-    const isPriorityImage = index < INITIAL_PRIORITY_COUNT;
-
     const item = cellDisplayData[index];
 
     if (!item) {
       return <div style={{ ...style, visibility: 'hidden' }} />;
     }
+
+    // 🎯 图片加载优化：首屏卡片使用 priority 预加载
+    const isPriorityImage = index < INITIAL_PRIORITY_COUNT;
 
     return (
       <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
@@ -332,26 +332,26 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
             }),
           }}
           onCellsRendered={(visibleCells, allCells) => {
-            // 🔥 关键修复：将 Grid 的二维索引转换为一维索引
-            // 使用 overscan 索引（allCells）来确保提前触发加载
-            const { rowStartIndex, rowStopIndex } = allCells;
+                // 🔥 关键修复：将 Grid 的二维索引转换为一维索引
+                // 使用 overscan 索引（allCells）来确保提前触发加载
+                const { rowStartIndex, rowStopIndex } = allCells;
 
-            // 计算一维索引范围 - 使用整行范围
-            // startIndex: 该行第一个元素的索引
-            // stopIndex: 该行最后一个元素的索引（即下一行第一个元素 - 1）
-            const startIndex = rowStartIndex * columnCount;
-            const stopIndex = Math.min(
-              (rowStopIndex + 1) * columnCount - 1,
-              itemCount - 1
-            );
+                // 计算一维索引范围 - 使用整行范围
+                // startIndex: 该行第一个元素的索引
+                // stopIndex: 该行最后一个元素的索引（即下一行第一个元素 - 1）
+                const startIndex = rowStartIndex * columnCount;
+                const stopIndex = Math.min(
+                  (rowStopIndex + 1) * columnCount - 1,
+                  itemCount - 1
+                );
 
-            // 调用 InfiniteLoader 的 onRowsRendered
-            onRowsRendered({
-              startIndex,
-              stopIndex
-            });
-          }}
-        />
+                // 调用 InfiniteLoader 的 onRowsRendered
+                onRowsRendered({
+                  startIndex,
+                  stopIndex
+                });
+              }}
+            />
       )}
 
       {/* 加载更多指示器 */}

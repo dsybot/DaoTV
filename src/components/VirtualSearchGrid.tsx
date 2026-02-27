@@ -111,7 +111,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
     const checkContainer = () => {
       const element = containerRef.current;
       const actualWidth = element?.offsetWidth || 0;
-
+      
       console.log('VirtualSearchGrid container debug:', {
         actualWidth,
         containerWidth,
@@ -121,7 +121,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
         element: !!element
       });
     };
-
+    
     checkContainer();
   }, [containerWidth]);
 
@@ -236,6 +236,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
       );
     }
   }, []);
+
 
   return (
     <div ref={containerRef} className='w-full'>
