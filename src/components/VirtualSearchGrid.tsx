@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 
 import { SearchResult } from '@/lib/types';
@@ -68,7 +68,12 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
     ref,
   ) => {
     const virtuosoRef = useRef<VirtuosoGridHandle>(null);
+    const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
     const currentData = viewMode === 'agg' ? filteredAggResults : filteredResults;
+
+    useEffect(() => {
+      setScrollParent(document.body);
+    }, []);
     const totalItemCount = currentData.length;
 
     const imagesToPreload = useMemo(() => {
@@ -114,7 +119,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
     return (
       <VirtuosoGrid
         ref={virtuosoRef}
-        useWindowScroll
+        customScrollParent={scrollParent ?? undefined}
         data={currentData as any[]}
         overscan={1200}
         components={{
