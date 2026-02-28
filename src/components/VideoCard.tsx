@@ -38,6 +38,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { processImageUrl, isSeriesCompleted } from '@/lib/utils';
+import { loadedImageUrls } from '@/lib/imageCache';
 
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 import MobileActionSheet from '@/components/MobileActionSheet';
@@ -93,8 +94,6 @@ export interface VideoCardProps {
   aiEnabled?: boolean; // AI功能是否启用（从父组件传递）
   aiCheckComplete?: boolean; // AI权限检测是否完成（从父组件传递）
 }
-
-const loadedImageUrls = new Set<string>();
 
 export type VideoCardHandle = {
   setEpisodes: (episodes?: number) => void;

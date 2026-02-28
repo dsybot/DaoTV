@@ -91,7 +91,6 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
 
     const imagesToPreload = useMemo(() => {
       return doubanData
-        .slice(0, Math.min(30, doubanData.length))
         .map((item) => item.poster)
         .filter(Boolean) as string[];
     }, [doubanData]);
