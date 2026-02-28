@@ -28,6 +28,18 @@ interface VirtualSearchGridProps {
 
 const INITIAL_PRIORITY_COUNT = 24;
 
+function getAdaptiveOverscan(): number {
+  if (typeof navigator === 'undefined') return 900;
+  const mem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+  if (typeof mem === 'number') {
+    if (mem <= 4) return 620;
+    if (mem <= 8) return 820;
+  }
+  return 980;
+}
+
+const OVERSCAN = getAdaptiveOverscan();
+
 // List 容器：flex wrap
 const ListContainer = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ style, children, ...props }, ref) => (
@@ -121,7 +133,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
         ref={virtuosoRef}
         customScrollParent={scrollParent ?? undefined}
         data={currentData as any[]}
-        overscan={1200}
+        overscan={OVERSCAN}
         components={{
           List: ListContainer,
           Item: ItemContainer,

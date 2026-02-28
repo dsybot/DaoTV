@@ -29,6 +29,18 @@ interface VirtualDoubanGridProps {
 const INITIAL_PRIORITY_COUNT = 30;
 const skeletonData = Array.from({ length: 25 }, (_, i) => i);
 
+function getAdaptiveOverscan(): number {
+  if (typeof navigator === 'undefined') return 900;
+  const mem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+  if (typeof mem === 'number') {
+    if (mem <= 4) return 620;
+    if (mem <= 8) return 820;
+  }
+  return 980;
+}
+
+const OVERSCAN = getAdaptiveOverscan();
+
 // List 容器：flex wrap，对应原来的 grid class
 const ListContainer = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ style, children, ...props }, ref) => (
@@ -136,7 +148,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
         ref={virtuosoRef}
         customScrollParent={scrollParent ?? undefined}
         data={doubanData}
-        overscan={1200}
+        overscan={OVERSCAN}
         endReached={() => {
           if (hasMore && !isLoadingMore) onLoadMore();
         }}
