@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 
 import { DoubanItem } from '@/lib/types';
@@ -84,6 +84,16 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     ref,
   ) => {
     const virtuosoRef = useRef<VirtuosoGridHandle>(null);
+    const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
+
+    useEffect(() => {
+      // Use document.documentElement (<html>) instead of document.body.
+      // document.documentElement.getBoundingClientRect().height === window.innerHeight
+      // (viewport height, not total content height), so react-virtuoso's
+      // visibleHeight calculation stays stable as content grows — eliminating
+      // the ResizeObserver feedback loop that caused continuous flashing.
+      setScrollParent(document.documentElement);
+    }, []);
 
     const imagesToPreload = useMemo(() => {
       return doubanData
@@ -188,7 +198,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     return (
       <VirtuosoGrid
         ref={virtuosoRef}
-        useWindowScroll
+        customScrollParent={scrollParent ?? undefined}
         data={displayData}
         overscan={OVERSCAN}
         endReached={() => {
