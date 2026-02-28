@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, us
 import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 
 import { DoubanItem } from '@/lib/types';
+import { processImageUrl } from '@/lib/utils';
 import { useImagePreload } from '@/hooks/useImagePreload';
 import VideoCard from '@/components/VideoCard';
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
@@ -91,7 +92,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
 
     const imagesToPreload = useMemo(() => {
       return doubanData
-        .map((item) => item.poster)
+        .map((item) => item.poster ? processImageUrl(item.poster) : '')
         .filter(Boolean) as string[];
     }, [doubanData]);
 
