@@ -94,6 +94,8 @@ export interface VideoCardProps {
   aiCheckComplete?: boolean; // AI权限检测是否完成（从父组件传递）
 }
 
+const loadedImageUrls = new Set<string>();
+
 export type VideoCardHandle = {
   setEpisodes: (episodes?: number) => void;
   setSourceNames: (names?: string[]) => void;
@@ -136,8 +138,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const deletePlayRecordMutation = useDeletePlayRecordMutation();
 
     const [favorited, setFavorited] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
+    const [isLoading, setIsLoading] = useState(() =>
+      loadedImageUrls.has(processImageUrl(poster)),
+    );
+    const [imageLoaded, setImageLoaded] = useState(() =>
+      loadedImageUrls.has(processImageUrl(poster)),
+    ); // 图片加载状态
     const [showMobileActions, setShowMobileActions] = useState(false);
     const [searchFavorited, setSearchFavorited] = useState<boolean | null>(
       null,
@@ -1005,6 +1011,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               priority={priority}
               quality={85}
               onLoadingComplete={() => {
+                loadedImageUrls.add(processImageUrl(actualPoster));
                 setIsLoading(true);
                 setImageLoaded(true);
               }}
