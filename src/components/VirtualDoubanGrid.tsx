@@ -151,6 +151,9 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
         endReached={() => {
           if (hasMore && !isLoadingMore) onLoadMore();
         }}
+        atBottomStateChange={(atBottom) => {
+          if (atBottom && hasMore && !isLoadingMore) onLoadMore();
+        }}
         components={{
           List: ListContainer,
           Item: ItemContainer,
