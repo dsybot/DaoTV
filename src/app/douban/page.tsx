@@ -750,7 +750,7 @@ function DoubanPageClient() {
     }
 
     // 如果没有更多数据或正在加载，则不设置监听
-    if (!hasMore || isLoadingMore || loading) {
+    if (!hasMore || isLoadingMore || loading || useVirtualization) {
       return;
     }
 
