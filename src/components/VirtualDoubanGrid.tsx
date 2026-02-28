@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 
 import { DoubanItem } from '@/lib/types';
@@ -97,6 +97,52 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
 
     useImagePreload(imagesToPreload, doubanData.length > 0);
 
+    // Append skeleton placeholders while loading more so VirtuosoGrid
+    // pre-measures DOM slots — prevents layout flash when real items arrive
+    const SKELETON_SENTINEL = '__skeleton__' as const;
+    type DisplayItem = DoubanItem | { id: typeof SKELETON_SENTINEL; _skeletonIndex: number };
+    const displayData = useMemo<DisplayItem[]>(() => {
+      if (!isLoadingMore) return doubanData;
+      const skeletons: DisplayItem[] = Array.from({ length: 8 }, (_, i) => ({
+        id: SKELETON_SENTINEL,
+        _skeletonIndex: i,
+      }));
+      return [...doubanData, ...skeletons];
+    }, [doubanData, isLoadingMore]);
+
+    const videoCardType = useMemo(() =>
+      type === 'movie' ? 'movie'
+      : type === 'show' ? 'variety'
+      : type === 'tv' ? 'tv'
+      : type === 'anime' ? 'anime'
+      : '',
+    [type]);
+
+    const itemContent = useCallback((index: number, item: DisplayItem) => {
+      if ((item as { id: typeof SKELETON_SENTINEL }).id === SKELETON_SENTINEL) {
+        return <DoubanCardSkeleton />;
+      }
+      const real = item as DoubanItem;
+      return (
+        <VideoCard
+          from='douban'
+          source='douban'
+          id={real.id}
+          source_name='豆瓣'
+          title={real.title}
+          poster={real.poster}
+          douban_id={Number(real.id)}
+          rate={real.rate}
+          year={real.year}
+          type={videoCardType}
+          isBangumi={isBangumi}
+          priority={index < INITIAL_PRIORITY_COUNT}
+          aiEnabled={aiEnabled}
+          aiCheckComplete={aiCheckComplete}
+        />
+      );
+    }, [videoCardType, isBangumi, aiEnabled, aiCheckComplete]);
+
     useImperativeHandle(ref, () => ({
       scrollToTop: () => {
         virtuosoRef.current?.scrollToIndex({ index: 0, behavior: 'smooth' });
@@ -146,7 +192,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
       <VirtuosoGrid
         ref={virtuosoRef}
         customScrollParent={scrollParent ?? undefined}
-        data={doubanData}
+        data={displayData}
         overscan={OVERSCAN}
         endReached={() => {
           if (hasMore && !isLoadingMore) onLoadMore();
@@ -207,30 +253,7 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
               </div>
             ) : null,
         }}
-        itemContent={(index, item) => (
-          <VideoCard
-            from='douban'
-            source='douban'
-            id={item.id}
-            source_name='豆瓣'
-            title={item.title}
-            poster={item.poster}
-            douban_id={Number(item.id)}
-            rate={item.rate}
-            year={item.year}
-            type={
-              type === 'movie' ? 'movie'
-              : type === 'show' ? 'variety'
-              : type === 'tv' ? 'tv'
-              : type === 'anime' ? 'anime'
-              : ''
-            }
-            isBangumi={isBangumi}
-            priority={index < INITIAL_PRIORITY_COUNT}
-            aiEnabled={aiEnabled}
-            aiCheckComplete={aiCheckComplete}
-          />
-        )}
+        itemContent={itemContent}
       />
     );
   },
