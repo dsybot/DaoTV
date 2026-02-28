@@ -198,9 +198,14 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
         endReached={() => {
           if (hasMore && !isLoadingMore) onLoadMore();
         }}
+        scrollSeekConfiguration={{
+          enter: (velocity) => Math.abs(velocity) > 600,
+          exit: (velocity) => Math.abs(velocity) < 80,
+        }}
         components={{
           List: ListContainer,
           Item: ItemContainer,
+          ScrollSeekPlaceholder: () => <DoubanCardSkeleton />,
           Footer: () =>
             isLoadingMore ? (
               <div className='flex justify-center mt-8 py-8'>
