@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useImperativeHandle, useMemo, useRef } from 'react';
 import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 
 import { DoubanItem } from '@/lib/types';
@@ -84,11 +84,6 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     ref,
   ) => {
     const virtuosoRef = useRef<VirtuosoGridHandle>(null);
-    const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
-
-    useEffect(() => {
-      setScrollParent(document.body);
-    }, []);
 
     const imagesToPreload = useMemo(() => {
       return doubanData
@@ -106,18 +101,36 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
       : '',
     [type]);
 
-    const itemContent = useCallback((index: number, item: DoubanItem) => {
+    // Append skeleton placeholders while loading more so VirtuosoGrid
+    // keeps rendering to the bottom — required for endReached to re-fire
+    // after new data lands
+    const SKELETON_SENTINEL = '__skeleton__' as const;
+    type DisplayItem = DoubanItem | { id: typeof SKELETON_SENTINEL; _skeletonIndex: number };
+    const displayData = useMemo<DisplayItem[]>(() => {
+      if (!isLoadingMore) return doubanData;
+      const skeletons: DisplayItem[] = Array.from({ length: 8 }, (_, i) => ({
+        id: SKELETON_SENTINEL,
+        _skeletonIndex: i,
+      }));
+      return [...doubanData, ...skeletons];
+    }, [doubanData, isLoadingMore]);
+
+    const itemContent = useCallback((index: number, item: DisplayItem) => {
+      if ((item as { id: typeof SKELETON_SENTINEL }).id === SKELETON_SENTINEL) {
+        return <DoubanCardSkeleton />;
+      }
+      const real = item as DoubanItem;
       return (
         <VideoCard
           from='douban'
           source='douban'
-          id={item.id}
+          id={real.id}
           source_name='豆瓣'
-          title={item.title}
-          poster={item.poster}
-          douban_id={Number(item.id)}
-          rate={item.rate}
-          year={item.year}
+          title={real.title}
+          poster={real.poster}
+          douban_id={Number(real.id)}
+          rate={real.rate}
+          year={real.year}
           type={videoCardType}
           isBangumi={isBangumi}
           priority={index < INITIAL_PRIORITY_COUNT}
@@ -175,20 +188,15 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     return (
       <VirtuosoGrid
         ref={virtuosoRef}
-        customScrollParent={scrollParent ?? undefined}
-        data={doubanData}
+        useWindowScroll
+        data={displayData}
         overscan={OVERSCAN}
         endReached={() => {
           if (hasMore && !isLoadingMore) onLoadMore();
         }}
-        scrollSeekConfiguration={{
-          enter: (velocity) => Math.abs(velocity) > 600,
-          exit: (velocity) => Math.abs(velocity) < 80,
-        }}
         components={{
           List: ListContainer,
           Item: ItemContainer,
-          ScrollSeekPlaceholder: () => <DoubanCardSkeleton />,
           Footer: () =>
             isLoadingMore ? (
               <div className='flex justify-center mt-8 py-8'>
