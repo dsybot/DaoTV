@@ -177,8 +177,8 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
         ref={virtuosoRef}
         customScrollParent={scrollParent ?? undefined}
         data={doubanData}
-        overscan={OVERSCAN}
-        increaseViewportBy={{ top: 600, bottom: 1200 }}
+        overscan={{ main: OVERSCAN, reverse: Math.round(OVERSCAN * 0.85) }}
+        increaseViewportBy={{ top: Math.round(OVERSCAN * 0.45), bottom: Math.round(OVERSCAN * 0.75) }}
         endReached={() => {
           if (hasMore && !isLoadingMore) onLoadMore();
         }}
