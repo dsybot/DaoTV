@@ -696,8 +696,11 @@ function DoubanPageClient() {
             );
 
             if (keyParamsMatch) {
-              // 🚀 使用 flushSync 强制同步更新，确保数据立即渲染
+              // Reset lock before data update so endReached fires with
+              // the new totalCount while isLoadingMore is already false.
+              isLoadingMoreRef.current = false;
               flushSync(() => {
+                setIsLoadingMore(false);
                 // 🔧 双重去重逻辑：防止跨批次和批次内重复数据
                 setDoubanData((prev) => {
                   const existingIds = new Set(prev.map((item) => item.id));
@@ -727,9 +730,10 @@ function DoubanPageClient() {
           }
         } catch (err) {
           console.error(err);
-        } finally {
           isLoadingMoreRef.current = false;
           setIsLoadingMore(false);
+        } finally {
+          // lock already cleared on success path above
         }
       };
 
