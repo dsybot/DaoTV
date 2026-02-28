@@ -19,8 +19,7 @@ interface VirtualGridProps<T> {
  * A virtualised grid that piggy-backs on CSS grid for column layout
  * and virtualises *rows* via @tanstack/react-virtual.
  *
- * Uses document.documentElement as scroll element so window.scrollY
- * is read correctly (document.body.scrollTop is always 0 in modern browsers).
+ * Uses document.body as scroll element for window-level scrolling.
  */
 export default function VirtualGrid<T>({
   items,
