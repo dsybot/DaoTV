@@ -1010,7 +1010,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               loading={priority ? 'eager' : 'lazy'}
               priority={priority}
               quality={85}
-              onLoadingComplete={() => {
+              onLoad={() => {
                 loadedImageUrls.add(processImageUrl(actualPoster));
                 setIsLoading(true);
                 setImageLoaded(true);
