@@ -13,6 +13,10 @@ interface VirtualGridProps<T> {
   /** Overscan rows */
   overscan?: number;
   className?: string;
+  /** Callback when user scrolls near the end - triggers before reaching last item */
+  endReached?: () => void;
+  /** How many rows before the end to trigger endReached (default: 2) */
+  endReachedThreshold?: number;
 }
 
 /**
@@ -29,6 +33,8 @@ export default function VirtualGrid<T>({
   rowGapClass = 'pb-14 sm:pb-20',
   overscan = 3,
   className = '',
+  endReached,
+  endReachedThreshold = 2,
 }: VirtualGridProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(3);
@@ -60,6 +66,25 @@ export default function VirtualGrid<T>({
   });
 
   const virtualRows = virtualizer.getVirtualItems();
+
+  // Detect when user scrolls near the end and trigger endReached callback
+  const lastVirtualRowRef = useRef<number>(-1);
+  useEffect(() => {
+    if (!endReached || virtualRows.length === 0) return;
+
+    const lastVirtualRow = virtualRows[virtualRows.length - 1];
+    const lastRowIndex = lastVirtualRow.index;
+
+    // Trigger endReached when we're within threshold rows of the end
+    // and we haven't triggered for this position yet
+    if (
+      lastRowIndex >= rowCount - endReachedThreshold &&
+      lastRowIndex !== lastVirtualRowRef.current
+    ) {
+      lastVirtualRowRef.current = lastRowIndex;
+      endReached();
+    }
+  }, [virtualRows, rowCount, endReached, endReachedThreshold]);
 
   return (
     <>

@@ -1018,6 +1018,12 @@ function DoubanPageClient() {
                   className='grid-cols-3 gap-x-2 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8'
                   rowGapClass='pb-12 sm:pb-20'
                   estimateRowHeight={320}
+                  endReached={() => {
+                    if (hasMore && !isLoadingMore && !loading) {
+                      setCurrentPage((prev) => prev + 1);
+                    }
+                  }}
+                  endReachedThreshold={3}
                   renderItem={(item, index) => {
                     const mappedType = type === 'movie' ? 'movie' : type === 'show' ? 'variety' : type === 'tv' ? 'tv' : type === 'anime' ? 'anime' : '';
                     return (
