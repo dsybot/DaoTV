@@ -334,8 +334,8 @@ function SearchPageClient() {
     // 首先应用精确搜索过滤
     const filteredResults = exactSearch
       ? searchResults.filter((item) =>
-          titleContainsQuery(item.title, currentQueryRef.current),
-        )
+        titleContainsQuery(item.title, currentQueryRef.current),
+      )
       : searchResults;
 
     const map = new Map<string, SearchResult[]>();
@@ -343,9 +343,8 @@ function SearchPageClient() {
 
     filteredResults.forEach((item) => {
       // 使用 title + year + type 作为键，year 必然存在，但依然兜底 'unknown'
-      const key = `${item.title.replaceAll(' ', '')}-${
-        item.year || 'unknown'
-      }-${item.episodes.length === 1 ? 'movie' : 'tv'}`;
+      const key = `${item.title.replaceAll(' ', '')}-${item.year || 'unknown'
+        }-${item.episodes.length === 1 ? 'movie' : 'tv'}`;
       const arr = map.get(key) || [];
 
       // 如果是新的键，记录其顺序
@@ -454,8 +453,8 @@ function SearchPageClient() {
     // 首先应用精确搜索过滤
     const exactSearchFiltered = exactSearch
       ? searchResults.filter((item) =>
-          titleContainsQuery(item.title, currentQueryRef.current),
-        )
+        titleContainsQuery(item.title, currentQueryRef.current),
+      )
       : searchResults;
 
     const filtered = exactSearchFiltered.filter((item) => {
@@ -679,7 +678,7 @@ function SearchPageClient() {
       if (eventSourceRef.current) {
         try {
           eventSourceRef.current.close();
-        } catch {}
+        } catch { }
         eventSourceRef.current = null;
       }
       setSearchResults([]);
@@ -780,13 +779,13 @@ function SearchPageClient() {
                 setIsLoading(false);
                 try {
                   es.close();
-                } catch {}
+                } catch { }
                 if (eventSourceRef.current === es) {
                   eventSourceRef.current = null;
                 }
                 break;
             }
-          } catch {}
+          } catch { }
         };
 
         es.onerror = () => {
@@ -805,7 +804,7 @@ function SearchPageClient() {
           }
           try {
             es.close();
-          } catch {}
+          } catch { }
           if (eventSourceRef.current === es) {
             eventSourceRef.current = null;
           }
@@ -851,7 +850,7 @@ function SearchPageClient() {
       if (eventSourceRef.current) {
         try {
           eventSourceRef.current.close();
-        } catch {}
+        } catch { }
         eventSourceRef.current = null;
       }
       if (flushTimerRef.current) {
@@ -1103,8 +1102,8 @@ function SearchPageClient() {
           {/* 搜索类型选项卡 - 移动优先响应式设计 */}
           <div className='max-w-3xl mx-auto mb-6 px-3 sm:px-0'>
             {/* 移动端：可滚动横向布局；桌面端：居中排列 */}
-            <div className='overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0'>
-              <div className='inline-flex sm:flex items-center justify-start sm:justify-center min-w-full sm:min-w-0 bg-gradient-to-r from-gray-100 via-white to-gray-100 dark:from-gray-900/95 dark:via-gray-800/95 dark:to-gray-900/95 rounded-2xl p-2 gap-2 sm:gap-2.5 shadow-xl border border-gray-200/70 dark:border-gray-800/70 backdrop-blur-md'>
+            <div className='overflow-x-auto scrollbar-hide sm:mx-0'>
+              <div className='inline-flex sm:flex items-center justify-start sm:justify-center min-w-full sm:min-w-0 bg-gradient-to-r from-gray-100 via-white to-gray-100 dark:from-gray-900/95 dark:via-gray-800/95 dark:to-gray-900/95 rounded-2xl p-2 gap-2 sm:gap-2.5 sm:shadow-xl border border-gray-200/70 dark:border-gray-800/70 backdrop-blur-md mx-0 sm:mx-auto'>
                 <button
                   type='button'
                   onClick={() => {
@@ -1127,11 +1126,10 @@ function SearchPageClient() {
                       );
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'video'
-                      ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'video'
+                    ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
+                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                    }`}
                 >
                   🎬 影视资源
                 </button>
@@ -1153,11 +1151,10 @@ function SearchPageClient() {
                       handleNetDiskSearch(currentQuery);
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'netdisk'
-                      ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'netdisk'
+                    ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
+                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                    }`}
                 >
                   💾 网盘资源
                 </button>
@@ -1184,11 +1181,10 @@ function SearchPageClient() {
                       setTimeout(() => handleYouTubeSearch(currentQuery), 0);
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'youtube'
-                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'youtube'
+                    ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
+                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                    }`}
                 >
                   📺 YouTube
                 </button>
@@ -1215,11 +1211,10 @@ function SearchPageClient() {
                       );
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'tmdb-actor'
-                      ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'tmdb-actor'
+                    ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
+                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                    }`}
                 >
                   🎬 TMDB演员
                 </button>
@@ -1326,11 +1321,10 @@ function SearchPageClient() {
                               handleNetDiskSearch(currentQuery);
                             }
                           }}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
-                            netdiskResourceType === 'netdisk'
-                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                          }`}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'netdisk'
+                            ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                            }`}
                         >
                           💾 网盘资源
                         </button>
@@ -1345,11 +1339,10 @@ function SearchPageClient() {
                               setAcgTriggerSearch((prev) => !prev);
                             }
                           }}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
-                            netdiskResourceType === 'acg'
-                              ? 'bg-purple-500 text-white border-purple-500 shadow-md'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                          }`}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'acg'
+                            ? 'bg-purple-500 text-white border-purple-500 shadow-md'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                            }`}
                         >
                           🎌 动漫磁力
                         </button>
@@ -1412,11 +1405,10 @@ function SearchPageClient() {
                                 );
                               }
                             }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                              tmdbActorType === type.key
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                            }`}
+                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${tmdbActorType === type.key
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                              }`}
                             disabled={tmdbActorLoading}
                           >
                             {type.label}
@@ -1516,11 +1508,10 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'search'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            }`}
                         >
                           🔍 搜索视频
                         </button>
@@ -1533,11 +1524,10 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'direct'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            }`}
                         >
                           🔗 直接播放
                         </button>
@@ -1600,11 +1590,10 @@ function SearchPageClient() {
                                 );
                               }
                             }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                              youtubeContentType === type.key
-                                ? 'bg-red-500 text-white border-red-500'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                            }`}
+                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${youtubeContentType === type.key
+                              ? 'bg-red-500 text-white border-red-500'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                              }`}
                             disabled={youtubeLoading}
                           >
                             {type.label}
@@ -1639,11 +1628,10 @@ function SearchPageClient() {
                                   );
                                 }
                               }}
-                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${
-                                youtubeSortOrder === sort.key
-                                  ? 'bg-blue-500 text-white border-blue-500'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
-                              }`}
+                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${youtubeSortOrder === sort.key
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
+                                }`}
                               disabled={youtubeLoading}
                             >
                               {sort.icon && <span>{sort.icon}</span>}
@@ -1891,76 +1879,76 @@ function SearchPageClient() {
                     >
                       {viewMode === 'agg'
                         ? filteredAggResults.map(([mapKey, group]) => {
-                            const title = group[0]?.title || '';
-                            const poster = group[0]?.poster || '';
-                            const year = group[0]?.year || 'unknown';
-                            const { episodes, source_names, douban_id } =
-                              computeGroupStats(group);
-                            const type = episodes === 1 ? 'movie' : 'tv';
-                            if (!groupStatsRef.current.has(mapKey)) {
-                              groupStatsRef.current.set(mapKey, {
-                                episodes,
-                                source_names,
-                                douban_id,
-                              });
-                            }
-                            return (
-                              <div key={`agg-${mapKey}`} className='w-full'>
-                                <VideoCard
-                                  ref={getGroupRef(mapKey)}
-                                  from='search'
-                                  isAggregate={true}
-                                  title={title}
-                                  poster={poster}
-                                  year={year}
-                                  episodes={episodes}
-                                  source_names={source_names}
-                                  douban_id={douban_id}
-                                  query={
-                                    searchQuery.trim() !== title
-                                      ? searchQuery.trim()
-                                      : ''
-                                  }
-                                  type={type}
-                                />
-                              </div>
-                            );
-                          })
-                        : filteredAllResults.map((item) => (
-                            <div
-                              key={`all-${item.source}-${item.id}`}
-                              className='w-full'
-                            >
+                          const title = group[0]?.title || '';
+                          const poster = group[0]?.poster || '';
+                          const year = group[0]?.year || 'unknown';
+                          const { episodes, source_names, douban_id } =
+                            computeGroupStats(group);
+                          const type = episodes === 1 ? 'movie' : 'tv';
+                          if (!groupStatsRef.current.has(mapKey)) {
+                            groupStatsRef.current.set(mapKey, {
+                              episodes,
+                              source_names,
+                              douban_id,
+                            });
+                          }
+                          return (
+                            <div key={`agg-${mapKey}`} className='w-full'>
                               <VideoCard
-                                id={item.id}
-                                title={item.title}
-                                poster={item.poster}
-                                episodes={item.episodes.length}
-                                source={item.source}
-                                source_name={item.source_name}
-                                douban_id={item.douban_id}
+                                ref={getGroupRef(mapKey)}
+                                from='search'
+                                isAggregate={true}
+                                title={title}
+                                poster={poster}
+                                year={year}
+                                episodes={episodes}
+                                source_names={source_names}
+                                douban_id={douban_id}
                                 query={
-                                  searchQuery.trim() !== item.title
+                                  searchQuery.trim() !== title
                                     ? searchQuery.trim()
                                     : ''
                                 }
-                                year={item.year}
-                                from='search'
-                                type={inferTypeFromName(
-                                  item.type_name,
-                                  item.episodes.length,
-                                )}
-                                remarks={item.remarks}
+                                type={type}
                               />
                             </div>
-                          ))}
+                          );
+                        })
+                        : filteredAllResults.map((item) => (
+                          <div
+                            key={`all-${item.source}-${item.id}`}
+                            className='w-full'
+                          >
+                            <VideoCard
+                              id={item.id}
+                              title={item.title}
+                              poster={item.poster}
+                              episodes={item.episodes.length}
+                              source={item.source}
+                              source_name={item.source_name}
+                              douban_id={item.douban_id}
+                              query={
+                                searchQuery.trim() !== item.title
+                                  ? searchQuery.trim()
+                                  : ''
+                              }
+                              year={item.year}
+                              from='search'
+                              type={inferTypeFromName(
+                                item.type_name,
+                                item.episodes.length,
+                              )}
+                              remarks={item.remarks}
+                            />
+                          </div>
+                        ))}
                     </div>
                   )}
 
                   {/* Footer */}
                   {isLoading &&
-                  (filteredAggResults.length > 0 ||
-                    filteredAllResults.length > 0) ? (
+                    (filteredAggResults.length > 0 ||
+                      filteredAllResults.length > 0) ? (
                     <div className='fixed bottom-0 left-0 right-0 z-50 flex justify-center py-3 bg-white/98 dark:bg-gray-900/98 border-t border-gray-200/80 dark:border-gray-700/80'>
                       <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400'>
                         <div className='animate-spin rounded-full h-4 w-4 border-2 border-gray-300 dark:border-gray-600 border-t-green-500 dark:border-t-green-400'></div>
@@ -2080,11 +2068,10 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'search'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            }`}
                         >
                           🔍 搜索视频
                         </button>
@@ -2096,11 +2083,10 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'direct'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            }`}
                         >
                           🔗 直接播放
                         </button>
@@ -2165,11 +2151,10 @@ function SearchPageClient() {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-20 right-6 md:bottom-6 z-50 w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center ${
-          showBackToTop
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}
+        className={`fixed bottom-20 right-6 md:bottom-6 z-50 w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center ${showBackToTop
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-4 pointer-events-none'
+          }`}
         aria-label='返回顶部'
       >
         <ChevronUp className='w-6 h-6' />
