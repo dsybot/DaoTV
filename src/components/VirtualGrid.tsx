@@ -75,16 +75,24 @@ export default function VirtualGrid<T>({
     const lastVirtualRow = virtualRows[virtualRows.length - 1];
     const lastRowIndex = lastVirtualRow.index;
 
-    // Trigger endReached when we're within threshold rows of the end
+    // Calculate dynamic threshold based on viewport height and row height
+    // Mobile devices need earlier triggering due to smaller screens
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const visibleRows = Math.ceil(viewportHeight / estimateRowHeight);
+    // Trigger when remaining rows <= visible rows + threshold
+    // This ensures data loads before user sees the end
+    const dynamicThreshold = Math.max(visibleRows + endReachedThreshold, endReachedThreshold);
+
+    // Trigger endReached when we're within dynamic threshold rows of the end
     // and we haven't triggered for this position yet
     if (
-      lastRowIndex >= rowCount - endReachedThreshold &&
+      lastRowIndex >= rowCount - dynamicThreshold &&
       lastRowIndex !== lastVirtualRowRef.current
     ) {
       lastVirtualRowRef.current = lastRowIndex;
       endReached();
     }
-  }, [virtualRows, rowCount, endReached, endReachedThreshold]);
+  }, [virtualRows, rowCount, endReached, endReachedThreshold, estimateRowHeight]);
 
   return (
     <>
