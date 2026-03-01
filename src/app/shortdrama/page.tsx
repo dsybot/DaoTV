@@ -306,7 +306,7 @@ export default function ShortDramaPage() {
               }}
               endReachedThreshold={3}
               renderItem={(drama, index) => (
-                <ShortDramaCard key={index} drama={drama} />
+                <ShortDramaCard key={index} drama={drama} priority={index < 30} />
               )}
             />
           ) : (
