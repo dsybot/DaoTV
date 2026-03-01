@@ -15,6 +15,7 @@ import { ShortDramaCategory, ShortDramaItem } from '@/lib/types';
 
 import PageLayout from '@/components/PageLayout';
 import ShortDramaCard from '@/components/ShortDramaCard';
+import VirtualGrid from '@/components/VirtualGrid';
 
 export default function ShortDramaPage() {
   const [categories, setCategories] = useState<ShortDramaCategory[]>([]);
@@ -30,10 +31,19 @@ export default function ShortDramaPage() {
   // 用于防止分类切换时的闪烁
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  const [useVirtualization, setUseVirtualization] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('useShortDramaVirtualization');
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
   const observer = useRef<IntersectionObserver | undefined>(undefined);
   const lastDramaElementRef = useCallback(
     (node: HTMLDivElement) => {
       if (loading) return;
+      if (useVirtualization) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
@@ -42,7 +52,7 @@ export default function ShortDramaPage() {
       });
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore, useVirtualization]
   );
 
   // 获取分类列表
@@ -251,16 +261,66 @@ export default function ShortDramaPage() {
           )}
 
           {/* 短剧网格 */}
-          <div className="grid grid-cols-3 gap-4 md:grid-cols-7">
-            {dramas.map((drama, index) => (
-              <div
-                key={`${drama.id}-${index}`}
-                ref={index === dramas.length - 1 ? lastDramaElementRef : null}
-              >
-                <ShortDramaCard drama={drama} />
+          <div className="mb-4 flex justify-end">
+            <label className='flex items-center gap-3 select-none cursor-pointer'>
+              <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>
+                虚拟化
+              </span>
+              <div className='relative'>
+                <input
+                  type='checkbox'
+                  className='sr-only peer'
+                  checked={useVirtualization}
+                  onChange={(e) => {
+                    const nextValue = e.target.checked;
+                    setUseVirtualization(nextValue);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem(
+                        'useShortDramaVirtualization',
+                        JSON.stringify(nextValue),
+                      );
+                    }
+                  }}
+                />
+                <div className='w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-linear-to-r peer-checked:from-purple-500 peer-checked:to-pink-500 transition-all duration-300 shadow-inner'></div>
+                <div className='absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-6'></div>
+                <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-6'>
+                  <span className='text-[10px] peer-checked:text-white text-gray-500'>
+                    {useVirtualization ? '✨' : '○'}
+                  </span>
+                </div>
               </div>
-            ))}
+            </label>
           </div>
+
+          {useVirtualization ? (
+            <VirtualGrid
+              items={dramas}
+              className='grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+              rowGapClass='pb-4'
+              estimateRowHeight={280}
+              endReached={() => {
+                if (hasMore && !loading) {
+                  setPage((prevPage) => prevPage + 1);
+                }
+              }}
+              endReachedThreshold={3}
+              renderItem={(drama, index) => (
+                <ShortDramaCard key={index} drama={drama} />
+              )}
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {dramas.map((drama, index) => (
+                <div
+                  key={`${drama.id}-${index}`}
+                  ref={index === dramas.length - 1 ? lastDramaElementRef : null}
+                >
+                  <ShortDramaCard drama={drama} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* 加载状态 - 只在首次加载或加载更多时显示骨架屏 */}
           {loading && (isInitialLoad || page > 1) && (
