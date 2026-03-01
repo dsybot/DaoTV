@@ -60,7 +60,7 @@ export default function VirtualGrid<T>({
 
   const virtualizer = useVirtualizer({
     count: rowCount,
-    getScrollElement: () => document.documentElement,
+    getScrollElement: () => document.body,
     estimateSize: () => estimateRowHeight,
     overscan,
   });
