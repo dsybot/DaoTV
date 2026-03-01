@@ -20,6 +20,7 @@ interface VirtualGridProps<T> {
  * and virtualises *rows* via @tanstack/react-virtual.
  *
  * Uses document.body as scroll element for window-level scrolling.
+ * Based on official @tanstack/react-virtual implementation pattern.
  */
 export default function VirtualGrid<T>({
   items,
@@ -79,34 +80,38 @@ export default function VirtualGrid<T>({
           position: 'relative',
         }}
       >
-        {virtualRows.map((virtualRow) => {
-          const startIdx = virtualRow.index * columns;
-          const rowItems = items.slice(startIdx, startIdx + columns);
+        {/* Container with unified offset - official pattern */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${virtualRows[0]?.start ?? 0}px)`,
+          }}
+        >
+          {virtualRows.map((virtualRow) => {
+            const startIdx = virtualRow.index * columns;
+            const rowItems = items.slice(startIdx, startIdx + columns);
 
-          return (
-            <div
-              key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
-              className={rowGapClass}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <div className={`grid ${className}`}>
-                {rowItems.map((item, i) => (
-                  <React.Fragment key={startIdx + i}>
-                    {renderItem(item, startIdx + i)}
-                  </React.Fragment>
-                ))}
+            return (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className={rowGapClass}
+              >
+                <div className={`grid ${className}`}>
+                  {rowItems.map((item, i) => (
+                    <React.Fragment key={startIdx + i}>
+                      {renderItem(item, startIdx + i)}
+                    </React.Fragment>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </>
   );
