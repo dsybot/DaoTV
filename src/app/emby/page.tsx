@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
+import VirtualGrid from '@/components/VirtualGrid';
 
 interface EmbySourceOption {
   key: string;
@@ -88,6 +89,15 @@ export default function PrivateLibraryPage() {
   const [mounted, setMounted] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // 虚拟化开关状态
+  const [useVirtualization, setUseVirtualization] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('useEmbyVirtualization');
+      return saved !== null ? JSON.parse(saved) : true; // 默认启用
+    }
+    return true;
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -196,8 +206,10 @@ export default function PrivateLibraryPage() {
     [listData]
   );
 
-  // 无限滚动：监听底部元素进入视口
+  // 无限滚动：监听底部元素进入视口（仅用于非虚拟化模式）
   useEffect(() => {
+    // 虚拟化模式使用 endReached 回调，不需要 IntersectionObserver
+    if (useVirtualization) return;
     if (!hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
@@ -214,7 +226,7 @@ export default function PrivateLibraryPage() {
     return () => {
       if (target) observer.unobserve(target);
     };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, useVirtualization]);
 
   // ── 4. Emby 搜索 ──────────────────────────────────────────────────────────
   const { data: searchData, isFetching: isSearching } = useQuery({
@@ -256,6 +268,14 @@ export default function PrivateLibraryPage() {
       localStorage.setItem('emby_sortOrder', next);
       return next;
     });
+  };
+
+  const toggleVirtualization = () => {
+    const newValue = !useVirtualization;
+    setUseVirtualization(newValue);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('useEmbyVirtualization', JSON.stringify(newValue));
+    }
   };
 
   const errorMessage = isError ? (listError as Error)?.message || '获取列表失败，请稍后重试' : '';
@@ -429,6 +449,28 @@ export default function PrivateLibraryPage() {
                   )}
                 </span>
               </button>
+
+              {/* 虚拟化开关 */}
+              <label className='flex items-center gap-2 cursor-pointer select-none group'>
+                <span className='text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                  ⚡ 虚拟滑动
+                </span>
+                <div className='relative'>
+                  <input
+                    type='checkbox'
+                    className='sr-only peer'
+                    checked={useVirtualization}
+                    onChange={toggleVirtualization}
+                  />
+                  <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-blue-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-blue-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
+                  <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-blue-300 dark:peer-checked:shadow-blue-500/50 peer-checked:scale-105'></div>
+                  <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
+                    <span className='text-[10px] peer-checked:text-white text-gray-500'>
+                      {useVirtualization ? '✨' : '○'}
+                    </span>
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
         </div>
@@ -525,20 +567,48 @@ export default function PrivateLibraryPage() {
                 已加载 {videos.length} / {listData?.pages[0]?.total ?? 0} 部
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {videos.map((video) => (
-                <VideoCard
-                  key={video.id}
-                  id={video.id}
-                  title={video.title}
-                  poster={video.poster}
-                  year={video.year}
-                  source={embyKey ? `emby_${embyKey}` : 'emby'}
-                  source_name={embySourceName}
-                  from="search"
-                />
-              ))}
-            </div>
+
+            {useVirtualization ? (
+              <VirtualGrid
+                items={videos}
+                className='grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                rowGapClass='pb-4'
+                estimateRowHeight={280}
+                endReached={() => {
+                  if (hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage();
+                  }
+                }}
+                endReachedThreshold={3}
+                renderItem={(video) => (
+                  <VideoCard
+                    key={video.id}
+                    id={video.id}
+                    title={video.title}
+                    poster={video.poster}
+                    year={video.year}
+                    source={embyKey ? `emby_${embyKey}` : 'emby'}
+                    source_name={embySourceName}
+                    from="search"
+                  />
+                )}
+              />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {videos.map((video) => (
+                  <VideoCard
+                    key={video.id}
+                    id={video.id}
+                    title={video.title}
+                    poster={video.poster}
+                    year={video.year}
+                    source={embyKey ? `emby_${embyKey}` : 'emby'}
+                    source_name={embySourceName}
+                    from="search"
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -559,8 +629,8 @@ export default function PrivateLibraryPage() {
           </div>
         )}
 
-        {/* 无限滚动触发器 */}
-        <div ref={observerTarget} className="h-4" />
+        {/* 无限滚动触发器（仅用于非虚拟化模式） */}
+        {!useVirtualization && <div ref={observerTarget} className="h-4" />}
       </div>
     </PageLayout>
   );
