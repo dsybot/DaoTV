@@ -498,6 +498,18 @@ function ShortDramaCard({
             {drama.name}
           </h3>
 
+          {/* 演员信息 */}
+          {drama.author && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-700/50">
+                <svg className="w-3 h-3 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span className="text-blue-700 dark:text-blue-300 font-medium line-clamp-1">{drama.author}</span>
+              </div>
+            </div>
+          )}
+
           {/* 描述信息（可选） */}
           {showDescription && drama.description && (
             <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
