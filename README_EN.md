@@ -25,7 +25,7 @@
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.15-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.1.3-orange)
+![Version](https://img.shields.io/badge/Version-6.2.0-orange)
 
 </div>
 
@@ -33,11 +33,12 @@
 
 ## 📢 Project Overview
 
-This project is a deeply customized version based on **MoonTV**, continuously developed from **v4.3.1** to the current **v6.1.3**, with **60+ major feature modules** and **400+ detailed optimizations** added. See [CHANGELOG](CHANGELOG) for all new features.
+This project is a deeply customized version based on **MoonTV**, continuously developed from **v4.3.1** to the current **v6.2.0**, with **60+ major feature modules** and **400+ detailed optimizations** added. See [CHANGELOG](CHANGELOG) for all new features.
 
 ### 💡 Core Enhancement Highlights
 
 #### 🎥 Content Ecosystem Expansion
+- **Emby Private Library**: Complete Emby media server integration with per-user configuration, dual authentication (API key and username/password), local full-text index search (fuzzy matching and Traditional/Simplified Chinese support), HLS transcoding (forced AAC audio for EAC3/TrueHD compatibility), admin public sources, manual refresh, mobile optimization
 - **YouTube Integration**: Complete YouTube search, playback, live streaming with cookieless domain support
 - **Cloud Drive Search (PanSou)**: Integrated advanced filtering and cache management
 - **ACG Torrent Search**: Integrated ACG anime torrent resource search for rich anime content access
@@ -1330,31 +1331,41 @@ This project works with [OrionTV](https://github.com/zimplexing/OrionTV) on Andr
 
 For complete feature updates and bug fixes, see [CHANGELOG](CHANGELOG).
 
-### Latest Version: v6.1.3 (2026-02-23)
+### Latest Version: v6.2.0 (2026-03-01)
 
 #### Added
-- 🔬 WebSR Super Resolution: Upgraded to v0.0.15, replaced Anime4K-WebGPU with WebSR for multi-content type super resolution, added glassmorphism design settings panel
-- 💬 Manual Danmaku Matching: Add manual danmaku matching feature, supporting anime search, episode selection, and auto-match override
-- 📥 M3U8 Downloader Enhancement: Add download manager entry in UserMenu, support IndexedDB persistence and Storage Buckets, restore download tasks after page refresh
-- 🔍 Exact Search Filter: Add exact search filter feature
-- 📺 FLV Live CORS Proxy Support: Add CORS proxy support for FLV live streams
+- 🔌 Emby Private Library Support: Integrated Emby private library with auto-initialization and config UI improvements
+- ⚙️ Emby Advanced Options: Add Emby advanced options in config UI
+- 🔍 Emby Search Feature: Add real-time Emby search with modern UI design, local full-text index supporting fuzzy matching
+- 👤 Emby User Configuration: Implement per-user independent Emby configuration system with test API functionality
+- 📭 Emby Empty State UI: Add empty state UI for no search results
+- 🌐 Emby Public Sources: Add admin public sources functionality
+- 💾 Private Library Enhancements: localStorage persistent sort preferences, manual refresh button, mobile category count display
+- 🎛️ EnableWebLive Toggle: Add EnableWebLive toggle to control live streaming access
+- 🖼️ Short Drama Image Cache: Implement short drama image cache and priority loading
+- ♾️ Virtual Scroll Seamless Loading: Implement virtual scroll seamless infinite loading for Emby and short drama, with viewport-aware endReached threshold and adaptive overscan
 
 #### Changed
-- ⚡ TanStack Query Full Migration: Comprehensively replace useState+useEffect data fetching with useQuery/useQueries/useMutation across play page, homepage, HeroBanner, release calendar, search suggestions, play stats, continue watching, and UserMenu, integrating prefetching and optimistic updates
-- ⚡ Homepage Tab Switch Non-blocking: Use useTransition for non-blocking tab switching on homepage
+- 🏷️ Rename 'Private Library' to 'Emby': Improve clarity and user understanding, route renamed to /emby
+- 🔄 Refactor SettingsPanel Component: Extract settings to standalone SettingsPanel component, use TanStack Query for Emby config management
+- ⚡ Migrate Private Library to TanStack Query: Refactor private library data management with TanStack Query
+- 🔐 Database Migration: Migrate flat Redis keys to Hash structure, use scrypt password hashing
+- 📦 Virtual Grid Refactor: Migrate react-window to @tanstack/react-virtual via unified VirtualGrid
 
 #### Fixed
-- 🎬 Fix live player error overlay blocking video playback
-- 🎨 Migrate all deprecated Tailwind v4 opacity utilities to slash syntax: Fix YouTube thumbnail hidden by opaque overlay and other Tailwind v4 breaking change style issues
-- 🔬 Fix WebSR settings panel multiple issues: close button pointer-events, panel structure alignment with danmaku panel, icon display
-- 🔔 Reduce noisy error popups: only show errors for user-initiated action failures
-- 🔧 Fix /api/cache 401 error, hydration error 418, and missing Referer/Origin headers in CMS proxy requests
-- 💬 Fix danmaku system multiple issues: stale data causing duplicates on load, modal fullscreen portalContainer rendering, broken image URLs in manual match results, early filter skipping anime without episodes, mobile responsiveness and iPhone safe area
-- 📥 Fix download system multiple issues: progress display optimization, restore progress and tasks after page refresh, prevent auto-show panel on restore
-- 👤 Fix UserMenu force refresh on initialization and infinite loop in watching updates check
+- 🔍 Fix source lookup and detail API: Fix source lookup logic for specified source and ID, regular API sources use search-based detail fetching, unify Emby source detail handling in /api/detail
+- 🔄 Fix play page initialization: Fix detailData null check and background loading state, optimize play page initialization for direct source access
+- 🔐 Fix Emby authentication system: Fix API key and username/password dual authentication support, use /Users/Me endpoint for API key authentication
+- 💾 Fix Emby config management: Fix auto-fetch and save Emby UserId on configuration, clear EmbyClient cache when user updates config to apply changes immediately
+- ⚡ Optimize UserEmbyConfig performance: Rewrite as uncontrolled inputs to eliminate lag, optimize form performance, fix per-user Emby config and add complete UI
+- 🎵 Fix Emby playback issues: Add PlaySessionId to HLS transcode URL to resolve fragment loading errors, use HLS with forced audio transcoding to resolve EAC3/TrueHD playback issues
+- 🖼️ Optimize image loading performance: Implement module-level image cache system, share cache between VideoCard and useImagePreload, prevent flash on virtual scroll remount
+- 🎬 Fix Douban virtual scroll issues: Fix virtual mode double infinite scroll trigger, eliminate load-more flash by releasing lock inside flushSync
+- ⚡ Optimize virtual scroll performance: Use unified container offset for better VirtualGrid performance, increase initial page size to fill viewport, preload data 800px before viewport end for seamless scroll
 
 ### Major Milestone Versions
 
+- **v6.2.0**: Emby private library support, virtual grid refactor (react-window to @tanstack/react-virtual), database migration (Redis Hash + scrypt password hashing), image cache optimization, virtual scroll performance optimization
 - **v6.1.3**: WebSR super resolution, manual danmaku matching, TanStack Query full migration, M3U8 downloader IndexedDB persistence, exact search filter, FLV live CORS proxy
 - **v6.1.1**: Trusted network mode, video source weight system, Bangumi API priority, smart search variants, short drama fallback API, danmaku system enhancement, video cache LRU eviction, config subscription fix
 - **v6.1.0**: Performance monitoring system, traffic monitoring system, TanStack Query state management, Kvrocks persistence, Douban anti-crawler verification, Mikan Project integration, video caching system, short drama AI chat, enhanced ad filtering
