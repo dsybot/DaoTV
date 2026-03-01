@@ -18,7 +18,7 @@ import PageLayout from '@/components/PageLayout';
 import SearchResultFilter, { SearchFilterCategory } from '@/components/SearchResultFilter';
 import SearchSuggestions from '@/components/SearchSuggestions';
 import VideoCard, { VideoCardHandle } from '@/components/VideoCard';
-import VirtualSearchGrid, { VirtualSearchGridRef } from '@/components/VirtualSearchGrid';
+import VirtualGrid from '@/components/VirtualGrid';
 import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import YouTubeVideoCard from '@/components/YouTubeVideoCard';
 import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
@@ -49,8 +49,6 @@ function SearchPageClient() {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   // 返回顶部按钮显示状态
   const [showBackToTop, setShowBackToTop] = useState(false);
-  // VirtualSearchGrid ref for scroll control
-  const virtualGridRef = useRef<VirtualSearchGridRef>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,9 +68,9 @@ function SearchPageClient() {
   const [useVirtualization, setUseVirtualization] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('useVirtualization');
-      return saved !== null ? JSON.parse(saved) : false; // 默认关闭
+      return saved !== null ? JSON.parse(saved) : true; // 默认启用
     }
-    return false;
+    return true;
   });
   // 精确搜索开关
   const [exactSearch, setExactSearch] = useState(true);
@@ -88,7 +86,7 @@ function SearchPageClient() {
   // ACG动漫磁力搜索相关状态
   const [acgTriggerSearch, setAcgTriggerSearch] = useState<boolean>();
   const [acgError, setAcgError] = useState<string | null>(null);
-
+  
   // YouTube搜索相关状态
   const [youtubeResults, setYoutubeResults] = useState<any[] | null>(null);
   const [youtubeLoading, setYoutubeLoading] = useState(false);
@@ -896,7 +894,12 @@ function SearchPageClient() {
     if (searchType === 'netdisk') {
       // 网盘搜索 - 也更新URL保持一致性
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
-      handleNetDiskSearch(trimmed);
+      if (netdiskResourceType === 'netdisk') {
+        handleNetDiskSearch(trimmed);
+      } else {
+        // ACG 搜索：触发 AcgSearch 组件搜索
+        setAcgTriggerSearch(prev => !prev);
+      }
     } else if (searchType === 'youtube') {
       // YouTube搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
@@ -933,11 +936,6 @@ function SearchPageClient() {
         top: 0,
         behavior: 'smooth',
       });
-
-      // 2. 重置虚拟列表到第一项
-      if (virtualGridRef.current) {
-        virtualGridRef.current.scrollToTop();
-      }
     } catch (error) {
       // 如果平滑滚动完全失败，使用立即滚动
       document.body.scrollTop = 0;
@@ -946,13 +944,14 @@ function SearchPageClient() {
 
   return (
     <PageLayout activePath='/search'>
-      <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible mb-10'>
+      <div className='overflow-visible mb-10 -mt-6 md:mt-0'>
         {/* 搜索框区域 - 美化版 */}
         <div className='mb-8'>
-          {/* 搜索类型选项卡 - 美化版 */}
-          <div className='max-w-2xl mx-auto mb-6'>
-            <div className='flex items-center justify-center'>
-              <div className='inline-flex items-center bg-linear-to-r from-gray-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-xl p-1.5 space-x-2 shadow-lg border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm'>
+          {/* 搜索类型选项卡 - 移动优先响应式设计 */}
+          <div className='max-w-3xl mx-auto mb-6 px-3 sm:px-0'>
+            {/* 移动端：可滚动横向布局；桌面端：居中排列 */}
+            <div className='overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0'>
+              <div className='inline-flex sm:flex items-center justify-start sm:justify-center min-w-full sm:min-w-0 bg-gradient-to-r from-gray-100 via-white to-gray-100 dark:from-gray-800/95 dark:via-gray-750/95 dark:to-gray-800/95 rounded-2xl p-2 gap-2 sm:gap-2.5 shadow-xl border-2 border-gray-200/70 dark:border-gray-600/70 backdrop-blur-md'>
                 <button
                   type='button'
                   onClick={() => {
@@ -972,10 +971,11 @@ function SearchPageClient() {
                       router.push(`/search?q=${encodeURIComponent(currentQuery)}`);
                     }
                   }}
-                  className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'video'
-                    ? 'bg-linear-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-105'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'video'
+                      ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   🎬 影视资源
                 </button>
@@ -996,10 +996,11 @@ function SearchPageClient() {
                       handleNetDiskSearch(currentQuery);
                     }
                   }}
-                  className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'netdisk'
-                    ? 'bg-linear-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'netdisk'
+                      ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   💾 网盘资源
                 </button>
@@ -1025,10 +1026,11 @@ function SearchPageClient() {
                       setTimeout(() => handleYouTubeSearch(currentQuery), 0);
                     }
                   }}
-                  className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'youtube'
-                    ? 'bg-linear-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/30 scale-105'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'youtube'
+                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   📺 YouTube
                 </button>
@@ -1050,10 +1052,11 @@ function SearchPageClient() {
                       handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
                     }
                   }}
-                  className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 relative overflow-hidden ${searchType === 'tmdb-actor'
-                    ? 'bg-linear-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/30 scale-105'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'tmdb-actor'
+                      ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   🎬 TMDB演员
                 </button>
@@ -1127,54 +1130,59 @@ function SearchPageClient() {
                 /* 网盘搜索结果 */
                 <>
                   <div className='mb-4'>
-                    <div className='flex items-center justify-between flex-wrap gap-3'>
-                      <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                        {netdiskResourceType === 'netdisk' ? '网盘搜索结果' : '动漫磁力搜索'}
-                        {netdiskLoading && netdiskResourceType === 'netdisk' && (
-                          <span className='ml-2 inline-block align-middle'>
-                            <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin'></span>
-                          </span>
-                        )}
-                      </h2>
-                      {/* 资源类型切换 */}
-                      <div className='flex items-center gap-2'>
-                        <span className='text-sm text-gray-600 dark:text-gray-400'>资源类型：</span>
-                        <div className='flex gap-2'>
-                          <button
-                            onClick={() => {
-                              setNetdiskResourceType('netdisk');
-                              setNetdiskResults(null);
-                              setNetdiskError(null);
-                              const currentQuery = searchQuery.trim() || searchParams?.get('q');
-                              if (currentQuery) {
-                                handleNetDiskSearch(currentQuery);
-                              }
-                            }}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'netdisk'
+                    <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
+                      资源搜索
+                      {netdiskLoading && netdiskResourceType === 'netdisk' && (
+                        <span className='ml-2 inline-block align-middle'>
+                          <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin'></span>
+                        </span>
+                      )}
+                    </h2>
+
+                    {/* 资源类型切换器 */}
+                    <div className='mt-3 flex items-center gap-2'>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>资源类型：</span>
+                      <div className='flex gap-2'>
+                        <button
+                          onClick={() => {
+                            setNetdiskResourceType('netdisk');
+                            setAcgError(null);
+                            const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                            if (currentQuery) {
+                              handleNetDiskSearch(currentQuery);
+                            }
+                          }}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
+                            netdiskResourceType === 'netdisk'
                               ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
-                              }`}
-                          >
-                            💾 网盘资源
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNetdiskResourceType('acg');
-                              setNetdiskResults(null);
-                              setNetdiskError(null);
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          💾 网盘资源
+                        </button>
+                        <button
+                          onClick={() => {
+                            setNetdiskResourceType('acg');
+                            setNetdiskResults(null);
+                            setNetdiskError(null);
+                            const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                            if (currentQuery) {
                               setAcgTriggerSearch(prev => !prev);
-                            }}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'acg'
+                            }
+                          }}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
+                            netdiskResourceType === 'acg'
                               ? 'bg-purple-500 text-white border-purple-500 shadow-md'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
-                              }`}
-                          >
-                            🎌 动漫磁力
-                          </button>
-                        </div>
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          🎌 动漫磁力
+                        </button>
                       </div>
                     </div>
                   </div>
+
+                  {/* 根据资源类型显示不同的搜索结果 */}
                   {netdiskResourceType === 'netdisk' ? (
                     <NetDiskSearchResults
                       results={netdiskResults}
@@ -1220,10 +1228,11 @@ function SearchPageClient() {
                                 handleTmdbActorSearch(currentQuery, type.key as 'movie' | 'tv', tmdbFilterState);
                               }
                             }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${tmdbActorType === type.key
-                              ? 'bg-blue-500 text-white border-blue-500'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                              }`}
+                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                              tmdbActorType === type.key
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                            }`}
                             disabled={tmdbActorLoading}
                           >
                             {type.label}
@@ -1271,7 +1280,6 @@ function SearchPageClient() {
                       {tmdbActorResults.map((item, index) => (
                         <div key={item.id || index} className='w-full'>
                           <VideoCard
-                            id={item.id}
                             title={item.title}
                             poster={item.poster}
                             year={item.year}
@@ -1300,7 +1308,7 @@ function SearchPageClient() {
                         </span>
                       )}
                     </h2>
-
+                    
                     {/* YouTube模式切换 */}
                     <div className='mt-3 flex items-center gap-2'>
                       <div className='inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 space-x-1'>
@@ -1312,10 +1320,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'search'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔍 搜索视频
                         </button>
@@ -1328,10 +1337,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'direct'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔗 直接播放
                         </button>
@@ -1379,17 +1389,18 @@ function SearchPageClient() {
                                 handleYouTubeSearch(currentQuery, type.key as any, youtubeSortOrder);
                               }
                             }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${youtubeContentType === type.key
-                              ? 'bg-red-500 text-white border-red-500'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                              }`}
+                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                              youtubeContentType === type.key
+                                ? 'bg-red-500 text-white border-red-500'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                            }`}
                             disabled={youtubeLoading}
                           >
                             {type.label}
                           </button>
                         ))}
                       </div>
-
+                      
                       {/* 排序选择器 */}
                       <div className='mt-3 flex items-center gap-3'>
                         <span className='text-sm text-gray-600 dark:text-gray-400'>排序：</span>
@@ -1410,10 +1421,11 @@ function SearchPageClient() {
                                   handleYouTubeSearch(currentQuery, youtubeContentType, sort.key as any);
                                 }
                               }}
-                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${youtubeSortOrder === sort.key
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
-                                }`}
+                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${
+                                youtubeSortOrder === sort.key
+                                  ? 'bg-blue-500 text-white border-blue-500'
+                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
+                              }`}
                               disabled={youtubeLoading}
                             >
                               {sort.icon && <span>{sort.icon}</span>}
@@ -1422,7 +1434,7 @@ function SearchPageClient() {
                           ))}
                         </div>
                       </div>
-
+                      
                       {/* 警告信息显示 */}
                       {youtubeWarning && (
                         <div className='mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800'>
@@ -1434,7 +1446,7 @@ function SearchPageClient() {
                           </div>
                         </div>
                       )}
-
+                      
                       {youtubeError ? (
                         <div className='text-center py-8'>
                           <div className='text-red-500 mb-2'>{youtubeError}</div>
@@ -1483,169 +1495,223 @@ function SearchPageClient() {
                       )}
                     </h2>
                   </div>
-                  {/* 筛选器 + 开关控件 */}
-                  <div className='mb-8 space-y-4'>
-                    {/* 筛选器 */}
-                    <div className='flex-1 min-w-0'>
-                      {viewMode === 'agg' ? (
-                        <SearchResultFilter
-                          categories={filterOptions.categoriesAgg}
-                          values={filterAgg}
-                          onChange={(v) => setFilterAgg(v as any)}
-                        />
-                      ) : (
-                        <SearchResultFilter
-                          categories={filterOptions.categoriesAll}
-                          values={filterAll}
-                          onChange={(v) => setFilterAll(v as any)}
-                        />
-                      )}
-                    </div>
-
-                    {/* 开关控件行 */}
-                    <div className='flex items-center justify-end gap-6'>
-                      {/* 虚拟化开关 */}
-                      <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
-                        <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
-                          ⚡ 虚拟滑动
-                        </span>
-                        <div className='relative'>
-                          <input
-                            type='checkbox'
-                            className='sr-only peer'
-                            checked={useVirtualization}
-                            onChange={toggleVirtualization}
-                          />
-                          <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-blue-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-blue-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
-                          <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-blue-300 dark:peer-checked:shadow-blue-500/50 peer-checked:scale-105'></div>
-                          {/* 开关内图标 */}
-                          <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
-                            <span className='text-[10px] peer-checked:text-white text-gray-500'>
-                              {useVirtualization ? '✨' : '○'}
-                            </span>
-                          </div>
-                        </div>
-                      </label>
-
-                      {/* 聚合开关 */}
-                      <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
-                        <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'>
-                          🔄 聚合
-                        </span>
-                        <div className='relative'>
-                          <input
-                            type='checkbox'
-                            className='sr-only peer'
-                            checked={viewMode === 'agg'}
-                            onChange={() => setViewMode(viewMode === 'agg' ? 'all' : 'agg')}
-                          />
-                          <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-emerald-400 peer-checked:to-green-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-emerald-500 dark:peer-checked:to-green-600 shadow-inner'></div>
-                          <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-emerald-300 dark:peer-checked:shadow-emerald-500/50 peer-checked:scale-105'></div>
-                          {/* 开关内图标 */}
-                          <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
-                            <span className='text-[10px] peer-checked:text-white text-gray-500'>
-                              {viewMode === 'agg' ? '🔗' : '○'}
-                            </span>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                  {/* 条件渲染：虚拟化 vs 传统网格 */}
-                  {useVirtualization ? (
-                    <VirtualSearchGrid
-                      ref={virtualGridRef}
-                      allResults={searchResults}
-                      filteredResults={filteredAllResults}
-                      aggregatedResults={aggregatedResults}
-                      filteredAggResults={filteredAggResults}
-                      viewMode={viewMode}
-                      searchQuery={searchQuery}
-                      isLoading={isLoading}
-                      groupRefs={groupRefs}
-                      groupStatsRef={groupStatsRef}
-                      getGroupRef={getGroupRef}
-                      computeGroupStats={computeGroupStats}
+              {/* 筛选器 + 开关控件 */}
+              <div className='mb-8 space-y-4'>
+                {/* 筛选器 */}
+                <div className='flex-1 min-w-0'>
+                  {viewMode === 'agg' ? (
+                    <SearchResultFilter
+                      categories={filterOptions.categoriesAgg}
+                      values={filterAgg}
+                      onChange={(v) => setFilterAgg(v as any)}
                     />
                   ) : (
-                    // 传统网格渲染（保持原有逻辑）
-                    searchResults.length === 0 ? (
-                      isLoading ? (
-                        <div className='flex justify-center items-center h-40'>
-                          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500'></div>
-                        </div>
-                      ) : (
-                        <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
-                          未找到相关结果
-                        </div>
-                      )
-                    ) : (
-                      <div
-                        key={`search-results-${viewMode}`}
-                        className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
-                      >
-                        {viewMode === 'agg'
-                          ? filteredAggResults.map(([mapKey, group]) => {
-                            const title = group[0]?.title || '';
-                            const poster = group[0]?.poster || '';
-                            const year = group[0]?.year || 'unknown';
-                            const { episodes, source_names, douban_id } = computeGroupStats(group);
-                            const type = episodes === 1 ? 'movie' : 'tv';
-
-                            // 如果该聚合第一次出现，写入初始统计
-                            if (!groupStatsRef.current.has(mapKey)) {
-                              groupStatsRef.current.set(mapKey, { episodes, source_names, douban_id });
-                            }
-
-                            return (
-                              <div key={`agg-${mapKey}`} className='w-full'>
-                                <VideoCard
-                                  ref={getGroupRef(mapKey)}
-                                  from='search'
-                                  isAggregate={true}
-                                  title={title}
-                                  poster={poster}
-                                  year={year}
-                                  episodes={episodes}
-                                  source_names={source_names}
-                                  douban_id={douban_id}
-                                  query={
-                                    searchQuery.trim() !== title
-                                      ? searchQuery.trim()
-                                      : ''
-                                  }
-                                  type={type}
-                                />
-                              </div>
-                            );
-                          })
-                          : filteredAllResults.map((item) => (
-                            <div
-                              key={`all-${item.source}-${item.id}`}
-                              className='w-full'
-                            >
-                              <VideoCard
-                                id={item.id}
-                                title={item.title}
-                                poster={item.poster}
-                                episodes={item.episodes.length}
-                                source={item.source}
-                                source_name={item.source_name}
-                                douban_id={item.douban_id}
-                                query={
-                                  searchQuery.trim() !== item.title
-                                    ? searchQuery.trim()
-                                    : ''
-                                }
-                                year={item.year}
-                                from='search'
-                                type={inferTypeFromName(item.type_name, item.episodes.length)}
-                              />
-                            </div>
-                          ))}
-                      </div>
-                    )
+                    <SearchResultFilter
+                      categories={filterOptions.categoriesAll}
+                      values={filterAll}
+                      onChange={(v) => setFilterAll(v as any)}
+                    />
                   )}
+                </div>
+                
+                {/* 开关控件行 */}
+                <div className='flex items-center justify-end gap-6'>
+                  {/* 虚拟化开关 */}
+                  <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
+                    <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                      ⚡ 虚拟滑动
+                    </span>
+                    <div className='relative'>
+                      <input
+                        type='checkbox'
+                        className='sr-only peer'
+                        checked={useVirtualization}
+                        onChange={toggleVirtualization}
+                      />
+                      <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-blue-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-blue-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
+                      <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-blue-300 dark:peer-checked:shadow-blue-500/50 peer-checked:scale-105'></div>
+                      {/* 开关内图标 */}
+                      <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
+                        <span className='text-[10px] peer-checked:text-white text-gray-500'>
+                          {useVirtualization ? '✨' : '○'}
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+
+                  {/* 聚合开关 */}
+                  <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
+                    <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'>
+                      🔄 聚合
+                    </span>
+                    <div className='relative'>
+                      <input
+                        type='checkbox'
+                        className='sr-only peer'
+                        checked={viewMode === 'agg'}
+                        onChange={() => setViewMode(viewMode === 'agg' ? 'all' : 'agg')}
+                      />
+                      <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-emerald-400 peer-checked:to-green-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-emerald-500 dark:peer-checked:to-green-600 shadow-inner'></div>
+                      <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-emerald-300 dark:peer-checked:shadow-emerald-500/50 peer-checked:scale-105'></div>
+                      {/* 开关内图标 */}
+                      <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
+                        <span className='text-[10px] peer-checked:text-white text-gray-500'>
+                          {viewMode === 'agg' ? '🔗' : '○'}
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              {/* 搜索结果网格 */}
+              {useVirtualization ? (
+                <div key={`search-results-${viewMode}`}>
+                  {viewMode === 'agg' ? (
+                    <VirtualGrid
+                      items={filteredAggResults}
+                      className='grid-cols-3 gap-x-2 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
+                      rowGapClass='pb-14 sm:pb-20'
+                      estimateRowHeight={320}
+                      renderItem={([mapKey, group]) => {
+                        const title = group[0]?.title || '';
+                        const poster = group[0]?.poster || '';
+                        const year = group[0]?.year || 'unknown';
+                        const { episodes, source_names, douban_id } = computeGroupStats(group);
+                        const type = episodes === 1 ? 'movie' : 'tv';
+                        if (!groupStatsRef.current.has(mapKey)) {
+                          groupStatsRef.current.set(mapKey, { episodes, source_names, douban_id });
+                        }
+                        return (
+                          <div key={`agg-${mapKey}`} className='w-full'>
+                            <VideoCard
+                              ref={getGroupRef(mapKey)}
+                              from='search'
+                              isAggregate={true}
+                              title={title}
+                              poster={poster}
+                              year={year}
+                              episodes={episodes}
+                              source_names={source_names}
+                              douban_id={douban_id}
+                              query={searchQuery.trim() !== title ? searchQuery.trim() : ''}
+                              type={type}
+                            />
+                          </div>
+                        );
+                      }}
+                    />
+                  ) : (
+                    <VirtualGrid
+                      items={filteredAllResults}
+                      className='grid-cols-3 gap-x-2 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
+                      rowGapClass='pb-14 sm:pb-20'
+                      estimateRowHeight={320}
+                      renderItem={(item) => (
+                        <div key={`all-${item.source}-${item.id}`} className='w-full'>
+                          <VideoCard
+                            id={item.id}
+                            title={item.title}
+                            poster={item.poster}
+                            episodes={item.episodes.length}
+                            source={item.source}
+                            source_name={item.source_name}
+                            douban_id={item.douban_id}
+                            query={searchQuery.trim() !== item.title ? searchQuery.trim() : ''}
+                            year={item.year}
+                            from='search'
+                            type={inferTypeFromName(item.type_name, item.episodes.length)}
+                            remarks={item.remarks}
+                          />
+                        </div>
+                      )}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div
+                  key={`search-results-${viewMode}`}
+                  className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
+                >
+                  {viewMode === 'agg'
+                    ? filteredAggResults.map(([mapKey, group]) => {
+                      const title = group[0]?.title || '';
+                      const poster = group[0]?.poster || '';
+                      const year = group[0]?.year || 'unknown';
+                      const { episodes, source_names, douban_id } = computeGroupStats(group);
+                      const type = episodes === 1 ? 'movie' : 'tv';
+                      if (!groupStatsRef.current.has(mapKey)) {
+                        groupStatsRef.current.set(mapKey, { episodes, source_names, douban_id });
+                      }
+                      return (
+                        <div key={`agg-${mapKey}`} className='w-full'>
+                          <VideoCard
+                            ref={getGroupRef(mapKey)}
+                            from='search'
+                            isAggregate={true}
+                            title={title}
+                            poster={poster}
+                            year={year}
+                            episodes={episodes}
+                            source_names={source_names}
+                            douban_id={douban_id}
+                            query={searchQuery.trim() !== title ? searchQuery.trim() : ''}
+                            type={type}
+                          />
+                        </div>
+                      );
+                    })
+                    : filteredAllResults.map((item) => (
+                      <div key={`all-${item.source}-${item.id}`} className='w-full'>
+                        <VideoCard
+                          id={item.id}
+                          title={item.title}
+                          poster={item.poster}
+                          episodes={item.episodes.length}
+                          source={item.source}
+                          source_name={item.source_name}
+                          douban_id={item.douban_id}
+                          query={searchQuery.trim() !== item.title ? searchQuery.trim() : ''}
+                          year={item.year}
+                          from='search'
+                          type={inferTypeFromName(item.type_name, item.episodes.length)}
+                          remarks={item.remarks}
+                        />
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* Footer */}
+              {isLoading && (filteredAggResults.length > 0 || filteredAllResults.length > 0) ? (
+                <div className='fixed bottom-0 left-0 right-0 z-50 flex justify-center py-3 bg-white/98 dark:bg-gray-900/98 border-t border-gray-200/80 dark:border-gray-700/80'>
+                  <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400'>
+                    <div className='animate-spin rounded-full h-4 w-4 border-2 border-gray-300 dark:border-gray-600 border-t-green-500 dark:border-t-green-400'></div>
+                    <span>正在搜索更多结果...</span>
+                  </div>
+                </div>
+              ) : !isLoading && (filteredAggResults.length > 0 || filteredAllResults.length > 0) ? (
+                <div className='flex justify-center mt-8 py-8'>
+                  <div className='relative px-8 py-5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg overflow-hidden'>
+                    <div className='absolute inset-0 bg-gradient-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
+                    <div className='relative flex flex-col items-center gap-2'>
+                      <div className='relative'>
+                        <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
+                          <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 13l4 4L19 7'></path>
+                          </svg>
+                        </div>
+                        <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+                      </div>
+                      <div className='text-center'>
+                        <p className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-1'>搜索完成</p>
+                        <p className='text-xs text-gray-600 dark:text-gray-400'>
+                          共找到 {viewMode === 'agg' ? filteredAggResults.length : filteredAllResults.length} 个结果
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
                 </>
               )}
             </section>
@@ -1707,7 +1773,7 @@ function SearchPageClient() {
                     <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
                       YouTube视频
                     </h2>
-
+                    
                     {/* YouTube模式切换 */}
                     <div className='mt-3 flex items-center gap-2'>
                       <div className='inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 space-x-1'>
@@ -1718,10 +1784,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'search'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔍 搜索视频
                         </button>
@@ -1733,10 +1800,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'direct'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔗 直接播放
                         </button>
