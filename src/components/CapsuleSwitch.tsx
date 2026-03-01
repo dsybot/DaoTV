@@ -60,43 +60,43 @@ const CapsuleSwitch: React.FC<CapsuleSwitchProps> = ({
   }, [activeIndex]);
 
   return (
-    <div className="max-w-full overflow-x-auto scrollbar-hide">
-    <div
-      ref={containerRef}
-      className={`relative inline-flex bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-full p-1 shadow-lg ${className || ''
-        }`}
-    >
-      {/* 滑动的渐变背景指示器 */}
-      {indicatorStyle.width > 0 && (
-        <div
-          className='absolute top-1 bottom-1 bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 rounded-full shadow-xl transition-all duration-300 ease-out'
-          style={{
-            left: `${indicatorStyle.left}px`,
-            width: `${indicatorStyle.width}px`,
-            boxShadow: '0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(20, 184, 166, 0.3)',
-          }}
-        />
-      )}
-
-      {options.map((opt, index) => {
-        const isActive = active === opt.value;
-        return (
-          <button
-            key={opt.value}
-            ref={(el) => {
-              buttonRefs.current[index] = el;
+    <div className="inline-block">
+      <div
+        ref={containerRef}
+        className={`relative inline-flex bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-full p-1 shadow-lg ${className || ''
+          }`}
+      >
+        {/* 滑动的渐变背景指示器 */}
+        {indicatorStyle.width > 0 && (
+          <div
+            className='absolute top-1 bottom-1 bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 rounded-full shadow-xl transition-all duration-300 ease-out'
+            style={{
+              left: `${indicatorStyle.left}px`,
+              width: `${indicatorStyle.width}px`,
+              boxShadow: '0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(20, 184, 166, 0.3)',
             }}
-            onClick={() => onChange(opt.value)}
-            className={`relative z-10 w-16 px-3 py-1 text-xs sm:w-20 sm:py-2 sm:text-sm rounded-full font-bold transition-all duration-200 cursor-pointer ${isActive
+          />
+        )}
+
+        {options.map((opt, index) => {
+          const isActive = active === opt.value;
+          return (
+            <button
+              key={opt.value}
+              ref={(el) => {
+                buttonRefs.current[index] = el;
+              }}
+              onClick={() => onChange(opt.value)}
+              className={`relative z-10 w-16 px-3 py-1 text-xs sm:w-20 sm:py-2 sm:text-sm rounded-full font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'text-white dark:text-white drop-shadow-lg'
                 : 'text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
+                }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
