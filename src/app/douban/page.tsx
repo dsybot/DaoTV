@@ -25,7 +25,8 @@ import VideoCard from '@/components/VideoCard';
 import VirtualGrid from '@/components/VirtualGrid';
 
 // 🔧 统一分页常量 - 防止分页步长不一致导致重复数据
-const PAGE_SIZE = 25;
+// 增加初始加载数量以填满可视区域（3列 × 11行 + overscan）
+const PAGE_SIZE = 50;
 
 function DoubanPageClient() {
   const searchParams = useSearchParams();
