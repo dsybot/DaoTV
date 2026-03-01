@@ -1102,7 +1102,7 @@ function SearchPageClient() {
           {/* 搜索类型选项卡 - 移动优先响应式设计 */}
           <div className='max-w-3xl mx-auto mb-6 px-3 sm:px-0'>
             {/* 移动端：可滚动横向布局；桌面端：居中排列 */}
-            <div className='overflow-x-auto scrollbar-hide sm:mx-0'>
+            <div className='overflow-x-auto scrollbar-hide sm:mx-0 mt-2 sm:mt-0'>
               <div className='inline-flex sm:flex items-center justify-start sm:justify-center min-w-full sm:min-w-0 bg-gradient-to-r from-gray-100 via-white to-gray-100 dark:from-gray-900/95 dark:via-gray-800/95 dark:to-gray-900/95 rounded-2xl p-2 gap-2 sm:gap-2.5 sm:shadow-xl border border-gray-200/70 dark:border-gray-800/70 backdrop-blur-md mx-0 sm:mx-auto'>
                 <button
                   type='button'
