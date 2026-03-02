@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { Suspense } from 'react';
+import { Toaster } from 'sonner';
 
 import './globals.css';
 
@@ -171,6 +172,7 @@ export default async function RootLayout({
               </DownloadProvider>
             </GlobalCacheProvider>
           </QueryProvider>
+          <Toaster position="top-center" richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

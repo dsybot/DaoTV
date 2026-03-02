@@ -7,6 +7,7 @@
 import Hls from 'hls.js';
 import { Heart, ChevronUp, Download, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   Suspense,
   useCallback,
@@ -7160,11 +7161,11 @@ function PlayPageClient() {
             // 单集视频，直接下载当前
             const currentUrl = videoUrl;
             if (!currentUrl) {
-              alert('无法获取视频地址');
+              toast.error('无法获取视频地址');
               return;
             }
             if (!currentUrl.includes('.m3u8')) {
-              alert('仅支持M3U8格式视频下载');
+              toast.error('仅支持M3U8格式视频下载');
               return;
             }
             try {
@@ -7177,11 +7178,22 @@ function PlayPageClient() {
                 referer,
                 origin,
               });
-              // 自动打开下载面板
-              setShowDownloadPanel(true);
+
+              // 显示 Toast 通知
+              toast.success('下载已开始', {
+                description: videoTitle || '视频',
+                action: {
+                  label: '查看下载',
+                  onClick: () => setShowDownloadPanel(true)
+                },
+                duration: 5000,
+              });
             } catch (error) {
               console.error('创建下载任务失败:', error);
-              alert('创建下载任务失败: ' + (error as Error).message);
+              toast.error('创建下载任务失败', {
+                description: (error as Error).message,
+                duration: 5000,
+              });
             }
             return;
           }
@@ -7250,13 +7262,25 @@ function PlayPageClient() {
             }
           }
 
-          // 如果尝试过下载，就打开下载面板（即使失败也打开，让用户看到错误）
-          if (hasAttempted) {
-            console.log('[Download] 尝试打开下载面板, hasAttempted:', hasAttempted);
-            setShowDownloadPanel(true);
-            console.log('[Download] setShowDownloadPanel(true) 已调用');
-          } else {
-            console.log('[Download] 未尝试下载, hasAttempted:', hasAttempted);
+          // 显示 Toast 通知，不自动打开面板
+          console.log('[Download] 下载完成，显示 Toast 通知, successCount:', successCount);
+
+          if (successCount > 0) {
+            toast.success('下载已开始', {
+              description: successCount === 1
+                ? `${videoTitle || '视频'}_第${episodeIndexes[0] + 1}集`
+                : `已添加 ${successCount} 个下载任务`,
+              action: {
+                label: '查看下载',
+                onClick: () => setShowDownloadPanel(true)
+              },
+              duration: 5000,
+            });
+          } else if (hasAttempted) {
+            toast.error('下载失败', {
+              description: '无法创建下载任务，请查看控制台了解详情',
+              duration: 5000,
+            });
           }
         }}
       />
