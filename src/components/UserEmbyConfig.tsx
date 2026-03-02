@@ -5,6 +5,7 @@
 import { Check, Globe, Plus, X } from 'lucide-react';
 import { memo, useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 interface UserEmbyConfigProps {
   initialConfig: { sources: any[] };
@@ -36,11 +37,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
     setSources(initialConfig.sources || []);
   }, [initialConfig]);
 
-  // Toast
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error'>('success');
-
   // Checkbox state only (text inputs use refs for performance)
   const [formChecks, setFormChecks] = useState({
     enabled: true,
@@ -57,13 +53,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
   const refApiKey = useRef<HTMLInputElement>(null);
   const refUsername = useRef<HTMLInputElement>(null);
   const refPassword = useRef<HTMLInputElement>(null);
-
-  const showNotification = (message: string, type: 'success' | 'error') => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
 
   const clearRefs = () => {
     if (refKey.current) refKey.current.value = '';
@@ -117,10 +106,10 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: { sources: newSources } }),
       });
-      showNotification('删除成功', 'success');
+      toast.success('删除成功');
       queryClient.invalidateQueries({ queryKey: ['user', 'emby-config'] });
     } catch {
-      showNotification('删除失败', 'error');
+      toast.error('删除失败');
     }
   };
 
@@ -135,12 +124,12 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
       });
       const data = await res.json();
       if (data.success) {
-        showNotification(`连接成功！用户: ${data.user?.Name || '未知'}`, 'success');
+        toast.success(`连接成功！用户: ${data.user?.Name || '未知'}`);
       } else {
-        showNotification(`连接失败: ${data.error}`, 'error');
+        toast.error(`连接失败: ${data.error}`);
       }
     } catch {
-      showNotification('测试连接失败', 'error');
+      toast.error('测试连接失败');
     } finally {
       setTestingIndex(null);
     }
@@ -155,11 +144,11 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
     const Password = refPassword.current?.value || '';
 
     if (!key || !name || !ServerURL) {
-      showNotification('请填写必填字段：标识符、名称、服务器地址', 'error');
+      toast.error('请填写必填字段：标识符、名称、服务器地址');
       return;
     }
     if (editingIndex === null && sources.some(s => s.key === key)) {
-      showNotification('标识符已存在，请使用其他标识符', 'error');
+      toast.error('标识符已存在，请使用其他标识符');
       return;
     }
 
@@ -178,14 +167,14 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
       const data = await res.json();
       if (data.success) {
         setSources(newSources);
-        showNotification('保存成功！', 'success');
+        toast.success('保存成功！');
         queryClient.invalidateQueries({ queryKey: ['user', 'emby-config'] });
         resetForm();
       } else {
-        showNotification(`保存失败: ${data.error}`, 'error');
+        toast.error(`保存失败: ${data.error}`);
       }
     } catch {
-      showNotification('保存失败，请重试', 'error');
+      toast.error('保存失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -357,16 +346,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
               className='px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors'>
               取消
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Toast */}
-      {showToast && (
-        <div className='fixed top-20 left-1/2 -translate-x-1/2 z-[1100]'>
-          <div className={`px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 ${toastType === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-            {toastType === 'success' ? <Check className='w-5 h-5' /> : <X className='w-5 h-5' />}
-            <span className='font-medium'>{toastMessage}</span>
           </div>
         </div>
       )}
