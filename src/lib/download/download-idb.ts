@@ -139,9 +139,25 @@ export async function saveTask(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { downloadedSegments, ...taskWithoutSegments } = task;
 
+  // 深度清理 aesConf，移除 crypto-js 对象中的不可序列化函数
+  const cleanedTask = {
+    ...taskWithoutSegments,
+    aesConf: {
+      method: taskWithoutSegments.aesConf.method,
+      uri: taskWithoutSegments.aesConf.uri,
+      iv: taskWithoutSegments.aesConf.iv,
+      // 只保存 key 的原始数据，不保存 WordArray 对象
+      key: taskWithoutSegments.aesConf.key
+        ? (taskWithoutSegments.aesConf.key as any).words
+          ? new Uint8Array((taskWithoutSegments.aesConf.key as any).words.length * 4)
+          : taskWithoutSegments.aesConf.key
+        : null,
+    },
+  };
+
   const storedTask: StoredTask = {
     id,
-    task: taskWithoutSegments,
+    task: cleanedTask as any,
     status: status === 'downloading' ? 'pause' : status,
     createdAt: Date.now(),
     updatedAt: Date.now(),
