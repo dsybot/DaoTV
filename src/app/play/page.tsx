@@ -7198,7 +7198,19 @@ function PlayPageClient() {
             return;
           }
 
-          // 批量下载多集
+          // 批量下载多集 - 立即显示 toast
+          const taskCount = episodeIndexes.length;
+          toast.success('下载已开始', {
+            description: taskCount === 1
+              ? `${videoTitle || '视频'}_第${episodeIndexes[0] + 1}集`
+              : `正在添加 ${taskCount} 个下载任务...`,
+            action: {
+              label: '查看下载',
+              onClick: () => setShowDownloadPanel(true)
+            },
+            duration: 5000,
+          });
+
           let successCount = 0;
           let hasAttempted = false;
           for (const episodeIndex of episodeIndexes) {
@@ -7262,23 +7274,15 @@ function PlayPageClient() {
             }
           }
 
-          // 显示 Toast 通知，不自动打开面板
-          console.log('[Download] 下载完成，显示 Toast 通知, successCount:', successCount);
-
-          if (successCount > 0) {
-            toast.success('下载已开始', {
-              description: successCount === 1
-                ? `${videoTitle || '视频'}_第${episodeIndexes[0] + 1}集`
-                : `已添加 ${successCount} 个下载任务`,
-              action: {
-                label: '查看下载',
-                onClick: () => setShowDownloadPanel(true)
-              },
-              duration: 5000,
-            });
-          } else if (hasAttempted) {
+          // 如果有失败的任务，显示错误提示
+          if (successCount === 0 && hasAttempted) {
             toast.error('下载失败', {
               description: '无法创建下载任务，请查看控制台了解详情',
+              duration: 5000,
+            });
+          } else if (successCount < taskCount) {
+            toast.warning('部分任务创建失败', {
+              description: `成功添加 ${successCount}/${taskCount} 个下载任务`,
               duration: 5000,
             });
           }
