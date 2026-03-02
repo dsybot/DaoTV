@@ -6336,8 +6336,8 @@ function PlayPageClient() {
 
             <div
               className={`grid gap-4 lg:h-[500px] xl:h-[650px] 2xl:h-[750px] transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
-                  ? 'grid-cols-1'
-                  : 'grid-cols-1 md:grid-cols-4'
+                ? 'grid-cols-1'
+                : 'grid-cols-1 md:grid-cols-4'
                 }`}
             >
               {/* 播放器 */}
@@ -6440,8 +6440,8 @@ function PlayPageClient() {
               {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
               <div
                 className={`h-[300px] lg:h-full md:overflow-hidden transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
-                    ? 'md:col-span-1 lg:hidden lg:opacity-0 lg:scale-95'
-                    : 'md:col-span-1 lg:opacity-100 lg:scale-100'
+                  ? 'md:col-span-1 lg:hidden lg:opacity-0 lg:scale-95'
+                  : 'md:col-span-1 lg:opacity-100 lg:scale-100'
                   }`}
               >
                 <EpisodeSelector
@@ -7037,8 +7037,8 @@ function PlayPageClient() {
                             setNetdiskError(null);
                           }}
                           className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'netdisk'
-                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
+                            ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
                             }`}
                         >
                           💾 网盘资源
@@ -7053,8 +7053,8 @@ function PlayPageClient() {
                             }
                           }}
                           className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'acg'
-                              ? 'bg-purple-500 text-white border-purple-500 shadow-md'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
+                            ? 'bg-purple-500 text-white border-purple-500 shadow-md'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
                             }`}
                         >
                           🎌 动漫磁力
@@ -7122,8 +7122,8 @@ function PlayPageClient() {
                       }
                     }}
                     className={`sticky bottom-6 left-full -ml-14 sm:bottom-8 sm:-ml-16 w-11 h-11 sm:w-12 sm:h-12 ${netdiskResourceType === 'acg'
-                        ? 'bg-purple-500 hover:bg-purple-600'
-                        : 'bg-blue-500 hover:bg-blue-600'
+                      ? 'bg-purple-500 hover:bg-purple-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
                       } text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center active:scale-95 z-50 group`}
                     aria-label='返回顶部'
                   >
@@ -7188,7 +7188,9 @@ function PlayPageClient() {
 
           // 批量下载多集
           let successCount = 0;
+          let hasAttempted = false;
           for (const episodeIndex of episodeIndexes) {
+            hasAttempted = true;
             try {
               let episodeUrl = detail.episodes[episodeIndex];
               if (!episodeUrl) continue;
@@ -7248,8 +7250,8 @@ function PlayPageClient() {
             }
           }
 
-          // 如果至少有一个任务创建成功，自动打开下载面板
-          if (successCount > 0) {
+          // 如果尝试过下载，就打开下载面板（即使失败也打开，让用户看到错误）
+          if (hasAttempted) {
             setShowDownloadPanel(true);
           }
         }}

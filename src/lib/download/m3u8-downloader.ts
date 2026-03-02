@@ -437,7 +437,11 @@ export async function downloadTsSegment(
   byteRange?: { offset: number; length: number } | null,
   timeout = 45000
 ): Promise<ArrayBuffer> {
+  console.log('[downloadTsSegment] 开始下载片段:', url);
+  console.log('[downloadTsSegment] 请求头:', requestHeaders);
+
   const headers = buildRequestHeaders(requestHeaders);
+  console.log('[downloadTsSegment] 构建的 headers:', headers);
 
   // 添加 Range 头支持 BYTERANGE
   if (byteRange) {
@@ -446,7 +450,10 @@ export async function downloadTsSegment(
 
   // 创建超时控制
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const timeoutId = setTimeout(() => {
+    console.error('[downloadTsSegment] 请求超时:', url);
+    controller.abort();
+  }, timeout);
 
   // 合并 signal
   const combinedSignal = signal
@@ -458,15 +465,22 @@ export async function downloadTsSegment(
     : controller.signal;
 
   try {
+    console.log('[downloadTsSegment] 发起 fetch 请求...');
     const response = await fetch(url, { signal: combinedSignal, headers });
     clearTimeout(timeoutId);
+    console.log('[downloadTsSegment] 收到响应:', response.status, response.statusText);
 
     if (!response.ok) {
       throw new Error(`下载失败: ${response.status}`);
     }
-    return response.arrayBuffer();
+
+    console.log('[downloadTsSegment] 开始读取 arrayBuffer...');
+    const buffer = await response.arrayBuffer();
+    console.log('[downloadTsSegment] 片段下载成功，大小:', buffer.byteLength, 'bytes');
+    return buffer;
   } catch (error) {
     clearTimeout(timeoutId);
+    console.error('[downloadTsSegment] 下载失败:', url, error);
     throw error;
   }
 }
