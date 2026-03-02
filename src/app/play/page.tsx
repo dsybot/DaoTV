@@ -978,13 +978,12 @@ function PlayPageClient() {
       <div class="fullscreen-title-container">
         <div class="fullscreen-title-content">
           <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
-          ${
-            hasEpisodes && episodeName
-              ? `<span class="fullscreen-episode-text">${episodeName}</span>`
-              : hasEpisodes
-                ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
-                : ''
-          }
+          ${hasEpisodes && episodeName
+        ? `<span class="fullscreen-episode-text">${episodeName}</span>`
+        : hasEpisodes
+          ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
+          : ''
+      }
         </div>
       </div>
     `;
@@ -2008,10 +2007,8 @@ function PlayPageClient() {
     console.log('播放源评分排序结果（含权重加成）:');
     resultsWithScore.forEach((result, index) => {
       console.log(
-        `${index + 1}. ${
-          result.source.source_name
-        } - 总分: ${result.score.toFixed(2)} (测速分: ${result.testScore.toFixed(2)}, 权重: ${result.weight}) [${result.testResult.quality}, ${
-          result.testResult.loadSpeed
+        `${index + 1}. ${result.source.source_name
+        } - 总分: ${result.score.toFixed(2)} (测速分: ${result.testScore.toFixed(2)}, 权重: ${result.weight}) [${result.testResult.quality}, ${result.testResult.loadSpeed
         }, ${result.testResult.pingTime}ms]`,
       );
     });
@@ -3019,11 +3016,11 @@ function PlayPageClient() {
             const matchYearAndType = (result: SearchResult) => {
               const yearMatch = videoYearRef.current
                 ? result.year.toLowerCase() ===
-                  videoYearRef.current.toLowerCase()
+                videoYearRef.current.toLowerCase()
                 : true;
               const typeMatch = searchType
                 ? (searchType === 'tv' && result.episodes.length > 1) ||
-                  (searchType === 'movie' && result.episodes.length === 1)
+                (searchType === 'movie' && result.episodes.length === 1)
                 : true;
               return yearMatch && typeMatch;
             };
@@ -3043,7 +3040,7 @@ function PlayPageClient() {
               const exactMatch =
                 resultTitle === queryTitle ||
                 resultTitle.replace(/\d+|[：:]/g, '') ===
-                  queryTitle.replace(/\d+|[：:]/g, '');
+                queryTitle.replace(/\d+|[：:]/g, '');
               return exactMatch && matchYearAndType(result);
             });
 
@@ -3176,7 +3173,7 @@ function PlayPageClient() {
               const isExact =
                 normalizedTitle === normalizedQuery ||
                 normalizedTitle.replace(/\d+/g, '') ===
-                  normalizedQuery.replace(/\d+/g, '');
+                normalizedQuery.replace(/\d+/g, '');
               if (isExact) console.log(`中文精确匹配: "${result.title}"`);
               return isExact;
             });
@@ -4785,20 +4782,20 @@ function PlayPageClient() {
             },
             ...(webGPUSupported
               ? [
-                  {
-                    name: '超分设置',
-                    html: '超分设置',
-                    icon: '<text x="50%" y="50%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">超</text>',
-                    tooltip: '打开AI超分设置面板',
-                    onClick: function () {
-                      setIsWebSRSettingsPanelOpen(true);
-                      if (artPlayerRef.current) {
-                        artPlayerRef.current.setting.show = false;
-                      }
-                      return '打开AI超分设置面板';
-                    },
+                {
+                  name: '超分设置',
+                  html: '超分设置',
+                  icon: '<text x="50%" y="50%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">超</text>',
+                  tooltip: '打开AI超分设置面板',
+                  onClick: function () {
+                    setIsWebSRSettingsPanelOpen(true);
+                    if (artPlayerRef.current) {
+                      artPlayerRef.current.setting.show = false;
+                    }
+                    return '打开AI超分设置面板';
                   },
-                ]
+                },
+              ]
               : []),
           ],
           // 控制栏配置
@@ -5040,28 +5037,28 @@ function PlayPageClient() {
             // 其他浏览器：不显示 Chromecast（不支持 Cast API）
             ...(isChrome && !isIOS
               ? [
-                  artplayerPluginChromecast({
-                    title: videoTitle
-                      ? `${videoTitle}${currentEpisodeIndex >= 0 ? ` - 第${currentEpisodeIndex + 1}集` : ''}`
-                      : undefined,
-                    poster: videoCover || undefined,
-                    onStateChange: (state) => {
-                      console.log('Chromecast state changed:', state);
-                    },
-                    onCastAvailable: (available) => {
-                      console.log('Chromecast available:', available);
-                    },
-                    onCastStart: () => {
-                      console.log('Chromecast started');
-                    },
-                    onCastEnd: () => {
-                      console.log('Chromecast ended');
-                    },
-                    onError: (error) => {
-                      console.error('Chromecast error:', error);
-                    },
-                  }),
-                ]
+                artplayerPluginChromecast({
+                  title: videoTitle
+                    ? `${videoTitle}${currentEpisodeIndex >= 0 ? ` - 第${currentEpisodeIndex + 1}集` : ''}`
+                    : undefined,
+                  poster: videoCover || undefined,
+                  onStateChange: (state) => {
+                    console.log('Chromecast state changed:', state);
+                  },
+                  onCastAvailable: (available) => {
+                    console.log('Chromecast available:', available);
+                  },
+                  onCastStart: () => {
+                    console.log('Chromecast started');
+                  },
+                  onCastEnd: () => {
+                    console.log('Chromecast ended');
+                  },
+                  onError: (error) => {
+                    console.error('Chromecast error:', error);
+                  },
+                }),
+              ]
               : []),
             // 毛玻璃效果控制栏插件 - 现代化悬浮设计
             // CSS已优化：桌面98%宽度，移动端100%，按钮可自动缩小适应
@@ -5157,13 +5154,12 @@ function PlayPageClient() {
               <div class="fullscreen-title-container">
                 <div class="fullscreen-title-content">
                   <h1 class="fullscreen-title-text">${detail?.title || ''}</h1>
-                  ${
-                    fsHasEpisodes && fsEpisodeName
-                      ? `<span class="fullscreen-episode-text">${fsEpisodeName}</span>`
-                      : fsHasEpisodes
-                        ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
-                        : ''
-                  }
+                  ${fsHasEpisodes && fsEpisodeName
+                ? `<span class="fullscreen-episode-text">${fsEpisodeName}</span>`
+                : fsHasEpisodes
+                  ? `<span class="fullscreen-episode-text">第 ${currentEpisodeIndex + 1} 集</span>`
+                  : ''
+              }
                 </div>
               </div>
             `,
@@ -6339,17 +6335,15 @@ function PlayPageClient() {
             </div>
 
             <div
-              className={`grid gap-4 lg:h-[500px] xl:h-[650px] 2xl:h-[750px] transition-all duration-300 ease-in-out ${
-                isEpisodeSelectorCollapsed
+              className={`grid gap-4 lg:h-[500px] xl:h-[650px] 2xl:h-[750px] transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
                   ? 'grid-cols-1'
                   : 'grid-cols-1 md:grid-cols-4'
-              }`}
+                }`}
             >
               {/* 播放器 */}
               <div
-                className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${
-                  isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-3'
-                }`}
+                className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-3'
+                  }`}
               >
                 <div className='relative w-full h-[300px] lg:h-full'>
                   <div
@@ -6445,11 +6439,10 @@ function PlayPageClient() {
 
               {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
               <div
-                className={`h-[300px] lg:h-full md:overflow-hidden transition-all duration-300 ease-in-out ${
-                  isEpisodeSelectorCollapsed
+                className={`h-[300px] lg:h-full md:overflow-hidden transition-all duration-300 ease-in-out ${isEpisodeSelectorCollapsed
                     ? 'md:col-span-1 lg:hidden lg:opacity-0 lg:scale-95'
                     : 'md:col-span-1 lg:opacity-100 lg:scale-100'
-                }`}
+                  }`}
               >
                 <EpisodeSelector
                   totalEpisodes={totalEpisodes}
@@ -6614,9 +6607,9 @@ function PlayPageClient() {
                   matchInfo={
                     detail?.title && currentEpisodeIndex >= 0
                       ? {
-                          animeTitle: detail.title,
-                          episodeTitle: `第 ${currentEpisodeIndex + 1} 集`,
-                        }
+                        animeTitle: detail.title,
+                        episodeTitle: `第 ${currentEpisodeIndex + 1} 集`,
+                      }
                       : null
                   }
                   onSettingsChange={(newSettings) => {
@@ -7043,11 +7036,10 @@ function PlayPageClient() {
                             setNetdiskResults(null);
                             setNetdiskError(null);
                           }}
-                          className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${
-                            netdiskResourceType === 'netdisk'
+                          className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'netdisk'
                               ? 'bg-blue-500 text-white border-blue-500 shadow-md'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
-                          }`}
+                            }`}
                         >
                           💾 网盘资源
                         </button>
@@ -7060,11 +7052,10 @@ function PlayPageClient() {
                               setAcgTriggerSearch((prev) => !prev);
                             }
                           }}
-                          className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${
-                            netdiskResourceType === 'acg'
+                          className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'acg'
                               ? 'bg-purple-500 text-white border-purple-500 shadow-md'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
-                          }`}
+                            }`}
                         >
                           🎌 动漫磁力
                         </button>
@@ -7121,37 +7112,36 @@ function PlayPageClient() {
               {/* 返回顶部按钮 - 统一放在外层，适用于所有资源类型 */}
               {((netdiskResourceType === 'netdisk' && netdiskTotal > 10) ||
                 netdiskResourceType === 'acg') && (
-                <button
-                  onClick={() => {
-                    if (netdiskModalContentRef.current) {
-                      netdiskModalContentRef.current.scrollTo({
-                        top: 0,
-                        behavior: 'smooth',
-                      });
-                    }
-                  }}
-                  className={`sticky bottom-6 left-full -ml-14 sm:bottom-8 sm:-ml-16 w-11 h-11 sm:w-12 sm:h-12 ${
-                    netdiskResourceType === 'acg'
-                      ? 'bg-purple-500 hover:bg-purple-600'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  } text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center active:scale-95 z-50 group`}
-                  aria-label='返回顶部'
-                >
-                  <svg
-                    className='w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-y-[-2px] transition-transform'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
+                  <button
+                    onClick={() => {
+                      if (netdiskModalContentRef.current) {
+                        netdiskModalContentRef.current.scrollTo({
+                          top: 0,
+                          behavior: 'smooth',
+                        });
+                      }
+                    }}
+                    className={`sticky bottom-6 left-full -ml-14 sm:bottom-8 sm:-ml-16 w-11 h-11 sm:w-12 sm:h-12 ${netdiskResourceType === 'acg'
+                        ? 'bg-purple-500 hover:bg-purple-600'
+                        : 'bg-blue-500 hover:bg-blue-600'
+                      } text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center active:scale-95 z-50 group`}
+                    aria-label='返回顶部'
                   >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2.5}
-                      d='M5 10l7-7m0 0l7 7m-7-7v18'
-                    />
-                  </svg>
-                </button>
-              )}
+                    <svg
+                      className='w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-y-[-2px] transition-transform'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2.5}
+                        d='M5 10l7-7m0 0l7 7m-7-7v18'
+                      />
+                    </svg>
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -7187,6 +7177,8 @@ function PlayPageClient() {
                 referer,
                 origin,
               });
+              // 自动打开下载面板
+              setShowDownloadPanel(true);
             } catch (error) {
               console.error('创建下载任务失败:', error);
               alert('创建下载任务失败: ' + (error as Error).message);
@@ -7195,10 +7187,42 @@ function PlayPageClient() {
           }
 
           // 批量下载多集
+          let successCount = 0;
           for (const episodeIndex of episodeIndexes) {
             try {
-              const episodeUrl = detail.episodes[episodeIndex];
+              let episodeUrl = detail.episodes[episodeIndex];
               if (!episodeUrl) continue;
+
+              // 检查是否为短剧格式，需要先解析
+              if (episodeUrl.startsWith('shortdrama:')) {
+                try {
+                  const [, videoId, episode] = episodeUrl.split(':');
+                  const nameParam = detail.drama_name
+                    ? `&name=${encodeURIComponent(detail.drama_name)}`
+                    : '';
+                  const response = await fetch(
+                    `/api/shortdrama/parse?id=${videoId}&episode=${episode}${nameParam}`,
+                  );
+
+                  if (response.ok) {
+                    const result = await response.json();
+                    episodeUrl = result.url || '';
+                    if (!episodeUrl) {
+                      console.warn(`第${episodeIndex + 1}集解析失败，跳过`);
+                      continue;
+                    }
+                  } else {
+                    console.warn(`第${episodeIndex + 1}集解析失败，跳过`);
+                    continue;
+                  }
+                } catch (parseError) {
+                  console.error(
+                    `第${episodeIndex + 1}集短剧URL解析失败:`,
+                    parseError,
+                  );
+                  continue;
+                }
+              }
 
               // 检查是否是M3U8
               if (!episodeUrl.includes('.m3u8')) {
@@ -7218,9 +7242,15 @@ function PlayPageClient() {
                 referer,
                 origin,
               });
+              successCount++;
             } catch (error) {
               console.error(`创建第${episodeIndex + 1}集下载任务失败:`, error);
             }
+          }
+
+          // 如果至少有一个任务创建成功，自动打开下载面板
+          if (successCount > 0) {
+            setShowDownloadPanel(true);
           }
         }}
       />
