@@ -7252,7 +7252,11 @@ function PlayPageClient() {
 
           // 如果尝试过下载，就打开下载面板（即使失败也打开，让用户看到错误）
           if (hasAttempted) {
+            console.log('[Download] 尝试打开下载面板, hasAttempted:', hasAttempted);
             setShowDownloadPanel(true);
+            console.log('[Download] setShowDownloadPanel(true) 已调用');
+          } else {
+            console.log('[Download] 未尝试下载, hasAttempted:', hasAttempted);
           }
         }}
       />
