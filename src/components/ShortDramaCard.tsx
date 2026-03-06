@@ -384,7 +384,7 @@ function ShortDramaCard({
           />
 
           <img
-            src={drama.cover ? `/api/proxy/shortdrama?url=${encodeURIComponent(drama.cover)}` : '/placeholder-cover.jpg'}
+            src={drama.cover ? `/api/image-proxy?url=${encodeURIComponent(drama.cover)}` : '/placeholder-cover.jpg'}
             alt={drama.name}
             className={`h-full w-full object-cover transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
               }`}
