@@ -14,6 +14,7 @@ const httpsAgent = new https.Agent({
   maxFreeSockets: 10,
   timeout: 60000,
   keepAliveMsecs: 30000,
+  rejectUnauthorized: false,
 });
 
 const httpAgent = new http.Agent({
