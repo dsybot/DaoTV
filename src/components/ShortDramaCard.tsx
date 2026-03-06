@@ -394,8 +394,14 @@ function ShortDramaCard({
               setImageLoaded(true);
             }}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder-cover.jpg';
-              setImageLoaded(true);
+              const img = e.target as HTMLImageElement;
+              const current = img.src;
+              if (current.startsWith('https://')) {
+                img.src = current.replace('https://', 'http://');
+              } else {
+                img.src = '/placeholder-cover.jpg';
+                setImageLoaded(true);
+              }
             }}
           />
 
