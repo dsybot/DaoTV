@@ -499,6 +499,7 @@ export class EmbyClient {
   }
 
   async getStreamUrl(itemId: string, direct = true, forceDirectUrl = false): Promise<string> {
+    await this.ensureAuthenticated();
     const token = this.apiKey || this.authToken;
 
     // 如果启用了代理播放且不是强制获取直接URL，返回代理URL
