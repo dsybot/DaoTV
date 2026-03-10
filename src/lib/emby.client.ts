@@ -125,9 +125,9 @@ export class EmbyClient {
     // 如果有 AuthToken，假设它是有效的
     if (this.authToken) return;
 
-    // 如果有用户名和密码，自动认证
-    if (this.username && this.password) {
-      const authResult = await this.authenticate(this.username, this.password);
+    // 如果有用户名，自动认证（密码可选）
+    if (this.username) {
+      const authResult = await this.authenticate(this.username, this.password || '');
       this.authToken = authResult.AccessToken;
       this.userId = authResult.User.Id;
     }
