@@ -54,6 +54,7 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
   const refApiKey = useRef<HTMLInputElement>(null);
   const refUsername = useRef<HTMLInputElement>(null);
   const refPassword = useRef<HTMLInputElement>(null);
+  const refUserId = useRef<HTMLInputElement>(null);
 
   const clearRefs = () => {
     if (refKey.current) refKey.current.value = '';
@@ -62,6 +63,7 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
     if (refApiKey.current) refApiKey.current.value = '';
     if (refUsername.current) refUsername.current.value = '';
     if (refPassword.current) refPassword.current.value = '';
+    if (refUserId.current) refUserId.current.value = '';
   };
 
   const resetForm = () => {
@@ -102,6 +104,7 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
       if (refApiKey.current) refApiKey.current.value = source.ApiKey || '';
       if (refUsername.current) refUsername.current.value = source.Username || '';
       if (refPassword.current) refPassword.current.value = source.Password || '';
+      if (refUserId.current) refUserId.current.value = source.UserId || '';
     }, 0);
   };
 
@@ -151,6 +154,7 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
     const ApiKey = refApiKey.current?.value || '';
     const Username = refUsername.current?.value || '';
     const Password = refPassword.current?.value || '';
+    const UserId = refUserId.current?.value || '';
 
     if (!key || !name || !ServerURL) {
       toast.error('请填写必填字段：标识符、名称、服务器地址');
@@ -172,7 +176,7 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
 
     setIsLoading(true);
     try {
-      const completeFormData = { key, name, ServerURL, ApiKey, Username, Password, ...formChecks };
+      const completeFormData = { key, name, ServerURL, ApiKey, Username, Password, UserId, ...formChecks };
       const newSources = editingIndex !== null
         ? sources.map((s, i) => i === editingIndex ? completeFormData : s)
         : [...sources, completeFormData];
@@ -382,6 +386,15 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
           <details className='mt-2'>
             <summary className='text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200'>高级选项</summary>
             <div className='mt-2 space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700'>
+              <div>
+                <label className='block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1'>用户 ID（可选）</label>
+                <input ref={refUserId} type='text'
+                  className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  placeholder='留空则自动获取' />
+                <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+                  不填则自动获取当前认证用户的 ID；如需指定其他用户可手动填写
+                </p>
+              </div>
               {[
                 { key: 'transcodeMp4', label: '转码mp4（推荐MKV格式启用）' },
                 { key: 'proxyPlay', label: '视频播放代理' },
