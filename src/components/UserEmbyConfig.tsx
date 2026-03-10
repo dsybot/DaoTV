@@ -351,12 +351,23 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
 
           {/* 密钥认证 */}
           {authMode === 'apikey' && (
-            <div>
-              <label className='block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'>API Key *</label>
-              <input ref={refApiKey} type='text'
-                className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                placeholder='在 Emby 控制台的 API 密钥页面生成' />
-            </div>
+            <>
+              <div>
+                <label className='block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'>API Key *</label>
+                <input ref={refApiKey} type='text'
+                  className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  placeholder='在 Emby 控制台的 API 密钥页面生成' />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'>用户 ID（可选）</label>
+                <input ref={refUserId} type='text'
+                  className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  placeholder='留空则自动获取' />
+                <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+                  不填则自动获取；如需指定其他用户可手动填写
+                </p>
+              </div>
+            </>
           )}
 
           {/* 账号认证 */}
@@ -386,15 +397,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
           <details className='mt-2'>
             <summary className='text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200'>高级选项</summary>
             <div className='mt-2 space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700'>
-              <div>
-                <label className='block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1'>用户 ID（可选）</label>
-                <input ref={refUserId} type='text'
-                  className='w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                  placeholder='留空则自动获取' />
-                <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-                  不填则自动获取当前认证用户的 ID；如需指定其他用户可手动填写
-                </p>
-              </div>
               {[
                 { key: 'transcodeMp4', label: '转码mp4（推荐MKV格式启用）' },
                 { key: 'proxyPlay', label: '视频播放代理' },

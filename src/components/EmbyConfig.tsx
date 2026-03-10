@@ -467,18 +467,35 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
 
             {/* 密钥认证模式 */}
             {authMode === 'apikey' && (
-              <div>
-                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                  API Key *
-                </label>
-                <input
-                  type='password'
-                  value={formData.ApiKey}
-                  onChange={(e) => setFormData({ ...formData, ApiKey: e.target.value })}
-                  placeholder='在 Emby 控制台的 API 密钥页面生成'
-                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                />
-              </div>
+              <>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                    API Key *
+                  </label>
+                  <input
+                    type='password'
+                    value={formData.ApiKey}
+                    onChange={(e) => setFormData({ ...formData, ApiKey: e.target.value })}
+                    placeholder='在 Emby 控制台的 API 密钥页面生成'
+                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  />
+                </div>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                    用户 ID（可选）
+                  </label>
+                  <input
+                    type='text'
+                    value={formData.UserId}
+                    onChange={(e) => setFormData({ ...formData, UserId: e.target.value })}
+                    placeholder='留空则自动获取'
+                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  />
+                  <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+                    不填则自动获取当前认证用户的 ID；如需指定其他用户可手动填写
+                  </p>
+                </div>
+              </>
             )}
 
             {/* 账号认证模式 */}
@@ -516,23 +533,6 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
               <h4 className='text-sm font-medium text-gray-900 dark:text-white mb-3'>
                 高级选项
               </h4>
-
-              {/* 用户 ID（可选） */}
-              <div>
-                <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                  用户 ID（可选）
-                </label>
-                <input
-                  type='text'
-                  value={formData.UserId}
-                  onChange={(e) => setFormData({ ...formData, UserId: e.target.value })}
-                  placeholder='留空则自动获取'
-                  className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                />
-                <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
-                  不填则自动获取当前认证用户的 ID；如需指定其他用户可手动填写
-                </p>
-              </div>
 
               {/* 选项1: 移除Emby前缀 */}
               <div className='flex items-center justify-between'>
