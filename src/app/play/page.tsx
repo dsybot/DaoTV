@@ -5326,11 +5326,6 @@ function PlayPageClient() {
               display: none !important;
             }
             
-            /* 隐藏插件原生的样式面板（可选，如果你想保留可以删除这行） */
-            .artplayer-plugin-danmuku .apd-style-panel {
-              display: none !important;
-            }
-            
             /* 📱 移动端隐藏弹幕输入框 */
             @media (max-width: 768px) {
               .artplayer-plugin-danmuku .apd-emitter {
