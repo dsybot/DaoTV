@@ -176,6 +176,11 @@ function HeroBanner({
 
   // 🎯 检查并刷新缺失的 trailer URL（组件挂载时）
   useEffect(() => {
+    // 如果禁用了视频，不需要刷新 trailer
+    if (!enableVideo) {
+      return;
+    }
+
     const checkAndRefreshMissingTrailers = async () => {
       for (const item of items) {
         // 如果有 douban_id 但没有 trailerUrl，尝试获取
@@ -196,7 +201,7 @@ function HeroBanner({
     // 延迟执行，避免阻塞初始渲染
     const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
     return () => clearTimeout(timer);
-  }, [items, refreshedTrailerUrls, refreshTrailerUrl]);
+  }, [items, refreshedTrailerUrls, refreshTrailerUrl, enableVideo]);
 
   if (!items || items.length === 0) {
     return null;
@@ -237,9 +242,8 @@ function HeroBanner({
           return (
             <div
               key={item.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                index === currentIndex ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'
+                }`}
             >
               {/* 背景图片（始终显示，作为视频的占位符） */}
               <Image
@@ -265,9 +269,8 @@ function HeroBanner({
                 index === currentIndex && (
                   <video
                     ref={videoRef}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                      videoLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
+                      }`}
                     autoPlay
                     muted={isMuted}
                     loop
@@ -392,11 +395,10 @@ function HeroBanner({
               href={
                 currentItem.type === 'shortdrama'
                   ? '/shortdrama'
-                  : `/douban?type=${
-                      currentItem.type === 'variety'
-                        ? 'show'
-                        : currentItem.type || 'movie'
-                    }`
+                  : `/douban?type=${currentItem.type === 'variety'
+                    ? 'show'
+                    : currentItem.type || 'movie'
+                  }`
               }
               className='flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white/30 text-white font-bold rounded hover:bg-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl border border-white/50'
             >
@@ -449,11 +451,10 @@ function HeroBanner({
             <button
               key={index}
               onClick={() => handleIndicatorClick(index)}
-              className={`h-0.5 sm:h-1 rounded-full transition-all duration-300 ${
-                index === currentIndex
+              className={`h-0.5 sm:h-1 rounded-full transition-all duration-300 ${index === currentIndex
                   ? 'w-5 sm:w-10 bg-white shadow-lg'
                   : 'w-1 sm:w-2 bg-white/50 hover:bg-white/75'
-              }`}
+                }`}
               aria-label={`跳转到第 ${index + 1} 张`}
             />
           ))}
