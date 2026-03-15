@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const nextConfig = {
-  // 生产环境始终使用 standalone 模式（Vercel/Docker/Zeabur）
+  // 生产环境始终使用 standalone 模式（Vercel/Docker/Render）
   // 本地开发时（NODE_ENV !== 'production'）不使用 standalone
   ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
 

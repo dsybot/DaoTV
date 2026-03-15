@@ -137,7 +137,7 @@ pnpm dev
 - **Video Player**: ArtPlayer 5.3.0 + HLS.js 1.6.15
 - **State Management**: TanStack Query 5.90.21
 - **Database**: Upstash Redis + Kvrocks
-- **Deployment**: Docker / Vercel
+- **Deployment**: Docker / Vercel / Render
 
 ## 📜 Changelog
 

@@ -137,7 +137,7 @@ pnpm dev
 - **视频播放**：ArtPlayer 5.3.0 + HLS.js 1.6.15
 - **状态管理**：TanStack Query 5.90.21
 - **数据库**：Upstash Redis + Kvrocks
-- **部署方案**：Docker / Vercel
+- **部署方案**：Docker / Vercel / Render
 
 ## 📜 更新日志
 
