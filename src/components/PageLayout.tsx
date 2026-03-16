@@ -25,34 +25,8 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
   // 检查 AI 功能是否开启
   useEffect(() => {
-    if (isAIRecommendFeatureDisabled()) {
-      setAiEnabled(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const response = await fetch('/api/admin/ai-recommend');
-        if (!cancelled) {
-          if (response.ok) {
-            const data = await response.json();
-            setAiEnabled(data.enabled === true);
-          } else {
-            setAiEnabled(false);
-          }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setAiEnabled(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    const disabled = isAIRecommendFeatureDisabled();
+    setAiEnabled(!disabled);
   }, []);
 
   // 判断是否显示 AI 按钮（除了管理员页面）
