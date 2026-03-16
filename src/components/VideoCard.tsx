@@ -274,38 +274,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         return;
       }
 
-      if (isAIRecommendFeatureDisabled()) {
-        setAiEnabledLocal(false);
-        setAiCheckCompleteLocal(true);
-        return;
-      }
-
-      let cancelled = false;
-
-      (async () => {
-        try {
-          const response = await fetch('/api/ai-recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              messages: [{ role: 'user', content: 'ping' }],
-            }),
-          });
-          if (!cancelled) {
-            setAiEnabledLocal(response.status !== 403);
-            setAiCheckCompleteLocal(true);
-          }
-        } catch (error) {
-          if (!cancelled) {
-            setAiEnabledLocal(false);
-            setAiCheckCompleteLocal(true);
-          }
-        }
-      })();
-
-      return () => {
-        cancelled = true;
-      };
+      const disabled = isAIRecommendFeatureDisabled();
+      setAiEnabledLocal(!disabled);
+      setAiCheckCompleteLocal(true);
     }, [aiEnabledProp, aiCheckCompleteProp]); // 依赖父组件传递的props
 
     // 🚀 使用 TanStack Query useMutation 优化收藏功能
@@ -534,18 +505,15 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         actualSource === 'bangumi'
       ) {
         // 豆瓣内容 或 聚合搜索 或 即将上映 或 Bangumi番剧 - 只用标题和年份搜索
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${
-          actualYear ? `&year=${actualYear}` : ''
-        }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''
+          }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
         navigate(url);
       } else if (actualSource && actualId) {
         const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
           actualTitle,
-        )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${
-          isAggregate ? '&prefer=true' : ''
-        }${
-          actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
-        }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+        )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''
+          }${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
+          }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
         navigate(url);
       }
     }, [
@@ -592,11 +560,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       } else if (actualSource && actualId) {
         const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
           actualTitle,
-        )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${
-          isAggregate ? '&prefer=true' : ''
-        }${
-          actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
-        }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+        )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''
+          }${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
+          }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
         window.open(url, '_blank');
       }
     }, [
@@ -792,7 +758,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           id: 'upcoming-notice',
           label: '该影片尚未上映，敬请期待',
           icon: <span className='text-lg'>📅</span>,
-          onClick: () => {}, // 不执行任何操作
+          onClick: () => { }, // 不执行任何操作
           disabled: true,
           color: 'default' as const,
         });
@@ -820,8 +786,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               ),
               onClick: () => {
                 const mockEvent = {
-                  preventDefault: () => {},
-                  stopPropagation: () => {},
+                  preventDefault: () => { },
+                  stopPropagation: () => { },
                 } as React.MouseEvent;
                 handleToggleFavorite(mockEvent);
               },
@@ -835,7 +801,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               id: 'favorite-loading',
               label: '收藏加载中...',
               icon: <Heart size={20} />,
-              onClick: () => {}, // 加载中时不响应点击
+              onClick: () => { }, // 加载中时不响应点击
               disabled: true,
             });
           }
@@ -851,8 +817,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             ),
             onClick: () => {
               const mockEvent = {
-                preventDefault: () => {},
-                stopPropagation: () => {},
+                preventDefault: () => { },
+                stopPropagation: () => { },
               } as React.MouseEvent;
               handleToggleFavorite(mockEvent);
             },
@@ -876,8 +842,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           icon: <Trash2 size={20} />,
           onClick: () => {
             const mockEvent = {
-              preventDefault: () => {},
-              stopPropagation: () => {},
+              preventDefault: () => { },
+              stopPropagation: () => { },
             } as React.MouseEvent;
             handleDeleteRecord(mockEvent);
           },
@@ -1154,15 +1120,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                     <Heart
                       onClick={handleToggleFavorite}
                       size={20}
-                      className={`transition-all duration-300 ease-out ${
-                        (
+                      className={`transition-all duration-300 ease-out ${(
                           from === 'search'
                             ? optimisticSearchFavorited
                             : optimisticFavorited
                         )
                           ? 'fill-red-600 stroke-red-600'
                           : 'fill-transparent stroke-white hover:stroke-red-400'
-                      } hover:scale-[1.1]`}
+                        } hover:scale-[1.1]`}
                       style={
                         {
                           WebkitUserSelect: 'none',
@@ -1251,14 +1216,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               actualYear !== 'unknown' &&
               actualYear.trim() !== '' && (
                 <div
-                  className={`absolute left-2 flex items-center bg-black/80 px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${
-                    actualEpisodes &&
-                    actualEpisodes > 1 &&
-                    !isUpcoming &&
-                    !(from === 'favorite' && actualEpisodes === 99)
+                  className={`absolute left-2 flex items-center bg-black/80 px-2 py-0.5 rounded-md shadow-lg text-white/80 text-[10px] font-medium transition-all duration-300 ease-out group-hover:scale-105 z-30 ${actualEpisodes &&
+                      actualEpisodes > 1 &&
+                      !isUpcoming &&
+                      !(from === 'favorite' && actualEpisodes === 99)
                       ? 'top-[38px]' // 有集数徽章时向下偏移
                       : 'top-2'
-                  }`}
+                    }`}
                   style={
                     {
                       WebkitUserSelect: 'none',
