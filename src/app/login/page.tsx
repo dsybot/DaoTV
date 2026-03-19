@@ -2,7 +2,15 @@
 
 'use client';
 
-import { AlertCircle, CheckCircle, User, Lock, Sparkles, UserPlus, Send } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle,
+  User,
+  Lock,
+  Sparkles,
+  UserPlus,
+  Send,
+} from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
@@ -11,7 +19,11 @@ import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
 import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { OIDCProviderLogo, detectProvider, getProviderButtonText } from '@/components/OIDCProviderLogos';
+import {
+  OIDCProviderLogo,
+  detectProvider,
+  getProviderButtonText,
+} from '@/components/OIDCProviderLogos';
 
 // 版本显示组件
 function VersionDisplay() {
@@ -34,18 +46,17 @@ function VersionDisplay() {
   }, []);
 
   return (
-    <div
-      className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'
-    >
+    <div className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
       <span className='font-mono'>v{CURRENT_VERSION}</span>
       {!isChecking && updateStatus !== UpdateStatus.FETCH_FAILED && (
         <div
-          className={`flex items-center gap-1.5 ${updateStatus === UpdateStatus.HAS_UPDATE
-            ? 'text-yellow-600 dark:text-yellow-400'
-            : updateStatus === UpdateStatus.NO_UPDATE
-              ? 'text-green-600 dark:text-green-400'
-              : ''
-            }`}
+          className={`flex items-center gap-1.5 ${
+            updateStatus === UpdateStatus.HAS_UPDATE
+              ? 'text-yellow-600 dark:text-yellow-400'
+              : updateStatus === UpdateStatus.NO_UPDATE
+                ? 'text-green-600 dark:text-green-400'
+                : ''
+          }`}
         >
           {updateStatus === UpdateStatus.HAS_UPDATE && (
             <>
@@ -72,7 +83,13 @@ function LoginPageClient() {
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [shouldAskUsername, setShouldAskUsername] = useState(false);
+  const [shouldAskUsername] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const storageType = (window as any).RUNTIME_CONFIG?.STORAGE_TYPE;
+      return !!(storageType && storageType !== 'localstorage');
+    }
+    return false;
+  });
   const [bingWallpaper, setBingWallpaper] = useState<string>('');
   const [customBgDesktop, setCustomBgDesktop] = useState<string>('');
   const [customBgMobile, setCustomBgMobile] = useState<string>('');
@@ -85,12 +102,14 @@ function LoginPageClient() {
   const [telegramUsername, setTelegramUsername] = useState('');
 
   // OIDC 登录状态
-  const [oidcProviders, setOidcProviders] = useState<Array<{
-    id: string;
-    name: string;
-    buttonText: string;
-    issuer: string;
-  }>>([]);
+  const [oidcProviders, setOidcProviders] = useState<
+    Array<{
+      id: string;
+      name: string;
+      buttonText: string;
+      issuer: string;
+    }>
+  >([]);
   const [oidcEnabled, setOidcEnabled] = useState(false);
   const [oidcButtonText, setOidcButtonText] = useState('使用OIDC登录');
   const [oidcIssuer, setOidcIssuer] = useState<string>('');
@@ -126,14 +145,6 @@ function LoginPageClient() {
 
     fetchBingWallpaper();
   }, [customBgDesktop, customBgMobile]);
-
-  // 在客户端挂载后设置配置
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storageType = (window as any).RUNTIME_CONFIG?.STORAGE_TYPE;
-      setShouldAskUsername(storageType && storageType !== 'localstorage');
-    }
-  }, []);
 
   // 获取 Telegram Magic Link 配置
   useEffect(() => {
@@ -210,7 +221,7 @@ function LoginPageClient() {
           await fetch('/api/user/my-stats', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ loginTime })
+            body: JSON.stringify({ loginTime }),
           });
           // 更新 localStorage 记录
           localStorage.setItem('lastRecordedLogin', loginTime.toString());
@@ -248,7 +259,10 @@ function LoginPageClient() {
     setTelegramLoading(true);
 
     try {
-      console.log('[Frontend] Generating deep link for user:', telegramUsername);
+      console.log(
+        '[Frontend] Generating deep link for user:',
+        telegramUsername,
+      );
       const res = await fetch('/api/telegram/send-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -256,7 +270,11 @@ function LoginPageClient() {
       });
 
       const data = await res.json();
-      console.log('[Frontend] API response:', { ok: res.ok, status: res.status, data });
+      console.log('[Frontend] API response:', {
+        ok: res.ok,
+        status: res.status,
+        data,
+      });
 
       if (res.ok && data.deepLink) {
         setTelegramDeepLink(data.deepLink);
@@ -273,16 +291,14 @@ function LoginPageClient() {
     }
   };
 
-
-
   return (
     <div className='relative min-h-screen flex items-center justify-center px-3 sm:px-4 py-8 sm:py-0 overflow-hidden'>
       {/* 背景图片：优先使用自定义背景，否则使用 Bing 壁纸 */}
       {(() => {
         // 确定要使用的背景图
         const bgUrl = isMobile
-          ? (customBgMobile || customBgDesktop || bingWallpaper)
-          : (customBgDesktop || bingWallpaper);
+          ? customBgMobile || customBgDesktop || bingWallpaper
+          : customBgDesktop || bingWallpaper;
 
         return bgUrl ? (
           <div
@@ -302,7 +318,10 @@ function LoginPageClient() {
       <div className='relative z-10 w-full max-w-md rounded-2xl sm:rounded-3xl bg-white/30 dark:bg-zinc-900/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-6 sm:p-10 border border-white/30 dark:border-white/10 animate-fade-in'>
         {/* 装饰性光效 */}
         <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse' />
-        <div className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse' style={{ animationDelay: '1s' }} />
+        <div
+          className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse'
+          style={{ animationDelay: '1s' }}
+        />
 
         {/* 标题区域 */}
         <div className='text-center mb-6 sm:mb-8'>
@@ -312,13 +331,18 @@ function LoginPageClient() {
           <h1 className='text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
             {siteName}
           </h1>
-          <p className='text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-medium'>欢迎回来，请登录您的账户</p>
+          <p className='text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-medium'>
+            欢迎回来，请登录您的账户
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
           {shouldAskUsername && (
             <div className='group'>
-              <label htmlFor='username' className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'>
+              <label
+                htmlFor='username'
+                className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'
+              >
                 用户名
               </label>
               <div className='relative'>
@@ -339,7 +363,10 @@ function LoginPageClient() {
           )}
 
           <div className='group'>
-            <label htmlFor='password' className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'>
+            <label
+              htmlFor='password'
+              className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'
+            >
               密码
             </label>
             <div className='relative'>
@@ -361,16 +388,16 @@ function LoginPageClient() {
           {error && (
             <div className='flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 animate-slide-down'>
               <AlertCircle className='h-4 w-4 text-red-600 dark:text-red-400 shrink-0' />
-              <p className='text-xs sm:text-sm text-red-600 dark:text-red-400'>{error}</p>
+              <p className='text-xs sm:text-sm text-red-600 dark:text-red-400'>
+                {error}
+              </p>
             </div>
           )}
 
           {/* 登录按钮 */}
           <button
             type='submit'
-            disabled={
-              !password || loading || (shouldAskUsername && !username)
-            }
+            disabled={!password || loading || (shouldAskUsername && !username)}
             className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-green-600/80 hover:bg-green-600/90 backdrop-blur-sm py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-green-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
           >
             <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
@@ -390,7 +417,9 @@ function LoginPageClient() {
               >
                 <UserPlus className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
                 <span>立即注册</span>
-                <span className='inline-block transition-transform group-hover:translate-x-1'>→</span>
+                <span className='inline-block transition-transform group-hover:translate-x-1'>
+                  →
+                </span>
               </a>
             </div>
           )}
@@ -416,17 +445,41 @@ function LoginPageClient() {
                 {oidcProviders.map((provider) => {
                   // 优先使用 provider.id，如果是自定义provider则从issuer推断
                   const providerId = provider.id.toLowerCase();
-                  const detectedProvider = ['google', 'github', 'microsoft', 'facebook', 'wechat', 'apple', 'linuxdo'].includes(providerId)
-                    ? (providerId as 'google' | 'github' | 'microsoft' | 'facebook' | 'wechat' | 'apple' | 'linuxdo')
+                  const detectedProvider = [
+                    'google',
+                    'github',
+                    'microsoft',
+                    'facebook',
+                    'wechat',
+                    'apple',
+                    'linuxdo',
+                  ].includes(providerId)
+                    ? (providerId as
+                        | 'google'
+                        | 'github'
+                        | 'microsoft'
+                        | 'facebook'
+                        | 'wechat'
+                        | 'apple'
+                        | 'linuxdo')
                     : detectProvider(provider.issuer || provider.buttonText);
-                  const customText = provider.buttonText && provider.buttonText !== '使用OIDC登录' ? provider.buttonText : undefined;
-                  const buttonText = getProviderButtonText(detectedProvider, customText);
+                  const customText =
+                    provider.buttonText &&
+                    provider.buttonText !== '使用OIDC登录'
+                      ? provider.buttonText
+                      : undefined;
+                  const buttonText = getProviderButtonText(
+                    detectedProvider,
+                    customText,
+                  );
 
                   return (
                     <button
                       key={provider.id}
                       type='button'
-                      onClick={() => window.location.href = `/api/auth/oidc/login?provider=${provider.id}`}
+                      onClick={() =>
+                        (window.location.href = `/api/auth/oidc/login?provider=${provider.id}`)
+                      }
                       className='w-full inline-flex justify-center items-center rounded-lg py-2.5 sm:py-3 text-sm sm:text-base font-semibold bg-white/40 dark:bg-white/10 backdrop-blur-sm border border-white/30 dark:border-white/10 text-gray-800 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/15 transition-all duration-200 active:scale-95'
                     >
                       <OIDCProviderLogo provider={detectedProvider} />
@@ -439,13 +492,18 @@ function LoginPageClient() {
               /* 单 Provider 按钮（向后兼容） */
               (() => {
                 const provider = detectProvider(oidcIssuer || oidcButtonText);
-                const customText = oidcButtonText && oidcButtonText !== '使用OIDC登录' ? oidcButtonText : undefined;
+                const customText =
+                  oidcButtonText && oidcButtonText !== '使用OIDC登录'
+                    ? oidcButtonText
+                    : undefined;
                 const buttonText = getProviderButtonText(provider, customText);
 
                 return (
                   <button
                     type='button'
-                    onClick={() => window.location.href = '/api/auth/oidc/login'}
+                    onClick={() =>
+                      (window.location.href = '/api/auth/oidc/login')
+                    }
                     className='mt-3 sm:mt-4 w-full inline-flex justify-center items-center rounded-lg py-2.5 sm:py-3 text-sm sm:text-base font-semibold bg-white/40 dark:bg-white/10 backdrop-blur-sm border border-white/30 dark:border-white/10 text-gray-800 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/15 transition-all duration-200 active:scale-95'
                   >
                     <OIDCProviderLogo provider={provider} />
@@ -455,76 +513,73 @@ function LoginPageClient() {
               })()
             )}
           </div>
-        )
-        }
+        )}
 
         {/* Telegram Magic Link 登录 */}
-        {
-          telegramEnabled && (
-            <div className='mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 dark:border-white/10'>
-              <p className='text-center text-gray-700 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4'>
-                或使用 Telegram 登录
-              </p>
+        {telegramEnabled && (
+          <div className='mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 dark:border-white/10'>
+            <p className='text-center text-gray-700 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4'>
+              或使用 Telegram 登录
+            </p>
 
-              {/* Telegram 用户名输入 */}
-              <div className='mb-3 sm:mb-4'>
-                <label className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'>
-                  Telegram 用户名
-                </label>
-                <div className='relative'>
-                  <div className='absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none'>
-                    <Send className='h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400' />
-                  </div>
-                  <input
-                    type='text'
-                    value={telegramUsername}
-                    onChange={(e) => setTelegramUsername(e.target.value)}
-                    placeholder='输入您的 Telegram 用户名'
-                    className='block w-full pl-9 sm:pl-10 pr-2.5 sm:pr-3 py-2.5 sm:py-3 rounded-lg sm:rounded-xl ring-1 ring-white/40 dark:ring-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/70 bg-white/40 dark:bg-white/10 backdrop-blur-sm text-gray-900 dark:text-white text-sm sm:text-base transition-all'
-                    disabled={telegramLoading}
-                  />
+            {/* Telegram 用户名输入 */}
+            <div className='mb-3 sm:mb-4'>
+              <label className='block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2'>
+                Telegram 用户名
+              </label>
+              <div className='relative'>
+                <div className='absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none'>
+                  <Send className='h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400' />
                 </div>
-                <p className='mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300'>
-                  💡 输入您的 Telegram 用户名（不含 @）
+                <input
+                  type='text'
+                  value={telegramUsername}
+                  onChange={(e) => setTelegramUsername(e.target.value)}
+                  placeholder='输入您的 Telegram 用户名'
+                  className='block w-full pl-9 sm:pl-10 pr-2.5 sm:pr-3 py-2.5 sm:py-3 rounded-lg sm:rounded-xl ring-1 ring-white/40 dark:ring-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/70 bg-white/40 dark:bg-white/10 backdrop-blur-sm text-gray-900 dark:text-white text-sm sm:text-base transition-all'
+                  disabled={telegramLoading}
+                />
+              </div>
+              <p className='mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300'>
+                💡 输入您的 Telegram 用户名（不含 @）
+              </p>
+            </div>
+
+            <button
+              onClick={handleTelegramLogin}
+              disabled={telegramLoading || !telegramUsername.trim()}
+              className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-blue-600/80 hover:bg-blue-600/90 backdrop-blur-sm py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
+            >
+              <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
+              <Send className='h-4 w-4 sm:h-5 sm:w-5' />
+              {telegramLoading ? '正在打开 Telegram...' : '通过 Telegram 登录'}
+            </button>
+
+            {telegramDeepLink && (
+              <div className='mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-blue-500/20 backdrop-blur-sm border border-blue-400/30'>
+                <p className='text-xs sm:text-sm text-blue-100 mb-1.5 sm:mb-2'>
+                  📱 已在新标签页打开 Telegram
+                </p>
+                <p className='text-[11px] sm:text-xs text-blue-200'>
+                  如果没有自动打开，请点击{' '}
+                  <a
+                    href={telegramDeepLink}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='underline font-semibold'
+                  >
+                    这里
+                  </a>
                 </p>
               </div>
-
-              <button
-                onClick={handleTelegramLogin}
-                disabled={telegramLoading || !telegramUsername.trim()}
-                className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-blue-600/80 hover:bg-blue-600/90 backdrop-blur-sm py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
-              >
-                <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
-                <Send className='h-4 w-4 sm:h-5 sm:w-5' />
-                {telegramLoading ? '正在打开 Telegram...' : '通过 Telegram 登录'}
-              </button>
-
-              {telegramDeepLink && (
-                <div className='mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-blue-500/20 backdrop-blur-sm border border-blue-400/30'>
-                  <p className='text-xs sm:text-sm text-blue-100 mb-1.5 sm:mb-2'>
-                    📱 已在新标签页打开 Telegram
-                  </p>
-                  <p className='text-[11px] sm:text-xs text-blue-200'>
-                    如果没有自动打开，请点击{' '}
-                    <a
-                      href={telegramDeepLink}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='underline font-semibold'
-                    >
-                      这里
-                    </a>
-                  </p>
-                </div>
-              )}
-            </div>
-          )
-        }
-      </div >
+            )}
+          </div>
+        )}
+      </div>
 
       {/* 版本信息显示 */}
-      < VersionDisplay />
-    </div >
+      <VersionDisplay />
+    </div>
   );
 }
 
