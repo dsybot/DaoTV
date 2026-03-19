@@ -499,6 +499,36 @@ div[data-media-provider] video {
     visibility: hidden !important;
     transition: none !important;
   }
+
+  /* 样式面板只在悬停 A 按钮时显示，避免整个面板区域提前触发 */
+  .artplayer-plugin-danmuku .apd-style {
+    position: relative;
+  }
+
+  .artplayer-plugin-danmuku .apd-style .apd-style-panel {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .artplayer-plugin-danmuku .apd-style:hover .apd-style-panel,
+  .artplayer-plugin-danmuku .apd-style .apd-style-panel:hover {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+
+  .artplayer[data-dragging='true']
+    .artplayer-plugin-danmuku
+    .apd-style
+    .apd-style-panel {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
 }
 
 /* Firefox 特定修复 - 解决hover时backdrop-blur导致的徽章消失和图片模糊问题 */
