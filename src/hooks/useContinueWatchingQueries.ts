@@ -2,11 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import {
-  getAllPlayRecords,
-  subscribeToDataUpdates,
-  type PlayRecord,
-} from '@/lib/db.client';
+import { getAllPlayRecords } from '@/lib/db.client';
 import {
   getDetailedWatchingUpdates,
   subscribeToWatchingUpdatesEvent,
@@ -24,8 +20,6 @@ import {
  * - staleTime controls when data is considered fresh
  */
 export function useContinueWatchingQuery() {
-  const queryClient = useQueryClient();
-
   const query = useQuery({
     queryKey: ['playRecords', 'continueWatching'],
     queryFn: async () => {
@@ -40,19 +34,6 @@ export function useContinueWatchingQuery() {
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000,
   });
-
-  // Subscribe to external events and invalidate query cache
-  useEffect(() => {
-    const unsubscribe = subscribeToDataUpdates(
-      'playRecordsUpdated',
-      () => {
-        console.log('ContinueWatching: 播放记录更新，invalidate query');
-        queryClient.invalidateQueries({ queryKey: ['playRecords', 'continueWatching'] });
-      }
-    );
-
-    return unsubscribe;
-  }, [queryClient]);
 
   return query;
 }
@@ -93,7 +74,9 @@ export function useWatchingUpdatesQuery(hasPlayRecords: boolean) {
     if (!hasPlayRecords) return;
 
     const unsubscribe = subscribeToWatchingUpdatesEvent(() => {
-      console.log('ContinueWatching: 收到watching updates事件，invalidate query');
+      console.log(
+        'ContinueWatching: 收到watching updates事件，invalidate query',
+      );
       queryClient.invalidateQueries({ queryKey: ['watchingUpdates'] });
     });
 

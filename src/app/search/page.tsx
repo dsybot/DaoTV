@@ -3,14 +3,11 @@
 
 import { ChevronUp, Search, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, {
-  startTransition,
-  Suspense,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  experimental_streamedQuery as streamedQuery,
+  useQuery,
+} from '@tanstack/react-query';
 
 import {
   addSearchHistory,
@@ -36,6 +33,159 @@ import AcgSearch from '@/components/AcgSearch';
 import stcasc from 'switch-chinese';
 
 const chineseConverter = stcasc();
+
+type SSEChunk =
+  | { type: 'start'; totalSources: number }
+  | { type: 'source_result'; results: SearchResult[] }
+  | { type: 'source_progress' }
+  | { type: 'source_error' }
+  | { type: 'complete'; completedSources: number };
+
+type StreamedState = {
+  results: SearchResult[];
+  totalSources: number;
+  completedSources: number;
+};
+
+const STREAMED_INITIAL: StreamedState = {
+  results: [],
+  totalSources: 0,
+  completedSources: 0,
+};
+
+function eventSourceIterable(
+  url: string,
+  signal?: AbortSignal,
+): AsyncIterable<SSEChunk> {
+  return {
+    [Symbol.asyncIterator]() {
+      type Item =
+        | { value: SSEChunk; done: false }
+        | { value: undefined; done: true };
+
+      const queue: Item[] = [];
+      let waiting: ((item: Item) => void) | null = null;
+      let closed = false;
+
+      let pending: SearchResult[] = [];
+      let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const enqueue = (chunk: SSEChunk) => {
+        if (closed) return;
+        const item: Item = { value: chunk, done: false };
+        if (waiting) {
+          const resolveWaiting = waiting;
+          waiting = null;
+          resolveWaiting(item);
+        } else {
+          queue.push(item);
+        }
+      };
+
+      const flushPending = () => {
+        flushTimer = null;
+        if (pending.length === 0) return;
+        enqueue({ type: 'source_result', results: pending });
+        pending = [];
+      };
+
+      const close = (completedSources?: number) => {
+        if (closed) return;
+
+        if (flushTimer !== null) {
+          clearTimeout(flushTimer);
+          flushTimer = null;
+        }
+
+        if (pending.length > 0) {
+          enqueue({ type: 'source_result', results: pending });
+          pending = [];
+        }
+
+        if (completedSources !== undefined) {
+          enqueue({ type: 'complete', completedSources });
+        }
+
+        closed = true;
+        const done: Item = { value: undefined, done: true };
+        if (waiting) {
+          const resolveWaiting = waiting;
+          waiting = null;
+          resolveWaiting(done);
+        } else {
+          queue.push(done);
+        }
+      };
+
+      const es = new EventSource(url);
+
+      es.onmessage = (event) => {
+        if (!event.data || closed) return;
+
+        try {
+          const payload = JSON.parse(event.data);
+          switch (payload.type) {
+            case 'start':
+              enqueue({
+                type: 'start',
+                totalSources: payload.totalSources || 0,
+              });
+              break;
+            case 'source_result':
+              enqueue({ type: 'source_progress' });
+              if (
+                Array.isArray(payload.results) &&
+                payload.results.length > 0
+              ) {
+                pending.push(...(payload.results as SearchResult[]));
+                if (flushTimer === null) {
+                  flushTimer = setTimeout(flushPending, 80);
+                }
+              }
+              break;
+            case 'source_error':
+              enqueue({ type: 'source_error' });
+              break;
+            case 'complete':
+              try {
+                es.close();
+              } catch {}
+              close(payload.completedSources ?? 0);
+              break;
+          }
+        } catch {}
+      };
+
+      es.onerror = () => {
+        try {
+          es.close();
+        } catch {}
+        close();
+      };
+
+      signal?.addEventListener('abort', () => {
+        try {
+          es.close();
+        } catch {}
+        close();
+      });
+
+      return {
+        next(): Promise<IteratorResult<SSEChunk>> {
+          if (queue.length > 0) {
+            return Promise.resolve(queue.shift()!);
+          }
+          if (closed) {
+            return Promise.resolve({ value: undefined, done: true });
+          }
+          return new Promise((resolve) => {
+            waiting = resolve;
+          });
+        },
+      };
+    },
+  };
+}
 
 function SearchPageClient() {
   // 根据 type_name 推断内容类型的辅助函数
@@ -80,15 +230,8 @@ function SearchPageClient() {
   const searchParams = useSearchParams();
   const currentQueryRef = useRef<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const [totalSources, setTotalSources] = useState(0);
-  const [completedSources, setCompletedSources] = useState(0);
-  const pendingResultsRef = useRef<SearchResult[]>([]);
-  const flushTimerRef = useRef<number | null>(null);
   const [useFluidSearch, setUseFluidSearch] = useState(true);
   // 虚拟化开关状态
   const [useVirtualization, setUseVirtualization] = useState(() => {
@@ -267,26 +410,6 @@ function SearchPageClient() {
     }
   };
 
-  // 在“无排序”场景用于每个源批次的预排序：完全匹配标题优先，其次年份倒序，未知年份最后
-  const sortBatchForNoOrder = (items: SearchResult[]) => {
-    const q = currentQueryRef.current.trim();
-    return items.slice().sort((a, b) => {
-      const aExact = (a.title || '').trim() === q;
-      const bExact = (b.title || '').trim() === q;
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-
-      const aNum = Number.parseInt(a.year as any, 10);
-      const bNum = Number.parseInt(b.year as any, 10);
-      const aValid = !Number.isNaN(aNum);
-      const bValid = !Number.isNaN(bNum);
-      if (aValid && !bValid) return -1;
-      if (!aValid && bValid) return 1;
-      if (aValid && bValid) return bNum - aNum; // 年份倒序
-      return 0;
-    });
-  };
-
   // 简化的年份排序：unknown/空值始终在最后
   const compareYear = (
     aYear: string,
@@ -329,13 +452,85 @@ function SearchPageClient() {
 
     return false;
   };
+
+  const trimmedQuery = useMemo(
+    () => (searchParams.get('q') || '').trim(),
+    [searchParams],
+  );
+
+  const streamedSearchQuery = useQuery<StreamedState>({
+    queryKey: ['search', 'streamed', trimmedQuery],
+    queryFn: streamedQuery<SSEChunk, StreamedState>({
+      streamFn: (ctx) =>
+        eventSourceIterable(
+          `/api/search/ws?q=${encodeURIComponent(trimmedQuery)}`,
+          ctx.signal,
+        ),
+      refetchMode: 'reset',
+      reducer: (acc: StreamedState, chunk: SSEChunk): StreamedState => {
+        switch (chunk.type) {
+          case 'start':
+            return {
+              results: [],
+              totalSources: chunk.totalSources,
+              completedSources: 0,
+            };
+          case 'source_result':
+            return { ...acc, results: acc.results.concat(chunk.results) };
+          case 'source_progress':
+          case 'source_error':
+            return { ...acc, completedSources: acc.completedSources + 1 };
+          case 'complete':
+            return {
+              ...acc,
+              completedSources: chunk.completedSources || acc.totalSources,
+            };
+        }
+      },
+      initialValue: STREAMED_INITIAL,
+    }),
+    enabled: !!trimmedQuery && useFluidSearch,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  const traditionalSearchQuery = useQuery<SearchResult[]>({
+    queryKey: ['search', 'traditional', trimmedQuery],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(trimmedQuery)}`,
+      );
+      const data = await res.json();
+      return Array.isArray(data.results)
+        ? (data.results as SearchResult[])
+        : [];
+    },
+    enabled: !!trimmedQuery && !useFluidSearch,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  const searchResults: SearchResult[] = useFluidSearch
+    ? (streamedSearchQuery.data?.results ?? [])
+    : (traditionalSearchQuery.data ?? []);
+  const totalSources = useFluidSearch
+    ? (streamedSearchQuery.data?.totalSources ?? 0)
+    : 1;
+  const completedSources = useFluidSearch
+    ? (streamedSearchQuery.data?.completedSources ?? 0)
+    : traditionalSearchQuery.isSuccess
+      ? 1
+      : 0;
+  const isLoading = useFluidSearch
+    ? streamedSearchQuery.isFetching
+    : traditionalSearchQuery.isFetching;
   // 聚合后的结果（按标题和年份分组）
   const aggregatedResults = useMemo(() => {
     // 首先应用精确搜索过滤
     const filteredResults = exactSearch
       ? searchResults.filter((item) =>
-        titleContainsQuery(item.title, currentQueryRef.current),
-      )
+          titleContainsQuery(item.title, currentQueryRef.current),
+        )
       : searchResults;
 
     const map = new Map<string, SearchResult[]>();
@@ -343,8 +538,9 @@ function SearchPageClient() {
 
     filteredResults.forEach((item) => {
       // 使用 title + year + type 作为键，year 必然存在，但依然兜底 'unknown'
-      const key = `${item.title.replaceAll(' ', '')}-${item.year || 'unknown'
-        }-${item.episodes.length === 1 ? 'movie' : 'tv'}`;
+      const key = `${item.title.replaceAll(' ', '')}-${
+        item.year || 'unknown'
+      }-${item.episodes.length === 1 ? 'movie' : 'tv'}`;
       const arr = map.get(key) || [];
 
       // 如果是新的键，记录其顺序
@@ -453,8 +649,8 @@ function SearchPageClient() {
     // 首先应用精确搜索过滤
     const exactSearchFiltered = exactSearch
       ? searchResults.filter((item) =>
-        titleContainsQuery(item.title, currentQueryRef.current),
-      )
+          titleContainsQuery(item.title, currentQueryRef.current),
+        )
       : searchResults;
 
     const filtered = exactSearchFiltered.filter((item) => {
@@ -464,9 +660,23 @@ function SearchPageClient() {
       return true;
     });
 
-    // 如果是无排序状态，直接返回过滤后的原始顺序
+    // 如果是无排序状态，按精确匹配优先+年份倒序排列（保留来源到达顺序的相对位置）
     if (yearOrder === 'none') {
-      return filtered;
+      const q = currentQueryRef.current.trim();
+      return filtered.slice().sort((a, b) => {
+        const aExact = (a.title || '').trim() === q;
+        const bExact = (b.title || '').trim() === q;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        const aNum = Number.parseInt(a.year as any, 10);
+        const bNum = Number.parseInt(b.year as any, 10);
+        const aValid = !Number.isNaN(aNum);
+        const bValid = !Number.isNaN(bNum);
+        if (aValid && !bValid) return -1;
+        if (!aValid && bValid) return 1;
+        if (aValid && bValid) return bNum - aNum;
+        return 0;
+      });
     }
 
     // 简化排序：1. 年份排序，2. 年份相同时精确匹配在前，3. 标题排序
@@ -502,9 +712,25 @@ function SearchPageClient() {
       return true;
     });
 
-    // 如果是无排序状态，保持按关键字+年份+类型出现的原始顺序
+    // 如果是无排序状态，按精确匹配优先+年份倒序排列
     if (yearOrder === 'none') {
-      return filtered;
+      const q = currentQueryRef.current.trim();
+      return filtered.slice().sort((a, b) => {
+        const aTitle = (a[1][0]?.title || '').trim();
+        const bTitle = (b[1][0]?.title || '').trim();
+        const aExact = aTitle === q;
+        const bExact = bTitle === q;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        const aNum = Number.parseInt(a[1][0]?.year as any, 10);
+        const bNum = Number.parseInt(b[1][0]?.year as any, 10);
+        const aValid = !Number.isNaN(aNum);
+        const bValid = !Number.isNaN(bNum);
+        if (aValid && !bValid) return -1;
+        if (!aValid && bValid) return 1;
+        if (aValid && bValid) return bNum - aNum;
+        return 0;
+      });
     }
 
     // 简化排序：1. 年份排序，2. 年份相同时精确匹配在前，3. 标题排序
@@ -668,198 +894,31 @@ function SearchPageClient() {
   ]);
 
   useEffect(() => {
-    // 当搜索参数变化时更新搜索状态
+    // 当搜索参数变化时更新 UI 状态（数据获取由 TanStack Query 驱动）
     const query = searchParams.get('q') || '';
     currentQueryRef.current = query.trim();
 
     if (query) {
       setSearchQuery(query);
-      // 新搜索：关闭旧连接并清空结果
-      if (eventSourceRef.current) {
-        try {
-          eventSourceRef.current.close();
-        } catch { }
-        eventSourceRef.current = null;
-      }
-      setSearchResults([]);
-      setTotalSources(0);
-      setCompletedSources(0);
-      // 清理缓冲
-      pendingResultsRef.current = [];
-      if (flushTimerRef.current) {
-        clearTimeout(flushTimerRef.current);
-        flushTimerRef.current = null;
-      }
-      setIsLoading(true);
       setShowResults(true);
-
-      const trimmed = query.trim();
-
-      // 每次搜索时重新读取设置，确保使用最新的配置
-      let currentFluidSearch = useFluidSearch;
-      if (typeof window !== 'undefined') {
-        const savedFluidSearch = localStorage.getItem('fluidSearch');
-        if (savedFluidSearch !== null) {
-          currentFluidSearch = JSON.parse(savedFluidSearch);
-        } else {
-          const defaultFluidSearch =
-            (window as any).RUNTIME_CONFIG?.FLUID_SEARCH !== false;
-          currentFluidSearch = defaultFluidSearch;
-        }
-      }
-
-      // 如果读取的配置与当前状态不同，更新状态
-      if (currentFluidSearch !== useFluidSearch) {
-        setUseFluidSearch(currentFluidSearch);
-      }
-
-      if (currentFluidSearch) {
-        // 流式搜索：打开新的流式连接
-        const es = new EventSource(
-          `/api/search/ws?q=${encodeURIComponent(trimmed)}`,
-        );
-        eventSourceRef.current = es;
-
-        es.onmessage = (event) => {
-          if (!event.data) return;
-          try {
-            const payload = JSON.parse(event.data);
-            if (currentQueryRef.current !== trimmed) return;
-            switch (payload.type) {
-              case 'start':
-                setTotalSources(payload.totalSources || 0);
-                setCompletedSources(0);
-                break;
-              case 'source_result': {
-                setCompletedSources((prev) => prev + 1);
-                if (
-                  Array.isArray(payload.results) &&
-                  payload.results.length > 0
-                ) {
-                  // 缓冲新增结果，节流刷入，避免频繁重渲染导致闪烁
-                  const activeYearOrder =
-                    viewMode === 'agg'
-                      ? filterAgg.yearOrder
-                      : filterAll.yearOrder;
-                  const incoming: SearchResult[] =
-                    activeYearOrder === 'none'
-                      ? sortBatchForNoOrder(payload.results as SearchResult[])
-                      : (payload.results as SearchResult[]);
-                  pendingResultsRef.current.push(...incoming);
-                  if (!flushTimerRef.current) {
-                    flushTimerRef.current = window.setTimeout(() => {
-                      const toAppend = pendingResultsRef.current;
-                      pendingResultsRef.current = [];
-                      startTransition(() => {
-                        setSearchResults((prev) => prev.concat(toAppend));
-                      });
-                      flushTimerRef.current = null;
-                    }, 80);
-                  }
-                }
-                break;
-              }
-              case 'source_error':
-                setCompletedSources((prev) => prev + 1);
-                break;
-              case 'complete':
-                setCompletedSources(payload.completedSources || totalSources);
-                // 完成前确保将缓冲写入
-                if (pendingResultsRef.current.length > 0) {
-                  const toAppend = pendingResultsRef.current;
-                  pendingResultsRef.current = [];
-                  if (flushTimerRef.current) {
-                    clearTimeout(flushTimerRef.current);
-                    flushTimerRef.current = null;
-                  }
-                  startTransition(() => {
-                    setSearchResults((prev) => prev.concat(toAppend));
-                  });
-                }
-                setIsLoading(false);
-                try {
-                  es.close();
-                } catch { }
-                if (eventSourceRef.current === es) {
-                  eventSourceRef.current = null;
-                }
-                break;
-            }
-          } catch { }
-        };
-
-        es.onerror = () => {
-          setIsLoading(false);
-          // 错误时也清空缓冲
-          if (pendingResultsRef.current.length > 0) {
-            const toAppend = pendingResultsRef.current;
-            pendingResultsRef.current = [];
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
-            }
-            startTransition(() => {
-              setSearchResults((prev) => prev.concat(toAppend));
-            });
-          }
-          try {
-            es.close();
-          } catch { }
-          if (eventSourceRef.current === es) {
-            eventSourceRef.current = null;
-          }
-        };
-      } else {
-        // 传统搜索：使用普通接口
-        fetch(`/api/search?q=${encodeURIComponent(trimmed)}`)
-          .then((response) => response.json())
-          .then((data) => {
-            if (currentQueryRef.current !== trimmed) return;
-
-            if (data.results && Array.isArray(data.results)) {
-              const activeYearOrder =
-                viewMode === 'agg' ? filterAgg.yearOrder : filterAll.yearOrder;
-              const results: SearchResult[] =
-                activeYearOrder === 'none'
-                  ? sortBatchForNoOrder(data.results as SearchResult[])
-                  : (data.results as SearchResult[]);
-
-              setSearchResults(results);
-              setTotalSources(1);
-              setCompletedSources(1);
-            }
-            setIsLoading(false);
-          })
-          .catch(() => {
-            setIsLoading(false);
-          });
-      }
       setShowSuggestions(false);
 
-      // 保存到搜索历史 (事件监听会自动更新界面)
+      // 每次搜索时重新读取流式搜索设置
+      if (typeof window !== 'undefined') {
+        const savedFluidSearch = localStorage.getItem('fluidSearch');
+        const next =
+          savedFluidSearch !== null
+            ? JSON.parse(savedFluidSearch)
+            : (window as any).RUNTIME_CONFIG?.FLUID_SEARCH !== false;
+        if (next !== useFluidSearch) setUseFluidSearch(next);
+      }
+
       addSearchHistory(query);
     } else {
       setShowResults(false);
       setShowSuggestions(false);
     }
   }, [searchParams]);
-
-  // 组件卸载时，关闭可能存在的连接
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        try {
-          eventSourceRef.current.close();
-        } catch { }
-        eventSourceRef.current = null;
-      }
-      if (flushTimerRef.current) {
-        clearTimeout(flushTimerRef.current);
-        flushTimerRef.current = null;
-      }
-      pendingResultsRef.current = [];
-    };
-  }, []);
 
   // 输入框内容变化时触发，显示搜索建议
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1062,7 +1121,6 @@ function SearchPageClient() {
       handleTmdbActorSearch(trimmed, tmdbActorType, tmdbFilterState);
     } else {
       // 原有的影视搜索逻辑
-      setIsLoading(true);
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
       // 其余由 searchParams 变化的 effect 处理
     }
@@ -1073,7 +1131,6 @@ function SearchPageClient() {
     setShowSuggestions(false);
 
     // 自动执行搜索
-    setIsLoading(true);
     setShowResults(true);
 
     router.push(`/search?q=${encodeURIComponent(suggestion)}`);
@@ -1120,16 +1177,16 @@ function SearchPageClient() {
                     const currentQuery =
                       searchQuery.trim() || searchParams?.get('q');
                     if (currentQuery && showResults) {
-                      setIsLoading(true);
                       router.push(
                         `/search?q=${encodeURIComponent(currentQuery)}`,
                       );
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'video'
-                    ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
-                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'video'
+                      ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   🎬 影视资源
                 </button>
@@ -1151,10 +1208,11 @@ function SearchPageClient() {
                       handleNetDiskSearch(currentQuery);
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'netdisk'
-                    ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
-                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'netdisk'
+                      ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   💾 网盘资源
                 </button>
@@ -1181,10 +1239,11 @@ function SearchPageClient() {
                       setTimeout(() => handleYouTubeSearch(currentQuery), 0);
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'youtube'
-                    ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
-                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'youtube'
+                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   📺 YouTube
                 </button>
@@ -1211,10 +1270,11 @@ function SearchPageClient() {
                       );
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${searchType === 'tmdb-actor'
-                    ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
-                    : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                    }`}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                    searchType === 'tmdb-actor'
+                      ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
+                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
+                  }`}
                 >
                   🎬 TMDB演员
                 </button>
@@ -1277,7 +1337,6 @@ function SearchPageClient() {
 
                   // 回显搜索框
                   setSearchQuery(trimmed);
-                  setIsLoading(true);
                   setShowResults(true);
                   setShowSuggestions(false);
 
@@ -1321,10 +1380,11 @@ function SearchPageClient() {
                               handleNetDiskSearch(currentQuery);
                             }
                           }}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'netdisk'
-                            ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                            }`}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
+                            netdiskResourceType === 'netdisk'
+                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                          }`}
                         >
                           💾 网盘资源
                         </button>
@@ -1339,10 +1399,11 @@ function SearchPageClient() {
                               setAcgTriggerSearch((prev) => !prev);
                             }
                           }}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${netdiskResourceType === 'acg'
-                            ? 'bg-purple-500 text-white border-purple-500 shadow-md'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                            }`}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
+                            netdiskResourceType === 'acg'
+                              ? 'bg-purple-500 text-white border-purple-500 shadow-md'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                          }`}
                         >
                           🎌 动漫磁力
                         </button>
@@ -1405,10 +1466,11 @@ function SearchPageClient() {
                                 );
                               }
                             }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${tmdbActorType === type.key
-                              ? 'bg-blue-500 text-white border-blue-500'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                              }`}
+                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                              tmdbActorType === type.key
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                            }`}
                             disabled={tmdbActorLoading}
                           >
                             {type.label}
@@ -1508,10 +1570,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'search'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔍 搜索视频
                         </button>
@@ -1524,10 +1587,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'direct'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔗 直接播放
                         </button>
@@ -1590,10 +1654,11 @@ function SearchPageClient() {
                                 );
                               }
                             }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${youtubeContentType === type.key
-                              ? 'bg-red-500 text-white border-red-500'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                              }`}
+                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                              youtubeContentType === type.key
+                                ? 'bg-red-500 text-white border-red-500'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                            }`}
                             disabled={youtubeLoading}
                           >
                             {type.label}
@@ -1628,10 +1693,11 @@ function SearchPageClient() {
                                   );
                                 }
                               }}
-                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${youtubeSortOrder === sort.key
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
-                                }`}
+                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${
+                                youtubeSortOrder === sort.key
+                                  ? 'bg-blue-500 text-white border-blue-500'
+                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
+                              }`}
                               disabled={youtubeLoading}
                             >
                               {sort.icon && <span>{sort.icon}</span>}
@@ -1879,76 +1945,76 @@ function SearchPageClient() {
                     >
                       {viewMode === 'agg'
                         ? filteredAggResults.map(([mapKey, group]) => {
-                          const title = group[0]?.title || '';
-                          const poster = group[0]?.poster || '';
-                          const year = group[0]?.year || 'unknown';
-                          const { episodes, source_names, douban_id } =
-                            computeGroupStats(group);
-                          const type = episodes === 1 ? 'movie' : 'tv';
-                          if (!groupStatsRef.current.has(mapKey)) {
-                            groupStatsRef.current.set(mapKey, {
-                              episodes,
-                              source_names,
-                              douban_id,
-                            });
-                          }
-                          return (
-                            <div key={`agg-${mapKey}`} className='w-full'>
+                            const title = group[0]?.title || '';
+                            const poster = group[0]?.poster || '';
+                            const year = group[0]?.year || 'unknown';
+                            const { episodes, source_names, douban_id } =
+                              computeGroupStats(group);
+                            const type = episodes === 1 ? 'movie' : 'tv';
+                            if (!groupStatsRef.current.has(mapKey)) {
+                              groupStatsRef.current.set(mapKey, {
+                                episodes,
+                                source_names,
+                                douban_id,
+                              });
+                            }
+                            return (
+                              <div key={`agg-${mapKey}`} className='w-full'>
+                                <VideoCard
+                                  ref={getGroupRef(mapKey)}
+                                  from='search'
+                                  isAggregate={true}
+                                  title={title}
+                                  poster={poster}
+                                  year={year}
+                                  episodes={episodes}
+                                  source_names={source_names}
+                                  douban_id={douban_id}
+                                  query={
+                                    searchQuery.trim() !== title
+                                      ? searchQuery.trim()
+                                      : ''
+                                  }
+                                  type={type}
+                                />
+                              </div>
+                            );
+                          })
+                        : filteredAllResults.map((item) => (
+                            <div
+                              key={`all-${item.source}-${item.id}`}
+                              className='w-full'
+                            >
                               <VideoCard
-                                ref={getGroupRef(mapKey)}
-                                from='search'
-                                isAggregate={true}
-                                title={title}
-                                poster={poster}
-                                year={year}
-                                episodes={episodes}
-                                source_names={source_names}
-                                douban_id={douban_id}
+                                id={item.id}
+                                title={item.title}
+                                poster={item.poster}
+                                episodes={item.episodes.length}
+                                source={item.source}
+                                source_name={item.source_name}
+                                douban_id={item.douban_id}
                                 query={
-                                  searchQuery.trim() !== title
+                                  searchQuery.trim() !== item.title
                                     ? searchQuery.trim()
                                     : ''
                                 }
-                                type={type}
+                                year={item.year}
+                                from='search'
+                                type={inferTypeFromName(
+                                  item.type_name,
+                                  item.episodes.length,
+                                )}
+                                remarks={item.remarks}
                               />
                             </div>
-                          );
-                        })
-                        : filteredAllResults.map((item) => (
-                          <div
-                            key={`all-${item.source}-${item.id}`}
-                            className='w-full'
-                          >
-                            <VideoCard
-                              id={item.id}
-                              title={item.title}
-                              poster={item.poster}
-                              episodes={item.episodes.length}
-                              source={item.source}
-                              source_name={item.source_name}
-                              douban_id={item.douban_id}
-                              query={
-                                searchQuery.trim() !== item.title
-                                  ? searchQuery.trim()
-                                  : ''
-                              }
-                              year={item.year}
-                              from='search'
-                              type={inferTypeFromName(
-                                item.type_name,
-                                item.episodes.length,
-                              )}
-                              remarks={item.remarks}
-                            />
-                          </div>
-                        ))}
+                          ))}
                     </div>
                   )}
 
                   {/* Footer */}
                   {isLoading &&
-                    (filteredAggResults.length > 0 ||
-                      filteredAllResults.length > 0) ? (
+                  (filteredAggResults.length > 0 ||
+                    filteredAllResults.length > 0) ? (
                     <div className='fixed bottom-0 left-0 right-0 z-50 flex justify-center py-3 bg-white/98 dark:bg-gray-900/98 border-t border-gray-200/80 dark:border-gray-700/80'>
                       <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400'>
                         <div className='animate-spin rounded-full h-4 w-4 border-2 border-gray-300 dark:border-gray-600 border-t-green-500 dark:border-t-green-400'></div>
@@ -2068,10 +2134,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'search'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'search'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔍 搜索视频
                         </button>
@@ -2083,10 +2150,11 @@ function SearchPageClient() {
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${youtubeMode === 'direct'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                            }`}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            youtubeMode === 'direct'
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
                         >
                           🔗 直接播放
                         </button>
@@ -2151,10 +2219,11 @@ function SearchPageClient() {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-20 right-6 md:bottom-6 z-50 w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center ${showBackToTop
-          ? 'opacity-100 translate-y-0'
-          : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
+        className={`fixed bottom-20 right-6 md:bottom-6 z-50 w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center ${
+          showBackToTop
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
         aria-label='返回顶部'
       >
         <ChevronUp className='w-6 h-6' />
