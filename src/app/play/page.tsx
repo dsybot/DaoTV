@@ -5388,10 +5388,16 @@ function PlayPageClient() {
               display: none !important;
             }
             
-            /* 📱 移动端隐藏弹幕输入框 */
+            /* 📱 移动端默认隐藏弹幕输入框，仅全屏时显示 */
             @media (max-width: 768px) {
               .artplayer-plugin-danmuku .apd-emitter {
                 display: none !important;
+              }
+
+              .art-fullscreen .artplayer-plugin-danmuku .apd-emitter,
+              .art-fullscreen-web .artplayer-plugin-danmuku .apd-emitter,
+              .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-emitter {
+                display: flex !important;
               }
             }
             
@@ -6349,6 +6355,19 @@ function PlayPageClient() {
 
   return (
     <>
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-danmaku-emitter-guard .artplayer-plugin-danmuku .apd-emitter {
+            display: none !important;
+          }
+
+          .mobile-danmaku-emitter-guard .art-fullscreen .artplayer-plugin-danmuku .apd-emitter,
+          .mobile-danmaku-emitter-guard .art-fullscreen-web .artplayer-plugin-danmuku .apd-emitter,
+          .mobile-danmaku-emitter-guard .artplayer[data-fullscreen='true'] .artplayer-plugin-danmuku .apd-emitter {
+            display: flex !important;
+          }
+        }
+      `}</style>
       <PageLayout activePath='/play'>
         <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
           {/* 第一行：影片标题 */}
@@ -6403,7 +6422,7 @@ function PlayPageClient() {
                 className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-3'
                   }`}
               >
-                <div className='relative w-full h-[300px] lg:h-full'>
+                <div className='mobile-danmaku-emitter-guard relative w-full h-[300px] lg:h-full'>
                   <div
                     ref={artRef}
                     className='bg-black w-full h-full rounded-xl overflow-hidden shadow-lg'
