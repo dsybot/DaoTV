@@ -302,11 +302,18 @@ function SearchPageClient() {
     });
 
     return (
-      <button
+      <div
         key={item.key}
-        type='button'
+        role='button'
+        tabIndex={0}
         onClick={() => router.push(itemUrl)}
-        className='group w-full rounded-2xl border border-gray-200/80 bg-white/90 p-3 text-left shadow-sm transition-all hover:border-green-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/70 dark:hover:border-green-700'
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            router.push(itemUrl);
+          }
+        }}
+        className='group w-full cursor-pointer rounded-2xl border border-gray-200/80 bg-white/90 p-3 text-left shadow-sm transition-all hover:border-green-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/70 dark:hover:border-green-700'
       >
         <div className='flex items-start gap-4'>
           <div className='relative h-32 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800'>
@@ -403,7 +410,7 @@ function SearchPageClient() {
             )}
           </div>
         )}
-      </button>
+      </div>
     );
   };
 
@@ -587,13 +594,7 @@ function SearchPageClient() {
     return getDefaultAggregate() ? 'agg' : 'all';
   });
   const [resultDisplayMode, setResultDisplayMode] = useState<'card' | 'list'>(
-    () => {
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('searchResultDisplayMode');
-        if (saved === 'card' || saved === 'list') return saved;
-      }
-      return 'card';
-    },
+    'card',
   );
   const [expandedSourceTags, setExpandedSourceTags] = useState<
     Record<string, boolean>
@@ -602,6 +603,31 @@ function SearchPageClient() {
     url: string;
     alt: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const saved = localStorage.getItem('searchResultDisplayMode');
+      if (saved === 'card' || saved === 'list') {
+        setResultDisplayMode(saved);
+      }
+    } catch {
+      // ignore storage access failures
+    }
+  }, []);
+
+  const updateResultDisplayMode = (mode: 'card' | 'list') => {
+    setResultDisplayMode(mode);
+
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem('searchResultDisplayMode', mode);
+    } catch {
+      // ignore storage access failures
+    }
+  };
 
   // 保存虚拟化设置
   const toggleVirtualization = () => {
@@ -2008,13 +2034,7 @@ function SearchPageClient() {
                       <div className='flex items-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700'>
                         <button
                           type='button'
-                          onClick={() => {
-                            setResultDisplayMode('card');
-                            localStorage.setItem(
-                              'searchResultDisplayMode',
-                              'card',
-                            );
-                          }}
+                          onClick={() => updateResultDisplayMode('card')}
                           className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
                             resultDisplayMode === 'card'
                               ? 'bg-green-500 text-white'
@@ -2026,13 +2046,7 @@ function SearchPageClient() {
                         </button>
                         <button
                           type='button'
-                          onClick={() => {
-                            setResultDisplayMode('list');
-                            localStorage.setItem(
-                              'searchResultDisplayMode',
-                              'list',
-                            );
-                          }}
+                          onClick={() => updateResultDisplayMode('list')}
                           className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
                             resultDisplayMode === 'list'
                               ? 'bg-green-500 text-white'
