@@ -41,9 +41,11 @@ export async function GET(request: NextRequest) {
       isDefault: boolean;
     }> = [];
     try {
+      console.log('🎵 [API] 开始获取音轨，itemId:', itemId);
       audioStreams = await client.getAudioStreams(itemId);
+      console.log('🎵 [API] 获取到音轨数据:', audioStreams);
     } catch (error) {
-      console.warn('获取音轨失败（不影响播放）:', error);
+      console.error('🎵 [API] 获取音轨失败（不影响播放）:', error);
     }
 
     // 构建 episodes 数组（电影返回单个playUrl，电视剧返回所有剧集的playUrl）

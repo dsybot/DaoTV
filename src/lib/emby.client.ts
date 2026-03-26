@@ -590,9 +590,18 @@ export class EmbyClient {
 
     const token = this.apiKey || this.authToken;
 
+    console.log(
+      '🎵 [Client] 开始获取音轨，itemId:',
+      itemId,
+      'userId:',
+      this.userId,
+    );
+
     // 尝试从 PlaybackInfo 获取音轨信息
     try {
       const playbackInfoUrl = `${this.serverUrl}/Items/${itemId}/PlaybackInfo?UserId=${this.userId}${token ? `&api_key=${token}` : ''}`;
+
+      console.log('🎵 [Client] 请求 PlaybackInfo:', playbackInfoUrl);
 
       const response = await fetch(playbackInfoUrl, {
         method: 'POST',
@@ -605,10 +614,15 @@ export class EmbyClient {
         }),
       });
 
+      console.log('🎵 [Client] PlaybackInfo 响应状态:', response.status);
+
       if (response.ok) {
         const data: PlaybackInfoResponse = await response.json();
+        console.log('🎵 [Client] PlaybackInfo 数据:', data);
+
         const streams =
           data.MediaSources?.[0]?.MediaStreams || data.MediaStreams || [];
+        console.log('🎵 [Client] 所有流:', streams);
 
         const audioStreams = streams
           .filter((stream) => stream.Type?.toLowerCase() === 'audio')
@@ -622,34 +636,59 @@ export class EmbyClient {
           .filter((stream) => stream.index >= 0)
           .sort((a, b) => a.index - b.index);
 
+        console.log('🎵 [Client] 过滤后的音频流:', audioStreams);
+
         if (audioStreams.length > 0) {
           return audioStreams;
         }
       }
     } catch (error) {
       console.warn(
-        '从 PlaybackInfo 获取音轨失败，尝试从 Item 详情获取:',
+        '🎵 [Client] 从 PlaybackInfo 获取音轨失败，尝试从 Item 详情获取:',
         error,
       );
     }
 
-    // 回退：从 Item 详情获取
+    // 回退：从 Item 详情获取（显式请求 MediaStreams 字段）
     try {
-      const item = await this.getItem(itemId);
-      const streams = item.MediaSources?.[0]?.MediaStreams || [];
+      console.log('🎵 [Client] 尝试从 Item 详情获取音轨');
 
-      return streams
-        .filter((stream) => stream.Type === 'Audio')
+      // 直接请求 MediaStreams 字段，而不是通过 getItem
+      const itemDetailUrl = `${this.serverUrl}/Items/${itemId}?Fields=MediaStreams${token ? `&api_key=${token}` : ''}`;
+      console.log('🎵 [Client] 请求 Item 详情:', itemDetailUrl);
+
+      const response = await fetch(itemDetailUrl, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        console.error('🎵 [Client] Item 详情请求失败:', response.status);
+        return [];
+      }
+
+      const item: PlaybackInfoResponse = await response.json();
+      console.log('🎵 [Client] Item 详情响应:', item);
+
+      const streams = item.MediaStreams || [];
+      console.log('🎵 [Client] Item MediaStreams:', streams);
+
+      const audioStreams = streams
+        .filter((stream) => stream.Type?.toLowerCase() === 'audio')
         .map((stream) => ({
-          index: stream.Index,
+          index: stream.Index ?? -1,
           displayTitle: stream.DisplayTitle,
           language: stream.Language,
           codec: stream.Codec,
           isDefault: stream.IsDefault ?? false,
         }))
+        .filter((stream: AudioStream) => stream.index >= 0)
         .sort((a, b) => a.index - b.index);
+
+      console.log('🎵 [Client] 从 Item 获取的音频流:', audioStreams);
+      return audioStreams;
     } catch (error) {
-      console.error('获取音轨信息失败:', error);
+      console.error('🎵 [Client] 获取音轨信息失败:', error);
       return [];
     }
   }
