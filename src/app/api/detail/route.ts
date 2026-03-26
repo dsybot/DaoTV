@@ -208,6 +208,36 @@ export async function GET(request: NextRequest) {
           return (a.IndexNumber || 0) - (b.IndexNumber || 0);
         });
 
+        // 为每一集获取音轨并选择兼容的音轨
+        const episodeUrls = await Promise.all(
+          allEpisodes.map(async (ep) => {
+            try {
+              // 获取当前集的音轨
+              const epAudioStreams = await client.getAudioStreams(ep.Id);
+              const epCompatibleAudioIndex =
+                findCompatibleAudioTrack(epAudioStreams);
+              console.log(
+                `========== [/api/detail] 剧集 ${ep.Id} 选择的音轨索引:`,
+                epCompatibleAudioIndex,
+              );
+
+              return await client.getStreamUrl(
+                ep.Id,
+                true,
+                false,
+                epCompatibleAudioIndex,
+              );
+            } catch (error) {
+              console.error(
+                `========== [/api/detail] 获取剧集 ${ep.Id} 音轨失败:`,
+                error,
+              );
+              // 失败时不指定音轨索引
+              return await client.getStreamUrl(ep.Id);
+            }
+          }),
+        );
+
         result = {
           source: sourceCode,
           source_name: sourceName,
@@ -217,17 +247,14 @@ export async function GET(request: NextRequest) {
           year: item.ProductionYear?.toString() || '',
           douban_id: 0,
           desc: item.Overview || '',
-          episodes: await Promise.all(
-            allEpisodes.map((ep) =>
-              client.getStreamUrl(ep.Id, true, false, compatibleAudioIndex),
-            ),
-          ),
+          episodes: episodeUrls,
           episodes_titles: allEpisodes.map((ep) => {
             const seasonNum = ep.ParentIndexNumber || 1;
             const episodeNum = ep.IndexNumber || 1;
             return `S${seasonNum.toString().padStart(2, '0')}E${episodeNum.toString().padStart(2, '0')}`;
           }),
           proxyMode: false,
+          // 添加音轨信息（Series 级别的，仅供参考）
           private_audio_streams: audioStreams.map((stream) => ({
             index: stream.index,
             display_title: stream.displayTitle,
