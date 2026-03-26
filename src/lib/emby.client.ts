@@ -735,7 +735,7 @@ export class EmbyClient {
         // 使用 HLS 端点并强制音频转码为 AAC，避免 EAC3/TrueHD 兼容性问题
         url = `${this.serverUrl}/Videos/${itemId}/master.m3u8?api_key=${token}&AudioCodec=aac&AudioBitrate=320000&MaxAudioChannels=6&PlaySessionId=${playSessionId}`;
       } else {
-        url = `${this.serverUrl}/Videos/${itemId}/stream?Static=true&api_key=${token}`;
+        url = `${this.serverUrl}/Videos/${itemId}/stream?static=true&api_key=${token}`;
       }
 
       // 如果指定了音轨索引，添加到 URL
