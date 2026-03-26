@@ -724,46 +724,60 @@ export class EmbyClient {
       return proxyUrl;
     }
 
-    // 原有的直接播放逻辑
-    let url: string;
+    // 原有的直接播放逻辑 - 使用 URLSearchParams 构建查询参数
+    const query = new URLSearchParams();
 
     if (direct) {
       // 选项3: 转码mp4 - 使用 HLS 强制音频转码
       if (this.transcodeMp4) {
         // 生成唯一的 PlaySessionId
         const playSessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-        // 使用 HLS 端点并强制音频转码为 AAC，避免 EAC3/TrueHD 兼容性问题
-        url = `${this.serverUrl}/Videos/${itemId}/master.m3u8?api_key=${token}&AudioCodec=aac&AudioBitrate=320000&MaxAudioChannels=6&PlaySessionId=${playSessionId}`;
-      } else {
-        url = `${this.serverUrl}/Videos/${itemId}/stream?static=true&api_key=${token}`;
-      }
+        query.set('api_key', token || '');
+        query.set('AudioCodec', 'aac');
+        query.set('AudioBitrate', '320000');
+        query.set('MaxAudioChannels', '6');
+        query.set('PlaySessionId', playSessionId);
 
-      // 如果指定了音轨索引，添加到 URL
-      if (typeof audioStreamIndex === 'number' && audioStreamIndex >= 0) {
-        url += `&AudioStreamIndex=${audioStreamIndex}`;
-      }
-
-      // 选项2: 拼接MediaSourceId参数
-      if (this.appendMediaSourceId && !this.transcodeMp4) {
-        try {
-          const playbackInfo = await this.getPlaybackInfo(itemId);
-          if (playbackInfo.MediaSourceId) {
-            url += `&MediaSourceId=${playbackInfo.MediaSourceId}`;
-          }
-        } catch {
-          // 继续使用不带 MediaSourceId 的 URL
+        if (typeof audioStreamIndex === 'number' && audioStreamIndex >= 0) {
+          query.set('AudioStreamIndex', String(audioStreamIndex));
         }
+
+        return `${this.serverUrl}/Videos/${encodeURIComponent(itemId)}/master.m3u8?${query.toString()}`;
+      } else {
+        query.set('static', 'true');
+        if (token) {
+          query.set('api_key', token);
+        }
+
+        if (typeof audioStreamIndex === 'number' && audioStreamIndex >= 0) {
+          query.set('AudioStreamIndex', String(audioStreamIndex));
+        }
+
+        // 选项2: 拼接MediaSourceId参数
+        if (this.appendMediaSourceId) {
+          try {
+            const playbackInfo = await this.getPlaybackInfo(itemId);
+            if (playbackInfo.MediaSourceId) {
+              query.set('MediaSourceId', playbackInfo.MediaSourceId);
+            }
+          } catch {
+            // 继续使用不带 MediaSourceId 的 URL
+          }
+        }
+
+        return `${this.serverUrl}/Videos/${encodeURIComponent(itemId)}/stream?${query.toString()}`;
       }
     } else {
-      url = `${this.serverUrl}/Videos/${itemId}/master.m3u8?api_key=${token}`;
-
-      // 如果指定了音轨索引，添加到 URL
-      if (typeof audioStreamIndex === 'number' && audioStreamIndex >= 0) {
-        url += `&AudioStreamIndex=${audioStreamIndex}`;
+      if (token) {
+        query.set('api_key', token);
       }
-    }
 
-    return url;
+      if (typeof audioStreamIndex === 'number' && audioStreamIndex >= 0) {
+        query.set('AudioStreamIndex', String(audioStreamIndex));
+      }
+
+      return `${this.serverUrl}/Videos/${encodeURIComponent(itemId)}/master.m3u8?${query.toString()}`;
+    }
   }
 
   getSubtitles(
