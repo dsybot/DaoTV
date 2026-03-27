@@ -185,6 +185,47 @@ function escapeAudioTrackHtml(rawValue: string): string {
     .replaceAll("'", '&#39;');
 }
 
+function appendAudioStreamIndex(url: string, audioStreamIndex: number): string {
+  if (!url) return url;
+
+  try {
+    const base =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost';
+    const parsed = new URL(url, base);
+    parsed.searchParams.set('AudioStreamIndex', String(audioStreamIndex));
+
+    if (/^https?:\/\//i.test(url)) {
+      return parsed.toString();
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}AudioStreamIndex=${encodeURIComponent(String(audioStreamIndex))}`;
+  }
+}
+
+function parseAudioStreamIndexFromUrl(url: string): number {
+  if (!url) return -1;
+
+  try {
+    const base =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost';
+    const parsed = new URL(url, base);
+    const rawValue = parsed.searchParams.get('AudioStreamIndex');
+    if (!rawValue || !/^\d+$/.test(rawValue)) {
+      return -1;
+    }
+    return Number(rawValue);
+  } catch {
+    return -1;
+  }
+}
+
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
   interface HTMLVideoElement {
@@ -2219,71 +2260,88 @@ function PlayPageClient() {
   };
 
   // 重置音轨状态
-  const resetAudioTrackState = () => {
+  const resetAudioTrackState = useCallback(() => {
     setAudioTracks([]);
     setCurrentAudioTrack(-1);
     setIsAudioTrackSwitching(false);
-  };
+  }, []);
 
-  // 从 Emby 获取音轨信息
-  const loadEmbyAudioTracks = async (itemId: string, embyKey?: string) => {
-    try {
-      const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
-      const response = await fetch(
-        `/api/emby/audio-tracks?id=${itemId}${embyKeyParam}`,
-      );
+  // 从 detail 中加载音轨信息（useEffect 监听）
+  useEffect(() => {
+    const isEmbySource =
+      detail?.source === 'emby' || detail?.source?.startsWith('emby_');
 
-      if (!response.ok) {
-        throw new Error('获取音轨失败');
-      }
-
-      const data = await response.json();
-      const streams = data.audioStreams || [];
-
-      if (streams.length < 2) {
-        resetAudioTrackState();
-        return;
-      }
-
-      const mappedTracks = streams.map((stream: any, index: number) => ({
-        index: stream.index,
-        displayTitle: stream.displayTitle,
-        language: stream.language,
-        codec: stream.codec,
-        isDefault: stream.isDefault,
-        name: resolveAudioTrackName(
-          stream.displayTitle,
-          stream.language,
-          index,
-        ),
-      }));
-
-      setAudioTracks(mappedTracks);
-
-      // 设置默认音轨
-      const defaultTrack =
-        mappedTracks.find((track) => track.isDefault) || mappedTracks[0];
-      setCurrentAudioTrack(defaultTrack.index);
-
-      // 尝试应用用户偏好的语言
-      const preferredLang = loadPreferredAudioLang();
-      if (preferredLang) {
-        const preferredTrack = mappedTracks.find(
-          (track) => normalizeAudioLang(track.language) === preferredLang,
-        );
-        if (preferredTrack && preferredTrack.index !== defaultTrack.index) {
-          setCurrentAudioTrack(preferredTrack.index);
-          return preferredTrack.index;
-        }
-      }
-
-      return defaultTrack.index;
-    } catch (error) {
-      console.error('获取 Emby 音轨失败:', error);
+    if (!isEmbySource || !detail) {
       resetAudioTrackState();
-      return undefined;
+      return;
     }
-  };
+
+    const rawTracks = (detail as any).private_audio_streams || [];
+    if (rawTracks.length < 2) {
+      resetAudioTrackState();
+      return;
+    }
+
+    const mappedTracks = rawTracks
+      .map((stream: any, index: number) => {
+        const parsedIndex = Number(stream.index);
+        if (!Number.isFinite(parsedIndex) || parsedIndex < 0) {
+          return null;
+        }
+
+        return {
+          index: Math.floor(parsedIndex),
+          name: resolveAudioTrackName(
+            stream.display_title,
+            stream.language,
+            index,
+          ),
+          language: stream.language,
+          codec: stream.codec,
+          isDefault: Boolean(stream.is_default),
+        };
+      })
+      .filter((track: any): track is (typeof audioTracks)[0] => Boolean(track))
+      .sort((a, b) => a.index - b.index);
+
+    if (mappedTracks.length < 2) {
+      resetAudioTrackState();
+      return;
+    }
+
+    setAudioTracks(mappedTracks);
+
+    const activeUrl =
+      videoUrl ||
+      detail.episodes?.[currentEpisodeIndex] ||
+      detail.episodes?.[0] ||
+      '';
+    let selectedTrackIndex = parseAudioStreamIndexFromUrl(activeUrl);
+    if (selectedTrackIndex < 0) {
+      selectedTrackIndex =
+        mappedTracks.find((track) => track.isDefault)?.index ??
+        mappedTracks[0].index;
+    }
+    setCurrentAudioTrack(selectedTrackIndex);
+
+    // 应用用户偏好
+    const preferredLang = loadPreferredAudioLang();
+    if (!preferredLang) return;
+
+    const preferredTrack = mappedTracks.find(
+      (track) => normalizeAudioLang(track.language) === preferredLang,
+    );
+
+    if (!preferredTrack || preferredTrack.index === selectedTrackIndex) {
+      return;
+    }
+
+    const targetUrl = appendAudioStreamIndex(activeUrl, preferredTrack.index);
+    setCurrentAudioTrack(preferredTrack.index);
+    if (targetUrl && targetUrl !== activeUrl) {
+      setVideoUrl(targetUrl);
+    }
+  }, [currentEpisodeIndex, detail, resetAudioTrackState, videoUrl]);
 
   // 处理音轨切换
   const handleAudioTrackSelect = async (track: (typeof audioTracks)[0]) => {
@@ -2302,7 +2360,7 @@ function PlayPageClient() {
       return;
     }
 
-    // Emby 音轨切换（需要重新加载流）
+    // Emby 音轨切换（通过 URL 参数）
     if (
       !detail ||
       !detail.source ||
@@ -2319,27 +2377,11 @@ function PlayPageClient() {
     savePreferredAudioLang(track.language);
     setIsAudioTrackSwitching(true);
 
-    try {
-      const { embyKey } = parseSourceForApi(detail.source);
-      const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
-
-      // 通过 API 获取带音轨参数的 URL
-      const response = await fetch(
-        `/api/emby/detail?id=${detail.id}${embyKeyParam}&audioStreamIndex=${track.index}`,
-      );
-
-      if (!response.ok) {
-        throw new Error('获取音轨URL失败');
-      }
-
-      const data = await response.json();
-      const newUrl = data[0]?.episodes?.[currentEpisodeIndexRef.current] || '';
-
-      if (newUrl && newUrl !== videoUrl) {
-        setVideoUrl(newUrl);
-      }
-    } catch (error) {
-      console.error('切换音轨失败:', error);
+    // 直接修改 URL 参数，不需要重新请求 API
+    const nextUrl = appendAudioStreamIndex(videoUrl, track.index);
+    if (nextUrl && nextUrl !== videoUrl) {
+      setVideoUrl(nextUrl);
+    } else {
       setIsAudioTrackSwitching(false);
     }
   };
@@ -2452,23 +2494,6 @@ function PlayPageClient() {
     } else {
       // 普通视频格式
       const newUrl = episodeData || '';
-
-      // 如果是 Emby 源，加载音轨信息
-      if (
-        detailData.source &&
-        (detailData.source === 'emby' || detailData.source.startsWith('emby_'))
-      ) {
-        const { embyKey } = parseSourceForApi(detailData.source);
-        const itemId = detailData.id;
-
-        if (itemId) {
-          await loadEmbyAudioTracks(itemId, embyKey);
-          // 注意：音轨偏好已在 loadEmbyAudioTracks 中处理，URL 会在初始加载时就包含正确的音轨参数
-        }
-      } else {
-        // 非 Emby 源，重置音轨状态
-        resetAudioTrackState();
-      }
 
       if (newUrl !== videoUrl) {
         setVideoUrl(newUrl);

@@ -11,10 +11,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const itemId = searchParams.get('id');
   const embyKey = searchParams.get('embyKey') || undefined;
-  const audioStreamIndexParam = searchParams.get('audioStreamIndex');
-  const audioStreamIndex = audioStreamIndexParam
-    ? parseInt(audioStreamIndexParam, 10)
-    : undefined;
 
   if (!itemId) {
     return NextResponse.json({ error: '缺少媒体ID' }, { status: 400 });
@@ -36,14 +32,26 @@ export async function GET(request: NextRequest) {
     // 获取媒体详情
     const item = await client.getItem(itemId);
 
+    // 获取音轨信息（不影响主流程）
+    let audioStreams: Array<{
+      index: number;
+      displayTitle?: string;
+      language?: string;
+      codec?: string;
+      isDefault: boolean;
+    }> = [];
+    try {
+      audioStreams = await client.getAudioStreams(itemId);
+    } catch (error) {
+      console.warn('获取音轨失败（不影响播放）:', error);
+    }
+
     // 构建 episodes 数组（电影返回单个playUrl，电视剧返回所有剧集的playUrl）
     let episodesUrls: string[] = [];
 
     if (item.Type === 'Movie') {
       // 电影：episodes数组包含一个播放URL
-      episodesUrls = [
-        await client.getStreamUrl(item.Id, true, false, audioStreamIndex),
-      ];
+      episodesUrls = [await client.getStreamUrl(item.Id)];
     } else if (item.Type === 'Series') {
       // 电视剧：获取所有剧集的播放URL
       const allEpisodes = await client.getEpisodes(itemId);
@@ -56,9 +64,7 @@ export async function GET(request: NextRequest) {
       });
 
       episodesUrls = await Promise.all(
-        sortedEpisodes.map((ep) =>
-          client.getStreamUrl(ep.Id, true, false, audioStreamIndex),
-        ),
+        sortedEpisodes.map((ep) => client.getStreamUrl(ep.Id)),
       );
     }
 
@@ -76,6 +82,13 @@ export async function GET(request: NextRequest) {
         rating: item.CommunityRating || 0,
         overview: item.Overview || '',
         episodes: episodesUrls,
+        private_audio_streams: audioStreams.map((stream) => ({
+          index: stream.index,
+          display_title: stream.displayTitle,
+          language: stream.language,
+          codec: stream.codec,
+          is_default: stream.isDefault,
+        })),
       },
     ]);
   } catch (error) {
