@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-console */
+/* eslint-disable no-console */
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -32,7 +32,7 @@ async function getEmbyClient(embyKey?: string, username?: string) {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string; filename: string }> }
+  { params }: { params: Promise<{ token: string; filename: string }> },
 ) {
   try {
     const { token: requestToken, filename } = await params;
@@ -54,6 +54,13 @@ export async function GET(
 
     const itemId = searchParams.get('itemId');
     const embyKey = searchParams.get('embyKey') || undefined;
+    const rawAudioStreamIndex = searchParams.get('audioStreamIndex');
+    const audioStreamIndex =
+      rawAudioStreamIndex !== null &&
+      Number.isInteger(Number(rawAudioStreamIndex)) &&
+      Number(rawAudioStreamIndex) >= 0
+        ? Number(rawAudioStreamIndex)
+        : undefined;
 
     if (!itemId) {
       return NextResponse.json({ error: '缺少 itemId 参数' }, { status: 400 });
@@ -63,7 +70,12 @@ export async function GET(
     let client = await getEmbyClient(embyKey, authInfo?.username);
 
     // 构建 Emby 原始播放链接（强制获取直接URL，避免代理循环）
-    let embyStreamUrl = await client.getStreamUrl(itemId, true, true);
+    let embyStreamUrl = await client.getStreamUrl(
+      itemId,
+      true,
+      true,
+      audioStreamIndex,
+    );
 
     // 构建请求头，转发 Range 请求
     const requestHeaders: HeadersInit = {};
@@ -83,7 +95,12 @@ export async function GET(
       const { embyManager } = await import('@/lib/emby-manager');
       embyManager.clearCache();
       client = await getEmbyClient(embyKey, authInfo?.username);
-      embyStreamUrl = await client.getStreamUrl(itemId, true, true);
+      embyStreamUrl = await client.getStreamUrl(
+        itemId,
+        true,
+        true,
+        audioStreamIndex,
+      );
       videoResponse = await fetch(embyStreamUrl, {
         headers: requestHeaders,
       });
@@ -95,14 +112,12 @@ export async function GET(
         status: videoResponse.status,
         statusText: videoResponse.statusText,
       });
-      return NextResponse.json(
-        { error: '获取视频流失败' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: '获取视频流失败' }, { status: 500 });
     }
 
     // 获取 Content-Type
-    const contentType = videoResponse.headers.get('content-type') || 'video/mp4';
+    const contentType =
+      videoResponse.headers.get('content-type') || 'video/mp4';
 
     // 构建响应头
     const headers = new Headers();
@@ -136,7 +151,7 @@ export async function GET(
     console.error('[Emby Play] 错误:', error);
     return NextResponse.json(
       { error: '播放失败', details: (error as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
