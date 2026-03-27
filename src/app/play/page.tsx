@@ -2228,16 +2228,24 @@ function PlayPageClient() {
   // 从 Emby 获取音轨信息
   const loadEmbyAudioTracks = async (itemId: string, embyKey?: string) => {
     try {
-      const { embyManager } = await import('@/lib/emby-manager');
-      const client = await embyManager.getClient(embyKey);
-      const streams = await client.getAudioStreams(itemId);
+      const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
+      const response = await fetch(
+        `/api/emby/audio-tracks?id=${itemId}${embyKeyParam}`,
+      );
+
+      if (!response.ok) {
+        throw new Error('获取音轨失败');
+      }
+
+      const data = await response.json();
+      const streams = data.audioStreams || [];
 
       if (streams.length < 2) {
         resetAudioTrackState();
         return;
       }
 
-      const mappedTracks = streams.map((stream, index) => ({
+      const mappedTracks = streams.map((stream: any, index: number) => ({
         index: stream.index,
         displayTitle: stream.displayTitle,
         language: stream.language,
@@ -2313,14 +2321,19 @@ function PlayPageClient() {
 
     try {
       const { embyKey } = parseSourceForApi(detail.source);
-      const { embyManager } = await import('@/lib/emby-manager');
-      const client = await embyManager.getClient(embyKey);
-      const newUrl = await client.getStreamUrl(
-        detail.id,
-        true,
-        false,
-        track.index,
+      const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
+
+      // 通过 API 获取带音轨参数的 URL
+      const response = await fetch(
+        `/api/emby/detail?id=${detail.id}${embyKeyParam}&audioStreamIndex=${track.index}`,
       );
+
+      if (!response.ok) {
+        throw new Error('获取音轨URL失败');
+      }
+
+      const data = await response.json();
+      const newUrl = data[0]?.episodes?.[currentEpisodeIndexRef.current] || '';
 
       if (newUrl && newUrl !== videoUrl) {
         setVideoUrl(newUrl);
@@ -2438,7 +2451,7 @@ function PlayPageClient() {
       }
     } else {
       // 普通视频格式
-      let newUrl = episodeData || '';
+      const newUrl = episodeData || '';
 
       // 如果是 Emby 源，加载音轨信息
       if (
@@ -2449,29 +2462,8 @@ function PlayPageClient() {
         const itemId = detailData.id;
 
         if (itemId) {
-          const preferredAudioIndex = await loadEmbyAudioTracks(
-            itemId,
-            embyKey,
-          );
-
-          // 如果有偏好音轨且不是默认音轨，需要在 URL 中指定
-          if (
-            typeof preferredAudioIndex === 'number' &&
-            preferredAudioIndex >= 0
-          ) {
-            try {
-              const { embyManager } = await import('@/lib/emby-manager');
-              const client = await embyManager.getClient(embyKey);
-              newUrl = await client.getStreamUrl(
-                itemId,
-                true,
-                false,
-                preferredAudioIndex,
-              );
-            } catch (error) {
-              console.error('生成带音轨的 URL 失败:', error);
-            }
-          }
+          await loadEmbyAudioTracks(itemId, embyKey);
+          // 注意：音轨偏好已在 loadEmbyAudioTracks 中处理，URL 会在初始加载时就包含正确的音轨参数
         }
       } else {
         // 非 Emby 源，重置音轨状态

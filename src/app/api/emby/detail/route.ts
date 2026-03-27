@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { embyManager } from '@/lib/emby-manager';
 import { getAuthInfoFromCookie } from '@/lib/auth';
+import { embyManager } from '@/lib/emby-manager';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const itemId = searchParams.get('id');
   const embyKey = searchParams.get('embyKey') || undefined;
+  const audioStreamIndexParam = searchParams.get('audioStreamIndex');
+  const audioStreamIndex = audioStreamIndexParam
+    ? parseInt(audioStreamIndexParam, 10)
+    : undefined;
 
   if (!itemId) {
     return NextResponse.json({ error: '缺少媒体ID' }, { status: 400 });
@@ -21,10 +25,7 @@ export async function GET(request: NextRequest) {
     const authCookie = getAuthInfoFromCookie(request);
 
     if (!authCookie?.username) {
-      return NextResponse.json(
-        { error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
     const username = authCookie.username;
@@ -40,7 +41,9 @@ export async function GET(request: NextRequest) {
 
     if (item.Type === 'Movie') {
       // 电影：episodes数组包含一个播放URL
-      episodesUrls = [await client.getStreamUrl(item.Id)];
+      episodesUrls = [
+        await client.getStreamUrl(item.Id, true, false, audioStreamIndex),
+      ];
     } else if (item.Type === 'Series') {
       // 电视剧：获取所有剧集的播放URL
       const allEpisodes = await client.getEpisodes(itemId);
@@ -53,29 +56,33 @@ export async function GET(request: NextRequest) {
       });
 
       episodesUrls = await Promise.all(
-        sortedEpisodes.map(ep => client.getStreamUrl(ep.Id))
+        sortedEpisodes.map((ep) =>
+          client.getStreamUrl(ep.Id, true, false, audioStreamIndex),
+        ),
       );
     }
 
     // 返回 SearchResult 格式
     const sourceKey = embyKey ? `emby_${embyKey}` : 'emby';
 
-    return NextResponse.json([{
-      id: item.Id,
-      title: item.Name,
-      source: sourceKey,
-      source_name: 'Emby',
-      poster: client.getImageUrl(item.Id, 'Primary'),
-      year: item.ProductionYear?.toString() || '',
-      rating: item.CommunityRating || 0,
-      overview: item.Overview || '',
-      episodes: episodesUrls,
-    }]);
+    return NextResponse.json([
+      {
+        id: item.Id,
+        title: item.Name,
+        source: sourceKey,
+        source_name: 'Emby',
+        poster: client.getImageUrl(item.Id, 'Primary'),
+        year: item.ProductionYear?.toString() || '',
+        rating: item.CommunityRating || 0,
+        overview: item.Overview || '',
+        episodes: episodesUrls,
+      },
+    ]);
   } catch (error) {
     console.error('获取 Emby 详情失败:', error);
     return NextResponse.json(
       { error: '获取 Emby 详情失败: ' + (error as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
