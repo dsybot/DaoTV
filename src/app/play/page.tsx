@@ -2271,6 +2271,11 @@ function PlayPageClient() {
     const isEmbySource =
       detail?.source === 'emby' || detail?.source?.startsWith('emby_');
 
+    if (!isEmbySource || !detail) {
+      resetAudioTrackState();
+      return;
+    }
+
     console.log('🎵 音轨加载检查:', {
       isEmbySource,
       hasDetail: !!detail,
@@ -2278,11 +2283,6 @@ function PlayPageClient() {
       audioStreams: detail?.private_audio_streams,
       currentEpisodeIndex,
     });
-
-    if (!isEmbySource || !detail) {
-      resetAudioTrackState();
-      return;
-    }
 
     // 处理音轨数据的辅助函数
     const processAudioTracks = (rawTracks: any[]) => {
@@ -4826,6 +4826,12 @@ function PlayPageClient() {
         !artRef.current
       ) {
         return;
+      }
+
+      // 🔥 在初始化新播放器之前，先清理旧的播放器实例
+      if (artPlayerRef.current) {
+        console.log('[Play] 检测到旧播放器实例，先清理');
+        await cleanupPlayer();
       }
 
       // 确保选集索引有效
