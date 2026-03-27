@@ -2276,6 +2276,7 @@ function PlayPageClient() {
       hasDetail: !!detail,
       source: detail?.source,
       audioStreams: detail?.private_audio_streams,
+      currentEpisodeIndex,
     });
 
     if (!isEmbySource || !detail) {
@@ -2283,8 +2284,144 @@ function PlayPageClient() {
       return;
     }
 
+    // 处理音轨数据的辅助函数
+    const processAudioTracks = (rawTracks: any[]) => {
+      const mappedTracks = rawTracks
+        .map((stream: any, index: number) => {
+          const parsedIndex = Number(stream.index);
+          if (!Number.isFinite(parsedIndex) || parsedIndex < 0) {
+            return null;
+          }
+
+          return {
+            index: Math.floor(parsedIndex),
+            name: resolveAudioTrackName(
+              stream.display_title,
+              stream.language,
+              index,
+            ),
+            language: stream.language,
+            codec: stream.codec,
+            isDefault: Boolean(stream.is_default),
+          };
+        })
+        .filter((track: any): track is (typeof audioTracks)[0] =>
+          Boolean(track),
+        )
+        .sort((a, b) => a.index - b.index);
+
+      console.log('🎵 映射后的音轨:', mappedTracks);
+
+      if (mappedTracks.length < 2) {
+        resetAudioTrackState();
+        return;
+      }
+
+      setAudioTracks(mappedTracks);
+
+      const activeUrl =
+        videoUrl ||
+        detail.episodes?.[currentEpisodeIndex] ||
+        detail.episodes?.[0] ||
+        '';
+      let selectedTrackIndex = parseAudioStreamIndexFromUrl(activeUrl);
+      if (selectedTrackIndex < 0) {
+        selectedTrackIndex =
+          mappedTracks.find((track) => track.isDefault)?.index ??
+          mappedTracks[0].index;
+      }
+      setCurrentAudioTrack(selectedTrackIndex);
+
+      console.log('🎵 当前选中音轨:', selectedTrackIndex);
+
+      // 应用用户偏好
+      const preferredLang = loadPreferredAudioLang();
+      if (!preferredLang) return;
+
+      const preferredTrack = mappedTracks.find(
+        (track) => normalizeAudioLang(track.language) === preferredLang,
+      );
+
+      if (!preferredTrack || preferredTrack.index === selectedTrackIndex) {
+        return;
+      }
+
+      const targetUrl = appendAudioStreamIndex(activeUrl, preferredTrack.index);
+      setCurrentAudioTrack(preferredTrack.index);
+      if (targetUrl && targetUrl !== activeUrl) {
+        console.log('🎵 应用偏好音轨，切换URL:', targetUrl);
+        setVideoUrl(targetUrl);
+      }
+    };
+
+    // 对于剧集，需要动态获取当前集的音轨
+    const isSeriesWithEpisodes = detail.episodes && detail.episodes.length > 1;
+
+    if (isSeriesWithEpisodes) {
+      // 剧集：从当前播放的 episode URL 中提取 itemId，然后动态获取音轨
+      const currentEpisodeUrl = detail.episodes[currentEpisodeIndex];
+      if (!currentEpisodeUrl) {
+        resetAudioTrackState();
+        return;
+      }
+
+      // 从 URL 中提取 itemId (格式: /Videos/{itemId}/stream?...)
+      const itemIdMatch = currentEpisodeUrl.match(/\/Videos\/([^\/]+)\//);
+      if (!itemIdMatch) {
+        console.warn('🎵 无法从 episode URL 提取 itemId:', currentEpisodeUrl);
+        resetAudioTrackState();
+        return;
+      }
+
+      const episodeItemId = itemIdMatch[1];
+      const embyKey = detail.source.startsWith('emby_')
+        ? detail.source.substring(5)
+        : undefined;
+
+      console.log('🎵 剧集模式：动态获取音轨', {
+        episodeItemId,
+        embyKey,
+        currentEpisodeIndex,
+      });
+
+      // 动态获取当前集的音轨
+      const fetchEpisodeAudioStreams = async () => {
+        try {
+          const embyKeyParam = embyKey ? `&embyKey=${embyKey}` : '';
+          const response = await fetch(
+            `/api/emby/audio-streams?itemId=${episodeItemId}${embyKeyParam}`,
+          );
+
+          if (!response.ok) {
+            console.error('🎵 获取剧集音轨失败:', response.status);
+            resetAudioTrackState();
+            return;
+          }
+
+          const data = await response.json();
+          const rawTracks = data.audioStreams || [];
+          console.log('🎵 剧集音轨数据:', rawTracks);
+
+          if (rawTracks.length < 2) {
+            console.log('🎵 音轨数量不足2条，不显示音轨按钮');
+            resetAudioTrackState();
+            return;
+          }
+
+          processAudioTracks(rawTracks);
+        } catch (error) {
+          console.error('🎵 获取剧集音轨异常:', error);
+          resetAudioTrackState();
+        }
+      };
+
+      fetchEpisodeAudioStreams();
+      return;
+    }
+
+    // 电影：直接使用 detail 中的音轨数据
     const rawTracks = detail.private_audio_streams || [];
-    console.log('🎵 原始音轨数据:', rawTracks);
+    console.log('🎵 电影音轨数据:', rawTracks);
 
     if (rawTracks.length < 2) {
       console.log('🎵 音轨数量不足2条，不显示音轨按钮');
@@ -2292,70 +2429,7 @@ function PlayPageClient() {
       return;
     }
 
-    const mappedTracks = rawTracks
-      .map((stream: any, index: number) => {
-        const parsedIndex = Number(stream.index);
-        if (!Number.isFinite(parsedIndex) || parsedIndex < 0) {
-          return null;
-        }
-
-        return {
-          index: Math.floor(parsedIndex),
-          name: resolveAudioTrackName(
-            stream.display_title,
-            stream.language,
-            index,
-          ),
-          language: stream.language,
-          codec: stream.codec,
-          isDefault: Boolean(stream.is_default),
-        };
-      })
-      .filter((track: any): track is (typeof audioTracks)[0] => Boolean(track))
-      .sort((a, b) => a.index - b.index);
-
-    console.log('🎵 映射后的音轨:', mappedTracks);
-
-    if (mappedTracks.length < 2) {
-      resetAudioTrackState();
-      return;
-    }
-
-    setAudioTracks(mappedTracks);
-
-    const activeUrl =
-      videoUrl ||
-      detail.episodes?.[currentEpisodeIndex] ||
-      detail.episodes?.[0] ||
-      '';
-    let selectedTrackIndex = parseAudioStreamIndexFromUrl(activeUrl);
-    if (selectedTrackIndex < 0) {
-      selectedTrackIndex =
-        mappedTracks.find((track) => track.isDefault)?.index ??
-        mappedTracks[0].index;
-    }
-    setCurrentAudioTrack(selectedTrackIndex);
-
-    console.log('🎵 当前选中音轨:', selectedTrackIndex);
-
-    // 应用用户偏好
-    const preferredLang = loadPreferredAudioLang();
-    if (!preferredLang) return;
-
-    const preferredTrack = mappedTracks.find(
-      (track) => normalizeAudioLang(track.language) === preferredLang,
-    );
-
-    if (!preferredTrack || preferredTrack.index === selectedTrackIndex) {
-      return;
-    }
-
-    const targetUrl = appendAudioStreamIndex(activeUrl, preferredTrack.index);
-    setCurrentAudioTrack(preferredTrack.index);
-    if (targetUrl && targetUrl !== activeUrl) {
-      console.log('🎵 应用偏好音轨，切换URL:', targetUrl);
-      setVideoUrl(targetUrl);
-    }
+    processAudioTracks(rawTracks);
   }, [currentEpisodeIndex, detail, resetAudioTrackState, videoUrl]);
 
   // 处理音轨切换
@@ -6774,6 +6848,21 @@ function PlayPageClient() {
       cleanupPlayer();
     };
   }, []);
+
+  // 当 URL 参数变化时清理旧的播放器实例
+  useEffect(() => {
+    const currentSource = searchParams.get('source');
+    const currentId = searchParams.get('id');
+    const currentKey = `${currentSource}_${currentId}`;
+
+    // 如果视频源或ID变化，清理旧播放器
+    return () => {
+      if (artPlayerRef.current) {
+        console.log('[Play] URL参数变化，清理旧播放器');
+        cleanupPlayer();
+      }
+    };
+  }, [searchParams.get('source'), searchParams.get('id')]);
 
   // 返回顶部功能相关
   useEffect(() => {
