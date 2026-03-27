@@ -2271,13 +2271,23 @@ function PlayPageClient() {
     const isEmbySource =
       detail?.source === 'emby' || detail?.source?.startsWith('emby_');
 
+    console.log('🎵 音轨加载检查:', {
+      isEmbySource,
+      hasDetail: !!detail,
+      source: detail?.source,
+      audioStreams: detail?.private_audio_streams,
+    });
+
     if (!isEmbySource || !detail) {
       resetAudioTrackState();
       return;
     }
 
-    const rawTracks = (detail as any).private_audio_streams || [];
+    const rawTracks = detail.private_audio_streams || [];
+    console.log('🎵 原始音轨数据:', rawTracks);
+
     if (rawTracks.length < 2) {
+      console.log('🎵 音轨数量不足2条，不显示音轨按钮');
       resetAudioTrackState();
       return;
     }
@@ -2304,6 +2314,8 @@ function PlayPageClient() {
       .filter((track: any): track is (typeof audioTracks)[0] => Boolean(track))
       .sort((a, b) => a.index - b.index);
 
+    console.log('🎵 映射后的音轨:', mappedTracks);
+
     if (mappedTracks.length < 2) {
       resetAudioTrackState();
       return;
@@ -2324,6 +2336,8 @@ function PlayPageClient() {
     }
     setCurrentAudioTrack(selectedTrackIndex);
 
+    console.log('🎵 当前选中音轨:', selectedTrackIndex);
+
     // 应用用户偏好
     const preferredLang = loadPreferredAudioLang();
     if (!preferredLang) return;
@@ -2339,6 +2353,7 @@ function PlayPageClient() {
     const targetUrl = appendAudioStreamIndex(activeUrl, preferredTrack.index);
     setCurrentAudioTrack(preferredTrack.index);
     if (targetUrl && targetUrl !== activeUrl) {
+      console.log('🎵 应用偏好音轨，切换URL:', targetUrl);
       setVideoUrl(targetUrl);
     }
   }, [currentEpisodeIndex, detail, resetAudioTrackState, videoUrl]);
