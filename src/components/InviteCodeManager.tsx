@@ -1,7 +1,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 'use client';
 
-import { Ticket, Plus, Trash2, Copy, Check, RefreshCw, X } from 'lucide-react';
+import { Ticket, Plus, Trash2, Copy, Check, RefreshCw, X, Ban, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -14,6 +14,8 @@ interface InviteCode {
   remainingUses: number;
   expiresAt: string;
   expired: boolean;
+  disabled: boolean;
+  status: 'active' | 'used_up' | 'expired' | 'disabled';
   users: string[];
 }
 
@@ -109,6 +111,29 @@ export default function InviteCodeManager() {
     }
   };
 
+  // 禁用/启用邀请码
+  const handleToggle = async (code: string, disabled: boolean) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin/invites?code=${code}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ disabled }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await fetchCodes();
+      } else {
+        alert(data.error || '操作失败');
+      }
+    } catch (error) {
+      console.error('切换邀请码状态失败:', error);
+      alert('操作失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 复制邀请码
   const handleCopy = async (code: string) => {
     try {
@@ -142,7 +167,7 @@ export default function InviteCodeManager() {
             邀请码管理
           </h3>
           <span className='text-sm text-gray-500 dark:text-gray-400'>
-            ({codes.length} 个活跃邀请码)
+            (共 {codes.length} 个邀请码)
           </span>
         </div>
         <div className='flex gap-2'>
@@ -244,12 +269,16 @@ export default function InviteCodeManager() {
                     {formatDate(code.expiresAt)}
                   </td>
                   <td className='px-4 py-3'>
-                    {code.expired ? (
+                    {code.status === 'disabled' ? (
+                      <span className='px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'>
+                        已禁用
+                      </span>
+                    ) : code.status === 'expired' ? (
                       <span className='px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'>
                         已过期
                       </span>
-                    ) : code.remainingUses === 0 ? (
-                      <span className='px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'>
+                    ) : code.status === 'used_up' ? (
+                      <span className='px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200'>
                         已用完
                       </span>
                     ) : (
@@ -259,13 +288,25 @@ export default function InviteCodeManager() {
                     )}
                   </td>
                   <td className='px-4 py-3 text-right'>
-                    <button
-                      onClick={() => handleDelete(code.code)}
-                      className={buttonStyles.dangerSmall}
-                      disabled={loading}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className='flex items-center justify-end gap-2'>
+                      {code.status !== 'expired' && code.status !== 'used_up' && (
+                        <button
+                          onClick={() => handleToggle(code.code, !code.disabled)}
+                          className={code.disabled ? buttonStyles.success.replace('px-3 py-1.5', 'px-2 py-1').replace('text-sm', 'text-xs') : buttonStyles.secondary.replace('px-3 py-1.5', 'px-2 py-1').replace('text-sm', 'text-xs')}
+                          disabled={loading}
+                          title={code.disabled ? '启用' : '禁用'}
+                        >
+                          {code.disabled ? <CheckCircle size={14} /> : <Ban size={14} />}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(code.code)}
+                        className={buttonStyles.dangerSmall}
+                        disabled={loading}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

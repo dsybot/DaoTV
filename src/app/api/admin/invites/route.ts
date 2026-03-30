@@ -5,22 +5,23 @@ import { ensureAdmin } from '@/lib/admin-auth';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import {
   createInviteCode,
-  getAllActiveInviteCodes,
+  getAllInviteCodes,
   removeInviteCode,
+  toggleInviteCode,
 } from '@/lib/invite-code';
 
 export const runtime = 'nodejs';
 
 /**
  * GET /api/admin/invites
- * 获取所有活跃邀请码列表
+ * 获取所有邀请码列表（包括已用完、已过期、已禁用的）
  */
 export async function GET(req: NextRequest) {
   try {
     // 验证管理员权限
     await ensureAdmin(req);
 
-    const codes = await getAllActiveInviteCodes();
+    const codes = await getAllInviteCodes();
 
     return NextResponse.json({
       ok: true,
@@ -115,5 +116,47 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
     return NextResponse.json({ error: '删除邀请码失败' }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH /api/admin/invites?code=XXX
+ * 禁用/启用邀请码
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    // 验证管理员权限
+    await ensureAdmin(req);
+
+    const { searchParams } = new URL(req.url);
+    const code = searchParams.get('code');
+
+    if (!code) {
+      return NextResponse.json({ error: '缺少邀请码参数' }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { disabled } = body;
+
+    if (typeof disabled !== 'boolean') {
+      return NextResponse.json({ error: '缺少 disabled 参数' }, { status: 400 });
+    }
+
+    const success = await toggleInviteCode(code, disabled);
+
+    if (!success) {
+      return NextResponse.json({ error: '邀请码不存在' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: disabled ? '邀请码已禁用' : '邀请码已启用',
+    });
+  } catch (error) {
+    console.error('[Admin Invites] 切换邀请码状态失败:', error);
+    if ((error as Error).message === 'UNAUTHORIZED') {
+      return NextResponse.json({ error: '未授权' }, { status: 401 });
+    }
+    return NextResponse.json({ error: '切换邀请码状态失败' }, { status: 500 });
   }
 }

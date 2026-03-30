@@ -28,6 +28,7 @@ export interface InviteCodeData {
   maxUses: number;
   currentUses: number;
   expiresAt: number;
+  disabled?: boolean;
   users?: string[];
 }
 
@@ -40,6 +41,8 @@ export interface InviteCodeStats {
   remainingUses: number;
   expiresAt: string;
   expired: boolean;
+  disabled: boolean;
+  status: 'active' | 'used_up' | 'expired' | 'disabled';
   users: string[];
 }
 
@@ -88,13 +91,11 @@ export async function createInviteCode(
     maxUses,
     currentUses: 0,
     expiresAt,
+    disabled: false,
   };
 
-  // 存储邀请码详情
+  // 存储邀请码详情（不设置过期时间，保留历史数据）
   await client.hSet(`invite:${code}`, inviteData as any);
-
-  // 设置过期时间
-  await client.expire(`invite:${code}`, expiresIn);
 
   // 添加到活跃邀请码集合
   await client.sAdd('invites:active', code);
@@ -129,11 +130,14 @@ export async function validateInviteCode(
     return { valid: false, error: '邀请码数据异常' };
   }
 
+  // 检查是否被禁用
+  if (inviteData.disabled) {
+    return { valid: false, error: '邀请码已被禁用' };
+  }
+
   // 检查是否过期
   const now = Date.now();
   if (now > Number(inviteData.expiresAt)) {
-    // 清理过期邀请码
-    await removeInviteCode(code);
     return { valid: false, error: '邀请码已过期' };
   }
 
@@ -206,6 +210,19 @@ export async function getInviteCodeStats(code: string): Promise<InviteCodeStats 
   const currentUses = Number(inviteData.currentUses);
   const maxUses = Number(inviteData.maxUses);
   const createdAt = Number(inviteData.createdAt);
+  const disabled = (inviteData.disabled as any) === 'true' || (inviteData.disabled as any) === true;
+
+  // 计算状态
+  let status: 'active' | 'used_up' | 'expired' | 'disabled';
+  if (disabled) {
+    status = 'disabled';
+  } else if (expired) {
+    status = 'expired';
+  } else if (currentUses >= maxUses) {
+    status = 'used_up';
+  } else {
+    status = 'active';
+  }
 
   return {
     code: inviteData.code,
@@ -216,18 +233,31 @@ export async function getInviteCodeStats(code: string): Promise<InviteCodeStats 
     remainingUses: maxUses - currentUses,
     expiresAt: new Date(expiresAt).toISOString(),
     expired,
+    disabled,
+    status,
     users,
   };
 }
 
 /**
- * 获取所有活跃邀请码
+ * 获取所有邀请码（包括已用完、已过期、已禁用的）
  */
-export async function getAllActiveInviteCodes(): Promise<InviteCodeStats[]> {
+export async function getAllInviteCodes(): Promise<InviteCodeStats[]> {
   const client = getRedisClient();
-  const codes = await client.sMembers('invites:active');
-  const stats: InviteCodeStats[] = [];
 
+  // 获取所有邀请码的 key
+  const keys = await client.keys('invite:*');
+  const codes: string[] = [];
+
+  for (const key of keys) {
+    // 过滤掉 invite:CODE:users 这种 key，只保留 invite:CODE
+    if (!key.includes(':users')) {
+      const code = key.replace('invite:', '');
+      codes.push(code);
+    }
+  }
+
+  const stats: InviteCodeStats[] = [];
   for (const code of codes) {
     const stat = await getInviteCodeStats(code);
     if (stat) {
@@ -236,6 +266,41 @@ export async function getAllActiveInviteCodes(): Promise<InviteCodeStats[]> {
   }
 
   return stats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+/**
+ * 禁用/启用邀请码
+ * @param code 邀请码
+ * @param disabled 是否禁用
+ */
+export async function toggleInviteCode(code: string, disabled: boolean): Promise<boolean> {
+  const client = getRedisClient();
+
+  const inviteData = (await client.hGetAll(`invite:${code}`)) as unknown as InviteCodeData;
+  if (!inviteData || !inviteData.code) {
+    return false;
+  }
+
+  // 更新禁用状态
+  await client.hSet(`invite:${code}`, 'disabled', disabled ? 'true' : 'false');
+
+  // 如果禁用，从活跃集合中移除；如果启用且未用完未过期，添加到活跃集合
+  if (disabled) {
+    await client.sRem('invites:active', code);
+    console.log(`[InviteCode] 禁用邀请码: ${code}`);
+  } else {
+    const now = Date.now();
+    const expiresAt = Number(inviteData.expiresAt);
+    const currentUses = Number(inviteData.currentUses);
+    const maxUses = Number(inviteData.maxUses);
+
+    if (now <= expiresAt && currentUses < maxUses) {
+      await client.sAdd('invites:active', code);
+      console.log(`[InviteCode] 启用邀请码: ${code}`);
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -286,4 +351,47 @@ export async function getAdminInviteCodes(adminUsername: string): Promise<Invite
   }
 
   return stats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+/**
+ * 清理超过30天的已用完/已过期邀请码
+ */
+export async function cleanupOldInviteCodes(): Promise<number> {
+  const client = getRedisClient();
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+  // 获取所有邀请码
+  const keys = await client.keys('invite:*');
+  const codes: string[] = [];
+
+  for (const key of keys) {
+    if (!key.includes(':users')) {
+      const code = key.replace('invite:', '');
+      codes.push(code);
+    }
+  }
+
+  let deletedCount = 0;
+
+  for (const code of codes) {
+    const inviteData = (await client.hGetAll(`invite:${code}`)) as unknown as InviteCodeData;
+    if (!inviteData || !inviteData.code) {
+      continue;
+    }
+
+    const createdAt = Number(inviteData.createdAt);
+    const currentUses = Number(inviteData.currentUses);
+    const maxUses = Number(inviteData.maxUses);
+    const expiresAt = Number(inviteData.expiresAt);
+    const now = Date.now();
+
+    // 只删除超过30天且已用完或已过期的邀请码
+    if (createdAt < thirtyDaysAgo && (currentUses >= maxUses || now > expiresAt)) {
+      await removeInviteCode(code);
+      deletedCount++;
+    }
+  }
+
+  console.log(`[InviteCode] 清理了 ${deletedCount} 个超过30天的旧邀请码`);
+  return deletedCount;
 }
