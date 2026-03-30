@@ -84,18 +84,18 @@ export async function createInviteCode(
   const expiresAt = now + expiresIn * 1000;
   const client = getRedisClient();
 
-  const inviteData: InviteCodeData = {
+  const inviteData = {
     code,
     createdBy,
-    createdAt: now,
-    maxUses,
-    currentUses: 0,
-    expiresAt,
-    disabled: false,
+    createdAt: now.toString(),
+    maxUses: maxUses.toString(),
+    currentUses: '0',
+    expiresAt: expiresAt.toString(),
+    disabled: 'false',
   };
 
   // 存储邀请码详情（不设置过期时间，保留历史数据）
-  await client.hSet(`invite:${code}`, inviteData as any);
+  await client.hSet(`invite:${code}`, inviteData);
 
   // 添加到活跃邀请码集合
   await client.sAdd('invites:active', code);
