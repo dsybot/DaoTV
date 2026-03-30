@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     LoginBgDesktop: config.SiteConfig.LoginBgDesktop || '',
     LoginBgMobile: config.SiteConfig.LoginBgMobile || '',
     DownloadEnabled: config.DownloadConfig?.enabled ?? true,
+    requireInviteCode: config.UserConfig?.RequireInviteCode ?? false,
   };
 
   // 添加 Telegram 登录配置（仅公开必要信息）

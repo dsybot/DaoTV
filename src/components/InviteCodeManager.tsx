@@ -1,8 +1,9 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 'use client';
 
-import { Ticket, Plus, Trash2, Copy, Check, RefreshCw } from 'lucide-react';
+import { Ticket, Plus, Trash2, Copy, Check, RefreshCw, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface InviteCode {
   code: string;
@@ -274,13 +275,28 @@ export default function InviteCodeManager() {
       </div>
 
       {/* 生成邀请码模态框 */}
-      {showCreateModal && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-          <div className='bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md'>
-            <h3 className='text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100'>
-              生成新邀请码
-            </h3>
-            <div className='space-y-4'>
+      {showCreateModal && createPortal(
+        <div
+          className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4'
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className='bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md transform transition-all'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'>
+              <h3 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
+                生成新邀请码
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className='p-6 space-y-5'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                   最大使用次数
@@ -291,9 +307,13 @@ export default function InviteCodeManager() {
                   max='1000'
                   value={maxUses}
                   onChange={(e) => setMaxUses(Number(e.target.value))}
-                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                  className='w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                 />
+                <p className='mt-1.5 text-xs text-gray-500 dark:text-gray-400'>
+                  每个邀请码可以被使用的次数（1-1000）
+                </p>
               </div>
+
               <div>
                 <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                   有效期（天）
@@ -304,28 +324,33 @@ export default function InviteCodeManager() {
                   max='365'
                   value={expiresIn}
                   onChange={(e) => setExpiresIn(Number(e.target.value))}
-                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                  className='w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                 />
+                <p className='mt-1.5 text-xs text-gray-500 dark:text-gray-400'>
+                  邀请码的有效期限（1-365天）
+                </p>
               </div>
             </div>
-            <div className='flex gap-2 mt-6'>
+
+            <div className='flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700'>
               <button
                 onClick={handleCreate}
                 disabled={loading}
-                className={buttonStyles.success + ' flex-1'}
+                className={buttonStyles.success + ' flex-1 disabled:opacity-50 disabled:cursor-not-allowed'}
               >
-                {loading ? '生成中...' : '生成'}
+                {loading ? '生成中...' : '生成邀请码'}
               </button>
               <button
                 onClick={() => setShowCreateModal(false)}
                 disabled={loading}
-                className={buttonStyles.secondary}
+                className={buttonStyles.secondary + ' disabled:opacity-50 disabled:cursor-not-allowed'}
               >
                 取消
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
