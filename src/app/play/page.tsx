@@ -1181,6 +1181,7 @@ function PlayPageClient() {
   const sourceSwitchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSwitchRef = useRef<any>(null); // 保存待处理的切换请求
   const switchPromiseRef = useRef<Promise<void> | null>(null); // 当前切换的Promise
+  const shouldRestoreFullscreenWebRef = useRef(false);
 
   const artPlayerRef = useRef<any>(null);
   const artRef = useRef<HTMLDivElement | null>(null);
@@ -4828,24 +4829,6 @@ function PlayPageClient() {
         return;
       }
 
-      // 🔥 在初始化新播放器之前，先清理旧的播放器实例
-      if (artPlayerRef.current) {
-        console.log('[Play] 检测到旧播放器实例，先清理');
-
-        // 🔥 关键修复：如果处于网页全屏状态，先退出网页全屏
-        // 原因：ArtPlayer设置了FULLSCREEN_WEB_IN_BODY=true时，网页全屏会把播放器移到body下
-        // 如果不先退出全屏就destroy，播放器容器位置会错乱，导致新播放器只有声音没有画面
-        // 参考ArtPlayer源码：packages/artplayer/src/player/fullscreenWebMix.js
-        if (artPlayerRef.current.fullscreenWeb) {
-          console.log('[Play] 检测到网页全屏状态，先退出网页全屏');
-          artPlayerRef.current.fullscreenWeb = false;
-          // 等待DOM恢复到原容器位置（fullscreenWeb setter会调用append($container, $player)）
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-
-        await cleanupPlayer();
-      }
-
       // 确保选集索引有效
       if (
         !detail ||
@@ -4993,18 +4976,42 @@ function PlayPageClient() {
 
           // 🚀 移除原有的 setTimeout 弹幕加载逻辑，交由 useEffect 统一优化处理
 
-          console.log('使用switch方法成功切换视频');
+          console.log('✅ 使用switch方法成功切换视频（保持全屏状态）');
           return;
         } catch (error) {
-          console.warn('Switch方法失败，将重建播放器:', error);
+          console.warn('⚠️ Switch方法失败，将重建播放器:', error);
           // 重置集数切换标识
           isEpisodeChangingRef.current = false;
-          // 如果switch失败，清理播放器并重新创建
+
+          const wasFullscreenWeb = artPlayerRef.current?.fullscreenWeb || false;
+          if (wasFullscreenWeb && artPlayerRef.current) {
+            console.log('[Play] Switch失败，退出网页全屏后重建（稍后恢复）');
+            artPlayerRef.current.fullscreenWeb = false;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+
           await cleanupPlayer();
+
+          if (wasFullscreenWeb) {
+            shouldRestoreFullscreenWebRef.current = true;
+          }
         }
       }
       if (artPlayerRef.current) {
+        console.log('[Play] 检测到旧播放器实例，先清理');
+
+        const wasFullscreenWeb = artPlayerRef.current.fullscreenWeb;
+        if (wasFullscreenWeb) {
+          console.log('[Play] 检测到网页全屏状态，先退出网页全屏（稍后恢复）');
+          artPlayerRef.current.fullscreenWeb = false;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
         await cleanupPlayer();
+
+        if (wasFullscreenWeb) {
+          shouldRestoreFullscreenWebRef.current = true;
+        }
       }
 
       // 确保 DOM 容器完全清空，避免多实例冲突
@@ -5753,6 +5760,16 @@ function PlayPageClient() {
         artPlayerRef.current.on('ready', async () => {
           setError(null);
           setPlayerReady(true); // 标记播放器已就绪，启用观影室同步
+
+          if (shouldRestoreFullscreenWebRef.current) {
+            console.log('[Play] 恢复网页全屏状态');
+            setTimeout(() => {
+              if (artPlayerRef.current) {
+                artPlayerRef.current.fullscreenWeb = true;
+              }
+              shouldRestoreFullscreenWebRef.current = false;
+            }, 200);
+          }
 
           // 使用ArtPlayer layers API添加分辨率徽章（带渐变和发光效果）
           const video = artPlayerRef.current.video as HTMLVideoElement;
