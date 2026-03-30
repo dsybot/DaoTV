@@ -4831,6 +4831,18 @@ function PlayPageClient() {
       // 🔥 在初始化新播放器之前，先清理旧的播放器实例
       if (artPlayerRef.current) {
         console.log('[Play] 检测到旧播放器实例，先清理');
+
+        // 🔥 关键修复：如果处于网页全屏状态，先退出网页全屏
+        // 原因：ArtPlayer设置了FULLSCREEN_WEB_IN_BODY=true时，网页全屏会把播放器移到body下
+        // 如果不先退出全屏就destroy，播放器容器位置会错乱，导致新播放器只有声音没有画面
+        // 参考ArtPlayer源码：packages/artplayer/src/player/fullscreenWebMix.js
+        if (artPlayerRef.current.fullscreenWeb) {
+          console.log('[Play] 检测到网页全屏状态，先退出网页全屏');
+          artPlayerRef.current.fullscreenWeb = false;
+          // 等待DOM恢复到原容器位置（fullscreenWeb setter会调用append($container, $player)）
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
         await cleanupPlayer();
       }
 
