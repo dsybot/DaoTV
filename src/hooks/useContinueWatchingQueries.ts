@@ -1,26 +1,21 @@
 /* eslint-disable no-console */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+
 import { getAllPlayRecords } from '@/lib/db.client';
 import {
+  checkWatchingUpdates,
   getDetailedWatchingUpdates,
   subscribeToWatchingUpdatesEvent,
-  checkWatchingUpdates,
   type WatchingUpdate,
 } from '@/lib/watching-updates';
 
 /**
- * Fetch all play records sorted by save_time
- * Based on TanStack Query useQuery with event-driven invalidation
- *
- * 参考源码模式：
- * - useQuery with queryFn for data fetching
- * - External event subscriptions trigger invalidateQueries
- * - staleTime controls when data is considered fresh
+ * Query options for continue watching records
  */
-export function useContinueWatchingQuery() {
-  const query = useQuery({
+const continueWatchingOptions = () =>
+  queryOptions({
     queryKey: ['playRecords', 'continueWatching'],
     queryFn: async () => {
       const allRecords = await getAllPlayRecords();
@@ -35,21 +30,19 @@ export function useContinueWatchingQuery() {
     gcTime: 10 * 60 * 1000,
   });
 
-  return query;
+/**
+ * Fetch all play records sorted by save_time
+ * Based on TanStack Query useQuery with event-driven invalidation
+ */
+export function useContinueWatchingQuery() {
+  return useQuery(continueWatchingOptions());
 }
 
 /**
- * Fetch watching updates (new episodes detection)
- * Based on TanStack Query useQuery with enabled option
- *
- * 参考源码模式：
- * - enabled option controls when query runs (only when play records exist)
- * - Event subscriptions trigger cache invalidation
+ * Query options for watching updates
  */
-export function useWatchingUpdatesQuery(hasPlayRecords: boolean) {
-  const queryClient = useQueryClient();
-
-  const query = useQuery<WatchingUpdate | null>({
+const watchingUpdatesOptions = () =>
+  queryOptions<WatchingUpdate | null>({
     queryKey: ['watchingUpdates'],
     queryFn: async () => {
       // First try from cache
@@ -64,9 +57,20 @@ export function useWatchingUpdatesQuery(hasPlayRecords: boolean) {
 
       return updates;
     },
-    enabled: hasPlayRecords, // Only fetch when play records exist
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000,
+  });
+
+/**
+ * Fetch watching updates (new episodes detection)
+ * Based on TanStack Query useQuery with enabled option
+ */
+export function useWatchingUpdatesQuery(hasPlayRecords: boolean) {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    ...watchingUpdatesOptions(),
+    enabled: hasPlayRecords, // Only fetch when play records exist
   });
 
   // Subscribe to watching updates events

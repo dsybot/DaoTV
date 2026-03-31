@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 
 'use client';
 
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import {
   Cat,
   ChevronDown,
@@ -20,14 +21,13 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
+  startTransition,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
-  startTransition,
-  useMemo,
 } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 import { FastLink } from './FastLink';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
@@ -35,6 +35,31 @@ import { GlassmorphismEffect } from './GlassmorphismEffect';
 interface ModernNavProps {
   activePath?: string;
 }
+
+const userEmbyConfigOptions = () =>
+  queryOptions({
+    queryKey: ['user', 'emby-config'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/emby-config');
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.config;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+const publicSourcesOptions = () =>
+  queryOptions({
+    queryKey: ['emby', 'public-sources'],
+    queryFn: async () => {
+      const res = await fetch('/api/emby/public-sources');
+      if (!res.ok) return { sources: [] };
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
 
 const ModernNav = ({ activePath }: ModernNavProps) => {
   const pathname = usePathname();
@@ -82,9 +107,6 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
   const ITEM_WIDTH = 76; // px
   // 更多按钮宽度
   const MORE_BUTTON_WIDTH = 76;
-  // 导航栏内边距
-  const NAV_PADDING = 32;
-
   // 使用 useMemo 优化 navItems，避免每次渲染都创建新数组
   const baseNavItems = useMemo(
     () => [
@@ -104,29 +126,10 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
   const [enableWebLive, setEnableWebLive] = useState(false);
 
   // 检查用户是否配置了 Emby
-  const { data: userEmbyConfig } = useQuery({
-    queryKey: ['user', 'emby-config'],
-    queryFn: async () => {
-      const res = await fetch('/api/user/emby-config');
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.config;
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const { data: userEmbyConfig } = useQuery(userEmbyConfigOptions());
 
   // 检查管理员是否设置了公共源
-  const { data: publicSourcesData } = useQuery({
-    queryKey: ['emby', 'public-sources'],
-    queryFn: async () => {
-      const res = await fetch('/api/emby/public-sources');
-      if (!res.ok) return { sources: [] };
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const { data: publicSourcesData } = useQuery(publicSourcesOptions());
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;

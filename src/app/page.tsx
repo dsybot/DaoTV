@@ -1,59 +1,54 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, react-hooks/set-state-in-effect, no-console, unused-imports/no-unused-vars */
 
 'use client';
 
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import {
+  Calendar,
   ChevronRight,
   Film,
-  Tv,
-  Calendar,
-  Sparkles,
   Play,
+  Sparkles,
   Trash2,
+  Tv,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
   Suspense,
   useEffect,
-  useState,
-  useRef,
   useMemo,
   useReducer,
+  useRef,
+  useState,
   useTransition,
 } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
-import {
-  BangumiCalendarData,
-  GetBangumiCalendarData,
-} from '@/lib/bangumi.client';
-import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
+import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
+// 客户端收藏 API
+import { getAllFavorites, getAllPlayRecords } from '@/lib/db.client';
+import { getDoubanDetails } from '@/lib/douban.client';
 import {
   cleanExpiredCache,
   clearRecommendsCache,
 } from '@/lib/shortdrama-cache';
-import { ShortDramaItem, ReleaseCalendarItem } from '@/lib/types';
-// 客户端收藏 API
-import { getAllFavorites, getAllPlayRecords } from '@/lib/db.client';
+import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
+import { DoubanItem } from '@/lib/types';
 // 🚀 TanStack Query Mutations
 import { useClearFavoritesMutation } from '@/hooks/useFavoritesMutations';
 import { useHomePageQueries } from '@/hooks/useHomePageQueries';
-import { getDoubanDetails } from '@/lib/douban.client';
-import { DoubanItem } from '@/lib/types';
-import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ContinueWatching from '@/components/ContinueWatching';
 import HeroBanner from '@/components/HeroBanner';
 import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
 import ShortDramaCard from '@/components/ShortDramaCard';
-import SkeletonCard from '@/components/SkeletonCard';
 import { useSite } from '@/components/SiteProvider';
+import SkeletonCard from '@/components/SkeletonCard';
 import { TelegramWelcomeModal } from '@/components/TelegramWelcomeModal';
 import VideoCard from '@/components/VideoCard';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 // 🎯 优化：合并状态管理 - 使用 useReducer 减少重渲染
 interface HomeState {
@@ -130,6 +125,22 @@ const homeReducer = (state: HomeState, action: HomeAction): HomeState => {
       return state;
   }
 };
+
+const allFavoritesOptions = () =>
+  queryOptions({
+    queryKey: ['favorites'],
+    queryFn: () => getAllFavorites(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+const allPlayRecordsOptions = () =>
+  queryOptions({
+    queryKey: ['playRecords'],
+    queryFn: () => getAllPlayRecords(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
 function HomeClient() {
   // 🚀 TanStack Query - 首页数据查询（替代 GlobalCache）
@@ -256,6 +267,11 @@ function HomeClient() {
     return date;
   }, []); // 空依赖，只在组件挂载时计算一次
 
+  const [showClearFavoritesDialog, setShowClearFavoritesDialog] =
+    useState(false);
+  const [requireClearConfirmation, setRequireClearConfirmation] =
+    useState(false);
+
   // 合并初始化逻辑 - 优化性能，减少重渲染
   useEffect(() => {
     // 获取用户名
@@ -309,20 +325,10 @@ function HomeClient() {
   }, []);
 
   // 🚀 TanStack Query - 使用 useQuery 获取收藏数据（自动缓存，跨页面持久化）
-  const { data: allFavorites = {} } = useQuery({
-    queryKey: ['favorites'],
-    queryFn: () => getAllFavorites(),
-    staleTime: 5 * 60 * 1000, // 5分钟内数据保持新鲜
-    gcTime: 10 * 60 * 1000, // 10分钟后垃圾回收
-  });
+  const { data: allFavorites = {} } = useQuery(allFavoritesOptions());
 
   // 🚀 TanStack Query - 使用 useQuery 获取播放记录（自动缓存，跨页面持久化）
-  const { data: allPlayRecords = {} } = useQuery({
-    queryKey: ['playRecords'],
-    queryFn: () => getAllPlayRecords(),
-    staleTime: 5 * 60 * 1000, // 5分钟内数据保持新鲜
-    gcTime: 10 * 60 * 1000, // 10分钟后垃圾回收
-  });
+  const { data: allPlayRecords = {} } = useQuery(allPlayRecordsOptions());
 
   // 收藏夹数据
   type FavoriteItem = {
@@ -381,10 +387,6 @@ function HomeClient() {
   const [upcomingFilter, setUpcomingFilter] = useState<'all' | 'movie' | 'tv'>(
     'all',
   );
-  const [showClearFavoritesDialog, setShowClearFavoritesDialog] =
-    useState(false);
-  const [requireClearConfirmation, setRequireClearConfirmation] =
-    useState(false);
 
   // 🔄 优化：缓存收藏夹统计信息计算
   const favoriteStats = useMemo(() => {

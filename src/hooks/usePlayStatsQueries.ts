@@ -1,22 +1,21 @@
 /* eslint-disable no-console */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import type { PlayStatsResult } from '@/lib/types';
+import type { ReleaseCalendarItem } from '@/lib/types';
 import {
+  checkWatchingUpdates,
   getCachedWatchingUpdates,
   getDetailedWatchingUpdates,
-  checkWatchingUpdates,
-  forceClearWatchingUpdatesCache,
   type WatchingUpdate,
 } from '@/lib/watching-updates';
-import type { ReleaseCalendarItem } from '@/lib/types';
 
 /**
- * Fetch admin play stats
- * Based on TanStack Query useQuery with enabled option
+ * Query options for admin play stats
  */
-export function useAdminStatsQuery(enabled: boolean) {
-  return useQuery<PlayStatsResult>({
+const adminStatsOptions = () =>
+  queryOptions<PlayStatsResult>({
     queryKey: ['playStats', 'admin'],
     queryFn: async () => {
       console.log('开始获取管理员统计数据...');
@@ -35,19 +34,27 @@ export function useAdminStatsQuery(enabled: boolean) {
       console.log('管理员统计数据获取成功');
       return data;
     },
-    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000,
     retry: 1,
   });
+
+/**
+ * Fetch admin play stats
+ * Based on TanStack Query useQuery with enabled option
+ */
+export function useAdminStatsQuery(enabled: boolean) {
+  return useQuery({
+    ...adminStatsOptions(),
+    enabled,
+  });
 }
 
 /**
- * Fetch user personal stats
- * Based on TanStack Query useQuery with enabled option
+ * Query options for user personal stats
  */
-export function useUserStatsQuery(enabled: boolean) {
-  return useQuery({
+const userStatsOptions = () =>
+  queryOptions({
     queryKey: ['playStats', 'user'],
     queryFn: async () => {
       console.log('开始获取用户个人统计数据...');
@@ -66,19 +73,27 @@ export function useUserStatsQuery(enabled: boolean) {
       console.log('用户个人统计数据获取成功');
       return data;
     },
-    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000,
     retry: 1,
   });
+
+/**
+ * Fetch user personal stats
+ * Based on TanStack Query useQuery with enabled option
+ */
+export function useUserStatsQuery(enabled: boolean) {
+  return useQuery({
+    ...userStatsOptions(),
+    enabled,
+  });
 }
 
 /**
- * Fetch watching updates for play-stats page
- * Based on TanStack Query useQuery with enabled option
+ * Query options for watching updates
  */
-export function usePlayStatsWatchingUpdatesQuery(enabled: boolean) {
-  return useQuery<WatchingUpdate | null>({
+const playStatsWatchingUpdatesOptions = () =>
+  queryOptions<WatchingUpdate | null>({
     queryKey: ['watchingUpdates', 'playStats'],
     queryFn: async () => {
       const cached = getCachedWatchingUpdates();
@@ -88,18 +103,26 @@ export function usePlayStatsWatchingUpdatesQuery(enabled: boolean) {
       await checkWatchingUpdates();
       return getDetailedWatchingUpdates();
     },
-    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000,
+  });
+
+/**
+ * Fetch watching updates for play-stats page
+ * Based on TanStack Query useQuery with enabled option
+ */
+export function usePlayStatsWatchingUpdatesQuery(enabled: boolean) {
+  return useQuery({
+    ...playStatsWatchingUpdatesOptions(),
+    enabled,
   });
 }
 
 /**
- * Fetch upcoming releases for play-stats page
- * Based on TanStack Query useQuery with enabled option
+ * Query options for upcoming releases
  */
-export function useUpcomingReleasesQuery(enabled: boolean) {
-  return useQuery<ReleaseCalendarItem[]>({
+const upcomingReleasesOptions = () =>
+  queryOptions<ReleaseCalendarItem[]>({
     queryKey: ['upcomingReleases'],
     queryFn: async () => {
       const today = new Date();
@@ -107,7 +130,7 @@ export function useUpcomingReleasesQuery(enabled: boolean) {
       twoWeeks.setDate(today.getDate() + 14);
 
       const response = await fetch(
-        `/api/release-calendar?dateFrom=${today.toISOString().split('T')[0]}&dateTo=${twoWeeks.toISOString().split('T')[0]}`
+        `/api/release-calendar?dateFrom=${today.toISOString().split('T')[0]}&dateTo=${twoWeeks.toISOString().split('T')[0]}`,
       );
 
       if (response.ok) {
@@ -120,9 +143,18 @@ export function useUpcomingReleasesQuery(enabled: boolean) {
       console.error('获取即将上映内容失败:', response.status);
       return [];
     },
-    enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000,
+  });
+
+/**
+ * Fetch upcoming releases for play-stats page
+ * Based on TanStack Query useQuery with enabled option
+ */
+export function useUpcomingReleasesQuery(enabled: boolean) {
+  return useQuery({
+    ...upcomingReleasesOptions(),
+    enabled,
   });
 }
 
@@ -144,7 +176,9 @@ export function useInvalidatePlayStats() {
 
     // Invalidate all play-stats related queries
     await queryClient.invalidateQueries({ queryKey: ['playStats'] });
-    await queryClient.invalidateQueries({ queryKey: ['watchingUpdates', 'playStats'] });
+    await queryClient.invalidateQueries({
+      queryKey: ['watchingUpdates', 'playStats'],
+    });
     await queryClient.invalidateQueries({ queryKey: ['upcomingReleases'] });
   };
 }
