@@ -178,6 +178,7 @@ export default function TVBoxConfigPage() {
   const [customJarUrl, setCustomJarUrl] = useState('');
   const [customJarTestResult, setCustomJarTestResult] = useState<any>(null);
   const [customJarTestLoading, setCustomJarTestLoading] = useState(false);
+  const [hasCustomJarConfig, setHasCustomJarConfig] = useState(false); // 是否有管理员配置的自定义 JAR
 
   // Tab状态
   const [activeTab, setActiveTab] = useState<'basic' | 'smart-health' | 'jar-fix' | 'deep-diagnostic'>('basic');
@@ -204,7 +205,24 @@ export default function TVBoxConfigPage() {
 
   useEffect(() => {
     fetchSecurityConfig();
+    fetchCustomJarConfig(); // 获取自定义 JAR 配置
   }, [fetchSecurityConfig]);
+
+  // 获取自定义 JAR 配置
+  const fetchCustomJarConfig = async () => {
+    try {
+      const response = await fetch('/api/tvbox/custom-jar');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.enabled && data.jarUrl) {
+          setCustomJarUrl(data.jarUrl);
+          setHasCustomJarConfig(true);
+        }
+      }
+    } catch (error) {
+      console.error('获取自定义 JAR 配置失败:', error);
+    }
+  };
 
   const getConfigUrl = useCallback(() => {
     if (typeof window === 'undefined') return '';
@@ -1663,25 +1681,39 @@ export default function TVBoxConfigPage() {
                     <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <h3 className="font-semibold text-purple-900 dark:text-purple-300">🔧 自定义 JAR 代理测试</h3>
                   </div>
-                  <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
-                    测试自定义 JAR URL 通过本地代理的可用性（避免国内直连 GitHub 失败）
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      value={customJarUrl}
-                      onChange={(e) => setCustomJarUrl(e.target.value)}
-                      placeholder="输入 JAR URL，例如：https://raw.githubusercontent.com/..."
-                      className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-                    <button
-                      onClick={handleTestCustomJar}
-                      disabled={customJarTestLoading}
-                      className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-                    >
-                      {customJarTestLoading ? '测试中...' : '测试代理'}
-                    </button>
-                  </div>
+
+                  {hasCustomJarConfig ? (
+                    <>
+                      <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded">
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                          ✅ 管理员已配置自定义 JAR URL
+                        </p>
+                        <div className="p-2 bg-white dark:bg-gray-800 rounded border border-blue-300 dark:border-blue-600">
+                          <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                            {customJarUrl}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                        测试此自定义 JAR 通过本地代理的可用性
+                      </p>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleTestCustomJar}
+                          disabled={customJarTestLoading}
+                          className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                        >
+                          {customJarTestLoading ? '测试中...' : '测试代理'}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        ⚠️ 未配置自定义 JAR URL，使用默认源。如需配置，请前往管理后台 → TVBox 安全配置
+                      </p>
+                    </div>
+                  )}
 
                   {/* 自定义 JAR 测试结果 */}
                   {customJarTestResult && (

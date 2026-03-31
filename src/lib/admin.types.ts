@@ -242,6 +242,7 @@ export interface AdminConfig {
       proxyPlay?: boolean;               // 视频播放代理开关
     }>;
   };
+  CustomSpiderJar?: string;              // 自定义 Spider JAR URL（全局配置）
 }
 
 export interface AdminConfigResult {
