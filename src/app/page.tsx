@@ -262,8 +262,14 @@ function HomeClient() {
 
   // 🔄 优化：缓存今天的日期（用于上映日期计算）
   const today = useMemo(() => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
+    const dateStr = new Date().toLocaleDateString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const [year, month, day] = dateStr.split('/');
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
     return date;
   }, []); // 空依赖，只在组件挂载时计算一次
 
@@ -486,11 +492,20 @@ function HomeClient() {
 
         // 发送数据到Worker处理
         if (workerRef.current) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+          const todayStr = new Date()
+            .toLocaleDateString('zh-CN', {
+              timeZone: 'Asia/Shanghai',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            })
+            .split('/')
+            .reverse()
+            .join('-');
+
           workerRef.current.postMessage({
             releases,
-            today: today.toISOString().split('T')[0],
+            today: todayStr,
           });
         } else {
           // Fallback: Worker不可用时的处理

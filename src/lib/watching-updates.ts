@@ -220,7 +220,16 @@ export async function checkWatchingUpdates(
     console.log('🎬 开始检查收藏中的新上映内容...');
     try {
       const favorites = await getAllFavorites();
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date()
+        .toLocaleDateString('zh-CN', {
+          timeZone: 'Asia/Shanghai',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })
+        .split('/')
+        .reverse()
+        .join('-');
 
       const newReleases = Object.entries(favorites)
         .filter(([, fav]) => {
@@ -235,6 +244,22 @@ export async function checkWatchingUpdates(
         })
         .map(([key, fav]) => {
           const [sourceName, videoId] = key.split('+');
+          let remarksText = '已上映';
+
+          if (fav.releaseDate) {
+            const releaseDate = new Date(fav.releaseDate);
+            const todayDate = new Date(today);
+            const daysDiff = Math.floor(
+              (todayDate.getTime() - releaseDate.getTime()) /
+                (1000 * 60 * 60 * 24),
+            );
+
+            if (daysDiff === 0) {
+              remarksText = '今日上映';
+            } else if (daysDiff > 0) {
+              remarksText = `已上映${daysDiff}天`;
+            }
+          }
 
           return {
             title: fav.title,
@@ -251,7 +276,7 @@ export async function checkWatchingUpdates(
             newEpisodes: 0,
             remainingEpisodes: 0,
             latestEpisodes: fav.total_episodes || 0,
-            remarks: fav.remarks || '已上映',
+            remarks: remarksText,
             releaseDate: fav.releaseDate,
           };
         });
