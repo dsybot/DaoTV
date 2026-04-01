@@ -1,4 +1,4 @@
-/* eslint-disable no-console,@typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, simple-import-sort/imports */
 
 'use client';
 
@@ -6,7 +6,6 @@ import {
   BarChart3,
   Bell,
   Calendar,
-  Check,
   Download,
   Heart,
   KeyRound,
@@ -25,7 +24,7 @@ import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { CURRENT_VERSION } from '@/lib/version';
-import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
+import { UpdateStatus } from '@/lib/version_check';
 import {
   getCachedWatchingUpdates,
   getDetailedWatchingUpdates,
@@ -33,12 +32,7 @@ import {
   checkWatchingUpdates,
   type WatchingUpdate,
 } from '@/lib/watching-updates';
-import {
-  getAllPlayRecords,
-  forceRefreshPlayRecordsCache,
-  type PlayRecord,
-} from '@/lib/db.client';
-import type { Favorite } from '@/lib/types';
+import { type PlayRecord } from '@/lib/db.client';
 
 import { useDownload } from '@/contexts/DownloadContext';
 
@@ -70,7 +64,7 @@ export const UserMenu: React.FC = () => {
   const [isContinueWatchingOpen, setIsContinueWatchingOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [authInfo, setAuthInfo] = useState<AuthInfo | null>(null);
-  const [storageType, setStorageType] = useState<string>(() => {
+  const [storageType] = useState<string>(() => {
     // 🔧 优化：直接从 RUNTIME_CONFIG 读取初始值，避免默认值导致的多次渲染
     if (typeof window !== 'undefined') {
       return (window as any).RUNTIME_CONFIG?.STORAGE_TYPE || 'localstorage';
@@ -82,6 +76,9 @@ export const UserMenu: React.FC = () => {
     null,
   );
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(false);
+  const getActualUpdateCount = (updates: WatchingUpdate | null) =>
+    (updates?.updatedCount || 0) + (updates?.newReleasesCount || 0);
+
   // 🚀 TanStack Query - 观影室配置
   const { data: showWatchRoom = false } = useWatchRoomConfigQuery();
   // 🚀 TanStack Query - 下载功能配置
@@ -235,8 +232,8 @@ export const UserMenu: React.FC = () => {
         console.log('getDetailedWatchingUpdates 返回:', updates);
         setWatchingUpdates(updates);
 
-        // 检测是否有新更新（只检查新剧集更新，不包括继续观看）
-        if (updates && (updates.updatedCount || 0) > 0) {
+        // 检测是否有新更新（包括新剧集更新和新上映）
+        if (getActualUpdateCount(updates) > 0) {
           const lastViewed = parseInt(
             localStorage.getItem('watchingUpdatesLastViewed') || '0',
           );
@@ -336,7 +333,7 @@ export const UserMenu: React.FC = () => {
         setWatchingUpdates(updates);
 
         // 重新计算未读状态
-        if (updates && (updates.updatedCount || 0) > 0) {
+        if (getActualUpdateCount(updates) > 0) {
           const lastViewed = parseInt(
             localStorage.getItem('watchingUpdatesLastViewed') || '0',
           );
@@ -533,12 +530,11 @@ export const UserMenu: React.FC = () => {
   const showWatchingUpdates =
     authInfo?.username && storageType !== 'localstorage';
 
-  // 检查是否有实际更新（用于显示红点）- 只检查新剧集更新
-  const hasActualUpdates =
-    watchingUpdates && (watchingUpdates.updatedCount || 0) > 0;
+  // 检查是否有实际更新（用于显示红点）- 包括新剧集更新和新上映
+  const hasActualUpdates = getActualUpdateCount(watchingUpdates) > 0;
 
-  // 计算更新数量（只统计新剧集更新）
-  const totalUpdates = watchingUpdates?.updatedCount || 0;
+  // 计算更新数量（新剧集更新 + 新上映）
+  const totalUpdates = getActualUpdateCount(watchingUpdates);
 
   // 调试信息
   console.log('UserMenu 更新提醒调试:', {
@@ -963,6 +959,12 @@ export const UserMenu: React.FC = () => {
                 更新提醒
               </h3>
               <div className='flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400'>
+                {watchingUpdates && watchingUpdates.newReleasesCount > 0 && (
+                  <span className='inline-flex items-center gap-1'>
+                    <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                    {watchingUpdates.newReleasesCount}部已上映
+                  </span>
+                )}
                 {watchingUpdates && watchingUpdates.updatedCount > 0 && (
                   <span className='inline-flex items-center gap-1'>
                     <div className='w-2 h-2 bg-red-500 rounded-full animate-pulse'></div>
@@ -986,13 +988,68 @@ export const UserMenu: React.FC = () => {
             {!hasActualUpdates && (
               <div className='text-center py-8'>
                 <div className='text-gray-500 dark:text-gray-400 text-sm'>
-                  暂无新剧集更新
+                  暂无更新提醒
                 </div>
                 <div className='text-xs text-gray-400 dark:text-gray-500 mt-2'>
-                  系统会定期检查您观看过的剧集是否有新集数更新
+                  系统会定期检查您观看过和收藏过的内容是否有更新
                 </div>
               </div>
             )}
+            {/* 新上映的剧集 */}
+            {watchingUpdates &&
+              watchingUpdates.updatedSeries.filter(
+                (series) => series.hasNewRelease,
+              ).length > 0 && (
+                <div className='mb-8'>
+                  <div className='flex items-center gap-2 mb-4'>
+                    <h4 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                      新上映
+                    </h4>
+                    <div className='flex items-center gap-1'>
+                      <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                      <span className='text-sm text-green-500 font-medium'>
+                        {
+                          watchingUpdates.updatedSeries.filter(
+                            (series) => series.hasNewRelease,
+                          ).length
+                        }
+                        部收藏已上映
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
+                    {watchingUpdates.updatedSeries
+                      .filter((series) => series.hasNewRelease)
+                      .map((series, index) => (
+                        <div
+                          key={`release-${series.title}_${series.year}_${index}`}
+                          className='relative group/card'
+                        >
+                          <div className='relative group-hover/card:z-5 transition-all duration-300'>
+                            <VideoCard
+                              title={series.title}
+                              poster={series.cover}
+                              year={series.year}
+                              source={series.sourceKey}
+                              source_name={series.source_name}
+                              episodes={series.totalEpisodes}
+                              id={series.videoId}
+                              onDelete={undefined}
+                              type={series.totalEpisodes > 1 ? 'tv' : 'movie'}
+                              from='favorite'
+                              remarks={series.remarks}
+                              releaseDate={series.releaseDate}
+                            />
+                          </div>
+                          <div className='absolute -top-2 -right-2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
+                            新上映
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             {/* 有新集数的剧集 */}
             {watchingUpdates &&
               watchingUpdates.updatedSeries.filter(
