@@ -76,8 +76,27 @@ export const UserMenu: React.FC = () => {
     null,
   );
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(false);
+  const [dismissedReleases, setDismissedReleases] = useState<Set<string>>(
+    () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('moontv_dismissed_releases');
+          return saved ? new Set(JSON.parse(saved)) : new Set();
+        } catch {
+          return new Set();
+        }
+      }
+      return new Set();
+    },
+  );
+  const getActiveReleaseCount = (updates: WatchingUpdate | null) =>
+    updates?.updatedSeries.filter(
+      (series) =>
+        series.hasNewRelease &&
+        !dismissedReleases.has(`${series.sourceKey}+${series.videoId}`),
+    ).length || 0;
   const getActualUpdateCount = (updates: WatchingUpdate | null) =>
-    (updates?.updatedCount || 0) + (updates?.newReleasesCount || 0);
+    (updates?.updatedCount || 0) + getActiveReleaseCount(updates);
 
   // 🚀 TanStack Query - 观影室配置
   const { data: showWatchRoom = false } = useWatchRoomConfigQuery();
@@ -232,17 +251,19 @@ export const UserMenu: React.FC = () => {
         console.log('getDetailedWatchingUpdates 返回:', updates);
         setWatchingUpdates(updates);
 
-        // 检测是否有新更新（包括新剧集更新和新上映）
-        if (getActualUpdateCount(updates) > 0) {
-          const lastViewed = parseInt(
-            localStorage.getItem('watchingUpdatesLastViewed') || '0',
-          );
-          const currentTime = Date.now();
+        // 检测是否有新更新（包括新剧集更新和未忽略的新上映）
+        const activeReleases =
+          updates?.updatedSeries.filter(
+            (series) =>
+              series.hasNewRelease &&
+              !dismissedReleases.has(`${series.sourceKey}+${series.videoId}`),
+          ).length || 0;
 
-          // 如果从未查看过，或者距离上次查看超过1分钟，认为有新更新
-          const hasNewUpdates =
-            lastViewed === 0 || currentTime - lastViewed > 60000;
-          setHasUnreadUpdates(hasNewUpdates);
+        if (
+          updates &&
+          ((updates.updatedCount || 0) > 0 || activeReleases > 0)
+        ) {
+          setHasUnreadUpdates(true);
         } else {
           setHasUnreadUpdates(false);
         }
@@ -288,7 +309,7 @@ export const UserMenu: React.FC = () => {
     } else {
       console.log('watching-updates 条件不满足，跳过加载');
     }
-  }, [authInfo, storageType]);
+  }, [authInfo, storageType, dismissedReleases]);
 
   // 监听watching-updates事件，刷新播放记录
   useEffect(() => {
@@ -333,14 +354,13 @@ export const UserMenu: React.FC = () => {
         setWatchingUpdates(updates);
 
         // 重新计算未读状态
-        if (getActualUpdateCount(updates) > 0) {
-          const lastViewed = parseInt(
-            localStorage.getItem('watchingUpdatesLastViewed') || '0',
-          );
-          const currentTime = Date.now();
-          const hasNewUpdates =
-            lastViewed === 0 || currentTime - lastViewed > 60000;
-          setHasUnreadUpdates(hasNewUpdates);
+        const activeReleases = getActiveReleaseCount(updates);
+
+        if (
+          updates &&
+          ((updates.updatedCount || 0) > 0 || activeReleases > 0)
+        ) {
+          setHasUnreadUpdates(true);
         } else {
           setHasUnreadUpdates(false);
         }
@@ -401,10 +421,7 @@ export const UserMenu: React.FC = () => {
   const handleWatchingUpdates = () => {
     setIsOpen(false);
     setIsWatchingUpdatesOpen(true);
-    // 标记为已读
-    setHasUnreadUpdates(false);
-    const currentTime = Date.now();
-    localStorage.setItem('watchingUpdatesLastViewed', currentTime.toString());
+    // 注意：不在这里标记为已读，只有用户点击"不再提醒"时才标记
   };
 
   const handleCloseWatchingUpdates = () => {
@@ -427,6 +444,34 @@ export const UserMenu: React.FC = () => {
 
   const handleCloseFavorites = () => {
     setIsFavoritesOpen(false);
+  };
+
+  const handleDismissRelease = (sourceKey: string, videoId: string) => {
+    const key = `${sourceKey}+${videoId}`;
+    const newDismissed = new Set(dismissedReleases);
+    newDismissed.add(key);
+    setDismissedReleases(newDismissed);
+
+    try {
+      localStorage.setItem(
+        'moontv_dismissed_releases',
+        JSON.stringify([...newDismissed]),
+      );
+    } catch (error) {
+      console.error('保存已忽略列表失败:', error);
+    }
+
+    if (watchingUpdates) {
+      const remainingReleases = watchingUpdates.updatedSeries.filter(
+        (series) =>
+          series.hasNewRelease &&
+          !newDismissed.has(`${series.sourceKey}+${series.videoId}`),
+      ).length;
+
+      const hasUpdates =
+        (watchingUpdates.updatedCount || 0) > 0 || remainingReleases > 0;
+      setHasUnreadUpdates(hasUpdates);
+    }
   };
 
   // 从 key 中解析 source 和 id
@@ -959,12 +1004,13 @@ export const UserMenu: React.FC = () => {
                 更新提醒
               </h3>
               <div className='flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400'>
-                {watchingUpdates && watchingUpdates.newReleasesCount > 0 && (
-                  <span className='inline-flex items-center gap-1'>
-                    <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
-                    {watchingUpdates.newReleasesCount}部已上映
-                  </span>
-                )}
+                {watchingUpdates &&
+                  getActiveReleaseCount(watchingUpdates) > 0 && (
+                    <span className='inline-flex items-center gap-1'>
+                      <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                      {getActiveReleaseCount(watchingUpdates)}部已上映
+                    </span>
+                  )}
                 {watchingUpdates && watchingUpdates.updatedCount > 0 && (
                   <span className='inline-flex items-center gap-1'>
                     <div className='w-2 h-2 bg-red-500 rounded-full animate-pulse'></div>
@@ -998,7 +1044,11 @@ export const UserMenu: React.FC = () => {
             {/* 新上映的剧集 */}
             {watchingUpdates &&
               watchingUpdates.updatedSeries.filter(
-                (series) => series.hasNewRelease,
+                (series) =>
+                  series.hasNewRelease &&
+                  !dismissedReleases.has(
+                    `${series.sourceKey}+${series.videoId}`,
+                  ),
               ).length > 0 && (
                 <div className='mb-8'>
                   <div className='flex items-center gap-2 mb-4'>
@@ -1010,7 +1060,11 @@ export const UserMenu: React.FC = () => {
                       <span className='text-sm text-green-500 font-medium'>
                         {
                           watchingUpdates.updatedSeries.filter(
-                            (series) => series.hasNewRelease,
+                            (series) =>
+                              series.hasNewRelease &&
+                              !dismissedReleases.has(
+                                `${series.sourceKey}+${series.videoId}`,
+                              ),
                           ).length
                         }
                         部收藏已上映
@@ -1020,7 +1074,13 @@ export const UserMenu: React.FC = () => {
 
                   <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
                     {watchingUpdates.updatedSeries
-                      .filter((series) => series.hasNewRelease)
+                      .filter(
+                        (series) =>
+                          series.hasNewRelease &&
+                          !dismissedReleases.has(
+                            `${series.sourceKey}+${series.videoId}`,
+                          ),
+                      )
                       .map((series, index) => (
                         <div
                           key={`release-${series.title}_${series.year}_${index}`}
@@ -1045,6 +1105,20 @@ export const UserMenu: React.FC = () => {
                           <div className='absolute -top-2 -right-2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
                             新上映
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDismissRelease(
+                                series.sourceKey,
+                                series.videoId,
+                              );
+                            }}
+                            className='absolute -top-2 -left-2 bg-gray-800/80 hover:bg-gray-900 text-white rounded-full p-1 shadow-lg z-10 opacity-0 group-hover/card:opacity-100 transition-opacity'
+                            title='不再提醒'
+                          >
+                            <X className='w-3 h-3' />
+                          </button>
                         </div>
                       ))}
                   </div>
