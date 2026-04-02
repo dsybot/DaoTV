@@ -282,7 +282,7 @@ function HomeClient() {
       month: '2-digit',
       day: '2-digit',
     });
-    return dateStr.split('/').reverse().join('-');
+    return dateStr.replace(/\//g, '-');
   }, []); // 空依赖，只在组件挂载时计算一次
 
   const [showClearFavoritesDialog, setShowClearFavoritesDialog] =
@@ -894,7 +894,7 @@ function HomeClient() {
             options={[
               { label: '首页', value: 'home' },
               { label: '收藏夹', value: 'favorites' },
-              { label: '提醒', value: 'reminders' },
+              { label: '想看', value: 'reminders' },
             ]}
             active={activeTab}
             onChange={(value) =>
@@ -911,13 +911,13 @@ function HomeClient() {
         <div
           className={`max-w-[95%] mx-auto ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
         >
-          {/* 提醒视图 */}
+          {/* 想看视图 */}
           <section
             className={`mb-8 ${activeTab === 'reminders' ? 'block' : 'hidden'}`}
           >
             <div className='mb-6 flex items-center justify-between'>
               <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                我的提醒
+                我想看
               </h2>
               {reminderItems.length > 0 && (
                 <button
@@ -931,7 +931,7 @@ function HomeClient() {
                   }}
                 >
                   <Trash2 className='w-4 h-4' />
-                  <span>清空提醒</span>
+                  <span>清空想看</span>
                 </button>
               )}
             </div>
@@ -984,21 +984,47 @@ function HomeClient() {
                   let calculatedRemarks = item.remarks;
 
                   if (item.releaseDate) {
+                    // 使用字符串比较（YYYY-MM-DD 格式可以直接比较）
                     const releaseDate = item.releaseDate;
-                    const releaseDateObj = new Date(releaseDate);
-                    const todayDateObj = new Date(today);
-                    const daysDiff = Math.ceil(
-                      (releaseDateObj.getTime() - todayDateObj.getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    );
 
-                    if (daysDiff < 0) {
-                      const daysAgo = Math.abs(daysDiff);
+                    if (releaseDate < today) {
+                      // 已上映：计算天数差
+                      const releaseParts = releaseDate.split('-').map(Number);
+                      const todayParts = today.split('-').map(Number);
+                      const releaseMs = new Date(
+                        releaseParts[0],
+                        releaseParts[1] - 1,
+                        releaseParts[2],
+                      ).getTime();
+                      const todayMs = new Date(
+                        todayParts[0],
+                        todayParts[1] - 1,
+                        todayParts[2],
+                      ).getTime();
+                      const daysAgo = Math.floor(
+                        (todayMs - releaseMs) / (1000 * 60 * 60 * 24),
+                      );
                       calculatedRemarks = `已上映${daysAgo}天`;
-                    } else if (daysDiff === 0) {
+                    } else if (releaseDate === today) {
                       calculatedRemarks = '今日上映';
                     } else {
-                      calculatedRemarks = `${daysDiff}天后上映`;
+                      // 即将上映：计算天数差
+                      const releaseParts = releaseDate.split('-').map(Number);
+                      const todayParts = today.split('-').map(Number);
+                      const releaseMs = new Date(
+                        releaseParts[0],
+                        releaseParts[1] - 1,
+                        releaseParts[2],
+                      ).getTime();
+                      const todayMs = new Date(
+                        todayParts[0],
+                        todayParts[1] - 1,
+                        todayParts[2],
+                      ).getTime();
+                      const daysUntil = Math.ceil(
+                        (releaseMs - todayMs) / (1000 * 60 * 60 * 24),
+                      );
+                      calculatedRemarks = `${daysUntil}天后上映`;
                     }
                   }
 
@@ -1051,10 +1077,10 @@ function HomeClient() {
                   </div>
 
                   <h3 className='text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2'>
-                    暂无提醒
+                    暂无想看内容
                   </h3>
                   <p className='text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs'>
-                    发现即将上映的内容，点击 🔔 设置提醒吧！
+                    发现即将上映的内容，点击 🔔 标记想看吧！
                   </p>
                 </div>
               )}
@@ -1062,8 +1088,8 @@ function HomeClient() {
 
             <ConfirmDialog
               isOpen={showClearRemindersDialog}
-              title='确认清空提醒'
-              message={`确定要清空所有提醒吗？\n\n这将删除 ${reminderItems.length} 项提醒，此操作无法撤销。`}
+              title='确认清空想看'
+              message={`确定要清空所有想看内容吗？\n\n这将删除 ${reminderItems.length} 项内容，此操作无法撤销。`}
               confirmText='确认清空'
               cancelText='取消'
               variant='danger'
@@ -1309,24 +1335,47 @@ function HomeClient() {
                     let calculatedRemarks = item.remarks;
 
                     if (item.releaseDate) {
-                      // 使用字符串比较日期（YYYY-MM-DD 格式可以直接比较）
+                      // 使用字符串比较（YYYY-MM-DD 格式可以直接比较）
                       const releaseDate = item.releaseDate;
 
-                      // 计算天数差异
-                      const releaseDateObj = new Date(releaseDate);
-                      const todayDateObj = new Date(today);
-                      const daysDiff = Math.ceil(
-                        (releaseDateObj.getTime() - todayDateObj.getTime()) /
-                          (1000 * 60 * 60 * 24),
-                      );
-
-                      if (daysDiff < 0) {
-                        const daysAgo = Math.abs(daysDiff);
+                      if (releaseDate < today) {
+                        // 已上映：计算天数差
+                        const releaseParts = releaseDate.split('-').map(Number);
+                        const todayParts = today.split('-').map(Number);
+                        const releaseMs = new Date(
+                          releaseParts[0],
+                          releaseParts[1] - 1,
+                          releaseParts[2],
+                        ).getTime();
+                        const todayMs = new Date(
+                          todayParts[0],
+                          todayParts[1] - 1,
+                          todayParts[2],
+                        ).getTime();
+                        const daysAgo = Math.floor(
+                          (todayMs - releaseMs) / (1000 * 60 * 60 * 24),
+                        );
                         calculatedRemarks = `已上映${daysAgo}天`;
-                      } else if (daysDiff === 0) {
+                      } else if (releaseDate === today) {
                         calculatedRemarks = '今日上映';
                       } else {
-                        calculatedRemarks = `${daysDiff}天后上映`;
+                        // 即将上映：计算天数差
+                        const releaseParts = releaseDate.split('-').map(Number);
+                        const todayParts = today.split('-').map(Number);
+                        const releaseMs = new Date(
+                          releaseParts[0],
+                          releaseParts[1] - 1,
+                          releaseParts[2],
+                        ).getTime();
+                        const todayMs = new Date(
+                          todayParts[0],
+                          todayParts[1] - 1,
+                          todayParts[2],
+                        ).getTime();
+                        const daysUntil = Math.ceil(
+                          (releaseMs - todayMs) / (1000 * 60 * 60 * 24),
+                        );
+                        calculatedRemarks = `${daysUntil}天后上映`;
                       }
                     }
 
@@ -1443,22 +1492,48 @@ function HomeClient() {
                         release.type === upcomingFilter,
                     )
                     .map((release, index) => {
-                      // 计算距离上映还有几天（使用字符串格式的 today）
-                      const releaseDate = new Date(release.releaseDate);
-                      const todayDateObj = new Date(today);
-                      const daysDiff = Math.ceil(
-                        (releaseDate.getTime() - todayDateObj.getTime()) /
-                          (1000 * 60 * 60 * 24),
-                      );
+                      // 计算距离上映还有几天（使用字符串比较）
+                      const releaseDate = release.releaseDate;
 
-                      // 根据天数差异显示不同文字
                       let remarksText;
-                      if (daysDiff < 0) {
-                        remarksText = `已上映${Math.abs(daysDiff)}天`;
-                      } else if (daysDiff === 0) {
+                      if (releaseDate < today) {
+                        // 已上映：计算天数差
+                        const releaseParts = releaseDate.split('-').map(Number);
+                        const todayParts = today.split('-').map(Number);
+                        const releaseMs = new Date(
+                          releaseParts[0],
+                          releaseParts[1] - 1,
+                          releaseParts[2],
+                        ).getTime();
+                        const todayMs = new Date(
+                          todayParts[0],
+                          todayParts[1] - 1,
+                          todayParts[2],
+                        ).getTime();
+                        const daysAgo = Math.floor(
+                          (todayMs - releaseMs) / (1000 * 60 * 60 * 24),
+                        );
+                        remarksText = `已上映${daysAgo}天`;
+                      } else if (releaseDate === today) {
                         remarksText = '今日上映';
                       } else {
-                        remarksText = `${daysDiff}天后上映`;
+                        // 即将上映：计算天数差
+                        const releaseParts = releaseDate.split('-').map(Number);
+                        const todayParts = today.split('-').map(Number);
+                        const releaseMs = new Date(
+                          releaseParts[0],
+                          releaseParts[1] - 1,
+                          releaseParts[2],
+                        ).getTime();
+                        const todayMs = new Date(
+                          todayParts[0],
+                          todayParts[1] - 1,
+                          todayParts[2],
+                        ).getTime();
+                        const daysUntil = Math.ceil(
+                          (releaseMs - todayMs) / (1000 * 60 * 60 * 24),
+                        );
+                        remarksText = `${daysUntil}天后上映`;
                       }
 
                       return (

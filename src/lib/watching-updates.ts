@@ -216,8 +216,8 @@ export async function checkWatchingUpdates(
 
     await Promise.all(updatePromises);
 
-    // 🎬 检查提醒中的新上映内容
-    console.log('🎬 开始检查提醒中的新上映内容...');
+    // 🎬 检查想看中的新上映内容
+    console.log('🎬 开始检查想看中的新上映内容...');
     try {
       const reminders = await getAllReminders();
       const today = new Date()
@@ -227,10 +227,9 @@ export async function checkWatchingUpdates(
           month: '2-digit',
           day: '2-digit',
         })
-        .split('/')
-        .reverse()
-        .join('-');
+        .replace(/\//g, '-');
 
+      // 筛选有releaseDate且已上映的想看内容
       const newReleases = Object.entries(reminders)
         .filter(([, reminder]) => {
           if (!reminder.releaseDate) return false;
@@ -248,17 +247,28 @@ export async function checkWatchingUpdates(
           let remarksText = '已上映';
 
           if (reminder.releaseDate) {
-            const releaseDate = new Date(reminder.releaseDate);
-            const todayDate = new Date(today);
-            const daysDiff = Math.floor(
-              (todayDate.getTime() - releaseDate.getTime()) /
-                (1000 * 60 * 60 * 24),
-            );
+            const releaseDate = reminder.releaseDate;
 
-            if (daysDiff === 0) {
+            if (releaseDate < today) {
+              // 已上映：计算天数差
+              const releaseParts = releaseDate.split('-').map(Number);
+              const todayParts = today.split('-').map(Number);
+              const releaseMs = new Date(
+                releaseParts[0],
+                releaseParts[1] - 1,
+                releaseParts[2],
+              ).getTime();
+              const todayMs = new Date(
+                todayParts[0],
+                todayParts[1] - 1,
+                todayParts[2],
+              ).getTime();
+              const daysAgo = Math.floor(
+                (todayMs - releaseMs) / (1000 * 60 * 60 * 24),
+              );
+              remarksText = `已上映${daysAgo}天`;
+            } else if (releaseDate === today) {
               remarksText = '今日上映';
-            } else if (daysDiff > 0) {
-              remarksText = `已上映${daysDiff}天`;
             }
           }
 
@@ -283,12 +293,12 @@ export async function checkWatchingUpdates(
         });
 
       if (newReleases.length > 0) {
-        console.log(`🎬 发现 ${newReleases.length} 部新上映的提醒内容`);
+        console.log(`🎬 发现 ${newReleases.length} 部新上映的想看内容`);
         updatedSeries.push(...newReleases);
         newReleasesCount = newReleases.length;
         hasAnyUpdates = true;
       } else {
-        console.log('🎬 没有新上映的提醒内容');
+        console.log('🎬 没有新上映的想看内容');
       }
     } catch (error) {
       console.error('检查新上映内容失败:', error);
