@@ -254,8 +254,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               setFavorited(fav);
             }
           }
-        } catch {
-          throw new Error('检查状态失败');
+        } catch (err) {
+          console.error('检查状态失败:', err);
         }
       };
 
