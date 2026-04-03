@@ -110,9 +110,12 @@ export async function checkWatchingUpdates(
       id: key,
     }));
 
-    if (records.length === 0) {
-      console.log('无播放记录，继续检查提醒中的上映提醒');
-    }
+    // 🔥 修复：即使没有播放记录，也要检查新上映的想看内容
+    // if (records.length === 0) {
+    //   console.log('无播放记录，跳过更新检查');
+    //   ...
+    // }
+    // 移除这个提前返回，让代码继续执行到检查新上映的部分
 
     // 筛选多集剧的记录（与Alpha版本保持一致，不限制是否看完）
     const candidateRecords = records.filter((record) => {
@@ -120,14 +123,16 @@ export async function checkWatchingUpdates(
     });
 
     console.log(`找到 ${candidateRecords.length} 个可能有更新的剧集`);
-    console.log(
-      '候选记录详情:',
-      candidateRecords.map((r) => ({
-        title: r.title,
-        index: r.index,
-        total: r.total_episodes,
-      })),
-    );
+    if (candidateRecords.length > 0) {
+      console.log(
+        '候选记录详情:',
+        candidateRecords.map((r) => ({
+          title: r.title,
+          index: r.index,
+          total: r.total_episodes,
+        })),
+      );
+    }
 
     let hasAnyUpdates = false;
     let updatedCount = 0;

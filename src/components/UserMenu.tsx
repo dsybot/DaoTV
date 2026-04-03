@@ -1067,7 +1067,7 @@ export const UserMenu: React.FC = () => {
                               ),
                           ).length
                         }
-                        部收藏已上映
+                        部新上映
                       </span>
                     </div>
                   </div>
