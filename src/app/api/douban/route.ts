@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
 import { fetchDoubanData } from '@/lib/douban';
+import { recordRequest } from '@/lib/performance-monitor';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 import { getRandomUserAgent } from '@/lib/user-agent';
-import { recordRequest } from '@/lib/performance-monitor';
 
 interface DoubanApiResponse {
   subjects: Array<{
@@ -13,6 +13,58 @@ interface DoubanApiResponse {
     cover: string;
     rate: string;
   }>;
+}
+
+type DoubanProxyType =
+  | 'direct'
+  | 'cors-proxy-zwei'
+  | 'cmliussss-cdn-tencent'
+  | 'cmliussss-cdn-ali'
+  | 'cors-anywhere'
+  | 'custom';
+
+async function fetchDoubanListWithProxy(
+  target: string,
+  proxyType: DoubanProxyType,
+  proxyUrl: string,
+): Promise<DoubanApiResponse> {
+  switch (proxyType) {
+    case 'cmliussss-cdn-tencent': {
+      const cdnTarget = target.replace(
+        'https://movie.douban.com',
+        'https://movie.douban.cmliussss.net',
+      );
+      return fetchDoubanData<DoubanApiResponse>(cdnTarget);
+    }
+    case 'cmliussss-cdn-ali': {
+      const cdnTarget = target.replace(
+        'https://movie.douban.com',
+        'https://movie.douban.cmliussss.com',
+      );
+      return fetchDoubanData<DoubanApiResponse>(cdnTarget);
+    }
+    case 'cors-proxy-zwei': {
+      return fetchDoubanData<DoubanApiResponse>(
+        `https://ciao-cors.is-an.org/${encodeURIComponent(target)}`,
+      );
+    }
+    case 'cors-anywhere': {
+      return fetchDoubanData<DoubanApiResponse>(
+        `https://cors-anywhere.com/${target}`,
+      );
+    }
+    case 'custom': {
+      if (!proxyUrl) {
+        throw new Error('自定义代理未配置');
+      }
+      return fetchDoubanData<DoubanApiResponse>(
+        `${proxyUrl}${encodeURIComponent(target)}`,
+      );
+    }
+    case 'direct':
+    default:
+      return fetchDoubanData<DoubanApiResponse>(target);
+  }
 }
 
 export const runtime = 'nodejs';
@@ -28,6 +80,9 @@ export async function GET(request: Request) {
   const tag = searchParams.get('tag');
   const pageSize = parseInt(searchParams.get('pageSize') || '16');
   const pageStart = parseInt(searchParams.get('pageStart') || '0');
+  const proxyType = (searchParams.get('proxyType') ||
+    'direct') as DoubanProxyType;
+  const proxyUrl = searchParams.get('proxyUrl') || '';
 
   // 验证参数
   if (!type || !tag) {
@@ -114,7 +169,11 @@ export async function GET(request: Request) {
 
   try {
     // 调用豆瓣 API
-    const doubanData = await fetchDoubanData<DoubanApiResponse>(target);
+    const doubanData = await fetchDoubanListWithProxy(
+      target,
+      proxyType,
+      proxyUrl,
+    );
 
     // 转换数据格式
     const list: DoubanItem[] = doubanData.subjects.map((item) => ({
@@ -155,7 +214,10 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    const errorResponse = { error: '获取豆瓣数据失败', details: (error as Error).message };
+    const errorResponse = {
+      error: '获取豆瓣数据失败',
+      details: (error as Error).message,
+    };
     const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
 
     recordRequest({
@@ -249,7 +311,7 @@ function handleTop250(pageStart: number) {
           error: '获取豆瓣 Top250 数据失败',
           details: (error as Error).message,
         },
-        { status: 500 }
+        { status: 500 },
       );
     });
 }
