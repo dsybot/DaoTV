@@ -7,6 +7,7 @@
 import { customAlphabet } from 'nanoid';
 
 import { db } from './db';
+import { createCompatClient } from './redis-compat';
 
 // 生成邀请码：8位大写字母+数字，排除易混淆字符 (0/O, 1/I/l)
 const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -18,7 +19,7 @@ function getRedisClient() {
   if (!storage || !storage.client) {
     throw new Error('Redis 客户端不可用，邀请码系统需要 Redis 存储');
   }
-  return storage.client;
+  return createCompatClient(storage.client);
 }
 
 export interface InviteCodeData {
