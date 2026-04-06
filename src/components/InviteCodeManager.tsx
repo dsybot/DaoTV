@@ -72,9 +72,13 @@ export default function InviteCodeManager() {
         setShowCreateModal(false);
         await fetchCodes();
         // 自动复制新生成的邀请码
-        await navigator.clipboard.writeText(data.code);
-        setCopiedCode(data.code);
-        setTimeout(() => setCopiedCode(null), 2000);
+        try {
+          await navigator.clipboard.writeText(data.code);
+          setCopiedCode(data.code);
+          setTimeout(() => setCopiedCode(null), 2000);
+        } catch {
+          // 剪贴板权限被拒绝时不影响主流程
+        }
       } else {
         alert(data.error || '生成邀请码失败');
       }
