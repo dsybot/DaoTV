@@ -132,7 +132,7 @@ export async function validateInviteCode(
   }
 
   // 检查是否被禁用
-  if (inviteData.disabled === 'true' || (inviteData.disabled as any) === true) {
+  if ((inviteData.disabled as unknown as string) === 'true' || inviteData.disabled === true) {
     return { valid: false, error: '邀请码已被禁用' };
   }
 
