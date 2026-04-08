@@ -187,7 +187,7 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
       await refreshConfig();
       resetForm();
       showMessage('success', editingSource ? '更新成功' : '添加成功');
-    } catch (err) {
+    } catch {
       showMessage('error', err instanceof Error ? err.message : '保存失败');
     } finally {
       setIsLoading(false);
@@ -215,7 +215,7 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
 
       await refreshConfig();
       showMessage('success', '删除成功');
-    } catch (err) {
+    } catch {
       showMessage('error', err instanceof Error ? err.message : '删除失败');
     } finally {
       setIsLoading(false);
