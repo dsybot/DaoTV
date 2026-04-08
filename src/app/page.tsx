@@ -546,7 +546,6 @@ function HomeClient() {
               day: '2-digit',
             })
             .split('/')
-            .reverse()
             .join('-');
 
           workerRef.current.postMessage({
