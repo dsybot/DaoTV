@@ -10,10 +10,7 @@ import { clearEmbyCache } from '@/lib/emby-cache';
 export const runtime = 'nodejs';
 
 /**
- * POST /api/admin/emby
- * Emby 配置管理接口
- * - test: 测试 Emby 连接
- * - clearCache: 清除 Emby 缓存
+ * Admin endpoint for Emby connection test and cache clearing.
  */
 export async function POST(request: NextRequest) {
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
@@ -39,14 +36,11 @@ export async function POST(request: NextRequest) {
     } = body;
 
     const authInfo = getAuthInfoFromCookie(request);
-    if (!authInfo || !authInfo.username) {
+    if (!authInfo?.username) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
     const username = authInfo.username;
-
-    // 获取配置
-
-    // 权限检查
     if (username !== process.env.USERNAME) {
       const userInfo = await db.getUserInfoV2(username);
       if (!userInfo || userInfo.role !== 'admin' || userInfo.banned) {
@@ -55,7 +49,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'test') {
-      // 测试连接
       if (!ServerURL) {
         return NextResponse.json(
           { error: '请填写 Emby 服务器地址' },
@@ -70,7 +63,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const testConfig = {
+      const client = new EmbyClient({
         ServerURL,
         ApiKey,
         Username,
@@ -79,11 +72,8 @@ export async function POST(request: NextRequest) {
         DeviceName,
         DeviceId,
         ClientVersion,
-      };
+      });
 
-      const client = new EmbyClient(testConfig);
-
-      // 如果使用用户名，先认证（密码可选）
       if (!ApiKey && Username) {
         try {
           await client.authenticate(Username, Password || '');
@@ -98,7 +88,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 测试连接
       const isConnected = await client.checkConnectivity();
       if (!isConnected) {
         return NextResponse.json(
@@ -110,7 +99,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 获取用户信息以获取 UserId
       let userId: string | undefined;
       try {
         const userInfo = await client.getCurrentUser();
@@ -127,7 +115,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'clearCache') {
-      // 清除缓存
       const result = clearEmbyCache();
       return NextResponse.json({
         success: true,
