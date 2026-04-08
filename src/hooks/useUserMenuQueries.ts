@@ -22,10 +22,6 @@ export interface EmbySource {
   ApiKey?: string;
   Username?: string;
   Password?: string;
-  ClientName?: string;
-  DeviceName?: string;
-  DeviceId?: string;
-  ClientVersion?: string;
   removeEmbyPrefix?: boolean;
   appendMediaSourceId?: boolean;
   transcodeMp4?: boolean;

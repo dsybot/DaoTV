@@ -59,10 +59,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
   const refUsername = useRef<HTMLInputElement>(null);
   const refPassword = useRef<HTMLInputElement>(null);
   const refUserId = useRef<HTMLInputElement>(null);
-  const refClientName = useRef<HTMLInputElement>(null);
-  const refDeviceName = useRef<HTMLInputElement>(null);
-  const refDeviceId = useRef<HTMLInputElement>(null);
-  const refClientVersion = useRef<HTMLInputElement>(null);
 
   const clearRefs = () => {
     if (refKey.current) refKey.current.value = '';
@@ -72,10 +68,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
     if (refUsername.current) refUsername.current.value = '';
     if (refPassword.current) refPassword.current.value = '';
     if (refUserId.current) refUserId.current.value = '';
-    if (refClientName.current) refClientName.current.value = '';
-    if (refDeviceName.current) refDeviceName.current.value = '';
-    if (refDeviceId.current) refDeviceId.current.value = '';
-    if (refClientVersion.current) refClientVersion.current.value = '';
   };
 
   const resetForm = () => {
@@ -126,14 +118,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
       if (refPassword.current)
         refPassword.current.value = source.Password || '';
       if (refUserId.current) refUserId.current.value = source.UserId || '';
-      if (refClientName.current)
-        refClientName.current.value = source.ClientName || '';
-      if (refDeviceName.current)
-        refDeviceName.current.value = source.DeviceName || '';
-      if (refDeviceId.current)
-        refDeviceId.current.value = source.DeviceId || '';
-      if (refClientVersion.current)
-        refClientVersion.current.value = source.ClientVersion || '';
     }, 0);
   };
 
@@ -184,10 +168,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
     const Username = refUsername.current?.value || '';
     const Password = refPassword.current?.value || '';
     const UserId = refUserId.current?.value || '';
-    const ClientName = refClientName.current?.value || '';
-    const DeviceName = refDeviceName.current?.value || '';
-    const DeviceId = refDeviceId.current?.value || '';
-    const ClientVersion = refClientVersion.current?.value || '';
 
     if (!key || !name || !ServerURL) {
       toast.error('请填写必填字段：标识符、名称、服务器地址');
@@ -217,10 +197,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
         Username,
         Password,
         UserId,
-        ClientName,
-        DeviceName,
-        DeviceId,
-        ClientVersion,
         ...formChecks,
       };
       const newSources =
@@ -534,37 +510,6 @@ export const UserEmbyConfig = memo(({ initialConfig }: UserEmbyConfigProps) => {
               高级选项
             </summary>
             <div className='mt-2 space-y-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700'>
-              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                部分 Emby 公益服会校验客户端白名单。留空时默认模拟 `Emby /
-                Windows / emby-windows /
-                1.0.0`，如果被拒绝可改成群公告允许的客户端名称。
-              </p>
-              <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
-                <input
-                  ref={refClientName}
-                  type='text'
-                  className='w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                  placeholder='客户端名称，默认 Emby'
-                />
-                <input
-                  ref={refDeviceName}
-                  type='text'
-                  className='w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                  placeholder='设备名称，默认 Windows'
-                />
-                <input
-                  ref={refDeviceId}
-                  type='text'
-                  className='w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                  placeholder='设备 ID，默认 emby-windows'
-                />
-                <input
-                  ref={refClientVersion}
-                  type='text'
-                  className='w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                  placeholder='客户端版本，默认 1.0.0'
-                />
-              </div>
               {[
                 { key: 'transcodeMp4', label: '转码mp4（推荐MKV格式启用）' },
                 { key: 'proxyPlay', label: '视频播放代理' },
