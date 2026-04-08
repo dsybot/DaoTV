@@ -7,6 +7,10 @@ interface EmbyConfig {
   Password?: string;
   UserId?: string;
   AuthToken?: string;
+  ClientName?: string;
+  DeviceName?: string;
+  DeviceId?: string;
+  ClientVersion?: string;
   // 高级流媒体选项
   removeEmbyPrefix?: boolean;
   appendMediaSourceId?: boolean;
@@ -93,6 +97,19 @@ interface EmbyView {
   CollectionType?: string;
 }
 
+const DEFAULT_CLIENT_NAME = 'Emby';
+const DEFAULT_DEVICE_NAME = 'Windows';
+const DEFAULT_DEVICE_ID = 'emby-windows';
+const DEFAULT_CLIENT_VERSION = '1.0.0';
+
+function normalizeIdentityValue(
+  value: string | undefined,
+  fallback: string,
+): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
+
 export class EmbyClient {
   private serverUrl: string;
   private apiKey?: string;
@@ -105,6 +122,10 @@ export class EmbyClient {
   private transcodeMp4: boolean;
   private proxyPlay: boolean;
   private embyKey?: string;
+  private clientName: string;
+  private deviceName: string;
+  private deviceId: string;
+  private clientVersion: string;
 
   constructor(config: EmbyConfig) {
     let serverUrl = config.ServerURL.replace(/\/$/, '');
@@ -139,6 +160,19 @@ export class EmbyClient {
     this.authToken = config.AuthToken;
     this.username = config.Username;
     this.password = config.Password;
+    this.clientName = normalizeIdentityValue(
+      config.ClientName,
+      DEFAULT_CLIENT_NAME,
+    );
+    this.deviceName = normalizeIdentityValue(
+      config.DeviceName,
+      DEFAULT_DEVICE_NAME,
+    );
+    this.deviceId = normalizeIdentityValue(config.DeviceId, DEFAULT_DEVICE_ID);
+    this.clientVersion = normalizeIdentityValue(
+      config.ClientVersion,
+      DEFAULT_CLIENT_VERSION,
+    );
   }
 
   private async ensureAuthenticated(): Promise<void> {
@@ -166,18 +200,59 @@ export class EmbyClient {
     }
   }
 
-  private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+  private escapeIdentityValue(value: string): string {
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  }
 
-    if (this.apiKey) {
-      headers['X-Emby-Token'] = this.apiKey;
-    } else if (this.authToken) {
-      headers['X-Emby-Token'] = this.authToken;
+  private getAuthorizationHeaderValue(): string {
+    return `MediaBrowser Client="${this.escapeIdentityValue(this.clientName)}", Device="${this.escapeIdentityValue(this.deviceName)}", DeviceId="${this.escapeIdentityValue(this.deviceId)}", Version="${this.escapeIdentityValue(this.clientVersion)}"`;
+  }
+
+  getRequestHeaders(
+    headers: HeadersInit = {},
+    includeContentType = false,
+  ): Headers {
+    const mergedHeaders = new Headers(headers);
+
+    if (includeContentType && !mergedHeaders.has('Content-Type')) {
+      mergedHeaders.set('Content-Type', 'application/json');
     }
 
-    return headers;
+    if (!mergedHeaders.has('X-Emby-Authorization')) {
+      mergedHeaders.set(
+        'X-Emby-Authorization',
+        this.getAuthorizationHeaderValue(),
+      );
+    }
+
+    if (!mergedHeaders.has('User-Agent')) {
+      mergedHeaders.set(
+        'User-Agent',
+        `${this.clientName}/${this.clientVersion}`,
+      );
+    }
+
+    if (this.apiKey && !mergedHeaders.has('X-Emby-Token')) {
+      mergedHeaders.set('X-Emby-Token', this.apiKey);
+    } else if (this.authToken && !mergedHeaders.has('X-Emby-Token')) {
+      mergedHeaders.set('X-Emby-Token', this.authToken);
+    }
+
+    return mergedHeaders;
+  }
+
+  private async embyFetch(
+    url: string,
+    init: RequestInit = {},
+    includeContentType = false,
+  ): Promise<Response> {
+    return fetch(url, {
+      ...init,
+      headers: this.getRequestHeaders(
+        init.headers,
+        includeContentType || init.body !== undefined,
+      ),
+    });
   }
 
   async authenticate(
@@ -186,15 +261,14 @@ export class EmbyClient {
   ): Promise<{ AccessToken: string; User: { Id: string } }> {
     const url = `${this.serverUrl}/Users/AuthenticateByName`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Emby-Authorization':
-          'MediaBrowser Client="LunaTV", Device="Web", DeviceId="lunatv-web", Version="1.0.0"',
+    const response = await this.embyFetch(
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify({ Username: username, Pw: password }),
       },
-      body: JSON.stringify({ Username: username, Pw: password }),
-    });
+      true,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -211,7 +285,7 @@ export class EmbyClient {
     // 如果使用 API Key，通过 /Users 端点获取用户列表（用 query param 传 api_key）
     if (this.apiKey) {
       const url = `${this.serverUrl}/Users?api_key=${this.apiKey}`;
-      const response = await fetch(url);
+      const response = await this.embyFetch(url);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -237,7 +311,7 @@ export class EmbyClient {
     // 已有 authToken，用 userId 直接访问 /Users/{id}
     if (this.authToken && this.userId) {
       const url = `${this.serverUrl}/Users/${this.userId}?api_key=${this.authToken}`;
-      const response = await fetch(url);
+      const response = await this.embyFetch(url);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
@@ -260,7 +334,7 @@ export class EmbyClient {
     const token = this.apiKey || this.authToken;
     const url = `${this.serverUrl}/Users/${this.userId}/Views${token ? `?api_key=${token}` : ''}`;
 
-    const response = await fetch(url);
+    const response = await this.embyFetch(url);
 
     // 如果是 401 错误且有用户名密码，尝试重新认证
     if (
@@ -275,7 +349,7 @@ export class EmbyClient {
 
       // 重试请求
       const retryUrl = `${this.serverUrl}/Users/${this.userId}/Views?api_key=${this.authToken}`;
-      const retryResponse = await fetch(retryUrl);
+      const retryResponse = await this.embyFetch(retryUrl);
 
       if (!retryResponse.ok) {
         const errorText = await retryResponse.text();
@@ -330,7 +404,7 @@ export class EmbyClient {
 
     const url = `${this.serverUrl}/Users/${this.userId}/Items?${searchParams.toString()}`;
 
-    const response = await fetch(url);
+    const response = await this.embyFetch(url);
 
     // 如果是 401 错误且有用户名密码，尝试重新认证
     if (
@@ -346,7 +420,7 @@ export class EmbyClient {
       // 重试请求
       searchParams.set('X-Emby-Token', this.authToken);
       const retryUrl = `${this.serverUrl}/Users/${this.userId}/Items?${searchParams.toString()}`;
-      const retryResponse = await fetch(retryUrl);
+      const retryResponse = await this.embyFetch(retryUrl);
 
       if (!retryResponse.ok) {
         const errorText = await retryResponse.text();
@@ -377,7 +451,7 @@ export class EmbyClient {
 
     const token = this.apiKey || this.authToken;
     const url = `${this.serverUrl}/Users/${this.userId}/Items/${itemId}?Fields=MediaSources${token ? `&api_key=${token}` : ''}`;
-    const response = await fetch(url);
+    const response = await this.embyFetch(url);
 
     // 如果是 401 错误且有用户名密码，尝试重新认证
     if (
@@ -393,7 +467,7 @@ export class EmbyClient {
       // 重试请求
       const retryToken = this.authToken;
       const retryUrl = `${this.serverUrl}/Users/${this.userId}/Items/${itemId}?Fields=MediaSources${retryToken ? `&api_key=${retryToken}` : ''}`;
-      const retryResponse = await fetch(retryUrl);
+      const retryResponse = await this.embyFetch(retryUrl);
 
       if (!retryResponse.ok) {
         throw new Error('获取 Emby 媒体详情失败');
@@ -418,7 +492,7 @@ export class EmbyClient {
 
     const token = this.apiKey || this.authToken;
     const url = `${this.serverUrl}/Shows/${seriesId}/Seasons?userId=${this.userId}${token ? `&api_key=${token}` : ''}`;
-    const response = await fetch(url);
+    const response = await this.embyFetch(url);
 
     // 如果是 401 错误且有用户名密码，尝试重新认证
     if (
@@ -434,7 +508,7 @@ export class EmbyClient {
       // 重试请求
       const retryToken = this.authToken;
       const retryUrl = `${this.serverUrl}/Shows/${seriesId}/Seasons?userId=${this.userId}${retryToken ? `&api_key=${retryToken}` : ''}`;
-      const retryResponse = await fetch(retryUrl);
+      const retryResponse = await this.embyFetch(retryUrl);
 
       if (!retryResponse.ok) {
         throw new Error('获取 Emby 季列表失败');
@@ -474,7 +548,7 @@ export class EmbyClient {
     }
 
     const url = `${this.serverUrl}/Shows/${seriesId}/Episodes?${searchParams.toString()}`;
-    const response = await fetch(url);
+    const response = await this.embyFetch(url);
 
     // 如果是 401 错误且有用户名密码，尝试重新认证
     if (
@@ -502,7 +576,7 @@ export class EmbyClient {
       }
 
       const retryUrl = `${this.serverUrl}/Shows/${seriesId}/Episodes?${retrySearchParams.toString()}`;
-      const retryResponse = await fetch(retryUrl);
+      const retryResponse = await this.embyFetch(retryUrl);
 
       if (!retryResponse.ok) {
         throw new Error('获取 Emby 集列表失败');
@@ -524,7 +598,7 @@ export class EmbyClient {
     try {
       const token = this.apiKey || this.authToken;
       const url = `${this.serverUrl}/System/Info/Public${token ? `?api_key=${token}` : ''}`;
-      const response = await fetch(url);
+      const response = await this.embyFetch(url);
       return response.ok;
     } catch {
       return false;
@@ -560,10 +634,7 @@ export class EmbyClient {
     const url = `${this.serverUrl}/Items/${itemId}/PlaybackInfo?UserId=${this.userId}${token ? `&api_key=${token}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
+      const response = await this.embyFetch(url);
 
       if (!response.ok) {
         return {};
@@ -603,16 +674,19 @@ export class EmbyClient {
 
       console.log('🎵 [Client] 请求 PlaybackInfo:', playbackInfoUrl);
 
-      const response = await fetch(playbackInfoUrl, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          UserId: this.userId,
-          StartTimeTicks: 0,
-          IsPlayback: true,
-          AutoOpenLiveStream: true,
-        }),
-      });
+      const response = await this.embyFetch(
+        playbackInfoUrl,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            UserId: this.userId,
+            StartTimeTicks: 0,
+            IsPlayback: true,
+            AutoOpenLiveStream: true,
+          }),
+        },
+        true,
+      );
 
       console.log('🎵 [Client] PlaybackInfo 响应状态:', response.status);
 
@@ -657,10 +731,7 @@ export class EmbyClient {
       const itemDetailUrl = `${this.serverUrl}/Items/${itemId}?Fields=MediaStreams${token ? `&api_key=${token}` : ''}`;
       console.log('🎵 [Client] 请求 Item 详情:', itemDetailUrl);
 
-      const response = await fetch(itemDetailUrl, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
+      const response = await this.embyFetch(itemDetailUrl);
 
       if (!response.ok) {
         console.error('🎵 [Client] Item 详情请求失败:', response.status);

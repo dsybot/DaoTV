@@ -86,7 +86,7 @@ export async function GET(
 
     // 流式代理视频内容
     let videoResponse = await fetch(embyStreamUrl, {
-      headers: requestHeaders,
+      headers: client.getRequestHeaders(requestHeaders),
     });
 
     // 如果返回 401，尝试重新认证并重试
@@ -102,7 +102,7 @@ export async function GET(
         audioStreamIndex,
       );
       videoResponse = await fetch(embyStreamUrl, {
-        headers: requestHeaders,
+        headers: client.getRequestHeaders(requestHeaders),
       });
     }
 
