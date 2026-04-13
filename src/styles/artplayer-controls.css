@@ -13,13 +13,20 @@
 }
 
 /* ===== Volume Control Hover Fix ===== */
-/* 增加音量面板的隐藏延迟，给用户足够时间移动鼠标 */
+/* 让音量面板覆盖按钮区域，确保鼠标在面板上时保持hover状态 */
 @media (hover: hover) {
   .art-volume-panel {
-    transition: all 0.2s ease 0.3s !important;
+    /* 面板从按钮底部开始，向上延伸 */
+    bottom: 0 !important;
+    height: calc(var(--art-volume-height, 120px) + var(--art-control-height, 38px)) !important;
+    /* 底部留出按钮空间，内容不会被遮挡 */
+    padding-bottom: var(--art-control-height, 38px) !important;
+    /* 增加隐藏延迟 */
+    transition: all 0.2s ease 0.5s !important;
   }
 
   .art-control-volume:hover .art-volume-panel {
+    /* hover时立即显示 */
     transition: all 0.2s ease 0s !important;
   }
 }
