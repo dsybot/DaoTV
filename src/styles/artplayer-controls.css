@@ -12,37 +12,14 @@
   background-color: #000 !important;
 }
 
-/* ===== Volume Control Hover Optimization ===== */
+/* ===== Volume Control Hover Fix ===== */
+/* 修复音量面板鼠标移动时消失的问题 - 参考 ArtPlayer 官方实现 */
 @media (hover: hover) {
-  .art-control-volume {
-    position: relative !important;
-    padding: 3px;
-  }
-
-  /* 扩展hover检测区域，避免鼠标移动到面板时消失 */
-  .art-control-volume::before {
-    content: '';
-    position: absolute;
-    top: -20px;
-    left: -5px;
-    right: -5px;
-    bottom: -3px;
-    z-index: -1;
-    pointer-events: auto;
-  }
-
-  /* 按钮或面板hover时显示音量面板 */
-  .art-control-volume:hover .art-volume-panel,
-  .art-volume-panel:hover {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
-    transition: opacity 0.15s ease 0.1s, transform 0.15s ease 0.1s !important;
-  }
-
-  /* 音量面板默认隐藏状态 */
+  /* 扩展音量面板高度，覆盖按钮区域，确保hover不丢失 */
   .art-volume-panel {
-    transition: opacity 0.15s ease 0.3s, transform 0.15s ease 0.3s !important;
+    bottom: 0 !important;
+    height: calc(var(--art-volume-height, 120px) + var(--art-control-height, 38px)) !important;
+    padding-bottom: var(--art-control-height, 38px) !important;
   }
 }
 
