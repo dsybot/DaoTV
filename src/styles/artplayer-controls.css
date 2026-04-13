@@ -12,6 +12,18 @@
   background-color: #000 !important;
 }
 
+/* ===== Volume Control Hover Fix ===== */
+/* 增加音量面板的隐藏延迟，给用户足够时间移动鼠标 */
+@media (hover: hover) {
+  .art-volume-panel {
+    transition: all 0.2s ease 0.3s !important;
+  }
+
+  .art-control-volume:hover .art-volume-panel {
+    transition: all 0.2s ease 0s !important;
+  }
+}
+
 /* ===== Danmaku System Mobile Optimization ===== */
 /* 弹幕面板在不同挂载位置的定位处理 */
 @media (max-width: 768px) {
