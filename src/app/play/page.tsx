@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
+import artplayerPluginSeekButtons from '@/lib/artplayer-plugin-seek-buttons';
 import { ClientCache } from '@/lib/client-cache';
 import {
   deletePlayRecord,
@@ -5723,6 +5724,10 @@ function PlayPageClient() {
             // 毛玻璃效果控制栏插件 - 现代化悬浮设计
             // CSS已优化：桌面98%宽度，移动端100%，按钮可自动缩小适应
             artplayerPluginLiquidGlass(),
+            // 快进/快退按钮插件 - 在控制栏添加 ±10秒 按钮
+            artplayerPluginSeekButtons({
+              seekTime: 10,
+            }),
           ],
         });
 
