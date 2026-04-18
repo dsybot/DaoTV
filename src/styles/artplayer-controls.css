@@ -4,6 +4,12 @@
    ⚠️ 重要：保留所有 !important 确保正确覆盖
    ============================================ */
 
+/* ===== 强制隐藏弹幕发射器按钮 ===== */
+/* 修复初始化时序问题：在 player ready 前弹幕插件可能显示默认 UI */
+.apd-emitter {
+  display: none !important;
+}
+
 /* ===== Poster (封面图) ===== */
 .art-poster {
   background-size: contain !important;
