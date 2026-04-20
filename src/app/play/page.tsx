@@ -50,6 +50,7 @@ import LoadingScreen from '@/components/play/LoadingScreen';
 import NetDiskButton from '@/components/play/NetDiskButton';
 import OwnerChangeDialog from '@/components/play/OwnerChangeDialog';
 import PlayErrorDisplay from '@/components/play/PlayErrorDisplay';
+import { SeekButtonsSettingsPanel } from '@/components/play/SeekButtonsSettingsPanel';
 import SourceSwitchDialog from '@/components/play/SourceSwitchDialog';
 import VideoCoverDisplay from '@/components/play/VideoCoverDisplay';
 import VideoInfoSection from '@/components/play/VideoInfoSection';
@@ -358,6 +359,27 @@ function PlayPageClient() {
 
   // WebSR 设置面板状态
   const [isWebSRSettingsPanelOpen, setIsWebSRSettingsPanelOpen] =
+    useState(false);
+  const [seekButtonsSettings, setSeekButtonsSettings] = useState<{
+    seekTime: number;
+    mobileLayout: 'both' | 'left' | 'right';
+  }>(() => {
+    if (typeof window === 'undefined') {
+      return {
+        seekTime: 10,
+        mobileLayout: 'both',
+      };
+    }
+
+    return {
+      seekTime: parseInt(localStorage.getItem('seek_time') || '10', 10),
+      mobileLayout: (localStorage.getItem('seek_layout') || 'both') as
+        | 'both'
+        | 'left'
+        | 'right',
+    };
+  });
+  const [isSeekButtonsSettingsPanelOpen, setIsSeekButtonsSettingsPanelOpen] =
     useState(false);
 
   // 视频分辨率状态
@@ -5494,6 +5516,18 @@ function PlayPageClient() {
                 return '打开跳过设置面板';
               },
             },
+            {
+              html: '快进快退设置',
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>',
+              tooltip: '打开快进快退设置面板',
+              onClick: function () {
+                setIsSeekButtonsSettingsPanelOpen(true);
+                if (artPlayerRef.current) {
+                  artPlayerRef.current.setting.show = false;
+                }
+                return '打开快进快退设置面板';
+              },
+            },
             ...(webGPUSupported
               ? [
                   {
@@ -5781,7 +5815,8 @@ function PlayPageClient() {
             artplayerPluginLiquidGlass(),
             // 快进/快退按钮插件 - 在控制栏添加 ±10秒 按钮
             artplayerPluginSeekButtons({
-              seekTime: 10,
+              seekTime: seekButtonsSettings.seekTime,
+              mobileLayout: seekButtonsSettings.mobileLayout,
             }),
           ],
         });
@@ -6823,7 +6858,14 @@ function PlayPageClient() {
     };
 
     loadAndInit();
-  }, [Hls, videoUrl, loading, blockAdEnabled]);
+  }, [
+    Hls,
+    videoUrl,
+    loading,
+    blockAdEnabled,
+    seekButtonsSettings.mobileLayout,
+    seekButtonsSettings.seekTime,
+  ]);
 
   // 动态更新音轨控制按钮
   useEffect(() => {
@@ -7596,6 +7638,60 @@ function PlayPageClient() {
                   }}
                   webGPUSupported={webGPUSupported}
                   processing={false}
+                />
+              </div>
+            </div>,
+            portalContainer,
+          )}
+
+        {/* 快进快退设置面板 */}
+        {isSeekButtonsSettingsPanelOpen &&
+          portalContainer &&
+          createPortal(
+            <div
+              style={{
+                all: 'initial',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                position: 'fixed',
+                inset: 0,
+                pointerEvents: 'none',
+                zIndex: 9999,
+              }}
+            >
+              <style>{`.seek-iso svg { fill: none !important; }`}</style>
+              <div className='seek-iso' style={{ pointerEvents: 'auto' }}>
+                <SeekButtonsSettingsPanel
+                  isOpen={isSeekButtonsSettingsPanelOpen}
+                  onClose={() => setIsSeekButtonsSettingsPanelOpen(false)}
+                  settings={seekButtonsSettings}
+                  onSettingsChange={(newSettings) => {
+                    const nextSettings = {
+                      seekTime:
+                        newSettings.seekTime ?? seekButtonsSettings.seekTime,
+                      mobileLayout:
+                        newSettings.mobileLayout ??
+                        seekButtonsSettings.mobileLayout,
+                    };
+
+                    localStorage.setItem(
+                      'seek_time',
+                      String(nextSettings.seekTime),
+                    );
+                    localStorage.setItem(
+                      'seek_layout',
+                      nextSettings.mobileLayout,
+                    );
+                    setSeekButtonsSettings(nextSettings);
+
+                    if (artPlayerRef.current) {
+                      resumeTimeRef.current = artPlayerRef.current.currentTime;
+                      if (artPlayerRef.current.video.hls) {
+                        artPlayerRef.current.video.hls.destroy();
+                      }
+                      artPlayerRef.current.destroy(false);
+                      artPlayerRef.current = null;
+                    }
+                  }}
                 />
               </div>
             </div>,
