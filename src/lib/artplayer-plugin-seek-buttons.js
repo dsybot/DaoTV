@@ -164,66 +164,103 @@ export default function artplayerPluginSeekButtons(option = {}) {
           pointer-events: none;
         }
 
-        /* 双侧模式：圆形按钮（单向箭头） - 默认 */
-        .art-seek-floating-left,
-        .art-seek-floating-right {
-          width: 68px;
-          height: 68px;
+        /* 双侧模式：圆形按钮（单向箭头） */
+        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
+        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right {
+          width: 64px;
+          height: 64px;
           border-radius: 50%;
         }
 
         /* 单侧模式：椭圆形按钮（双向箭头） */
         body[data-seek-layout="left"] .art-seek-floating-left,
         body[data-seek-layout="right"] .art-seek-floating-right {
-          width: 110px;
-          height: 68px;
-          border-radius: 34px;
+          width: 96px;
+          height: 64px;
+          border-radius: 32px;
         }
 
-        .art-seek-floating-left {
-          left: 80px;  /* 避免与左侧锁定按钮重叠 */
+        /* 双侧模式：按钮在屏幕中间（Netflix风格） */
+        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left {
+          left: 50%;
+          transform: translate(-100%, -50%);
+          margin-left: -40px;
         }
 
-        .art-seek-floating-right {
+        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right {
+          right: 50%;
+          transform: translate(100%, -50%);
+          margin-right: -40px;
+        }
+
+        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left:active {
+          transform: translate(-100%, -50%) scale(0.92);
+        }
+
+        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right:active {
+          transform: translate(100%, -50%) scale(0.92);
+        }
+
+        /* 单侧模式：按钮在屏幕边缘 */
+        body[data-seek-layout="left"] .art-seek-floating-left {
+          left: 16px;
+          top: 35%;  /* 向上移动避开锁定按钮 */
+        }
+
+        body[data-seek-layout="right"] .art-seek-floating-right {
           right: 16px;
         }
 
-        .art-seek-floating-left:active,
-        .art-seek-floating-right:active {
+        /* 单侧模式的active状态 */
+        body[data-seek-layout="left"] .art-seek-floating-left:active,
+        body[data-seek-layout="right"] .art-seek-floating-right:active {
           transform: translateY(-50%) scale(0.92);
           background: rgba(255, 255, 255, 0.25);
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
         }
 
         /* 全屏时调整位置和大小 */
-        .art-fullscreen .art-seek-floating-left,
-        .art-fullscreen-web .art-seek-floating-left {
-          left: 100px;  /* 全屏时也避免与锁定按钮重叠 */
+        /* 双侧模式全屏：保持中间位置，增大间距 */
+        .art-fullscreen body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
+        .art-fullscreen-web body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left {
+          margin-left: -60px;
         }
 
-        .art-fullscreen .art-seek-floating-right,
-        .art-fullscreen-web .art-seek-floating-right {
+        .art-fullscreen body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right,
+        .art-fullscreen-web body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right {
+          margin-right: -60px;
+        }
+
+        /* 单侧模式全屏：调整边缘位置 */
+        .art-fullscreen body[data-seek-layout="left"] .art-seek-floating-left,
+        .art-fullscreen-web body[data-seek-layout="left"] .art-seek-floating-left {
+          left: 24px;
+          top: 35%;
+        }
+
+        .art-fullscreen body[data-seek-layout="right"] .art-seek-floating-right,
+        .art-fullscreen-web body[data-seek-layout="right"] .art-seek-floating-right {
           right: 24px;
         }
 
-        /* 全屏时：双侧模式（圆形按钮更大） */
-        .art-fullscreen .art-seek-floating-left,
-        .art-fullscreen .art-seek-floating-right,
-        .art-fullscreen-web .art-seek-floating-left,
-        .art-fullscreen-web .art-seek-floating-right {
-          width: 80px;
-          height: 80px;
-          padding: 18px;
+        /* 全屏时：双侧模式 */
+        .art-fullscreen body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
+        .art-fullscreen body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right,
+        .art-fullscreen-web body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
+        .art-fullscreen-web body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right {
+          width: 72px;
+          height: 72px;
+          padding: 16px;
         }
 
-        /* 全屏时：单侧模式（椭圆按钮更大） */
-        body[data-seek-layout="left"] .art-fullscreen .art-seek-floating-left,
-        body[data-seek-layout="right"] .art-fullscreen .art-seek-floating-right,
-        body[data-seek-layout="left"] .art-fullscreen-web .art-seek-floating-left,
-        body[data-seek-layout="right"] .art-fullscreen-web .art-seek-floating-right {
-          width: 128px;
-          height: 80px;
-          padding: 18px;
+        /* 全屏时：单侧模式 */
+        .art-fullscreen body[data-seek-layout="left"] .art-seek-floating-left,
+        .art-fullscreen body[data-seek-layout="right"] .art-seek-floating-right,
+        .art-fullscreen-web body[data-seek-layout="left"] .art-seek-floating-left,
+        .art-fullscreen-web body[data-seek-layout="right"] .art-seek-floating-right {
+          width: 108px;
+          height: 72px;
+          padding: 16px;
         }
       `;
       document.head.appendChild(style);
