@@ -63,14 +63,16 @@ export default function artplayerPluginSeekButtons(option = {}) {
         button.className = `art-seek-floating-${side}`;
 
         if (isSingleButton) {
-          // 单侧模式：显示双向箭头
+          // 单侧模式：显示双向箭头（竖向排列）
           const dualIcon = `
-            <svg viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-              <g transform="translate(0, 0) scale(0.65)">
+            <svg viewBox="0 0 32 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+              <!-- 上方后退箭头 -->
+              <g transform="translate(0, 2) scale(0.65)">
                 <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12h-2.5c0 5.247-4.253 9.5-9.5 9.5S6.5 21.247 6.5 16 10.753 6.5 16 6.5c2.858 0 5.42 1.265 7.176 3.265L20 13h8V5l-2.94 2.94C22.697 5.39 19.547 4 16 4z" fill="currentColor"/>
                 <text x="16" y="19" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" font-family="Arial, sans-serif">${currentSeekTime}</text>
               </g>
-              <g transform="translate(24, 0) scale(0.65)">
+              <!-- 下方前进箭头 -->
+              <g transform="translate(0, 30) scale(0.65)">
                 <path d="M16 4c6.627 0 12 5.373 12 12s-5.373 12-12 12S4 22.627 4 16h2.5c0 5.247 4.253 9.5 9.5 9.5s9.5-4.253 9.5-9.5S21.247 6.5 16 6.5c-2.858 0-5.42 1.265-7.176 3.265L12 13H4V5l2.94 2.94C9.303 5.39 12.453 4 16 4z" fill="currentColor"/>
                 <text x="16" y="19" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" font-family="Arial, sans-serif">${currentSeekTime}</text>
               </g>
@@ -78,12 +80,12 @@ export default function artplayerPluginSeekButtons(option = {}) {
           `;
           button.innerHTML = dualIcon;
 
-          // 点击事件：左半边快退，右半边快进
+          // 点击事件：上半边快退，下半边快进
           button.onclick = (e) => {
             const rect = button.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const isLeftHalf = clickX < rect.width / 2;
-            if (isLeftHalf) {
+            const clickY = e.clientY - rect.top;
+            const isTopHalf = clickY < rect.height / 2;
+            if (isTopHalf) {
               seekBackward();
             } else {
               seekForward();
@@ -172,11 +174,11 @@ export default function artplayerPluginSeekButtons(option = {}) {
           border-radius: 50%;
         }
 
-        /* 单侧模式：椭圆形按钮（双向箭头） */
+        /* 单侧模式：竖向椭圆按钮（双向箭头上下排列） */
         body[data-seek-layout="left"] .art-seek-floating-left,
         body[data-seek-layout="right"] .art-seek-floating-right {
-          width: 96px;
-          height: 64px;
+          width: 64px;
+          height: 110px;
           border-radius: 32px;
         }
 
@@ -258,8 +260,8 @@ export default function artplayerPluginSeekButtons(option = {}) {
         .art-fullscreen body[data-seek-layout="right"] .art-seek-floating-right,
         .art-fullscreen-web body[data-seek-layout="left"] .art-seek-floating-left,
         .art-fullscreen-web body[data-seek-layout="right"] .art-seek-floating-right {
-          width: 108px;
-          height: 72px;
+          width: 72px;
+          height: 128px;
           padding: 16px;
         }
       `;
@@ -362,14 +364,14 @@ export default function artplayerPluginSeekButtons(option = {}) {
               button.className = `art-seek-floating-${side}`;
 
               if (isSingleButton) {
-                // 单侧模式：显示双向箭头
+                // 单侧模式：显示双向箭头（竖向排列）
                 const dualIcon = `
-                  <svg viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-                    <g transform="translate(0, 0) scale(0.65)">
+                  <svg viewBox="0 0 32 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                    <g transform="translate(0, 2) scale(0.65)">
                       <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12h-2.5c0 5.247-4.253 9.5-9.5 9.5S6.5 21.247 6.5 16 10.753 6.5 16 6.5c2.858 0 5.42 1.265 7.176 3.265L20 13h8V5l-2.94 2.94C22.697 5.39 19.547 4 16 4z" fill="currentColor"/>
                       <text x="16" y="19" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" font-family="Arial, sans-serif">${currentSeekTime}</text>
                     </g>
-                    <g transform="translate(24, 0) scale(0.65)">
+                    <g transform="translate(0, 30) scale(0.65)">
                       <path d="M16 4c6.627 0 12 5.373 12 12s-5.373 12-12 12S4 22.627 4 16h2.5c0 5.247 4.253 9.5 9.5 9.5s9.5-4.253 9.5-9.5S21.247 6.5 16 6.5c-2.858 0-5.42 1.265-7.176 3.265L12 13H4V5l2.94 2.94C9.303 5.39 12.453 4 16 4z" fill="currentColor"/>
                       <text x="16" y="19" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" font-family="Arial, sans-serif">${currentSeekTime}</text>
                     </g>
@@ -378,9 +380,9 @@ export default function artplayerPluginSeekButtons(option = {}) {
                 button.innerHTML = dualIcon;
                 button.onclick = (e) => {
                   const rect = button.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const isLeftHalf = clickX < rect.width / 2;
-                  if (isLeftHalf) {
+                  const clickY = e.clientY - rect.top;
+                  const isTopHalf = clickY < rect.height / 2;
+                  if (isTopHalf) {
                     seekBackward();
                   } else {
                     seekForward();
@@ -431,15 +433,15 @@ export default function artplayerPluginSeekButtons(option = {}) {
                 }
               });
             } else {
-              // 单侧模式：更新双向箭头
+              // 单侧模式：更新双向箭头（竖向排列）
               buttons.forEach(button => {
                 const dualIcon = `
-                  <svg viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-                    <g transform="translate(0, 0) scale(0.65)">
+                  <svg viewBox="0 0 32 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                    <g transform="translate(0, 2) scale(0.65)">
                       <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12h-2.5c0 5.247-4.253 9.5-9.5 9.5S6.5 21.247 6.5 16 10.753 6.5 16 6.5c2.858 0 5.42 1.265 7.176 3.265L20 13h8V5l-2.94 2.94C22.697 5.39 19.547 4 16 4z" fill="currentColor"/>
                       <text x="16" y="19" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" font-family="Arial, sans-serif">${currentSeekTime}</text>
                     </g>
-                    <g transform="translate(24, 0) scale(0.65)">
+                    <g transform="translate(0, 30) scale(0.65)">
                       <path d="M16 4c6.627 0 12 5.373 12 12s-5.373 12-12 12S4 22.627 4 16h2.5c0 5.247 4.253 9.5 9.5 9.5s9.5-4.253 9.5-9.5S21.247 6.5 16 6.5c-2.858 0-5.42 1.265-7.176 3.265L12 13H4V5l2.94 2.94C9.303 5.39 12.453 4 16 4z" fill="currentColor"/>
                       <text x="16" y="19" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" font-family="Arial, sans-serif">${currentSeekTime}</text>
                     </g>
