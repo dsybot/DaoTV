@@ -21,5 +21,6 @@ declare module '@/lib/artplayer-plugin-seek-buttons' {
     option?: SeekButtonsOption
   ): (art: Artplayer) => {
     name: string;
+    config: (newOptions: Partial<SeekButtonsOption>) => void;
   };
 }
