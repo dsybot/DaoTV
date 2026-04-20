@@ -5065,6 +5065,61 @@ function PlayPageClient() {
         const artplayerPluginDanmuku = (window as any)
           .DynamicArtplayerPluginDanmuku;
 
+        // 提前添加弹幕 UI 优化 CSS，避免插件初始化时按钮闪现
+        if (!document.getElementById('danmuku-controls-optimize')) {
+          const style = document.createElement('style');
+          style.id = 'danmuku-controls-optimize';
+          style.textContent = `
+            /* 🎯 统一弹幕按钮图标大小 */
+            .artplayer-plugin-danmuku .apd-config svg,
+            .artplayer-plugin-danmuku .apd-style svg,
+            .artplayer-plugin-danmuku .apd-toggle svg {
+              width: 24px !important;
+              height: 24px !important;
+            }
+
+            /* 隐藏插件原生的配置面板（使用自定义设置面板代替） */
+            .artplayer-plugin-danmuku .apd-config-panel {
+              display: none !important;
+            }
+
+            /* 📱 移动端默认隐藏弹幕输入框，仅全屏时显示 */
+            @media (max-width: 768px) {
+              .artplayer-plugin-danmuku .apd-emitter {
+                display: none !important;
+              }
+
+              .art-fullscreen .artplayer-plugin-danmuku .apd-emitter,
+              .art-fullscreen-web .artplayer-plugin-danmuku .apd-emitter,
+              .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-emitter {
+                display: flex !important;
+              }
+            }
+
+            /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
+            .artplayer-plugin-danmuku .apd-config {
+              position: relative;
+            }
+
+            /* 全屏模式下的特殊优化 */
+            .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-config-panel {
+              /* 全屏时使用固定定位并调整位置 */
+              position: fixed !important;
+              top: auto !important;
+              bottom: 80px !important; /* 距离底部控制栏80px */
+              right: 20px !important; /* 距离右边20px */
+              left: auto !important;
+              z-index: 2147483647 !important;
+            }
+
+            /* 确保全屏模式下弹幕面板内部元素可点击 */
+            .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-config-panel * {
+              pointer-events: auto !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
         // 创建新的播放器实例
         Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
         Artplayer.USE_RAF = false;
@@ -5977,66 +6032,6 @@ function PlayPageClient() {
 
             artPlayerRef.current.on('video:play', handleFirstPlay);
           }
-
-          // 添加弹幕插件按钮选择性隐藏CSS
-          const optimizeDanmukuControlsCSS = () => {
-            if (document.getElementById('danmuku-controls-optimize')) return;
-
-            const style = document.createElement('style');
-            style.id = 'danmuku-controls-optimize';
-            style.textContent = `
-            /* 🎯 统一弹幕按钮图标大小 */
-            .artplayer-plugin-danmuku .apd-config svg,
-            .artplayer-plugin-danmuku .apd-style svg,
-            .artplayer-plugin-danmuku .apd-toggle svg {
-              width: 24px !important;
-              height: 24px !important;
-            }
-
-            /* 隐藏插件原生的配置面板（使用自定义设置面板代替） */
-            .artplayer-plugin-danmuku .apd-config-panel {
-              display: none !important;
-            }
-            
-            /* 📱 移动端默认隐藏弹幕输入框，仅全屏时显示 */
-            @media (max-width: 768px) {
-              .artplayer-plugin-danmuku .apd-emitter {
-                display: none !important;
-              }
-
-              .art-fullscreen .artplayer-plugin-danmuku .apd-emitter,
-              .art-fullscreen-web .artplayer-plugin-danmuku .apd-emitter,
-              .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-emitter {
-                display: flex !important;
-              }
-            }
-            
-            /* 弹幕配置面板优化 - 修复全屏模式下点击问题 */
-            .artplayer-plugin-danmuku .apd-config {
-              position: relative;
-            }
-            
-            /* 全屏模式下的特殊优化 */
-            .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-config-panel {
-              /* 全屏时使用固定定位并调整位置 */
-              position: fixed !important;
-              top: auto !important;
-              bottom: 80px !important; /* 距离底部控制栏80px */
-              right: 20px !important; /* 距离右边20px */
-              left: auto !important;
-              z-index: 2147483647 !important;
-            }
-            
-            /* 确保全屏模式下弹幕面板内部元素可点击 */
-            .artplayer[data-fullscreen="true"] .artplayer-plugin-danmuku .apd-config-panel * {
-              pointer-events: auto !important;
-            }
-          `;
-            document.head.appendChild(style);
-          };
-
-          // 应用CSS优化
-          optimizeDanmukuControlsCSS();
 
           // 精确解决弹幕菜单与进度条拖拽冲突 - 基于ArtPlayer原生拖拽逻辑
           const fixDanmakuProgressConflict = () => {
