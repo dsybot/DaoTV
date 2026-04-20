@@ -120,7 +120,8 @@ export default function artplayerPluginSeekButtons(option = {}) {
         // 跟随控制栏的显示/隐藏状态
         const updateButtonsVisibility = () => {
           const controlsVisible = art.controls.show;
-          buttons.forEach(button => {
+          const allButtons = art.template.$player.querySelectorAll('.art-seek-floating-left, .art-seek-floating-right');
+          allButtons.forEach(button => {
             if (controlsVisible) {
               button.style.opacity = '0.85';
               button.style.pointerEvents = 'auto';
@@ -163,24 +164,24 @@ export default function artplayerPluginSeekButtons(option = {}) {
           pointer-events: none;
         }
 
-        /* 双侧模式：圆形按钮（单向箭头） */
-        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
-        body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right {
-          width: 64px;
-          height: 64px;
+        /* 双侧模式：圆形按钮（单向箭头） - 默认 */
+        .art-seek-floating-left,
+        .art-seek-floating-right {
+          width: 68px;
+          height: 68px;
           border-radius: 50%;
         }
 
         /* 单侧模式：椭圆形按钮（双向箭头） */
         body[data-seek-layout="left"] .art-seek-floating-left,
         body[data-seek-layout="right"] .art-seek-floating-right {
-          width: 96px;
-          height: 64px;
-          border-radius: 32px;
+          width: 110px;
+          height: 68px;
+          border-radius: 34px;
         }
 
         .art-seek-floating-left {
-          left: 16px;
+          left: 80px;  /* 避免与左侧锁定按钮重叠 */
         }
 
         .art-seek-floating-right {
@@ -197,7 +198,7 @@ export default function artplayerPluginSeekButtons(option = {}) {
         /* 全屏时调整位置和大小 */
         .art-fullscreen .art-seek-floating-left,
         .art-fullscreen-web .art-seek-floating-left {
-          left: 24px;
+          left: 100px;  /* 全屏时也避免与锁定按钮重叠 */
         }
 
         .art-fullscreen .art-seek-floating-right,
@@ -205,24 +206,24 @@ export default function artplayerPluginSeekButtons(option = {}) {
           right: 24px;
         }
 
-        /* 全屏时：双侧模式 */
-        .art-fullscreen body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
-        .art-fullscreen body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right,
-        .art-fullscreen-web body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-left,
-        .art-fullscreen-web body:not([data-seek-layout="left"]):not([data-seek-layout="right"]) .art-seek-floating-right {
-          width: 72px;
-          height: 72px;
-          padding: 16px;
+        /* 全屏时：双侧模式（圆形按钮更大） */
+        .art-fullscreen .art-seek-floating-left,
+        .art-fullscreen .art-seek-floating-right,
+        .art-fullscreen-web .art-seek-floating-left,
+        .art-fullscreen-web .art-seek-floating-right {
+          width: 80px;
+          height: 80px;
+          padding: 18px;
         }
 
-        /* 全屏时：单侧模式 */
-        .art-fullscreen body[data-seek-layout="left"] .art-seek-floating-left,
-        .art-fullscreen body[data-seek-layout="right"] .art-seek-floating-right,
-        .art-fullscreen-web body[data-seek-layout="left"] .art-seek-floating-left,
-        .art-fullscreen-web body[data-seek-layout="right"] .art-seek-floating-right {
-          width: 108px;
-          height: 72px;
-          padding: 16px;
+        /* 全屏时：单侧模式（椭圆按钮更大） */
+        body[data-seek-layout="left"] .art-fullscreen .art-seek-floating-left,
+        body[data-seek-layout="right"] .art-fullscreen .art-seek-floating-right,
+        body[data-seek-layout="left"] .art-fullscreen-web .art-seek-floating-left,
+        body[data-seek-layout="right"] .art-fullscreen-web .art-seek-floating-right {
+          width: 128px;
+          height: 80px;
+          padding: 18px;
         }
       `;
       document.head.appendChild(style);
@@ -366,6 +367,19 @@ export default function artplayerPluginSeekButtons(option = {}) {
               const button = createFloatingButtonForUpdate(currentMobileLayout, true);
               art.template.$player.appendChild(button);
             }
+
+            // 重建后立即更新按钮可见性
+            const controlsVisible = art.controls.show;
+            const newButtons = art.template.$player.querySelectorAll('.art-seek-floating-left, .art-seek-floating-right');
+            newButtons.forEach(btn => {
+              if (controlsVisible) {
+                btn.style.opacity = '0.85';
+                btn.style.pointerEvents = 'auto';
+              } else {
+                btn.style.opacity = '0';
+                btn.style.pointerEvents = 'none';
+              }
+            });
           } else if (newOptions.seekTime !== undefined) {
             // 只是秒数改变：只更新 innerHTML，不重建按钮
             const buttons = art.template.$player.querySelectorAll('.art-seek-floating-left, .art-seek-floating-right');
