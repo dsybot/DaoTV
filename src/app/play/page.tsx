@@ -360,25 +360,6 @@ function PlayPageClient() {
   // WebSR 设置面板状态
   const [isWebSRSettingsPanelOpen, setIsWebSRSettingsPanelOpen] =
     useState(false);
-  const [seekButtonsSettings, setSeekButtonsSettings] = useState<{
-    seekTime: number;
-    mobileLayout: 'both' | 'left' | 'right';
-  }>(() => {
-    if (typeof window === 'undefined') {
-      return {
-        seekTime: 10,
-        mobileLayout: 'both',
-      };
-    }
-
-    return {
-      seekTime: parseInt(localStorage.getItem('seek_time') || '10', 10),
-      mobileLayout: (localStorage.getItem('seek_layout') || 'both') as
-        | 'both'
-        | 'left'
-        | 'right',
-    };
-  });
   const [isSeekButtonsSettingsPanelOpen, setIsSeekButtonsSettingsPanelOpen] =
     useState(false);
 
@@ -5815,8 +5796,11 @@ function PlayPageClient() {
             artplayerPluginLiquidGlass(),
             // 快进/快退按钮插件 - 在控制栏添加 ±10秒 按钮
             artplayerPluginSeekButtons({
-              seekTime: seekButtonsSettings.seekTime,
-              mobileLayout: seekButtonsSettings.mobileLayout,
+              seekTime: parseInt(localStorage.getItem('seek_time') || '10', 10),
+              mobileLayout: (localStorage.getItem('seek_layout') || 'both') as
+                | 'both'
+                | 'left'
+                | 'right',
             }),
           ],
         });
@@ -6858,14 +6842,7 @@ function PlayPageClient() {
     };
 
     loadAndInit();
-  }, [
-    Hls,
-    videoUrl,
-    loading,
-    blockAdEnabled,
-    seekButtonsSettings.mobileLayout,
-    seekButtonsSettings.seekTime,
-  ]);
+  }, [Hls, videoUrl, loading, blockAdEnabled]);
 
   // 动态更新音轨控制按钮
   useEffect(() => {
@@ -7663,25 +7640,27 @@ function PlayPageClient() {
                 <SeekButtonsSettingsPanel
                   isOpen={isSeekButtonsSettingsPanelOpen}
                   onClose={() => setIsSeekButtonsSettingsPanelOpen(false)}
-                  settings={seekButtonsSettings}
+                  settings={{
+                    seekTime: parseInt(
+                      localStorage.getItem('seek_time') || '10',
+                      10,
+                    ),
+                    mobileLayout: (localStorage.getItem('seek_layout') ||
+                      'both') as 'both' | 'left' | 'right',
+                  }}
                   onSettingsChange={(newSettings) => {
-                    const nextSettings = {
-                      seekTime:
-                        newSettings.seekTime ?? seekButtonsSettings.seekTime,
-                      mobileLayout:
-                        newSettings.mobileLayout ??
-                        seekButtonsSettings.mobileLayout,
-                    };
-
-                    localStorage.setItem(
-                      'seek_time',
-                      String(nextSettings.seekTime),
-                    );
-                    localStorage.setItem(
-                      'seek_layout',
-                      nextSettings.mobileLayout,
-                    );
-                    setSeekButtonsSettings(nextSettings);
+                    if (newSettings.seekTime !== undefined) {
+                      localStorage.setItem(
+                        'seek_time',
+                        String(newSettings.seekTime),
+                      );
+                    }
+                    if (newSettings.mobileLayout !== undefined) {
+                      localStorage.setItem(
+                        'seek_layout',
+                        newSettings.mobileLayout,
+                      );
+                    }
 
                     if (artPlayerRef.current) {
                       resumeTimeRef.current = artPlayerRef.current.currentTime;
