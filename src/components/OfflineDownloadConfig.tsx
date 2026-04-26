@@ -5,6 +5,7 @@ import { Download } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface DownloadConfigProps {
   config: AdminConfig | null;
@@ -98,18 +99,7 @@ const DownloadConfig: React.FC<DownloadConfigProps> = ({
             开启后，播放页面将显示下载按钮
           </p>
         </div>
-        <button
-          onClick={() => setEnabled(!enabled)}
-          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${enabled
-              ? 'bg-green-600 dark:bg-green-600'
-              : 'bg-gray-200 dark:bg-gray-700'
-            }`}
-        >
-          <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
-          />
-        </button>
+        <ToggleSwitch checked={enabled} onChange={setEnabled} />
       </div>
 
       {/* 保存按钮 */}

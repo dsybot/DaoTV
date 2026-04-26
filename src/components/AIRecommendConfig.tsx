@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface AIRecommendConfigProps {
   config: AdminConfig | null;
@@ -371,26 +372,18 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
 
         {/* 启用开关 */}
         <div className='mb-6'>
-          <label className='flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              className='sr-only'
+          <div className='flex items-center'>
+            <ToggleSwitch
               checked={aiSettings.enabled}
-              onChange={(e) => setAiSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+              color='blue'
+              onChange={(checked) =>
+                setAiSettings((prev) => ({ ...prev, enabled: checked }))
+              }
             />
-            <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              aiSettings.enabled
-                ? 'bg-blue-600'
-                : 'bg-gray-200 dark:bg-gray-600'
-            }`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                aiSettings.enabled ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </div>
             <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
               启用AI推荐功能
             </span>
-          </label>
+          </div>
           <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             开启后用户可以在主页看到AI推荐按钮并与AI对话获取影视推荐
           </p>
@@ -585,26 +578,21 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
 
           {/* 启用智能协调器 */}
           <div className='mb-6'>
-            <label className='flex items-center cursor-pointer'>
-              <input
-                type='checkbox'
-                className='sr-only'
+            <div className='flex items-center'>
+              <ToggleSwitch
                 checked={aiSettings.enableOrchestrator}
-                onChange={(e) => setAiSettings(prev => ({ ...prev, enableOrchestrator: e.target.checked }))}
+                color='purple'
+                onChange={(checked) =>
+                  setAiSettings((prev) => ({
+                    ...prev,
+                    enableOrchestrator: checked,
+                  }))
+                }
               />
-              <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                aiSettings.enableOrchestrator
-                  ? 'bg-purple-600'
-                  : 'bg-gray-200 dark:bg-gray-600'
-              }`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  aiSettings.enableOrchestrator ? 'translate-x-6' : 'translate-x-1'
-                }`} />
-              </div>
               <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                 启用智能协调器（意图分析）
               </span>
-            </label>
+            </div>
             <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
               开启后AI会自动分析用户问题，判断是否需要联网搜索最新信息
             </p>
@@ -615,26 +603,20 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
             <div className='space-y-4 pl-6 border-l-2 border-purple-200 dark:border-purple-800'>
               {/* 启用联网搜索 */}
               <div>
-                <label className='flex items-center cursor-pointer'>
-                  <input
-                    type='checkbox'
-                    className='sr-only'
+                <div className='flex items-center'>
+                  <ToggleSwitch
                     checked={aiSettings.enableWebSearch}
-                    onChange={(e) => setAiSettings(prev => ({ ...prev, enableWebSearch: e.target.checked }))}
+                    onChange={(checked) =>
+                      setAiSettings((prev) => ({
+                        ...prev,
+                        enableWebSearch: checked,
+                      }))
+                    }
                   />
-                  <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    aiSettings.enableWebSearch
-                      ? 'bg-green-600'
-                      : 'bg-gray-200 dark:bg-gray-600'
-                  }`}>
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      aiSettings.enableWebSearch ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
-                  </div>
                   <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                     启用联网搜索（Tavily）
                   </span>
-                </label>
+                </div>
                 <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                   使用Tavily搜索引擎获取最新影视资讯、演员动态等实时信息
                 </p>

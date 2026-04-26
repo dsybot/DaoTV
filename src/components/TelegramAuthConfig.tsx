@@ -3,6 +3,8 @@
 import { AlertCircle, CheckCircle2, Save, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import ToggleSwitch from '@/components/ToggleSwitch';
+
 interface TelegramAuthConfigProps {
   config: {
     enabled: boolean;
@@ -107,19 +109,13 @@ export function TelegramAuthConfig({ config, onSave }: TelegramAuthConfigProps) 
             开启后，登录页面将显示 Telegram 登录按钮
           </p>
         </div>
-        <button
-          type='button'
-          onClick={() => setLocalConfig({ ...localConfig, enabled: !localConfig.enabled })}
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            localConfig.enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-          }`}
-        >
-          <span
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-              localConfig.enabled ? 'translate-x-5' : 'translate-x-0'
-            }`}
-          />
-        </button>
+        <ToggleSwitch
+          checked={localConfig.enabled}
+          color='blue'
+          onChange={(checked) =>
+            setLocalConfig({ ...localConfig, enabled: checked })
+          }
+        />
       </div>
 
       {/* Bot 配置 */}
@@ -172,19 +168,13 @@ export function TelegramAuthConfig({ config, onSave }: TelegramAuthConfigProps) 
               首次通过 Telegram 登录的用户将自动创建账号
             </p>
           </div>
-          <button
-            type='button'
-            onClick={() => setLocalConfig({ ...localConfig, autoRegister: !localConfig.autoRegister })}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              localConfig.autoRegister ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                localConfig.autoRegister ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
+          <ToggleSwitch
+            checked={localConfig.autoRegister}
+            color='blue'
+            onChange={(checked) =>
+              setLocalConfig({ ...localConfig, autoRegister: checked })
+            }
+          />
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface YouTubeConfigProps {
   config: AdminConfig | null;
@@ -167,26 +168,18 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
 
         {/* 启用开关 */}
         <div className='mb-6'>
-          <label className='flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              className='sr-only'
+          <div className='flex items-center'>
+            <ToggleSwitch
               checked={youtubeSettings.enabled}
-              onChange={(e) => setYoutubeSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+              color='red'
+              onChange={(checked) =>
+                setYoutubeSettings((prev) => ({ ...prev, enabled: checked }))
+              }
             />
-            <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              youtubeSettings.enabled
-                ? 'bg-red-600'
-                : 'bg-gray-200 dark:bg-gray-600'
-            }`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                youtubeSettings.enabled ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </div>
             <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
               启用YouTube搜索功能
             </span>
-          </label>
+          </div>
           <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             开启后用户可以在搜索页面切换到YouTube模式搜索和观看视频
           </p>
@@ -197,26 +190,21 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
           <div className='space-y-4'>
             {/* 演示模式开关 */}
             <div className='mb-4'>
-              <label className='flex items-center cursor-pointer'>
-                <input
-                  type='checkbox'
-                  className='sr-only'
+              <div className='flex items-center'>
+                <ToggleSwitch
                   checked={youtubeSettings.enableDemo}
-                  onChange={(e) => setYoutubeSettings(prev => ({ ...prev, enableDemo: e.target.checked }))}
+                  color='blue'
+                  onChange={(checked) =>
+                    setYoutubeSettings((prev) => ({
+                      ...prev,
+                      enableDemo: checked,
+                    }))
+                  }
                 />
-                <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  youtubeSettings.enableDemo
-                    ? 'bg-blue-600'
-                    : 'bg-gray-200 dark:bg-gray-600'
-                }`}>
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    youtubeSettings.enableDemo ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </div>
                 <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                   启用演示模式
                 </span>
-              </label>
+              </div>
               <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                 演示模式使用预设的视频数据，无需API密钥。关闭后将使用真实的YouTube API
               </p>

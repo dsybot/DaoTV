@@ -84,6 +84,7 @@ import DanmuApiConfig from '@/components/DanmuApiConfig';
 import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
 import InviteCodeManager from '@/components/InviteCodeManager';
 import PageLayout from '@/components/PageLayout';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 // 统一按钮样式系统
 const buttonStyles = {
@@ -135,12 +136,6 @@ const buttonStyles = {
     'px-3 py-1.5 text-sm font-medium bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white rounded-lg transition-colors',
   disabledSmall:
     'px-2 py-1 text-xs font-medium bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white rounded-md transition-colors',
-  // 开关按钮样式
-  toggleOn: 'bg-green-600 dark:bg-green-600',
-  toggleOff: 'bg-gray-200 dark:bg-gray-700',
-  toggleThumb: 'bg-white',
-  toggleThumbOn: 'translate-x-6',
-  toggleThumbOff: 'translate-x-1',
   // 快速操作按钮样式
   quickAction:
     'px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors',
@@ -998,16 +993,9 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 </div>
               </div>
               <div className='flex items-center mt-2'>
-                <button
-                  type='button'
-                  className={`relative inline-flex items-center h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                    config.UserConfig.AllowRegister
-                      ? buttonStyles.toggleOn
-                      : buttonStyles.toggleOff
-                  }`}
-                  role='switch'
-                  aria-checked={config.UserConfig.AllowRegister}
-                  onClick={async () => {
+                <ToggleSwitch
+                  checked={config.UserConfig.AllowRegister}
+                  onChange={async () => {
                     await withLoading('toggleAllowRegister', async () => {
                       try {
                         const response = await fetch('/api/admin/config', {
@@ -1043,16 +1031,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       }
                     });
                   }}
-                >
-                  <span
-                    aria-hidden='true'
-                    className={`pointer-events-none inline-block h-4 w-4 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${
-                      config.UserConfig.AllowRegister
-                        ? buttonStyles.toggleThumbOn
-                        : buttonStyles.toggleThumbOff
-                    }`}
-                  />
-                </button>
+                />
                 <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                   {config.UserConfig.AllowRegister ? '开启' : '关闭'}
                 </span>
@@ -1072,14 +1051,9 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     </div>
                   </div>
                   <div className='flex items-center'>
-                    <button
-                      type="button"
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                        config.UserConfig.RequireInviteCode ? buttonStyles.toggleOn : buttonStyles.toggleOff
-                      }`}
-                      role="switch"
-                      aria-checked={config.UserConfig.RequireInviteCode}
-                      onClick={async () => {
+                    <ToggleSwitch
+                      checked={config.UserConfig.RequireInviteCode}
+                      onChange={async () => {
                         await withLoading('toggleRequireInviteCode', async () => {
                           try {
                             const response = await fetch('/api/admin/config', {
@@ -1110,14 +1084,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           }
                         });
                       }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`pointer-events-none inline-block h-5 w-5 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${
-                          config.UserConfig.RequireInviteCode ? buttonStyles.toggleThumbOn : buttonStyles.toggleThumbOff
-                        }`}
-                      />
-                    </button>
+                    />
                     <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                       {config.UserConfig.RequireInviteCode ? '开启' : '关闭'}
                     </span>
@@ -1138,16 +1105,9 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   </div>
                 </div>
                 <div className='flex items-center mt-2'>
-                  <button
-                    type='button'
-                    className={`relative inline-flex items-center h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                      config.UserConfig.AutoCleanupInactiveUsers
-                        ? buttonStyles.toggleOn
-                        : buttonStyles.toggleOff
-                    }`}
-                    role='switch'
-                    aria-checked={config.UserConfig.AutoCleanupInactiveUsers}
-                    onClick={async () => {
+                  <ToggleSwitch
+                    checked={config.UserConfig.AutoCleanupInactiveUsers}
+                    onChange={async () => {
                       await withLoading('toggleAutoCleanup', async () => {
                         try {
                           const response = await fetch('/api/admin/config', {
@@ -1187,16 +1147,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         }
                       });
                     }}
-                  >
-                    <span
-                      aria-hidden='true'
-                      className={`pointer-events-none inline-block h-4 w-4 rounded-full ${buttonStyles.toggleThumb} shadow transform ring-0 transition duration-200 ease-in-out ${
-                        config.UserConfig.AutoCleanupInactiveUsers
-                          ? buttonStyles.toggleThumbOn
-                          : buttonStyles.toggleThumbOff
-                      }`}
-                    />
-                  </button>
+                  />
                   <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                     {config.UserConfig.AutoCleanupInactiveUsers
                       ? '开启'
@@ -2203,7 +2154,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
                 {/* 成人内容控制 */}
                 <div className='mb-6 p-4 bg-linear-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
-                  <label className='flex items-center justify-between cursor-pointer'>
+                  <div className='flex items-center justify-between'>
                     <div className='flex-1'>
                       <div className='flex items-center space-x-2'>
                         <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
@@ -2216,18 +2167,14 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         &gt; 用户组 &gt; 全局）
                       </p>
                     </div>
-                    <div className='relative inline-block ml-4'>
-                      <input
-                        type='checkbox'
+                    <div className='ml-4'>
+                      <ToggleSwitch
                         checked={selectedShowAdultContent}
-                        onChange={(e) =>
-                          setSelectedShowAdultContent(e.target.checked)
-                        }
-                        className='sr-only peer'
+                        color='red'
+                        onChange={setSelectedShowAdultContent}
                       />
-                      <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-linear-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
                     </div>
-                  </label>
+                  </div>
                 </div>
 
                 {/* 操作按钮 */}
@@ -2500,7 +2447,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
                   {/* 成人内容控制 */}
                   <div className='p-4 bg-linear-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
-                    <label className='flex items-center justify-between cursor-pointer'>
+                    <div className='flex items-center justify-between'>
                       <div className='flex-1'>
                         <div className='flex items-center space-x-2'>
                           <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
@@ -2512,21 +2459,19 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           允许此用户组查看被标记为成人资源的视频源（需要同时启用站点级别的成人内容开关）
                         </p>
                       </div>
-                      <div className='relative inline-block ml-4'>
-                        <input
-                          type='checkbox'
+                      <div className='ml-4'>
+                        <ToggleSwitch
                           checked={newUserGroup.showAdultContent}
-                          onChange={(e) =>
+                          color='red'
+                          onChange={(checked) =>
                             setNewUserGroup((prev) => ({
                               ...prev,
-                              showAdultContent: e.target.checked,
+                              showAdultContent: checked,
                             }))
                           }
-                          className='sr-only peer'
                         />
-                        <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-linear-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
                       </div>
-                    </label>
+                    </div>
                   </div>
 
                   {/* 操作按钮 */}
@@ -2804,7 +2749,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
                   {/* 成人内容控制 */}
                   <div className='p-4 bg-linear-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
-                    <label className='flex items-center justify-between cursor-pointer'>
+                    <div className='flex items-center justify-between'>
                       <div className='flex-1'>
                         <div className='flex items-center space-x-2'>
                           <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
@@ -2816,25 +2761,23 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           允许此用户组查看被标记为成人资源的视频源（需要同时启用站点级别的成人内容开关）
                         </p>
                       </div>
-                      <div className='relative inline-block ml-4'>
-                        <input
-                          type='checkbox'
+                      <div className='ml-4'>
+                        <ToggleSwitch
                           checked={editingUserGroup?.showAdultContent || false}
-                          onChange={(e) =>
+                          color='red'
+                          onChange={(checked) =>
                             setEditingUserGroup((prev) =>
                               prev
                                 ? {
                                     ...prev,
-                                    showAdultContent: e.target.checked,
+                                    showAdultContent: checked,
                                   }
                                 : null,
                             )
                           }
-                          className='sr-only peer'
                         />
-                        <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-linear-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
                       </div>
-                    </label>
+                    </div>
                   </div>
 
                   {/* 操作按钮 */}
@@ -4128,22 +4071,15 @@ const VideoSourceConfig = ({
           </span>
         </td>
         <td className='px-6 py-4 whitespace-nowrap text-center'>
-          <button
-            onClick={() => handleToggleAdult(source.key, !source.is_adult)}
+          <ToggleSwitch
+            checked={!!source.is_adult}
+            onChange={(checked) => handleToggleAdult(source.key, checked)}
+            color='red'
             disabled={isLoading(`toggleAdult_${source.key}`)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              source.is_adult
-                ? 'bg-linear-to-r from-red-600 to-pink-600 focus:ring-red-500'
-                : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500'
-            } ${isLoading(`toggleAdult_${source.key}`) ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={
               source.is_adult ? '点击取消成人资源标记' : '点击标记为成人资源'
             }
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${source.is_adult ? 'translate-x-6' : 'translate-x-1'}`}
-            />
-          </button>
+          />
           {source.is_adult && (
             <span className='ml-2 text-xs text-red-600 dark:text-red-400'>
               🔞
@@ -4570,20 +4506,16 @@ const VideoSourceConfig = ({
               为网页播放启用全球CDN加速，提升视频源API访问速度和稳定性
             </p>
           </div>
-          <label className='relative inline-flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              checked={videoProxySettings.enabled}
-              onChange={(e) =>
-                setVideoProxySettings((prev) => ({
-                  ...prev,
-                  enabled: e.target.checked,
-                }))
-              }
-              className='sr-only peer'
-            />
-            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          </label>
+          <ToggleSwitch
+            checked={videoProxySettings.enabled}
+            color='blue'
+            onChange={(checked) =>
+              setVideoProxySettings((prev) => ({
+                ...prev,
+                enabled: checked,
+              }))
+            }
+          />
         </div>
 
         {videoProxySettings.enabled && (
@@ -6032,22 +5964,7 @@ const ConfigFileComponent = ({
                 启用后系统将定期自动拉取最新配置
               </p>
             </div>
-            <button
-              type='button'
-              onClick={() => setAutoUpdate(!autoUpdate)}
-              disabled={false}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                autoUpdate ? buttonStyles.toggleOn : buttonStyles.toggleOff
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${
-                  autoUpdate
-                    ? buttonStyles.toggleThumbOn
-                    : buttonStyles.toggleThumbOff
-                }`}
-              />
-            </button>
+            <ToggleSwitch checked={autoUpdate} onChange={setAutoUpdate} />
           </div>
         </div>
       </div>
@@ -6686,31 +6603,18 @@ const SiteConfigComponent = ({
 
         {/* 启用自动刷新 */}
         <div className='mb-4'>
-          <label className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
+          <div className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
             <span>启用自动刷新</span>
-            <button
-              type='button'
-              onClick={() =>
+            <ToggleSwitch
+              checked={cronSettings.enableAutoRefresh}
+              onChange={() =>
                 setCronSettings((prev) => ({
                   ...prev,
                   enableAutoRefresh: !prev.enableAutoRefresh,
                 }))
               }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                cronSettings.enableAutoRefresh
-                  ? 'bg-green-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                  cronSettings.enableAutoRefresh
-                    ? 'translate-x-6'
-                    : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </label>
+            />
+          </div>
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
             自动刷新播放记录和收藏的剧集更新
           </p>
@@ -6741,31 +6645,18 @@ const SiteConfigComponent = ({
 
         {/* 仅刷新最近活跃 */}
         <div className='mb-4'>
-          <label className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
+          <div className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
             <span>仅刷新最近活跃的记录</span>
-            <button
-              type='button'
-              onClick={() =>
+            <ToggleSwitch
+              checked={cronSettings.onlyRefreshRecent}
+              onChange={() =>
                 setCronSettings((prev) => ({
                   ...prev,
                   onlyRefreshRecent: !prev.onlyRefreshRecent,
                 }))
               }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                cronSettings.onlyRefreshRecent
-                  ? 'bg-green-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                  cronSettings.onlyRefreshRecent
-                    ? 'translate-x-6'
-                    : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </label>
+            />
+          </div>
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
             只刷新最近有活动的记录，跳过长期未观看的内容
           </p>
@@ -6798,31 +6689,18 @@ const SiteConfigComponent = ({
 
         {/* 仅刷新连载中 */}
         <div className='mb-4'>
-          <label className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
+          <div className='flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300'>
             <span>仅刷新连载中的剧集</span>
-            <button
-              type='button'
-              onClick={() =>
+            <ToggleSwitch
+              checked={cronSettings.onlyRefreshOngoing}
+              onChange={() =>
                 setCronSettings((prev) => ({
                   ...prev,
                   onlyRefreshOngoing: !prev.onlyRefreshOngoing,
                 }))
               }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                cronSettings.onlyRefreshOngoing
-                  ? 'bg-green-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                  cronSettings.onlyRefreshOngoing
-                    ? 'translate-x-6'
-                    : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </label>
+            />
+          </div>
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
             跳过已完结的剧集，只刷新还在更新的内容
           </p>
@@ -6873,28 +6751,15 @@ const SiteConfigComponent = ({
           <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
             启用关键词过滤
           </label>
-          <button
-            type='button'
-            onClick={() =>
+          <ToggleSwitch
+            checked={!siteSettings.DisableYellowFilter}
+            onChange={() =>
               setSiteSettings((prev) => ({
                 ...prev,
                 DisableYellowFilter: !prev.DisableYellowFilter,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-              !siteSettings.DisableYellowFilter
-                ? buttonStyles.toggleOn
-                : buttonStyles.toggleOff
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${
-                !siteSettings.DisableYellowFilter
-                  ? buttonStyles.toggleThumbOn
-                  : buttonStyles.toggleThumbOff
-              }`}
-            />
-          </button>
+          />
         </div>
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
           开启后将过滤包含敏感关键词的视频分类（如"伦理"、"福利"等）。关闭后显示所有分类。
@@ -6908,28 +6773,16 @@ const SiteConfigComponent = ({
             显示成人内容{' '}
             <span className='text-red-600 dark:text-red-400'>🔞</span>
           </label>
-          <button
-            type='button'
-            onClick={() =>
+          <ToggleSwitch
+            checked={siteSettings.ShowAdultContent}
+            color='red'
+            onChange={() =>
               setSiteSettings((prev) => ({
                 ...prev,
                 ShowAdultContent: !prev.ShowAdultContent,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              siteSettings.ShowAdultContent
-                ? 'bg-linear-to-r from-red-600 to-pink-600 focus:ring-red-500'
-                : buttonStyles.toggleOff + ' focus:ring-gray-500'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${
-                siteSettings.ShowAdultContent
-                  ? buttonStyles.toggleThumbOn
-                  : buttonStyles.toggleThumbOff
-              }`}
-            />
-          </button>
+          />
         </div>
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
           开启后将显示标记为成人资源的视频源内容。关闭后将自动过滤所有成人内容。
@@ -6942,28 +6795,15 @@ const SiteConfigComponent = ({
           <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
             启用流式搜索
           </label>
-          <button
-            type='button'
-            onClick={() =>
+          <ToggleSwitch
+            checked={siteSettings.FluidSearch}
+            onChange={() =>
               setSiteSettings((prev) => ({
                 ...prev,
                 FluidSearch: !prev.FluidSearch,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-              siteSettings.FluidSearch
-                ? buttonStyles.toggleOn
-                : buttonStyles.toggleOff
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${
-                siteSettings.FluidSearch
-                  ? buttonStyles.toggleThumbOn
-                  : buttonStyles.toggleThumbOff
-              }`}
-            />
-          </button>
+          />
         </div>
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
           启用后搜索结果将实时流式返回，提升用户体验。
@@ -6976,28 +6816,15 @@ const SiteConfigComponent = ({
           <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
             启用网页直播
           </label>
-          <button
-            type='button'
-            onClick={() =>
+          <ToggleSwitch
+            checked={siteSettings.EnableWebLive}
+            onChange={() =>
               setSiteSettings((prev) => ({
                 ...prev,
                 EnableWebLive: !prev.EnableWebLive,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-              siteSettings.EnableWebLive
-                ? buttonStyles.toggleOn
-                : buttonStyles.toggleOff
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${
-                siteSettings.EnableWebLive
-                  ? buttonStyles.toggleThumbOn
-                  : buttonStyles.toggleThumbOff
-              }`}
-            />
-          </button>
+          />
         </div>
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
           网页直播性能较差，会导致服务器内存泄露，建议谨慎开启。
@@ -7143,28 +6970,15 @@ const SiteConfigComponent = ({
               启用后用户可以在搜索页面按演员名字搜索相关影视作品
             </p>
           </div>
-          <button
-            type='button'
-            onClick={() =>
+          <ToggleSwitch
+            checked={!!siteSettings.EnableTMDBActorSearch}
+            onChange={() =>
               setSiteSettings((prev) => ({
                 ...prev,
                 EnableTMDBActorSearch: !prev.EnableTMDBActorSearch,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              siteSettings.EnableTMDBActorSearch
-                ? 'bg-green-600'
-                : 'bg-gray-200 dark:bg-gray-700'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                siteSettings.EnableTMDBActorSearch
-                  ? 'translate-x-6'
-                  : 'translate-x-1'
-              }`}
-            />
-          </button>
+          />
         </div>
       </div>
 
@@ -8351,26 +8165,16 @@ const LiveSourceConfig = ({
                 强制识别为 TVBox 源
               </label>
               <div className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex items-center'>
-                <button
-                  type='button'
-                  onClick={() =>
+                <ToggleSwitch
+                  checked={newLiveSource.isTvBox}
+                  color='purple'
+                  onChange={() =>
                     setNewLiveSource((prev) => ({
                       ...prev,
                       isTvBox: !prev.isTvBox,
                     }))
                   }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                    newLiveSource.isTvBox
-                      ? 'bg-purple-600 focus:ring-purple-500'
-                      : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      newLiveSource.isTvBox ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                />
                 <span className='ml-3 text-sm text-gray-500 dark:text-gray-400'>
                   {newLiveSource.isTvBox ? '已开启' : '已关闭'}
                 </span>
@@ -8487,27 +8291,15 @@ const LiveSourceConfig = ({
                 强制识别为 TVBox 源
               </label>
               <div className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex items-center'>
-                <button
-                  type='button'
-                  onClick={() =>
+                <ToggleSwitch
+                  checked={editingLiveSource.isTvBox}
+                  color='purple'
+                  onChange={() =>
                     setEditingLiveSource((prev) =>
                       prev ? { ...prev, isTvBox: !prev.isTvBox } : null,
                     )
                   }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                    editingLiveSource.isTvBox
-                      ? 'bg-purple-600 focus:ring-purple-500'
-                      : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      editingLiveSource.isTvBox
-                        ? 'translate-x-6'
-                        : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                />
                 <span className='ml-3 text-sm text-gray-500 dark:text-gray-400'>
                   {editingLiveSource.isTvBox ? '已开启' : '已关闭'}
                 </span>

@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface EmbyConfigProps {
   config: AdminConfig | null;
@@ -544,19 +545,13 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
                     启用后将从播放链接中移除 /emby 前缀
                   </p>
                 </div>
-                <button
-                  type='button'
-                  onClick={() => setFormData({ ...formData, removeEmbyPrefix: !formData.removeEmbyPrefix })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formData.removeEmbyPrefix ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.removeEmbyPrefix ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                <ToggleSwitch
+                  checked={formData.removeEmbyPrefix}
+                  color='blue'
+                  onChange={(checked) =>
+                    setFormData({ ...formData, removeEmbyPrefix: checked })
+                  }
+                />
               </div>
 
               {/* 选项2: 拼接MediaSourceId参数 */}
@@ -569,19 +564,13 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
                     启用后将调用 PlaybackInfo API 获取 MediaSourceId 并添加到播放链接
                   </p>
                 </div>
-                <button
-                  type='button'
-                  onClick={() => setFormData({ ...formData, appendMediaSourceId: !formData.appendMediaSourceId })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formData.appendMediaSourceId ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.appendMediaSourceId ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                <ToggleSwitch
+                  checked={formData.appendMediaSourceId}
+                  color='blue'
+                  onChange={(checked) =>
+                    setFormData({ ...formData, appendMediaSourceId: checked })
+                  }
+                />
               </div>
 
               {/* 选项3: 转码mp4 */}
@@ -594,19 +583,13 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
                     启用后将使用 stream.mp4 格式并移除 Static 参数
                   </p>
                 </div>
-                <button
-                  type='button'
-                  onClick={() => setFormData({ ...formData, transcodeMp4: !formData.transcodeMp4 })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formData.transcodeMp4 ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.transcodeMp4 ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                <ToggleSwitch
+                  checked={formData.transcodeMp4}
+                  color='blue'
+                  onChange={(checked) =>
+                    setFormData({ ...formData, transcodeMp4: checked })
+                  }
+                />
               </div>
 
               {/* 选项4: 视频播放代理 */}
@@ -619,19 +602,13 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
                     启用后视频播放将通过服务器代理
                   </p>
                 </div>
-                <button
-                  type='button'
-                  onClick={() => setFormData({ ...formData, proxyPlay: !formData.proxyPlay })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formData.proxyPlay ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.proxyPlay ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                <ToggleSwitch
+                  checked={formData.proxyPlay}
+                  color='blue'
+                  onChange={(checked) =>
+                    setFormData({ ...formData, proxyPlay: checked })
+                  }
+                />
               </div>
             </div>
 
@@ -659,19 +636,13 @@ const EmbyConfig = ({ config, refreshConfig }: EmbyConfigProps) => {
                   开启后，所有用户的私人媒体库将自动包含此源
                 </p>
               </div>
-              <button
-                type='button'
-                onClick={() => setFormData({ ...formData, isPublic: !formData.isPublic })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.isPublic ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    formData.isPublic ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+              <ToggleSwitch
+                checked={formData.isPublic}
+                color='purple'
+                onChange={(checked) =>
+                  setFormData({ ...formData, isPublic: checked })
+                }
+              />
             </div>
 
             {/* 操作按钮 */}

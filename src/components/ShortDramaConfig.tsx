@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface ShortDramaConfigProps {
   config: AdminConfig | null;
@@ -123,24 +124,20 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
 
         {/* 启用备用API开关 */}
         <div className='mb-6'>
-          <label className='flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              className='sr-only'
+          <div className='flex items-center'>
+            <ToggleSwitch
               checked={shortDramaSettings.enableAlternative}
-              onChange={(e) => setShortDramaSettings(prev => ({ ...prev, enableAlternative: e.target.checked }))}
+              onChange={(checked) =>
+                setShortDramaSettings((prev) => ({
+                  ...prev,
+                  enableAlternative: checked,
+                }))
+              }
             />
-            <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${shortDramaSettings.enableAlternative
-              ? 'bg-green-600'
-              : 'bg-gray-200 dark:bg-gray-600'
-              }`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shortDramaSettings.enableAlternative ? 'translate-x-6' : 'translate-x-1'
-                }`} />
-            </div>
             <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
               启用备用API自动切换
             </span>
-          </label>
+          </div>
           <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             开启后，当主API失败时会自动尝试使用备用API解析视频
           </p>

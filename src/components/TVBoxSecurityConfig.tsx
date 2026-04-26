@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle, Shield, Copy, ExternalLink } from 'lucide-rea
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface TVBoxSecurityConfigProps {
   config: AdminConfig | null;
@@ -383,15 +384,17 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 要求TVBox在URL中携带token参数才能访问
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
-              <input
-                type='checkbox'
-                checked={securitySettings.enableAuth}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, enableAuth: e.target.checked }))}
-                className='sr-only peer'
-              />
-              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
+            <ToggleSwitch
+              checked={securitySettings.enableAuth}
+              color='blue'
+              onChange={(checked) =>
+                setSecuritySettings((prev) => ({
+                  ...prev,
+                  enableAuth: checked,
+                }))
+              }
+              className='flex-shrink-0'
+            />
           </div>
 
           {securitySettings.enableAuth && (
@@ -456,15 +459,17 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 只允许指定IP地址访问TVBox接口
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
-              <input
-                type='checkbox'
-                checked={securitySettings.enableIpWhitelist}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, enableIpWhitelist: e.target.checked }))}
-                className='sr-only peer'
-              />
-              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
+            <ToggleSwitch
+              checked={securitySettings.enableIpWhitelist}
+              color='blue'
+              onChange={(checked) =>
+                setSecuritySettings((prev) => ({
+                  ...prev,
+                  enableIpWhitelist: checked,
+                }))
+              }
+              className='flex-shrink-0'
+            />
           </div>
 
           {securitySettings.enableIpWhitelist && (
@@ -521,15 +526,17 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 限制每个IP每分钟的访问次数，防止滥用
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
-              <input
-                type='checkbox'
-                checked={securitySettings.enableRateLimit}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, enableRateLimit: e.target.checked }))}
-                className='sr-only peer'
-              />
-              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
+            <ToggleSwitch
+              checked={securitySettings.enableRateLimit}
+              color='blue'
+              onChange={(checked) =>
+                setSecuritySettings((prev) => ({
+                  ...prev,
+                  enableRateLimit: checked,
+                }))
+              }
+              className='flex-shrink-0'
+            />
           </div>
 
           {securitySettings.enableRateLimit && (
@@ -563,15 +570,14 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 为TVBox配置启用Cloudflare全球CDN加速
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
-              <input
-                type='checkbox'
-                checked={proxySettings.enabled}
-                onChange={(e) => setProxySettings(prev => ({ ...prev, enabled: e.target.checked }))}
-                className='sr-only peer'
-              />
-              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
+            <ToggleSwitch
+              checked={proxySettings.enabled}
+              color='blue'
+              onChange={(checked) =>
+                setProxySettings((prev) => ({ ...prev, enabled: checked }))
+              }
+              className='flex-shrink-0'
+            />
           </div>
 
           {proxySettings.enabled && (

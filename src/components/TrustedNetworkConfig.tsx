@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
+import ToggleSwitch from '@/components/ToggleSwitch';
 
 interface TrustedNetworkConfigProps {
   config: AdminConfig | null;
@@ -225,20 +226,16 @@ const TrustedNetworkConfig = ({ config, refreshConfig }: TrustedNetworkConfigPro
                 来自信任IP段的访问将自动跳过登录认证，适用于内网部署场景
               </p>
             </div>
-            <label className='relative inline-flex items-center cursor-pointer flex-shrink-0'>
-              <input
-                type='checkbox'
-                checked={settings.enabled}
-                onChange={(e) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    enabled: e.target.checked,
-                  }))
-                }
-                className='sr-only peer'
-              />
-              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
-            </label>
+            <ToggleSwitch
+              checked={settings.enabled}
+              onChange={(checked) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  enabled: checked,
+                }))
+              }
+              className='flex-shrink-0'
+            />
           </div>
 
           {settings.enabled && (
