@@ -814,14 +814,14 @@ function HomeClient() {
         </div>
       </div>
 
-      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible pb-32 md:pb-safe-bottom'>
+      <div className='overflow-visible pb-32 md:pb-safe-bottom'>
         {/* 轮播图 - 在所有tab显示 */}
         {!loading &&
           (hotMovies.length > 0 ||
             hotTvShows.length > 0 ||
             hotVarietyShows.length > 0 ||
             hotShortDramas.length > 0) && (
-            <div className='mt-8 sm:mt-12 mb-8 md:-mt-4'>
+            <div className='mb-8 md:mb-10'>
               <HeroBanner
                 items={[
                   // 豆瓣电影
@@ -888,7 +888,7 @@ function HomeClient() {
           )}
 
         {/* 顶部 Tab 切换 */}
-        <div className='mb-8 flex items-center justify-center'>
+        <div className='mb-8 flex items-center justify-center px-2 sm:px-10 md:-mt-2'>
           <CapsuleSwitch
             options={[
               { label: '首页', value: 'home' },
@@ -908,7 +908,7 @@ function HomeClient() {
         </div>
 
         <div
-          className={`max-w-[95%] mx-auto ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
+          className={`max-w-[95%] mx-auto md:pl-40 lg:pl-44 ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
         >
           {/* 想看视图 */}
           <section

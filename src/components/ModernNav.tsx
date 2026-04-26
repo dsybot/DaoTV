@@ -1,39 +1,39 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 'use client';
 
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import {
   Cat,
-  ChevronDown,
   Clover,
   Film,
   FolderOpen,
   Globe,
   Home,
   MoreHorizontal,
+  Play,
   PlaySquare,
   Radio,
-  Search,
   Star,
   Tv,
   X,
+  type LucideIcon,
 } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FastLink } from './FastLink';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
+import { useSite } from './SiteProvider';
 
 interface ModernNavProps {
   activePath?: string;
+}
+
+interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
 }
 
 const userEmbyConfigOptions = () =>
@@ -64,11 +64,9 @@ const publicSourcesOptions = () =>
 const ModernNav = ({ activePath }: ModernNavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
-
-  // 独立管理 active 状态，不依赖 activePath prop
+  const { siteName } = useSite();
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [active, setActive] = useState(() => {
-    // 初始化时使用当前路由
     if (typeof window !== 'undefined') {
       const queryString = new URLSearchParams(
         window.location.search,
@@ -79,39 +77,15 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
     }
     return activePath || '/';
   });
+  const [hasCustomCategories, setHasCustomCategories] = useState(false);
+  const [enableWebLive, setEnableWebLive] = useState(false);
 
-  // 监听路由变化，自动更新 active 状态
-  useEffect(() => {
-    const queryString = searchParams.toString();
-    const fullPath = queryString ? `${pathname}?${queryString}` : pathname;
-    setActive(fullPath);
-  }, [pathname, searchParams]);
+  const { data: userEmbyConfig } = useQuery(userEmbyConfigOptions());
+  const { data: publicSourcesData } = useQuery(publicSourcesOptions());
 
-  // 更多菜单状态
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
-  // 桌面端下拉菜单状态
-  const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLLIElement>(null);
-  const dropdownMenuRef = useRef<HTMLDivElement>(null);
-  const navContainerRef = useRef<HTMLDivElement>(null);
-
-  // 动态计算的可见项数量
-  const [maxVisibleCount, setMaxVisibleCount] = useState(20);
-  // 下拉菜单位置
-  const [dropdownPosition, setDropdownPosition] = useState({
-    top: 60,
-    right: 100,
-  });
-
-  // 每个导航项的宽度（包括间距）
-  const ITEM_WIDTH = 76; // px
-  // 更多按钮宽度
-  const MORE_BUTTON_WIDTH = 76;
-  // 使用 useMemo 优化 navItems，避免每次渲染都创建新数组
-  const baseNavItems = useMemo(
+  const baseNavItems = useMemo<NavItem[]>(
     () => [
       { icon: Home, label: '首页', href: '/' },
-      { icon: Search, label: '搜索', href: '/search', desktopOnly: true },
       { icon: Globe, label: '源浏览', href: '/source-browser' },
       { icon: Film, label: '电影', href: '/douban?type=movie' },
       { icon: Tv, label: '剧集', href: '/douban?type=tv' },
@@ -122,34 +96,23 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
     [],
   );
 
-  const [hasCustomCategories, setHasCustomCategories] = useState(false);
-  const [enableWebLive, setEnableWebLive] = useState(false);
-
-  // 检查用户是否配置了 Emby
-  const { data: userEmbyConfig } = useQuery(userEmbyConfigOptions());
-
-  // 检查管理员是否设置了公共源
-  const { data: publicSourcesData } = useQuery(publicSourcesOptions());
+  useEffect(() => {
+    const queryString = searchParams.toString();
+    const fullPath = queryString ? `${pathname}?${queryString}` : pathname;
+    setActive(fullPath);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
-    if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setHasCustomCategories(true);
-    }
-    if (runtimeConfig?.ENABLE_WEB_LIVE) {
-      setEnableWebLive(true);
-    }
+    setHasCustomCategories(runtimeConfig?.CUSTOM_CATEGORIES?.length > 0);
+    setEnableWebLive(Boolean(runtimeConfig?.ENABLE_WEB_LIVE));
   }, []);
 
-  const navItems = useMemo(() => {
+  const navItems = useMemo<NavItem[]>(() => {
     const items = [...baseNavItems];
 
     if (enableWebLive) {
-      items.push({
-        icon: Radio,
-        label: '直播',
-        href: '/live',
-      });
+      items.push({ icon: Radio, label: '直播', href: '/live' });
     }
 
     if (hasCustomCategories) {
@@ -160,117 +123,23 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
       });
     }
 
-    // Emby - 用户有私人源 OR 管理员有公共源，都显示导航
     const hasUserEmby = userEmbyConfig?.sources?.some(
-      (s: any) => s.enabled && s.ServerURL,
+      (source: any) => source.enabled && source.ServerURL,
     );
     const hasPublicEmby = (publicSourcesData?.sources?.length ?? 0) > 0;
-    const hasEmbyConfig = hasUserEmby || hasPublicEmby;
-    const hasEmbyInNav = items.some((item: any) => item.href === '/emby');
 
-    if (hasEmbyConfig && !hasEmbyInNav) {
-      items.push({
-        icon: FolderOpen,
-        label: 'Emby',
-        href: '/emby',
-      });
-    } else if (!hasEmbyConfig && hasEmbyInNav) {
-      // 如果用户删除了所有 Emby 配置，移除导航项
-      const index = items.findIndex((item: any) => item.href === '/emby');
-      if (index > -1) {
-        items.splice(index, 1);
-      }
+    if (hasUserEmby || hasPublicEmby) {
+      items.push({ icon: FolderOpen, label: 'Emby', href: '/emby' });
     }
 
     return items;
   }, [
     baseNavItems,
-    hasCustomCategories,
     enableWebLive,
-    userEmbyConfig,
+    hasCustomCategories,
     publicSourcesData,
+    userEmbyConfig,
   ]);
-
-  // 动态计算可见项数量
-  useEffect(() => {
-    const calculateVisibleCount = () => {
-      // 获取左侧标题和右侧按钮组元素
-      const titleEl = document.getElementById('nav-title');
-      const buttonsEl = document.getElementById('nav-buttons');
-
-      if (titleEl && buttonsEl) {
-        const titleRect = titleEl.getBoundingClientRect();
-        const buttonsRect = buttonsEl.getBoundingClientRect();
-        // 可用宽度 = 右侧按钮左边 - 左侧标题右边 - 间距
-        const availableWidth = buttonsRect.left - titleRect.right - 48; // 48px 为两侧间距
-        // 计算能放下多少个导航项（预留更多按钮的位置）
-        const count = Math.floor(
-          (availableWidth - MORE_BUTTON_WIDTH) / ITEM_WIDTH,
-        );
-        setMaxVisibleCount(Math.max(3, count)); // 至少显示3个
-      } else {
-        // 降级方案：使用视口宽度
-        const viewportWidth = window.innerWidth;
-        const availableWidth = viewportWidth - 400; // 预留左右元素空间
-        const count = Math.floor(
-          (availableWidth - MORE_BUTTON_WIDTH) / ITEM_WIDTH,
-        );
-        setMaxVisibleCount(Math.max(3, count));
-      }
-    };
-
-    // 延迟执行以确保DOM已渲染
-    const timer = setTimeout(calculateVisibleCount, 100);
-    window.addEventListener('resize', calculateVisibleCount);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', calculateVisibleCount);
-    };
-  }, []);
-
-  // 点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(target) &&
-        dropdownMenuRef.current &&
-        !dropdownMenuRef.current.contains(target)
-      ) {
-        setShowDesktopDropdown(false);
-      }
-    };
-
-    if (showDesktopDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showDesktopDropdown]);
-
-  // 更新下拉菜单位置
-  useEffect(() => {
-    if (showDesktopDropdown && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
-      });
-    }
-  }, [showDesktopDropdown]);
-
-  // 处理下拉菜单项点击
-  const handleDropdownItemClick = useCallback(
-    (href: string) => {
-      setActive(href); // 立即更新 active 状态
-      setShowDesktopDropdown(false);
-      // 使用 startTransition 优化导航性能
-      startTransition(() => {
-        router.push(href);
-      });
-    },
-    [router],
-  );
 
   const isActive = useCallback(
     (href: string) => {
@@ -290,95 +159,89 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
         (decodedActive.startsWith('/douban') &&
           typeMatch &&
           decodedActive.includes(`type=${typeMatch}`)) ||
-        (href === '/shortdrama' && decodedActive.startsWith('/shortdrama'))
+        (href === '/shortdrama' && decodedActive.startsWith('/shortdrama')) ||
+        (href === '/live' && decodedActive.startsWith('/live')) ||
+        (href === '/emby' && decodedActive.startsWith('/emby'))
       );
     },
     [active],
   );
 
-  // 计算桌面端可见项和隐藏项
-  const visibleItems = navItems.slice(0, maxVisibleCount);
-  const hiddenItems = navItems.slice(maxVisibleCount);
-  const hasHiddenItems = hiddenItems.length > 0;
-  const hasActiveHiddenItem = hiddenItems.some((item) => isActive(item.href));
-
-  // 获取颜色主题
   const getColorTheme = (href: string) => {
     const colorThemes: Record<
       string,
       { hover: string; active: string; gradient: string; color: string }
     > = {
       '/': {
-        hover: 'group-hover:text-green-600 dark:group-hover:text-green-400',
-        active: 'text-green-600 dark:text-green-400',
-        gradient: 'from-green-500 to-emerald-500',
-        color: 'text-green-500',
-      },
-      '/search': {
-        hover: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
-        active: 'text-blue-600 dark:text-blue-400',
-        gradient: 'from-blue-500 to-cyan-500',
-        color: 'text-blue-500',
+        hover: 'group-hover:text-cyan-400',
+        active: 'text-cyan-400',
+        gradient: 'from-cyan-400 to-emerald-400',
+        color: 'text-cyan-400',
       },
       '/source-browser': {
-        hover: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
-        active: 'text-emerald-600 dark:text-emerald-400',
-        gradient: 'from-emerald-500 to-green-500',
-        color: 'text-emerald-500',
+        hover: 'group-hover:text-emerald-400',
+        active: 'text-emerald-400',
+        gradient: 'from-emerald-400 to-green-500',
+        color: 'text-emerald-400',
       },
       '/douban?type=movie': {
-        hover: 'group-hover:text-red-600 dark:group-hover:text-red-400',
-        active: 'text-red-600 dark:text-red-400',
+        hover: 'group-hover:text-red-400',
+        active: 'text-red-400',
         gradient: 'from-red-500 to-pink-500',
-        color: 'text-red-500',
+        color: 'text-red-400',
       },
       '/douban?type=tv': {
-        hover: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
-        active: 'text-blue-600 dark:text-blue-400',
-        gradient: 'from-blue-600 to-indigo-600',
-        color: 'text-blue-600',
+        hover: 'group-hover:text-blue-400',
+        active: 'text-blue-400',
+        gradient: 'from-blue-500 to-indigo-500',
+        color: 'text-blue-400',
       },
       '/shortdrama': {
-        hover: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
-        active: 'text-purple-600 dark:text-purple-400',
-        gradient: 'from-purple-500 to-violet-500',
-        color: 'text-purple-500',
+        hover: 'group-hover:text-violet-400',
+        active: 'text-violet-400',
+        gradient: 'from-violet-500 to-fuchsia-500',
+        color: 'text-violet-400',
       },
       '/douban?type=anime': {
-        hover: 'group-hover:text-pink-600 dark:group-hover:text-pink-400',
-        active: 'text-pink-600 dark:text-pink-400',
+        hover: 'group-hover:text-pink-400',
+        active: 'text-pink-400',
         gradient: 'from-pink-500 to-rose-500',
-        color: 'text-pink-500',
+        color: 'text-pink-400',
       },
       '/douban?type=show': {
-        hover: 'group-hover:text-orange-600 dark:group-hover:text-orange-400',
-        active: 'text-orange-600 dark:text-orange-400',
-        gradient: 'from-orange-500 to-amber-500',
-        color: 'text-orange-500',
+        hover: 'group-hover:text-amber-400',
+        active: 'text-amber-400',
+        gradient: 'from-orange-500 to-amber-400',
+        color: 'text-amber-400',
       },
       '/live': {
-        hover: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
-        active: 'text-teal-600 dark:text-teal-400',
-        gradient: 'from-teal-500 to-cyan-500',
-        color: 'text-teal-500',
+        hover: 'group-hover:text-teal-400',
+        active: 'text-teal-400',
+        gradient: 'from-teal-400 to-cyan-500',
+        color: 'text-teal-400',
+      },
+      '/emby': {
+        hover: 'group-hover:text-sky-400',
+        active: 'text-sky-400',
+        gradient: 'from-sky-500 to-blue-500',
+        color: 'text-sky-400',
       },
     };
 
-    let theme = colorThemes[href];
-    if (!theme && href.includes('type=custom')) {
-      theme = {
-        hover: 'group-hover:text-yellow-600 dark:group-hover:text-yellow-400',
-        active: 'text-yellow-600 dark:text-yellow-400',
-        gradient: 'from-yellow-500 to-amber-500',
-        color: 'text-yellow-500',
+    if (href.includes('type=custom')) {
+      return {
+        hover: 'group-hover:text-yellow-400',
+        active: 'text-yellow-400',
+        gradient: 'from-yellow-400 to-amber-500',
+        color: 'text-yellow-400',
       };
     }
-    return theme || colorThemes['/'];
+
+    return colorThemes[href] || colorThemes['/'];
   };
 
   return (
     <>
-      {/* 更多菜单弹窗 - 仅移动端 */}
       {showMoreMenu && (
         <div
           className='md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-700'
@@ -386,7 +249,7 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
         >
           <div
             className='absolute bottom-20 left-2 right-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-800/30 overflow-hidden'
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
             style={{ maxHeight: 'calc(100vh - 10rem)', overflowY: 'auto' }}
           >
             <div className='flex items-center justify-between px-6 py-4 border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl z-10'>
@@ -394,247 +257,190 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                 全部分类
               </h3>
               <button
+                type='button'
                 onClick={() => setShowMoreMenu(false)}
                 className='p-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-colors'
+                aria-label='关闭'
               >
                 <X className='w-5 h-5 text-gray-600 dark:text-gray-400' />
               </button>
             </div>
             <div className='grid grid-cols-4 gap-4 p-4'>
-              {navItems
-                .filter((item: any) => !item.desktopOnly)
-                .map((item: any) => {
-                  const active = isActive(item.href);
-                  const Icon = item.icon;
-                  const theme = getColorTheme(item.href);
-                  return (
-                    <FastLink
-                      key={item.href}
-                      href={item.href}
-                      useTransitionNav
-                      onClick={() => {
-                        setActive(item.href);
-                        setShowMoreMenu(false);
-                      }}
-                      className='flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 active:scale-95 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
+              {navItems.map((item) => {
+                const activeItem = isActive(item.href);
+                const Icon = item.icon;
+                const theme = getColorTheme(item.href);
+
+                return (
+                  <FastLink
+                    key={item.href}
+                    href={item.href}
+                    useTransitionNav
+                    onClick={() => {
+                      setActive(item.href);
+                      setShowMoreMenu(false);
+                    }}
+                    className='flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 active:scale-95 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
+                  >
+                    <div
+                      className={`flex items-center justify-center w-12 h-12 rounded-2xl ${
+                        activeItem
+                          ? `bg-linear-to-br ${theme.gradient}`
+                          : 'bg-gray-100 dark:bg-gray-800'
+                      }`}
                     >
-                      <div
-                        className={`flex items-center justify-center w-12 h-12 rounded-2xl ${
-                          active
-                            ? `bg-linear-to-br ${theme.gradient}`
-                            : 'bg-gray-100 dark:bg-gray-800'
+                      <Icon
+                        className={`w-6 h-6 ${
+                          activeItem
+                            ? 'text-white'
+                            : 'text-gray-600 dark:text-gray-400'
                         }`}
-                      >
-                        <Icon
-                          className={`w-6 h-6 ${active ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}
-                      >
-                        {item.label}
-                      </span>
-                    </FastLink>
-                  );
-                })}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        activeItem
+                          ? theme.color
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </FastLink>
+                );
+              })}
             </div>
           </div>
         </div>
       )}
 
-      <nav className='fixed left-0 right-0 z-600 flex justify-center pointer-events-none bottom-0 md:top-4 md:bottom-auto'>
-        <GlassmorphismEffect
-          intensity='medium'
-          animated={false}
-          className='pointer-events-auto w-full md:w-auto md:max-w-[calc(100vw-2rem)] border border-white/20 dark:border-gray-700/20 md:rounded-full rounded-2xl overflow-visible md:mx-4'
-        >
-          <div ref={navContainerRef} className='relative'>
-            <ul
-              className='flex items-center overflow-x-auto scrollbar-hide md:justify-center md:gap-1 md:px-4 md:py-2'
-              style={{ minHeight: '3.5rem' }}
+      <nav className='hidden md:block fixed left-0 top-0 bottom-0 z-700 pointer-events-none'>
+        <div className='relative h-full w-44 xl:w-48'>
+          <div className='absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-black/90 via-black/60 to-transparent' />
+          <div className='pointer-events-auto relative z-10 flex h-full w-40 xl:w-44 flex-col px-5 py-7 text-white'>
+            <FastLink
+              href='/'
+              useTransitionNav
+              onClick={() => setActive('/')}
+              className='flex items-center gap-2.5'
             >
-              {/* 移动端：显示前4个非desktopOnly项目 */}
-              {navItems
-                .filter((item: any) => !item.desktopOnly)
-                .slice(0, 4)
-                .map((item: any) => {
-                  const active = isActive(item.href);
-                  const theme = getColorTheme(item.href);
+              <span className='flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
+                <Play
+                  className='ml-0.5 h-4 w-4 text-black'
+                  fill='currentColor'
+                />
+              </span>
+              <span className='text-lg font-bold tracking-tight text-white drop-shadow-lg'>
+                {siteName}
+              </span>
+            </FastLink>
 
-                  return (
-                    <li key={item.href} className='flex-1 shrink-0 md:hidden'>
-                      <FastLink
-                        href={item.href}
-                        useTransitionNav
-                        onClick={() => setActive(item.href)}
-                        className='group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200'
-                      >
-                        <item.icon
-                          className={`h-6 w-6 transition-all duration-200 ${
-                            active
-                              ? theme.active
-                              : 'text-gray-700 dark:text-gray-200'
-                          }`}
-                          style={{
-                            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-                          }}
-                        />
-                        <span
-                          className={`text-[10px] transition-all duration-200 ${
-                            active
-                              ? `${theme.active} font-semibold`
-                              : 'text-gray-700 dark:text-gray-200'
-                          }`}
-                          style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
-                        >
-                          {item.label}
-                        </span>
-                      </FastLink>
-                    </li>
-                  );
-                })}
-
-              {/* 桌面端：根据maxVisibleCount显示 */}
-              {visibleItems.map((item: any, index: number) => {
-                const active = isActive(item.href);
+            <ul className='mt-8 flex flex-1 flex-col gap-1.5 overflow-y-auto pr-4 scrollbar-hide'>
+              {navItems.map((item) => {
+                const activeItem = isActive(item.href);
+                const Icon = item.icon;
                 const theme = getColorTheme(item.href);
 
                 return (
-                  <li
-                    key={item.href}
-                    className='hidden md:flex shrink-0 md:animate-[slideInFromBottom_0.3s_ease-out] md:opacity-0'
-                    style={{
-                      animation: `slideInFromBottom 0.3s ease-out ${index * 0.05}s forwards`,
-                    }}
-                  >
+                  <li key={item.href}>
                     <FastLink
                       href={item.href}
                       useTransitionNav
                       onClick={() => setActive(item.href)}
-                      className='group flex flex-col items-center justify-center min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200'
+                      className={`group flex h-11 items-center gap-3 rounded-full px-3 text-sm font-semibold transition-all duration-200 ${
+                        activeItem
+                          ? `${theme.active} bg-white/10 shadow-lg shadow-black/20`
+                          : `text-zinc-300/90 hover:bg-white/10 hover:text-white ${theme.hover}`
+                      }`}
                     >
-                      <item.icon
-                        className={`h-6 w-6 transition-all duration-200 ${
-                          active
-                            ? `${theme.active} scale-110`
-                            : `text-gray-700 dark:text-gray-200 ${theme.hover} group-hover:scale-110`
+                      <Icon
+                        className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                          activeItem
+                            ? 'scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]'
+                            : 'opacity-80 group-hover:scale-110 group-hover:opacity-100'
                         }`}
-                        style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-                        }}
                       />
-                      <span
-                        className={`text-xs transition-all duration-200 ${
-                          active
-                            ? `${theme.active} font-semibold`
-                            : `text-gray-700 dark:text-gray-200 ${theme.hover}`
-                        }`}
-                        style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
-                      >
-                        {item.label}
-                      </span>
+                      <span>{item.label}</span>
                     </FastLink>
                   </li>
                 );
               })}
-
-              {/* 桌面端更多下拉菜单按钮 */}
-              {hasHiddenItems && (
-                <li
-                  className='hidden md:flex shrink-0 relative'
-                  ref={dropdownRef}
-                  style={{
-                    animation: `slideInFromBottom 0.3s ease-out ${visibleItems.length * 0.05}s forwards`,
-                  }}
-                >
-                  <button
-                    onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
-                    className={`group flex flex-col items-center justify-center gap-0.5 text-xs min-w-[70px] px-3 py-2 rounded-full hover:bg-white/40 dark:hover:bg-gray-800/40 transition-all duration-200 ${
-                      hasActiveHiddenItem
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : 'text-gray-700 dark:text-gray-200'
-                    }`}
-                  >
-                    <div className='relative'>
-                      <ChevronDown
-                        className={`h-6 w-6 transition-all duration-200 group-hover:scale-110 ${showDesktopDropdown ? 'rotate-180' : ''}`}
-                        style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-                        }}
-                      />
-                      {hasActiveHiddenItem && (
-                        <span className='absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full'></span>
-                      )}
-                    </div>
-                    <span
-                      style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
-                    >
-                      更多
-                    </span>
-                  </button>
-                </li>
-              )}
-
-              {/* 更多按钮 - 仅在移动端显示 */}
-              <li className='flex-1 md:hidden shrink-0'>
-                <button
-                  onClick={() => setShowMoreMenu(true)}
-                  className='flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200'
-                >
-                  <MoreHorizontal
-                    className='h-6 w-6 text-gray-700 dark:text-gray-200 transition-all duration-200'
-                    style={{
-                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-                    }}
-                  />
-                  <span
-                    className='text-[10px] text-gray-700 dark:text-gray-200 transition-all duration-200'
-                    style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
-                  >
-                    更多
-                  </span>
-                </button>
-              </li>
             </ul>
           </div>
-        </GlassmorphismEffect>
+        </div>
       </nav>
 
-      {/* 桌面端下拉菜单 - 放在nav外面避免被裁剪 */}
-      {showDesktopDropdown && hasHiddenItems && (
-        <div
-          ref={dropdownMenuRef}
-          className='hidden md:block fixed z-[800] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden min-w-[160px] pointer-events-auto'
-          style={{
-            top: dropdownPosition.top,
-            right: dropdownPosition.right,
-          }}
+      <nav className='fixed left-0 right-0 bottom-0 z-600 flex justify-center pointer-events-none md:hidden'>
+        <GlassmorphismEffect
+          intensity='medium'
+          animated={false}
+          className='pointer-events-auto w-full border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-visible'
         >
-          <div className='py-2'>
-            {hiddenItems.map((item: any) => {
-              const active = isActive(item.href);
-              const Icon = item.icon;
+          <ul
+            className='flex items-center overflow-x-auto scrollbar-hide'
+            style={{ minHeight: '3.5rem' }}
+          >
+            {navItems.slice(0, 4).map((item) => {
+              const activeItem = isActive(item.href);
               const theme = getColorTheme(item.href);
+              const Icon = item.icon;
+
               return (
-                <button
-                  key={item.href}
-                  onClick={() => handleDropdownItemClick(item.href)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors text-left ${active ? 'bg-gray-100/50 dark:bg-gray-800/50' : ''}`}
-                >
-                  <Icon
-                    className={`h-5 w-5 ${active ? theme.color : 'text-gray-500 dark:text-gray-400'}`}
-                  />
-                  <span
-                    className={`text-sm font-medium ${active ? theme.color : 'text-gray-700 dark:text-gray-300'}`}
+                <li key={item.href} className='flex-1 shrink-0'>
+                  <FastLink
+                    href={item.href}
+                    useTransitionNav
+                    onClick={() => setActive(item.href)}
+                    className='group flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200'
                   >
-                    {item.label}
-                  </span>
-                </button>
+                    <Icon
+                      className={`h-6 w-6 transition-all duration-200 ${
+                        activeItem
+                          ? theme.active
+                          : 'text-gray-700 dark:text-gray-200'
+                      }`}
+                      style={{
+                        filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
+                      }}
+                    />
+                    <span
+                      className={`text-[10px] transition-all duration-200 ${
+                        activeItem
+                          ? `${theme.active} font-semibold`
+                          : 'text-gray-700 dark:text-gray-200'
+                      }`}
+                      style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
+                    >
+                      {item.label}
+                    </span>
+                  </FastLink>
+                </li>
               );
             })}
-          </div>
-        </div>
-      )}
+
+            <li className='flex-1 shrink-0'>
+              <button
+                type='button'
+                onClick={() => setShowMoreMenu(true)}
+                className='flex flex-col items-center justify-center w-full h-14 gap-0.5 text-xs transition-all duration-200'
+              >
+                <MoreHorizontal
+                  className='h-6 w-6 text-gray-700 dark:text-gray-200 transition-all duration-200'
+                  style={{
+                    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
+                  }}
+                />
+                <span
+                  className='text-[10px] text-gray-700 dark:text-gray-200 transition-all duration-200'
+                  style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}
+                >
+                  更多
+                </span>
+              </button>
+            </li>
+          </ul>
+        </GlassmorphismEffect>
+      </nav>
     </>
   );
 };

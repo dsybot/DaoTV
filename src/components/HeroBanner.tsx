@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import {
@@ -11,15 +12,16 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState, useRef, useCallback, memo } from 'react';
-import { useAutoplay } from './hooks/useAutoplay';
-import { useSwipeGesture } from './hooks/useSwipeGesture';
-// 🚀 TanStack Query Queries & Mutations
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+
 import {
+  useClearTrailerUrlMutation,
   useRefreshedTrailerUrlsQuery,
   useRefreshTrailerUrlMutation,
-  useClearTrailerUrlMutation,
 } from '@/hooks/useHeroBannerQueries';
+
+import { useAutoplay } from './hooks/useAutoplay';
+import { useSwipeGesture } from './hooks/useSwipeGesture';
 
 interface BannerItem {
   id: string | number;
@@ -31,7 +33,7 @@ interface BannerItem {
   rate?: string;
   douban_id?: number;
   type?: string;
-  trailerUrl?: string; // 预告片视频URL（可选）
+  trailerUrl?: string;
 }
 
 interface HeroBannerProps {
@@ -39,13 +41,70 @@ interface HeroBannerProps {
   autoPlayInterval?: number;
   showControls?: boolean;
   showIndicators?: boolean;
-  enableVideo?: boolean; // 是否启用视频自动播放
+  enableVideo?: boolean;
 }
 
-// 🚀 优化方案6：使用React.memo防止不必要的重渲染
+const getProxiedImageUrl = (url: string) => {
+  if (url?.includes('douban') || url?.includes('doubanio')) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
+const getHDBackdrop = (url?: string) => {
+  if (!url) return url;
+  return url
+    .replace('/view/photo/s/', '/view/photo/l/')
+    .replace('/view/photo/m/', '/view/photo/l/')
+    .replace('/view/photo/sqxs/', '/view/photo/l/')
+    .replace('/s_ratio_poster/', '/l_ratio_poster/')
+    .replace('/m_ratio_poster/', '/l_ratio_poster/');
+};
+
+const getProxiedVideoUrl = (url: string) => {
+  if (url?.includes('douban') || url?.includes('doubanio')) {
+    return `/api/video-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
+const getTypeLabel = (type?: string) => {
+  switch (type) {
+    case 'movie':
+      return '电影';
+    case 'tv':
+      return '剧集';
+    case 'variety':
+      return '综艺';
+    case 'shortdrama':
+      return '短剧';
+    case 'anime':
+      return '动漫';
+    default:
+      return '剧集';
+  }
+};
+
+const getPlayHref = (item: BannerItem) => {
+  if (item.type === 'shortdrama') {
+    return `/play?title=${encodeURIComponent(item.title)}&shortdrama_id=${item.id}`;
+  }
+
+  return `/play?title=${encodeURIComponent(item.title)}${
+    item.year ? `&year=${item.year}` : ''
+  }${item.douban_id ? `&douban_id=${item.douban_id}` : ''}${
+    item.type ? `&stype=${item.type}` : ''
+  }`;
+};
+
+const getDetailHref = (item: BannerItem) => {
+  if (item.type === 'shortdrama') return '/shortdrama';
+  return `/douban?type=${item.type === 'variety' ? 'show' : item.type || 'movie'}`;
+};
+
 function HeroBanner({
   items,
-  autoPlayInterval = 8000, // Netflix风格：更长的停留时间
+  autoPlayInterval = 8000,
   showControls = true,
   showIndicators = true,
   enableVideo = false,
@@ -57,70 +116,39 @@ function HeroBanner({
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // 🚀 TanStack Query - 刷新后的trailer URL缓存
-  // 替换 useState + localStorage 手动管理
   const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
   const refreshTrailerMutation = useRefreshTrailerUrlMutation();
   const clearTrailerMutation = useClearTrailerUrlMutation();
 
-  // 处理图片 URL，使用代理绕过防盗链
-  const getProxiedImageUrl = (url: string) => {
-    if (url?.includes('douban') || url?.includes('doubanio')) {
-      return `/api/image-proxy?url=${encodeURIComponent(url)}`;
-    }
-    return url;
-  };
-
-  // 确保 backdrop 是高清版本
-  const getHDBackdrop = (url?: string) => {
-    if (!url) return url;
-    return url
-      .replace('/view/photo/s/', '/view/photo/l/')
-      .replace('/view/photo/m/', '/view/photo/l/')
-      .replace('/view/photo/sqxs/', '/view/photo/l/')
-      .replace('/s_ratio_poster/', '/l_ratio_poster/')
-      .replace('/m_ratio_poster/', '/l_ratio_poster/');
-  };
-
-  // 处理视频 URL，使用代理绕过防盗链
-  const getProxiedVideoUrl = (url: string) => {
-    if (url?.includes('douban') || url?.includes('doubanio')) {
-      return `/api/video-proxy?url=${encodeURIComponent(url)}`;
-    }
-    return url;
-  };
-
-  // 🚀 TanStack Query - 刷新过期的trailer URL
-  // 替换手动 useCallback + setState + localStorage
   const refreshTrailerUrl = useCallback(
     async (doubanId: number | string) => {
-      const result = await refreshTrailerMutation.mutateAsync({ doubanId });
-      return result;
+      return refreshTrailerMutation.mutateAsync({ doubanId });
     },
     [refreshTrailerMutation],
   );
 
-  // 获取当前有效的trailer URL（优先使用刷新后的）
-  const getEffectiveTrailerUrl = (item: BannerItem) => {
-    if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
-      return refreshedTrailerUrls[item.douban_id];
-    }
-    return item.trailerUrl;
-  };
+  const getEffectiveTrailerUrl = useCallback(
+    (item: BannerItem) => {
+      if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
+        return refreshedTrailerUrls[item.douban_id];
+      }
+      return item.trailerUrl;
+    },
+    [refreshedTrailerUrls],
+  );
 
-  // 导航函数
   const handleNext = useCallback(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || items.length <= 1) return;
     setIsTransitioning(true);
-    setVideoLoaded(false); // 重置视频加载状态
+    setVideoLoaded(false);
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    setTimeout(() => setIsTransitioning(false), 800); // Netflix风格：更慢的过渡
+    setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning, items.length]);
 
   const handlePrev = useCallback(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || items.length <= 1) return;
     setIsTransitioning(true);
-    setVideoLoaded(false); // 重置视频加载状态
+    setVideoLoaded(false);
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
     setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning, items.length]);
@@ -128,19 +156,17 @@ function HeroBanner({
   const handleIndicatorClick = (index: number) => {
     if (isTransitioning || index === currentIndex) return;
     setIsTransitioning(true);
-    setVideoLoaded(false); // 重置视频加载状态
+    setVideoLoaded(false);
     setCurrentIndex(index);
     setTimeout(() => setIsTransitioning(false), 800);
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
+    if (!videoRef.current) return;
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
   };
 
-  // 使用自动轮播 Hook
   useAutoplay({
     currentIndex,
     isHovered,
@@ -149,15 +175,14 @@ function HeroBanner({
     onNext: handleNext,
   });
 
-  // 使用滑动手势 Hook
   const swipeHandlers = useSwipeGesture({
     onSwipeLeft: handleNext,
     onSwipeRight: handlePrev,
   });
 
-  // 预加载背景图片（只预加载当前和相邻的图片，优化性能）
   useEffect(() => {
-    // 预加载当前、前一张、后一张
+    if (items.length === 0) return;
+
     const indicesToPreload = [
       currentIndex,
       (currentIndex - 1 + items.length) % items.length,
@@ -166,70 +191,46 @@ function HeroBanner({
 
     indicesToPreload.forEach((index) => {
       const item = items[index];
-      if (item) {
-        const img = new window.Image();
-        const imageUrl = getHDBackdrop(item.backdrop) || item.poster;
-        img.src = getProxiedImageUrl(imageUrl);
-      }
+      if (!item) return;
+      const img = new window.Image();
+      img.src = getProxiedImageUrl(getHDBackdrop(item.backdrop) || item.poster);
     });
-  }, [items, currentIndex]);
+  }, [currentIndex, items]);
 
-  // 🎯 检查并刷新缺失的 trailer URL（组件挂载时）
   useEffect(() => {
-    // 如果禁用了视频，不需要刷新 trailer
-    if (!enableVideo) {
-      return;
-    }
+    if (!enableVideo) return;
 
-    const checkAndRefreshMissingTrailers = async () => {
+    const timer = setTimeout(async () => {
       for (const item of items) {
-        // 如果有 douban_id 但没有 trailerUrl，尝试获取
         if (
           item.douban_id &&
           !item.trailerUrl &&
           !refreshedTrailerUrls[item.douban_id]
         ) {
-          console.log(
-            '[HeroBanner] 检测到缺失的 trailer，尝试获取:',
-            item.title,
-          );
           await refreshTrailerUrl(item.douban_id);
         }
       }
-    };
+    }, 1000);
 
-    // 延迟执行，避免阻塞初始渲染
-    const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
     return () => clearTimeout(timer);
-  }, [items, refreshedTrailerUrls, refreshTrailerUrl, enableVideo]);
+  }, [enableVideo, items, refreshedTrailerUrls, refreshTrailerUrl]);
 
   if (!items || items.length === 0) {
     return null;
   }
 
   const currentItem = items[currentIndex];
-
-  // 🔍 调试日志
-  console.log('[HeroBanner] 当前项目:', {
-    title: currentItem.title,
-    hasBackdrop: !!currentItem.backdrop,
-    hasTrailer: !!currentItem.trailerUrl,
-    trailerUrl: currentItem.trailerUrl,
-    enableVideo,
-  });
+  const currentTrailerUrl = getEffectiveTrailerUrl(currentItem);
 
   return (
     <div
-      className='relative w-full aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9] overflow-hidden group rounded-xl sm:rounded-2xl md:rounded-3xl'
+      className='relative w-full aspect-[16/9] overflow-hidden bg-black group rounded-xl sm:rounded-2xl md:aspect-auto md:h-[72vh] md:min-h-[560px] md:max-h-[820px] md:rounded-none'
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...swipeHandlers}
     >
-      {/* 背景图片/视频层 */}
       <div className='absolute inset-0 bg-black'>
-        {/* 只渲染当前、前一张、后一张（性能优化） */}
         {items.map((item, index) => {
-          // 计算是否应该渲染此项
           const prevIndex = (currentIndex - 1 + items.length) % items.length;
           const nextIndex = (currentIndex + 1) % items.length;
           const shouldRender =
@@ -239,17 +240,18 @@ function HeroBanner({
 
           if (!shouldRender) return null;
 
+          const imageUrl = getHDBackdrop(item.backdrop) || item.poster;
+          const trailerUrl = getEffectiveTrailerUrl(item);
+
           return (
             <div
               key={item.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'
-                }`}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentIndex ? 'opacity-100' : 'opacity-0'
+              }`}
             >
-              {/* 背景图片（始终显示，作为视频的占位符） */}
               <Image
-                src={getProxiedImageUrl(
-                  getHDBackdrop(item.backdrop) || item.poster,
-                )}
+                src={getProxiedImageUrl(imageUrl)}
                 alt={item.title}
                 fill
                 className='object-cover object-center'
@@ -263,207 +265,158 @@ function HeroBanner({
                 }
               />
 
-              {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
-              {enableVideo &&
-                getEffectiveTrailerUrl(item) &&
-                index === currentIndex && (
-                  <video
-                    ref={videoRef}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    autoPlay
-                    muted={isMuted}
-                    loop
-                    playsInline
-                    preload='metadata'
-                    onError={async (e) => {
-                      const video = e.currentTarget;
-                      console.error('[HeroBanner] 视频加载失败:', {
-                        title: item.title,
-                        trailerUrl: item.trailerUrl,
-                        error: e,
-                      });
+              {enableVideo && trailerUrl && index === currentIndex && (
+                <video
+                  ref={videoRef}
+                  className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+                    videoLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  autoPlay
+                  muted={isMuted}
+                  loop
+                  playsInline
+                  preload='metadata'
+                  onError={async (event) => {
+                    const video = event.currentTarget;
 
-                      // 检测是否是403错误（trailer URL过期）
-                      if (item.douban_id) {
-                        // 如果缓存中有URL，说明之前刷新过，但现在又失败了
-                        // 需要清除缓存中的旧URL，重新刷新
-                        if (refreshedTrailerUrls[item.douban_id]) {
-                          clearTrailerMutation.mutate({
-                            doubanId: item.douban_id,
-                          });
-                        }
-
-                        // 重新刷新URL
-                        const newUrl = await refreshTrailerUrl(item.douban_id);
-                        if (newUrl) {
-                          // 重新加载视频
-                          video.load();
-                        }
+                    if (item.douban_id) {
+                      if (refreshedTrailerUrls[item.douban_id]) {
+                        clearTrailerMutation.mutate({
+                          doubanId: item.douban_id,
+                        });
                       }
-                    }}
-                    onLoadedData={(e) => {
-                      console.log('[HeroBanner] 视频加载成功:', item.title);
-                      setVideoLoaded(true); // 视频加载完成，淡入显示
-                      // 确保视频开始播放
-                      const video = e.currentTarget;
-                      video.play().catch((error) => {
-                        console.error('[HeroBanner] 视频自动播放失败:', error);
-                      });
-                    }}
-                  >
-                    <source
-                      src={getProxiedVideoUrl(
-                        getEffectiveTrailerUrl(item) || '',
-                      )}
-                      type='video/mp4'
-                    />
-                  </video>
-                )}
+
+                      const newUrl = await refreshTrailerUrl(item.douban_id);
+                      if (newUrl) {
+                        video.load();
+                      }
+                    }
+                  }}
+                  onLoadedData={(event) => {
+                    setVideoLoaded(true);
+                    event.currentTarget.play().catch(() => {});
+                  }}
+                >
+                  <source src={getProxiedVideoUrl(trailerUrl)} type='video/mp4' />
+                </video>
+              )}
             </div>
           );
         })}
 
-        {/* Netflix经典渐变遮罩：底部黑→中间透明→顶部黑 */}
-        <div className='absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/80' />
-        {/* 左侧额外渐变（增强文字可读性） */}
-        <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent' />
+        <div className='absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/50' />
+        <div className='absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 to-transparent' />
+        <div className='absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/95 to-transparent' />
+        <div className='absolute inset-y-0 left-0 w-[46%] bg-gradient-to-r from-black/95 via-black/50 to-transparent' />
+        <div className='absolute inset-y-0 right-0 w-[32%] bg-gradient-to-l from-black/80 via-black/40 to-transparent' />
       </div>
 
-      {/* 内容叠加层 - Netflix风格：左下角 */}
-      <div className='absolute bottom-0 left-0 right-0 px-3 sm:px-8 md:px-12 lg:px-16 xl:px-20 pb-8 sm:pb-16 md:pb-20 lg:pb-24'>
-        <div className='max-w-2xl space-y-1.5 sm:space-y-4 md:space-y-5 lg:space-y-6'>
-          {/* 标题 - Netflix风格：超大字体 */}
-          <h1 className='text-lg sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white drop-shadow-2xl leading-tight line-clamp-1 sm:line-clamp-2'>
+      <div className='absolute bottom-0 left-0 right-0 px-4 pb-10 sm:px-8 sm:pb-16 md:pl-52 md:pr-20 md:pb-24 lg:pl-56 xl:pl-60'>
+        <div className='max-w-2xl space-y-3 sm:space-y-4 md:space-y-5'>
+          <h1 className='line-clamp-1 text-3xl font-bold leading-tight text-white drop-shadow-2xl sm:text-5xl md:line-clamp-2 md:text-6xl xl:text-7xl'>
             {currentItem.title}
           </h1>
 
-          {/* 元数据 */}
-          <div className='flex items-center gap-1.5 sm:gap-4 text-xs sm:text-base md:text-lg flex-wrap'>
+          <div className='flex flex-wrap items-center gap-2 text-xs sm:gap-3 sm:text-base'>
             {currentItem.rate && (
-              <div className='flex items-center gap-0.5 sm:gap-1.5 px-1 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-500/90 rounded text-[10px] sm:text-base'>
-                <span className='text-white font-bold'>★</span>
-                <span className='text-white font-bold'>{currentItem.rate}</span>
+              <div className='flex items-center gap-1 rounded bg-yellow-500/95 px-2 py-1 text-white shadow-lg'>
+                <span className='font-bold'>★</span>
+                <span className='font-bold'>{currentItem.rate}</span>
               </div>
             )}
             {currentItem.year && (
-              <span className='text-white/90 font-semibold drop-shadow-md text-[10px] sm:text-base'>
+              <span className='font-semibold text-white/90 drop-shadow-md'>
                 {currentItem.year}
               </span>
             )}
             {currentItem.type && (
-              <span className='px-1.5 sm:px-3 py-0.5 sm:py-1 bg-white/20 rounded text-white/90 font-medium border border-white/30 text-[10px] sm:text-base'>
-                {currentItem.type === 'movie'
-                  ? '电影'
-                  : currentItem.type === 'tv'
-                    ? '剧集'
-                    : currentItem.type === 'variety'
-                      ? '综艺'
-                      : currentItem.type === 'shortdrama'
-                        ? '短剧'
-                        : currentItem.type === 'anime'
-                          ? '动漫'
-                          : '剧集'}
+              <span className='rounded border border-white/25 bg-white/20 px-2.5 py-1 font-medium text-white/90 backdrop-blur-[8px]'>
+                {getTypeLabel(currentItem.type)}
               </span>
             )}
           </div>
 
-          {/* 描述 - 平板2行，桌面3行 */}
           {currentItem.description && (
-            <p className='text-xs sm:text-sm md:text-base lg:text-lg text-white/90 line-clamp-2 md:line-clamp-3 drop-shadow-lg leading-relaxed max-w-xl'>
+            <p className='line-clamp-2 max-w-xl text-sm leading-6 text-white/90 drop-shadow-lg sm:text-base md:line-clamp-3'>
               {currentItem.description}
             </p>
           )}
 
-          {/* 操作按钮 - Netflix风格 */}
-          <div className='flex gap-2 sm:gap-4 pt-0.5 sm:pt-2'>
+          <div className='flex gap-2 pt-1 sm:gap-3 sm:pt-2'>
             <Link
-              href={
-                currentItem.type === 'shortdrama'
-                  ? `/play?title=${encodeURIComponent(currentItem.title)}&shortdrama_id=${currentItem.id}`
-                  : `/play?title=${encodeURIComponent(currentItem.title)}${currentItem.year ? `&year=${currentItem.year}` : ''}${currentItem.douban_id ? `&douban_id=${currentItem.douban_id}` : ''}${currentItem.type ? `&stype=${currentItem.type}` : ''}`
-              }
-              className='flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white text-black font-bold rounded hover:bg-white/90 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl'
+              href={getPlayHref(currentItem)}
+              className='flex items-center gap-2 rounded-full bg-white/90 px-5 py-2.5 text-sm font-bold text-black shadow-xl transition-all hover:bg-white active:scale-95 sm:px-8 sm:py-3 sm:text-base'
             >
-              <Play
-                className='w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7'
-                fill='currentColor'
-              />
-              <span>播放</span>
+              <Play className='h-5 w-5' fill='currentColor' />
+              <span>立即播放</span>
             </Link>
             <Link
-              href={
-                currentItem.type === 'shortdrama'
-                  ? '/shortdrama'
-                  : `/douban?type=${currentItem.type === 'variety'
-                    ? 'show'
-                    : currentItem.type || 'movie'
-                  }`
-              }
-              className='flex items-center gap-1 sm:gap-2 px-3 sm:px-8 md:px-10 py-1.5 sm:py-3 md:py-4 bg-white/30 text-white font-bold rounded hover:bg-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-xs sm:text-lg md:text-xl border border-white/50'
+              href={getDetailHref(currentItem)}
+              className='flex items-center gap-2 rounded-full border border-white/25 bg-white/20 px-5 py-2.5 text-sm font-bold text-white shadow-xl backdrop-blur-[12px] transition-all hover:bg-white/25 active:scale-95 sm:px-8 sm:py-3 sm:text-base'
             >
-              <Info className='w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7' />
+              <Info className='h-5 w-5' />
               <span>详情</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* 音量控制按钮（仅视频模式） */}
-      {enableVideo && getEffectiveTrailerUrl(currentItem) && (
+      {enableVideo && currentTrailerUrl && (
         <button
+          type='button'
           onClick={toggleMute}
-          className='absolute bottom-10 sm:bottom-32 md:bottom-36 right-3 sm:right-8 md:right-12 lg:right-16 w-7 h-7 sm:w-12 sm:h-12 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50'
+          className='absolute bottom-12 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-black/50 text-white transition-all hover:bg-black/60 sm:bottom-28 sm:right-8 sm:h-12 sm:w-12 md:right-14'
           aria-label={isMuted ? '取消静音' : '静音'}
         >
           {isMuted ? (
-            <VolumeX className='w-3.5 h-3.5 sm:w-6 sm:h-6' />
+            <VolumeX className='h-4 w-4 sm:h-6 sm:w-6' />
           ) : (
-            <Volume2 className='w-3.5 h-3.5 sm:w-6 sm:h-6' />
+            <Volume2 className='h-4 w-4 sm:h-6 sm:w-6' />
           )}
         </button>
       )}
 
-      {/* 导航按钮 - 桌面端显示 */}
       {showControls && items.length > 1 && (
         <>
           <button
+            type='button'
             onClick={handlePrev}
-            className='hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30'
+            className='hidden absolute left-48 top-1/2 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-0 transition-all hover:bg-black/60 group-hover:opacity-100 md:flex lg:left-52'
             aria-label='上一张'
           >
-            <ChevronLeft className='w-7 h-7 lg:w-8 lg:h-8' />
+            <ChevronLeft className='h-7 w-7' />
           </button>
           <button
+            type='button'
             onClick={handleNext}
-            className='hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all transform hover:scale-110 border border-white/30'
+            className='hidden absolute right-8 top-1/2 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-0 transition-all hover:bg-black/60 group-hover:opacity-100 md:flex lg:right-10'
             aria-label='下一张'
           >
-            <ChevronRight className='w-7 h-7 lg:w-8 lg:h-8' />
+            <ChevronRight className='h-7 w-7' />
           </button>
         </>
       )}
 
-      {/* 指示器 - Netflix风格：底部居中 */}
       {showIndicators && items.length > 1 && (
-        <div className='absolute bottom-2 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2'>
+        <div className='absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 sm:bottom-6'>
           {items.map((_, index) => (
             <button
               key={index}
+              type='button'
               onClick={() => handleIndicatorClick(index)}
-              className={`h-0.5 sm:h-1 rounded-full transition-all duration-300 ${index === currentIndex
-                  ? 'w-5 sm:w-10 bg-white shadow-lg'
-                  : 'w-1 sm:w-2 bg-white/50 hover:bg-white/75'
-                }`}
+              className={`h-1 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? 'w-10 bg-white shadow-lg'
+                  : 'w-2 bg-white/50 hover:bg-white/75'
+              }`}
               aria-label={`跳转到第 ${index + 1} 张`}
             />
           ))}
         </div>
       )}
 
-      {/* 页码标识 */}
-      <div className='absolute top-2 sm:top-6 md:top-8 right-2 sm:right-8 md:right-12'>
-        <div className='px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/70 border border-white/70 sm:border-2 rounded text-white text-[10px] sm:text-sm font-bold'>
+      <div className='absolute top-3 right-3 md:hidden'>
+        <div className='rounded border border-white/60 bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white'>
           {currentIndex + 1} / {items.length}
         </div>
       </div>
