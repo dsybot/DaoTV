@@ -402,6 +402,16 @@ export abstract class BaseRedisStorage implements IStorage {
     await this.withRetry(() =>
       this.client.set(this.userPwdKey(userName), hashed),
     );
+
+    const hasV2Info = await this.withRetry(() =>
+      this.client.exists(this.userInfoKey(userName)),
+    );
+    if (hasV2Info === 1) {
+      const v2Hashed = await this.hashPassword(newPassword);
+      await this.withRetry(() =>
+        this.client.hSet(this.userInfoKey(userName), { password: v2Hashed }),
+      );
+    }
   }
 
   // 删除用户及其所有数据
@@ -666,9 +676,9 @@ export abstract class BaseRedisStorage implements IStorage {
       this.client.zRange(this.userListKey(), 0, -1),
     );
     const v2Users = ensureStringArray(v2Members as any[]);
-    if (v2Users.length > 0) return v2Users;
 
-    // V1 兼容：SCAN 扫描（降级兜底）
+    // Merge all known user indexes. Admin-created V1 users only have pwd keys,
+    // while registered/OIDC users are indexed by users:list and info keys.
     const v1Keys = await this.scanKeys('u:*:pwd');
     const v1Users = v1Keys
       .map((k) => {
@@ -683,7 +693,7 @@ export abstract class BaseRedisStorage implements IStorage {
         return m ? ensureString(m[1]) : undefined;
       })
       .filter((u): u is string => typeof u === 'string');
-    return Array.from(new Set([...v2KeyUsers, ...v1Users]));
+    return Array.from(new Set([...v2Users, ...v2KeyUsers, ...v1Users]));
   }
 
   // ---------- 管理员配置 ----------

@@ -165,13 +165,16 @@ export async function POST(req: NextRequest) {
 
     const config = await getConfig();
     const user = config.UserConfig.Users.find((u) => u.username === username);
-    if (user && user.banned) {
+    const userInfoV2 = await db.getUserInfoV2(username);
+    if (user?.banned || userInfoV2?.banned) {
       return NextResponse.json({ error: '用户被封禁' }, { status: 401 });
     }
 
     // 校验用户密码（V1）
     try {
-      const pass = await db.verifyUser(username, password);
+      const pass =
+        (await db.verifyUserV2(username, password)) ||
+        (await db.verifyUser(username, password));
 
       if (!pass) {
         return NextResponse.json(
@@ -185,7 +188,7 @@ export async function POST(req: NextRequest) {
       const cookieValue = await generateAuthCookie(
         username,
         password,
-        user?.role || 'user',
+        user?.role || userInfoV2?.role || 'user',
         false
       );
       const expires = new Date();

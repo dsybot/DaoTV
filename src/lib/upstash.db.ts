@@ -264,6 +264,16 @@ export class UpstashRedisStorage implements IStorage {
   async changePassword(userName: string, newPassword: string): Promise<void> {
     const hashed = hashPwd(newPassword);
     await withRetry(() => this.client.set(this.userPwdKey(userName), hashed));
+
+    const hasV2Info = await withRetry(() =>
+      this.client.exists(this.userInfoKey(userName)),
+    );
+    if (hasV2Info === 1) {
+      const v2Hashed = await this.hashPassword(newPassword);
+      await withRetry(() =>
+        this.client.hset(this.userInfoKey(userName), { password: v2Hashed }),
+      );
+    }
   }
 
   // 删除用户及其所有数据
@@ -523,9 +533,8 @@ export class UpstashRedisStorage implements IStorage {
     );
     const v2Users = ensureStringArray(v2Members as any[]);
 
-    // V1 兼容：从 u:*:info keys 扫描（降级兜底，只在 ZSet 为空时触发）
-    if (v2Users.length > 0) return v2Users;
-
+    // Merge all known user indexes. Admin-created V1 users only have pwd keys,
+    // while registered/OIDC users are indexed by users:list and info keys.
     const v1Keys = await withRetry(() => this.client.keys('u:*:pwd'));
     const v1Users = v1Keys
       .map((k) => {
@@ -542,7 +551,7 @@ export class UpstashRedisStorage implements IStorage {
       })
       .filter((u): u is string => typeof u === 'string');
 
-    return Array.from(new Set([...v2KeyUsers, ...v1Users]));
+    return Array.from(new Set([...v2Users, ...v2KeyUsers, ...v1Users]));
   }
 
   // ---------- 管理员配置 ----------

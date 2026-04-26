@@ -269,7 +269,14 @@ export class DbManager {
   // 检查用户是否已存在
   async checkUserExist(userName: string): Promise<boolean> {
     incrementDbQuery();
-    return this.storage.checkUserExist(userName);
+    const exists = await this.storage.checkUserExist(userName);
+    if (exists) return true;
+
+    if (typeof (this.storage as any).checkUserExistV2 === 'function') {
+      return (this.storage as any).checkUserExistV2(userName);
+    }
+
+    return false;
   }
 
   async changePassword(userName: string, newPassword: string): Promise<void> {

@@ -132,6 +132,16 @@ export async function POST(request: NextRequest) {
 
         // 获取用户组信息
         const { userGroup } = body as { userGroup?: string };
+        const userTags =
+          userGroup && userGroup.trim() ? [userGroup.trim()] : undefined;
+
+        // Write V2 as well so admin-created users are indexed and keep group metadata.
+        await db.createUserV2(
+          targetUsername!,
+          targetPassword,
+          'user',
+          userTags,
+        );
 
         // 更新配置
         const newUser: any = {
@@ -142,7 +152,7 @@ export async function POST(request: NextRequest) {
 
         // 如果指定了用户组，添加到tags中
         if (userGroup && userGroup.trim()) {
-          newUser.tags = [userGroup];
+          newUser.tags = userTags;
         }
 
         adminConfig.UserConfig.Users.push(newUser);
