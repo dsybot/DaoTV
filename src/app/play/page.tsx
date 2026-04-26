@@ -322,7 +322,14 @@ function PlayPageClient() {
   const [tmdbCastEnabled, setTmdbCastEnabled] = useState(false);
   // TMDB演员数据
   const [tmdbCast, setTmdbCast] = useState<
-    Array<{ id: number; name: string; photo: string | null }>
+    Array<{
+      id: number;
+      name: string;
+      original_name?: string;
+      character?: string;
+      photo: string | null;
+      order?: number;
+    }>
   >([]);
   // TMDB分集信息（用于显示分集标题tooltip）
   const [tmdbEpisodes, setTmdbEpisodes] = useState<

@@ -579,11 +579,13 @@ export async function GET(request: NextRequest) {
             cast = (creditsData.cast || [])
               .filter((c: any) => c.profile_path)
               .slice(0, 30)
-              .map((c: any) => ({
+              .map((c: any, index: number) => ({
                 id: c.id,
                 name: c.name,
+                original_name: c.original_name || c.name,
                 character: searchType === 'tv' ? (c.roles?.[0]?.character || '') : c.character,
                 photo: getTMDBImageUrl(config, c.profile_path, 'w300'),
+                order: typeof c.order === 'number' ? c.order : index,
               }));
             console.log(`[TMDB] 过滤后有头像的演员: ${cast.length} 个`);
           }

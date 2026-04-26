@@ -44,8 +44,10 @@ interface TMDBSeason {
 interface TMDBCast {
   id: number;
   name: string;
+  original_name?: string;
   character: string;
   photo: string | null;
+  order?: number;
 }
 
 interface TMDBData {

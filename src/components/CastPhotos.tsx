@@ -16,8 +16,10 @@ interface ActorPhoto {
 interface TMDBCastItem {
   id: number;
   name: string;
+  original_name?: string;
   character?: string;
   photo: string | null;
+  order?: number;
 }
 
 interface ActorWork {
@@ -30,9 +32,222 @@ interface ActorWork {
 
 interface DoubanCelebrity {
   name: string;
+  full_name?: string;
+  name_en?: string;
+  aliases?: string[];
   role: string;
   character: string;
   douban_id: string;
+  order?: number;
+}
+
+const CJK_RE = /[\u3400-\u9fff]/;
+
+function uniqueNames(values: Array<string | undefined | null>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  values.forEach((value) => {
+    const clean = value?.trim();
+    if (!clean) return;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(clean);
+  });
+
+  return result;
+}
+
+function normalizeCompact(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&amp;/g, '&')
+    .replace(/[·・•]/g, '')
+    .replace(/[^a-z0-9\u3400-\u9fff]/g, '');
+}
+
+function englishTokenKey(value: string): string {
+  const tokens = value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u3400-\u9fff]+/g, ' ')
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter((token) => token.length > 1);
+
+  if (tokens.length < 2) return '';
+  return [...tokens].sort().join(' ');
+}
+
+function reverseEnglishName(value?: string): string {
+  const tokens = value?.trim().split(/\s+/).filter(Boolean) || [];
+  if (tokens.length < 2 || tokens.length > 4) return '';
+  return [...tokens].reverse().join(' ');
+}
+
+function extractEnglishFromFullName(value?: string): string {
+  if (!value) return '';
+  const withoutLeadingChinese = value.replace(/^[\u3400-\u9fff·・]+\s*/, '');
+  return /[a-zA-Z]/.test(withoutLeadingChinese)
+    ? withoutLeadingChinese.trim()
+    : '';
+}
+
+function getDoubanAliases(celebrity: DoubanCelebrity): string[] {
+  const nameEn =
+    celebrity.name_en || extractEnglishFromFullName(celebrity.full_name);
+
+  return uniqueNames([
+    celebrity.name,
+    celebrity.full_name,
+    nameEn,
+    reverseEnglishName(nameEn),
+    ...(celebrity.aliases || []),
+  ]);
+}
+
+function getTmdbAliases(actor: TMDBCastItem): string[] {
+  return uniqueNames([actor.name, actor.original_name]);
+}
+
+function scoreNameMatch(
+  actor: TMDBCastItem,
+  actorIndex: number,
+  celebrity: DoubanCelebrity,
+  celebrityIndex: number,
+): { baseScore: number; score: number } {
+  const tmdbAliases = getTmdbAliases(actor);
+  const doubanAliases = getDoubanAliases(celebrity);
+  let baseScore = 0;
+
+  for (const tmdbName of tmdbAliases) {
+    const tmdbCompact = normalizeCompact(tmdbName);
+    const tmdbHasCjk = CJK_RE.test(tmdbName);
+    const tmdbTokenKey = englishTokenKey(tmdbName);
+
+    for (const doubanName of doubanAliases) {
+      const doubanCompact = normalizeCompact(doubanName);
+      if (!tmdbCompact || !doubanCompact) continue;
+
+      const doubanHasCjk = CJK_RE.test(doubanName);
+      const doubanTokenKey = englishTokenKey(doubanName);
+
+      if (tmdbCompact === doubanCompact) {
+        baseScore = Math.max(
+          baseScore,
+          tmdbHasCjk || doubanHasCjk || tmdbCompact.length >= 5 ? 100 : 88,
+        );
+      }
+
+      if (
+        tmdbTokenKey &&
+        doubanTokenKey &&
+        tmdbTokenKey === doubanTokenKey
+      ) {
+        baseScore = Math.max(baseScore, 96);
+      }
+
+      if (
+        tmdbHasCjk &&
+        doubanHasCjk &&
+        Math.min(tmdbCompact.length, doubanCompact.length) >= 2 &&
+        (tmdbCompact.includes(doubanCompact) ||
+          doubanCompact.includes(tmdbCompact))
+      ) {
+        baseScore = Math.max(baseScore, 82);
+      }
+    }
+  }
+
+  if (baseScore === 0) return { baseScore: 0, score: 0 };
+
+  const tmdbOrder = actor.order ?? actorIndex;
+  const doubanOrder = celebrity.order ?? celebrityIndex;
+  const orderDiff = Math.abs(tmdbOrder - doubanOrder);
+  let orderBonus = 0;
+  if (orderDiff === 0) {
+    orderBonus = 8;
+  } else if (orderDiff === 1) {
+    orderBonus = 6;
+  } else if (orderDiff === 2) {
+    orderBonus = 4;
+  } else if (orderDiff <= 4) {
+    orderBonus = 2;
+  }
+
+  return { baseScore, score: baseScore + orderBonus };
+}
+
+function buildDoubanCharacterMap(
+  tmdbCast: TMDBCastItem[],
+  doubanCelebrities: DoubanCelebrity[],
+): Map<number, string> {
+  const candidatesByActor = new Map<
+    number,
+    Array<{
+      actorIndex: number;
+      celebrityIndex: number;
+      character: string;
+      baseScore: number;
+      score: number;
+    }>
+  >();
+
+  tmdbCast.forEach((actor, actorIndex) => {
+    doubanCelebrities.forEach((celebrity, celebrityIndex) => {
+      if (!celebrity.character) return;
+
+      const match = scoreNameMatch(
+        actor,
+        actorIndex,
+        celebrity,
+        celebrityIndex,
+      );
+
+      if (match.score < 88) return;
+
+      const candidates = candidatesByActor.get(actorIndex) || [];
+      candidates.push({
+        actorIndex,
+        celebrityIndex,
+        character: celebrity.character,
+        ...match,
+      });
+      candidatesByActor.set(actorIndex, candidates);
+    });
+  });
+
+  const accepted = Array.from(candidatesByActor.values())
+    .map((candidates) => {
+      const sorted = candidates.sort((a, b) => b.score - a.score);
+      const [best, second] = sorted;
+      if (!best) return null;
+
+      const ambiguous =
+        second && best.score - second.score < 6 && best.baseScore < 95;
+      return ambiguous ? null : best;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b!.score - a!.score);
+
+  const usedActors = new Set<number>();
+  const usedCelebrities = new Set<number>();
+  const characterMap = new Map<number, string>();
+
+  accepted.forEach((match) => {
+    if (!match) return;
+    if (usedActors.has(match.actorIndex)) return;
+    if (usedCelebrities.has(match.celebrityIndex)) return;
+
+    usedActors.add(match.actorIndex);
+    usedCelebrities.add(match.celebrityIndex);
+    characterMap.set(match.actorIndex, match.character);
+  });
+
+  return characterMap;
 }
 
 interface CastPhotosProps {
@@ -65,13 +280,16 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
 
   // 获取豆瓣演员表
   useEffect(() => {
+    let cancelled = false;
+    setDoubanCelebrities([]);
+
     if (!doubanId) return;
 
     const fetchDoubanCelebrities = async () => {
       try {
-        const response = await fetch(`/api/douban/celebrities?id=${doubanId}`);
+        const response = await fetch(`/api/douban/celebrities?id=${doubanId}&v=2`);
         const data = await response.json();
-        if (data.code === 200 && data.data?.celebrities) {
+        if (!cancelled && data.code === 200 && data.data?.celebrities) {
           setDoubanCelebrities(data.data.celebrities);
         }
       } catch (error) {
@@ -80,47 +298,39 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
     };
 
     fetchDoubanCelebrities();
+
+    return () => {
+      cancelled = true;
+    };
   }, [doubanId]);
 
-  // 处理TMDB演员数据，优先使用豆瓣的角色名
+  // 处理TMDB演员数据，豆瓣只用于在当前演员列表内保守补充角色名
   useEffect(() => {
-    if (tmdbCast && tmdbCast.length > 0) {
-      const actorsWithPhoto = tmdbCast.filter(a => a.photo).map(a => {
-        let character = a.character;
-
-        // 优先使用豆瓣的角色名
-        if (doubanCelebrities.length > 0) {
-          // 尝试匹配演员名（支持中文名匹配）
-          const doubanMatch = doubanCelebrities.find(dc => {
-            // 完全匹配
-            if (dc.name === a.name) return true;
-            // TMDB名字包含豆瓣名字（如 "邓超" 在 "Chao Deng" 中）
-            if (a.name.includes(dc.name)) return true;
-            // 豆瓣名字包含TMDB名字的一部分
-            const tmdbNameParts = a.name.split(/\s+/);
-            if (tmdbNameParts.some(part => dc.name.includes(part) && part.length > 1)) return true;
-            return false;
-          });
-
-          if (doubanMatch && doubanMatch.character) {
-            character = doubanMatch.character;
-          }
-        }
-
-        return {
-          name: a.name,
-          photo: a.photo,
-          id: a.id,
-          character,
-        };
-      });
-
-      if (actorsWithPhoto.length > 0) {
-        setEnabled(true);
-        setActors(actorsWithPhoto);
-        onEnabledChange?.(true);
-      }
+    if (!tmdbCast || tmdbCast.length === 0) {
+      setEnabled(false);
+      setActors([]);
+      onEnabledChange?.(false);
+      setLoading(false);
+      return;
     }
+
+    const doubanCharacterMap =
+      doubanCelebrities.length > 0
+        ? buildDoubanCharacterMap(tmdbCast, doubanCelebrities)
+        : new Map<number, string>();
+
+    const actorsWithPhoto = tmdbCast
+      .map((a, index) => ({
+        name: a.name,
+        photo: a.photo,
+        id: a.id,
+        character: doubanCharacterMap.get(index) || a.character,
+      }))
+      .filter((actor) => actor.photo);
+
+    setActors(actorsWithPhoto);
+    setEnabled(actorsWithPhoto.length > 0);
+    onEnabledChange?.(actorsWithPhoto.length > 0);
     setLoading(false);
   }, [tmdbCast, doubanCelebrities, onEnabledChange]);
 

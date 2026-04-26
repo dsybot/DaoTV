@@ -22,7 +22,14 @@ interface VideoInfoSectionProps {
   loadingMovieDetails: boolean;
   loadingBangumiDetails: boolean;
   loadingComments: boolean;
-  tmdbCast: Array<{ id: number; name: string; photo: string | null }>;
+  tmdbCast: Array<{
+    id: number;
+    name: string;
+    original_name?: string;
+    character?: string;
+    photo: string | null;
+    order?: number;
+  }>;
   tmdbCastEnabled: boolean;
   setTmdbCastEnabled: (enabled: boolean) => void;
 }

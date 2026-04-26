@@ -121,9 +121,68 @@ export async function GET(request: Request) {
 
 interface DoubanCelebrity {
   name: string;        // 演员名
+  full_name: string;   // 豆瓣 title 原始姓名（通常包含中文名和英文名）
+  name_en: string;     // 英文名（如果豆瓣提供）
+  aliases: string[];   // 用于本地匹配的别名
   role: string;        // 职位（演员/导演/编剧等）
   character: string;   // 饰演的角色名
   douban_id: string;   // 豆瓣演员ID
+  order: number;       // 豆瓣演员表顺序
+}
+
+function decodeHtmlText(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
+function uniqueValues(values: Array<string | undefined | null>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  values.forEach((value) => {
+    const normalized = value?.trim();
+    if (!normalized) return;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(normalized);
+  });
+
+  return result;
+}
+
+function reverseEnglishName(name: string): string {
+  const tokens = name.split(/\s+/).filter(Boolean);
+  if (tokens.length < 2 || tokens.length > 4) return '';
+  return [...tokens].reverse().join(' ');
+}
+
+function parseDoubanName(fullName: string): {
+  name: string;
+  name_en: string;
+  aliases: string[];
+} {
+  const cleanFullName = decodeHtmlText(fullName);
+  const leadingChinese = cleanFullName.match(/^[\u3400-\u9fff·・]+/);
+  const name = leadingChinese?.[0] || cleanFullName.split(/\s+/)[0] || cleanFullName;
+  const remainder = leadingChinese
+    ? cleanFullName.slice(leadingChinese[0].length).trim()
+    : '';
+  const name_en = /[a-zA-Z]/.test(remainder) ? remainder : '';
+
+  const aliases = uniqueValues([
+    cleanFullName,
+    name,
+    name_en,
+    reverseEnglishName(name_en),
+  ]);
+
+  return { name, name_en, aliases };
 }
 
 function parseDoubanCelebrities(html: string): DoubanCelebrity[] {
@@ -146,14 +205,14 @@ function parseDoubanCelebrities(html: string): DoubanCelebrity[] {
       try {
         const item = match[1];
 
-        // 提取演员名 - 从 a 标签的 title 属性
-        const nameMatch = item.match(/<a[^>]*href="https:\/\/www\.douban\.com\/personage\/(\d+)\/"[^>]*title="([^"]+)"/);
-        if (!nameMatch) continue;
+        // 提取演员ID和姓名 - 支持 personage 和 celebrity 两种URL格式
+        const idMatch = item.match(/href="https:\/\/www\.douban\.com\/(?:personage|celebrity)\/(\d+)\/[^"]*"/);
+        const titleMatch = item.match(/<a[^>]*title="([^"]+)"/);
+        if (!idMatch || !titleMatch) continue;
 
-        const douban_id = nameMatch[1];
-        const fullName = nameMatch[2].trim();
-        // 取中文名（第一个空格前的部分，或整个名字）
-        const name = fullName.split(/\s+/)[0] || fullName;
+        const douban_id = idMatch[1];
+        const fullName = decodeHtmlText(titleMatch[1]);
+        const { name, name_en, aliases } = parseDoubanName(fullName);
 
         // 提取角色信息 - 从 span.role 的 title 属性
         const roleMatch = item.match(/<span class="role"[^>]*title="([^"]+)"/);
@@ -175,9 +234,13 @@ function parseDoubanCelebrities(html: string): DoubanCelebrity[] {
         if (name && role === '演员') {
           celebrities.push({
             name,
+            full_name: fullName,
+            name_en,
+            aliases,
             role,
             character,
-            douban_id
+            douban_id,
+            order: celebrities.length,
           });
         }
       } catch (e) {
