@@ -315,27 +315,27 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
       )}
 
       <nav className='hidden md:block fixed left-0 top-0 bottom-0 z-700 pointer-events-none'>
-        <div className='relative h-full w-44 xl:w-48'>
-          <div className='absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-black/90 via-black/60 to-transparent' />
-          <div className='pointer-events-auto relative z-10 flex h-full w-40 xl:w-44 flex-col px-5 py-7 text-white'>
+        <div className='relative h-full w-52 xl:w-56'>
+          <div className='absolute inset-y-0 left-0 w-72 bg-gradient-to-r from-black/90 via-black/55 to-transparent' />
+          <div className='pointer-events-auto relative z-10 flex h-full w-48 xl:w-52 flex-col px-6 py-8 text-white'>
             <FastLink
               href='/'
               useTransitionNav
               onClick={() => setActive('/')}
-              className='flex items-center gap-2.5'
+              className='flex items-center gap-3'
             >
-              <span className='flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
+              <span className='flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
                 <Play
-                  className='ml-0.5 h-4 w-4 text-black'
+                  className='ml-0.5 h-[18px] w-[18px] text-black'
                   fill='currentColor'
                 />
               </span>
-              <span className='text-lg font-bold tracking-tight text-white drop-shadow-lg'>
+              <span className='text-xl font-bold tracking-tight text-white drop-shadow-lg'>
                 {siteName}
               </span>
             </FastLink>
 
-            <ul className='mt-8 flex flex-1 flex-col gap-1.5 overflow-y-auto pr-4 scrollbar-hide'>
+            <ul className='mt-10 flex flex-1 flex-col gap-2.5 overflow-y-auto pr-5 scrollbar-hide'>
               {navItems.map((item) => {
                 const activeItem = isActive(item.href);
                 const Icon = item.icon;
@@ -347,14 +347,14 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                       href={item.href}
                       useTransitionNav
                       onClick={() => setActive(item.href)}
-                      className={`group flex h-11 items-center gap-3 rounded-full px-3 text-sm font-semibold transition-all duration-200 ${
+                      className={`group flex h-[52px] items-center gap-3.5 rounded-full px-4 text-base font-semibold transition-all duration-200 ${
                         activeItem
                           ? `${theme.active} bg-white/10 shadow-lg shadow-black/20`
                           : `text-zinc-300/90 hover:bg-white/10 hover:text-white ${theme.hover}`
                       }`}
                     >
                       <Icon
-                        className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                        className={`h-5 w-5 shrink-0 transition-transform duration-200 ${
                           activeItem
                             ? 'scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]'
                             : 'opacity-80 group-hover:scale-110 group-hover:opacity-100'

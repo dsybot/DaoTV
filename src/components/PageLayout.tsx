@@ -41,6 +41,11 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   }, [pathname, searchParams]);
 
   const shouldShowAIButton = aiEnabled && activePath !== '/admin';
+  const isHomePage = pathname === '/' && activePath === '/';
+  const mainSpacingClass =
+    isHomePage
+      ? 'md:mt-0'
+      : 'md:mt-24 md:pl-56 xl:pl-60 md:pr-6 xl:pr-8';
 
   const handleDesktopSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,7 +129,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
           <main
             className={`flex-1 md:min-h-0 mt-12 mb-24 md:mb-0 ${
-              activePath === '/' ? 'md:mt-0' : 'md:mt-24'
+              mainSpacingClass
             }`}
           >
             {children}

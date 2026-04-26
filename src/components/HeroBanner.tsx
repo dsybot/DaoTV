@@ -224,7 +224,7 @@ function HeroBanner({
 
   return (
     <div
-      className='relative w-full aspect-[16/9] overflow-hidden bg-black group rounded-xl sm:rounded-2xl md:aspect-auto md:h-[72vh] md:min-h-[560px] md:max-h-[820px] md:rounded-none'
+      className='relative w-full aspect-[16/9] overflow-hidden bg-black group rounded-xl sm:rounded-2xl md:left-1/2 md:w-screen md:max-w-none md:-translate-x-1/2 md:aspect-auto md:h-[72vh] md:min-h-[560px] md:max-h-[820px] md:rounded-none'
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...swipeHandlers}
@@ -304,14 +304,14 @@ function HeroBanner({
           );
         })}
 
-        <div className='absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/50' />
-        <div className='absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 to-transparent' />
-        <div className='absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/95 to-transparent' />
-        <div className='absolute inset-y-0 left-0 w-[46%] bg-gradient-to-r from-black/95 via-black/50 to-transparent' />
-        <div className='absolute inset-y-0 right-0 w-[32%] bg-gradient-to-l from-black/80 via-black/40 to-transparent' />
+        <div className='absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20' />
+        <div className='absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/45 to-transparent' />
+        <div className='absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/85 to-transparent' />
+        <div className='absolute inset-y-0 left-0 w-[31%] bg-gradient-to-r from-black/75 via-black/25 to-transparent' />
+        <div className='absolute inset-y-0 right-0 w-[18%] bg-gradient-to-l from-black/45 to-transparent' />
       </div>
 
-      <div className='absolute bottom-0 left-0 right-0 px-4 pb-10 sm:px-8 sm:pb-16 md:pl-52 md:pr-20 md:pb-24 lg:pl-56 xl:pl-60'>
+      <div className='absolute bottom-0 left-0 right-0 px-4 pb-10 sm:px-8 sm:pb-16 md:pl-60 md:pr-20 md:pb-24 lg:pl-64 xl:pl-72'>
         <div className='max-w-2xl space-y-3 sm:space-y-4 md:space-y-5'>
           <h1 className='line-clamp-1 text-3xl font-bold leading-tight text-white drop-shadow-2xl sm:text-5xl md:line-clamp-2 md:text-6xl xl:text-7xl'>
             {currentItem.title}
