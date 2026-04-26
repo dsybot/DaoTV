@@ -1246,6 +1246,81 @@ function PlayPageClient() {
     manualOverride: activeManualDanmuOverride,
   });
 
+  const syncDanmuNativeToggleVisual = useCallback((visible: boolean) => {
+    const value = String(visible);
+    const playerEl = artPlayerRef.current?.template?.$player as
+      | HTMLElement
+      | undefined;
+
+    if (playerEl?.dataset) {
+      playerEl.dataset.danmukuVisible = value;
+    }
+
+    const pluginEl = playerEl?.querySelector(
+      '.artplayer-plugin-danmuku',
+    ) as HTMLElement | null;
+    const mountEl = pluginEl?.parentElement as HTMLElement | null;
+    if (mountEl?.dataset) {
+      mountEl.dataset.danmukuVisible = value;
+    }
+  }, []);
+
+  const syncDanmuSwitchState = useCallback(
+    (enabled: boolean) => {
+      setExternalDanmuEnabled(enabled);
+      try {
+        localStorage.setItem('danmaku_visible', String(enabled));
+      } catch (e) {
+        console.warn('保存弹幕显示状态失败:', e);
+      }
+      syncDanmuNativeToggleVisual(enabled);
+    },
+    [setExternalDanmuEnabled, syncDanmuNativeToggleVisual],
+  );
+
+  const handleDanmuEnabledChange = useCallback(
+    (enabled: boolean) => {
+      syncDanmuSwitchState(enabled);
+
+      const plugin = artPlayerRef.current?.plugins?.artplayerPluginDanmuku;
+      if (!plugin) return;
+
+      if (!enabled) {
+        plugin.config({ visible: false });
+        plugin.load(); // 关闭主开关时清空当前队列，避免延迟弹幕继续出现
+        return;
+      }
+
+      plugin.config({ visible: true });
+      loadExternalDanmu()
+        .then((result) => {
+          if (
+            result.count <= 0 ||
+            !externalDanmuEnabledRef.current ||
+            !artPlayerRef.current?.plugins?.artplayerPluginDanmuku
+          ) {
+            return;
+          }
+
+          const activePlugin =
+            artPlayerRef.current.plugins.artplayerPluginDanmuku;
+          activePlugin.load();
+          activePlugin.load(result.data);
+          syncDanmuSwitchState(true);
+          console.log('✅ 外部弹幕已加载:', result.count, '条');
+        })
+        .catch((error) => {
+          console.error('加载外部弹幕失败:', error);
+        });
+    },
+    [loadExternalDanmu, syncDanmuSwitchState],
+  );
+  const handleDanmuEnabledChangeRef = useRef(handleDanmuEnabledChange);
+
+  useEffect(() => {
+    handleDanmuEnabledChangeRef.current = handleDanmuEnabledChange;
+  }, [handleDanmuEnabledChange]);
+
   // 播放器就绪状态
   const [playerReady, setPlayerReady] = useState(false);
 
@@ -5600,7 +5675,7 @@ function PlayPageClient() {
                       localStorage.getItem('danmaku_margin') || '[10, "75%"]',
                     ) as [number | `${number}%`, number | `${number}%`],
                     visible:
-                      localStorage.getItem('danmaku_visible') !== 'false',
+                      localStorage.getItem('enable_external_danmu') === 'true',
                     emitter: true, // 启用插件原生的开关和输入框
                     maxLength: 50,
                     lockTime: 1, // 🎯 进一步减少锁定时间，提升进度跳转响应
@@ -6259,51 +6334,23 @@ function PlayPageClient() {
 
               // 🎯 监听插件原生开关的点击，同步状态到 externalDanmuEnabled
               if (toggleButton) {
-                toggleButton.addEventListener('click', () => {
-                  // 延迟读取插件状态，确保插件已更新
-                  setTimeout(() => {
-                    if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-                      const plugin =
-                        artPlayerRef.current.plugins.artplayerPluginDanmuku;
-                      const isHidden = plugin.isHide;
-                      const newState = !isHidden;
+                const toggleButtonEl = toggleButton as HTMLElement;
+                if (!toggleButtonEl.dataset.customDanmuToggleBound) {
+                  toggleButtonEl.dataset.customDanmuToggleBound = 'true';
+                  toggleButtonEl.addEventListener(
+                    'click',
+                    (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.stopImmediatePropagation();
 
-                      // 同步到自定义状态
-                      setExternalDanmuEnabled(newState);
-                      localStorage.setItem(
-                        'enable_external_danmu',
-                        String(newState),
-                      );
-
-                      console.log('🔄 插件原生开关状态已同步:', newState);
-
-                      // 如果开启弹幕，加载外部弹幕数据
-                      if (
-                        newState &&
-                        externalDanmuEnabledRef.current !== newState
-                      ) {
-                        loadExternalDanmu().then((result) => {
-                          if (
-                            result.count > 0 &&
-                            artPlayerRef.current?.plugins
-                              ?.artplayerPluginDanmuku
-                          ) {
-                            const danmuPlugin =
-                              artPlayerRef.current.plugins
-                                .artplayerPluginDanmuku;
-                            danmuPlugin.load(); // 清空已有弹幕
-                            danmuPlugin.load(result.data); // 加载新弹幕
-                            console.log(
-                              '✅ 外部弹幕已加载:',
-                              result.count,
-                              '条',
-                            );
-                          }
-                        });
-                      }
-                    }
-                  }, 50);
-                });
+                      const nextState = !externalDanmuEnabledRef.current;
+                      handleDanmuEnabledChangeRef.current(nextState);
+                      console.log('🔄 底部弹幕开关已走统一逻辑:', nextState);
+                    },
+                    true,
+                  );
+                }
               }
 
               console.log('✅ 弹幕按钮已配置完成（方案C）');
@@ -6343,11 +6390,13 @@ function PlayPageClient() {
           // 监听弹幕插件的显示/隐藏事件，自动保存状态到localStorage
           artPlayerRef.current.on('artplayerPluginDanmuku:show', () => {
             localStorage.setItem('danmaku_visible', 'true');
+            syncDanmuNativeToggleVisual(true);
             console.log('弹幕显示状态已保存');
           });
 
           artPlayerRef.current.on('artplayerPluginDanmuku:hide', () => {
             localStorage.setItem('danmaku_visible', 'false');
+            syncDanmuNativeToggleVisual(false);
             console.log('弹幕隐藏状态已保存');
           });
 
@@ -7357,42 +7406,11 @@ function PlayPageClient() {
                       : null
                   }
                   onSettingsChange={(newSettings) => {
-                    // 🎯 方案C：不再通过 handleDanmuOperationOptimized 控制开关
-                    // 插件原生开关会自己管理弹幕的显示/隐藏
-                    // 这里只需要同步状态到 localStorage 和更新插件配置
+                    // 主开关统一走同一个入口，和底部弹幕按钮保持一致
 
                     // 更新启用状态（同步到 localStorage 和 state）
                     if (newSettings.enabled !== undefined) {
-                      setExternalDanmuEnabled(newSettings.enabled);
-                      localStorage.setItem(
-                        'enable_external_danmu',
-                        String(newSettings.enabled),
-                      );
-
-                      // 同步到插件原生开关
-                      if (
-                        artPlayerRef.current?.plugins?.artplayerPluginDanmuku
-                      ) {
-                        const plugin =
-                          artPlayerRef.current.plugins.artplayerPluginDanmuku;
-                        if (newSettings.enabled) {
-                          plugin.show();
-                          // 加载外部弹幕数据
-                          loadExternalDanmu().then((result) => {
-                            if (result.count > 0) {
-                              plugin.load(); // 清空已有弹幕
-                              plugin.load(result.data); // 加载新弹幕
-                              console.log(
-                                '✅ 外部弹幕已加载:',
-                                result.count,
-                                '条',
-                              );
-                            }
-                          });
-                        } else {
-                          plugin.hide();
-                        }
-                      }
+                      handleDanmuEnabledChange(newSettings.enabled);
                     }
 
                     // 更新 localStorage
@@ -7441,12 +7459,17 @@ function PlayPageClient() {
 
                     // 实时更新弹幕插件配置
                     if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
-                      artPlayerRef.current.plugins.artplayerPluginDanmuku.config(
-                        newSettings,
-                      );
+                      const { enabled: _enabled, ...pluginSettings } =
+                        newSettings;
+                      if (Object.keys(pluginSettings).length > 0) {
+                        artPlayerRef.current.plugins.artplayerPluginDanmuku.config(
+                          pluginSettings,
+                        );
+                      }
 
                       // 处理显示/隐藏
                       if (newSettings.visible !== undefined) {
+                        syncDanmuNativeToggleVisual(newSettings.visible);
                         if (newSettings.visible) {
                           artPlayerRef.current.plugins.artplayerPluginDanmuku.show();
                         } else {

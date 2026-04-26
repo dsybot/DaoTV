@@ -161,7 +161,7 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
   } = options;
 
   // 弹幕开关状态（从 localStorage 继承，默认关闭）
-  const [externalDanmuEnabled, setExternalDanmuEnabled] = useState<boolean>(() => {
+  const [externalDanmuEnabled, setExternalDanmuEnabledState] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const v = localStorage.getItem('enable_external_danmu');
       return v === 'true';
@@ -193,6 +193,19 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
   const danmuPluginStateRef = useRef<any>(null);
   // 自动重试追踪
   const autoRetryDanmuScopeRef = useRef<string>('');
+
+  const setExternalDanmuEnabled = useCallback((enabled: boolean) => {
+    externalDanmuEnabledRef.current = enabled;
+    setExternalDanmuEnabledState(enabled);
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('enable_external_danmu', String(enabled));
+      }
+    } catch (e) {
+      console.warn('localStorage设置失败:', e);
+    }
+  }, []);
 
   // 同步 ref
   useEffect(() => {
@@ -408,13 +421,6 @@ export function useDanmu(options: UseDanmuOptions): UseDanmuReturn {
     // 立即更新UI状态（确保响应性）
     externalDanmuEnabledRef.current = nextState;
     setExternalDanmuEnabled(nextState);
-
-    // 同步保存到localStorage
-    try {
-      localStorage.setItem('enable_external_danmu', String(nextState));
-    } catch (e) {
-      console.warn('localStorage设置失败:', e);
-    }
 
     // 防抖处理弹幕数据操作
     danmuOperationTimeoutRef.current = setTimeout(async () => {
