@@ -11,7 +11,6 @@ import AIRecommendModal from './AIRecommendModal';
 import MobileHeader from './MobileHeader';
 import ModernNav from './ModernNav';
 import SearchSuggestions from './SearchSuggestions';
-import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 
 interface PageLayoutProps {
@@ -168,7 +167,6 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
                       </svg>
                     </button>
                   )}
-                  <ThemeToggle />
                   <UserMenu />
                 </div>
               </div>

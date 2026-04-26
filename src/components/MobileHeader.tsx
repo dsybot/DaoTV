@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { BackButton } from './BackButton';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
 import { useSite } from './SiteProvider';
-import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 
 interface MobileHeaderProps {
@@ -79,7 +78,6 @@ const MobileHeader = ({ showBackButton = false, showAIButton = false, onAIClick 
 
           {/* 右侧按钮 */}
           <div className='flex items-center gap-2 z-10'>
-            <ThemeToggle />
             <UserMenu />
           </div>
         </div>

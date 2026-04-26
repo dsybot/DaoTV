@@ -145,12 +145,13 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} min-h-screen bg-white text-gray-900 dark:bg-black dark:text-gray-200`}
+        className={`${inter.className} min-h-screen bg-black text-gray-200`}
       >
         <ThemeProvider
           attribute='class'
-          defaultTheme='system'
-          enableSystem
+          defaultTheme='dark'
+          enableSystem={false}
+          forcedTheme='dark'
           disableTransitionOnChange
         >
           <QueryProvider>

@@ -18,7 +18,6 @@ import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
 import { useSite } from '@/components/SiteProvider';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   OIDCProviderLogo,
   detectProvider,
@@ -307,9 +306,6 @@ function LoginPageClient() {
       <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
       <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
-      <div className='absolute top-3 right-3 sm:top-4 sm:right-4 z-20'>
-        <ThemeToggle />
-      </div>
       <div className='relative z-10 w-full max-w-md rounded-2xl sm:rounded-3xl bg-white/30 dark:bg-zinc-900/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-6 sm:p-10 border border-white/30 dark:border-white/10 animate-fade-in'>
         {/* 装饰性光效 */}
         <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse' />
