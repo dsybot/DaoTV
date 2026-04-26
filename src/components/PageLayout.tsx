@@ -1,8 +1,8 @@
 'use client';
 
-import type { FormEvent } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { ExternalLink, Search } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
@@ -10,6 +10,7 @@ import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
 import AIRecommendModal from './AIRecommendModal';
 import MobileHeader from './MobileHeader';
 import ModernNav from './ModernNav';
+import SearchSuggestions from './SearchSuggestions';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 
@@ -25,6 +26,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(false);
   const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
+  const [showDesktopSuggestions, setShowDesktopSuggestions] = useState(false);
 
   useEffect(() => {
     const disabled = isAIRecommendFeatureDisabled();
@@ -34,10 +36,12 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   useEffect(() => {
     if (pathname === '/search') {
       setDesktopSearchQuery(searchParams.get('q') || '');
+      setShowDesktopSuggestions(false);
       return;
     }
 
     setDesktopSearchQuery('');
+    setShowDesktopSuggestions(false);
   }, [pathname, searchParams]);
 
   const shouldShowAIButton = aiEnabled && activePath !== '/admin';
@@ -45,7 +49,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const mainSpacingClass =
     isHomePage
       ? 'md:mt-0'
-      : 'md:mt-24 md:pl-56 xl:pl-60 md:pr-6 xl:pr-8';
+      : 'md:mt-24 md:pl-48 xl:pl-52 md:pr-6 xl:pr-8';
 
   const handleDesktopSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,7 +61,28 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
     }
 
     setDesktopSearchQuery(trimmed);
+    setShowDesktopSuggestions(false);
     router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleDesktopInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setDesktopSearchQuery(event.target.value);
+    setShowDesktopSuggestions(true);
+  };
+
+  const handleDesktopSuggestionSelect = (suggestion: string) => {
+    const trimmed = suggestion.trim().replace(/\s+/g, ' ');
+    setDesktopSearchQuery(trimmed);
+    setShowDesktopSuggestions(false);
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleDesktopSearchMore = () => {
+    const trimmed = desktopSearchQuery.trim().replace(/\s+/g, ' ');
+    setShowDesktopSuggestions(false);
+    router.push(
+      trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search',
+    );
   };
 
   return (
@@ -74,15 +99,14 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
             <div className='relative h-20 w-full'>
               <form
                 onSubmit={handleDesktopSearch}
-                className='pointer-events-auto absolute left-1/2 top-4 w-[min(40rem,42vw)] -translate-x-1/2'
+                className='pointer-events-auto absolute left-1/2 top-4 flex w-[min(44rem,46vw)] -translate-x-1/2 items-start gap-2'
               >
-                <div className='group relative h-12 overflow-hidden rounded-full border border-white/10 bg-black/40 shadow-2xl shadow-black/20 backdrop-blur-[18px] transition-all duration-300 hover:bg-black/50 focus-within:border-white/25 focus-within:bg-black/50'>
+                <div className='group relative h-12 flex-1 rounded-full border border-white/10 bg-black/40 shadow-2xl shadow-black/20 backdrop-blur-[18px] transition-all duration-300 hover:bg-black/50 focus-within:border-white/25 focus-within:bg-black/50'>
                   <input
                     type='text'
                     value={desktopSearchQuery}
-                    onChange={(event) =>
-                      setDesktopSearchQuery(event.target.value)
-                    }
+                    onChange={handleDesktopInputChange}
+                    onFocus={() => setShowDesktopSuggestions(true)}
                     placeholder='搜索影片、剧集、综艺...'
                     className='h-full w-full bg-transparent py-3 pl-7 pr-14 text-sm font-medium text-white outline-none placeholder:text-white/55'
                     autoComplete='off'
@@ -94,7 +118,31 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
                   >
                     <Search className='h-5 w-5' />
                   </button>
+                  <SearchSuggestions
+                    query={desktopSearchQuery}
+                    isVisible={showDesktopSuggestions}
+                    onSelect={handleDesktopSuggestionSelect}
+                    onClose={() => setShowDesktopSuggestions(false)}
+                    onEnterKey={() => {
+                      const trimmed = desktopSearchQuery
+                        .trim()
+                        .replace(/\s+/g, ' ');
+                      if (!trimmed) return;
+                      setDesktopSearchQuery(trimmed);
+                      setShowDesktopSuggestions(false);
+                      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+                    }}
+                  />
                 </div>
+                <button
+                  type='button'
+                  onClick={handleDesktopSearchMore}
+                  className='flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/35 text-white/75 shadow-2xl shadow-black/20 backdrop-blur-[18px] transition-all duration-200 hover:bg-black/50 hover:text-white'
+                  title='搜索更多'
+                  aria-label='搜索更多'
+                >
+                  <ExternalLink className='h-5 w-5' />
+                </button>
               </form>
 
               <div

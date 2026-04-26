@@ -908,7 +908,7 @@ function HomeClient() {
         </div>
 
         <div
-          className={`max-w-[95%] mx-auto md:pl-52 lg:pl-56 ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
+          className={`max-w-[95%] mx-auto md:pl-44 lg:pl-48 ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
         >
           {/* 想看视图 */}
           <section
