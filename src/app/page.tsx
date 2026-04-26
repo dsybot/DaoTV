@@ -821,7 +821,7 @@ function HomeClient() {
             hotTvShows.length > 0 ||
             hotVarietyShows.length > 0 ||
             hotShortDramas.length > 0) && (
-            <div className='mb-8 md:mb-10'>
+            <div className='mb-5 md:mb-4'>
               <HeroBanner
                 items={[
                   // 豆瓣电影
@@ -888,7 +888,7 @@ function HomeClient() {
           )}
 
         {/* 顶部 Tab 切换 */}
-        <div className='mb-8 flex items-center justify-center px-2 sm:px-10 md:-mt-2'>
+        <div className='relative z-10 mb-8 flex items-center justify-center px-2 sm:px-10 md:-mt-1'>
           <CapsuleSwitch
             options={[
               { label: '首页', value: 'home' },

@@ -304,9 +304,9 @@ function HeroBanner({
           );
         })}
 
-        <div className='absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20' />
+        <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20' />
         <div className='absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/45 to-transparent' />
-        <div className='absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/85 to-transparent' />
+        <div className='absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black via-black/80 to-transparent md:h-56' />
         <div className='absolute inset-y-0 left-0 w-[31%] bg-gradient-to-r from-black/75 via-black/25 to-transparent' />
         <div className='absolute inset-y-0 right-0 w-[18%] bg-gradient-to-l from-black/45 to-transparent' />
       </div>
