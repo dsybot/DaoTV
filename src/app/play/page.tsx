@@ -5596,26 +5596,27 @@ function PlayPageClient() {
               html: '控制栏透明度',
               icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg>',
               tooltip: (() => {
-                const opacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.8');
-                return `${Math.round(opacity * 100)}%`;
+                const opacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.5');
+                return `不透明度 ${Math.round(opacity * 100)}%`;
               })(),
               range: [
-                parseFloat(localStorage.getItem('control_bar_opacity') || '0.8'),
-                0.3,
-                1.0,
+                parseFloat(localStorage.getItem('control_bar_opacity') || '0.5'),
+                0.1,
+                0.8,
                 0.1
               ],
               onChange: function (item: any) {
                 const opacity = item.range[0];
                 localStorage.setItem('control_bar_opacity', opacity.toString());
 
-                // 实时应用透明度到控制栏
-                const bottomBar = document.querySelector('.art-bottom') as HTMLElement;
-                if (bottomBar) {
-                  bottomBar.style.background = `linear-gradient(0deg, rgba(0, 0, 0, ${opacity}) 0%, transparent 100%)`;
+                // 实时应用透明度到毛玻璃容器
+                const liquidGlass = document.querySelector('.art-liquid-glass') as HTMLElement;
+                if (liquidGlass) {
+                  // 直接使用用户设置的透明度值
+                  liquidGlass.style.setProperty('background-color', `rgba(0, 0, 0, ${opacity})`, 'important');
                 }
 
-                return `${Math.round(opacity * 100)}%`;
+                return `不透明度 ${Math.round(opacity * 100)}%`;
               },
             },
             ...(webGPUSupported
@@ -5998,11 +5999,12 @@ function PlayPageClient() {
             video.style.objectFit = savedObjectFit;
           }
 
-          // 🎨 应用保存的控制栏透明度设置
-          const savedOpacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.8');
-          const bottomBar = document.querySelector('.art-bottom') as HTMLElement;
-          if (bottomBar) {
-            bottomBar.style.background = `linear-gradient(0deg, rgba(0, 0, 0, ${savedOpacity}) 0%, transparent 100%)`;
+          // 🎨 应用保存的控制栏透明度设置（毛玻璃效果）
+          const savedOpacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.5');
+          const liquidGlass = document.querySelector('.art-liquid-glass') as HTMLElement;
+          if (liquidGlass) {
+            // 直接使用用户设置的透明度值
+            liquidGlass.style.setProperty('background-color', `rgba(0, 0, 0, ${savedOpacity})`, 'important');
           }
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）
