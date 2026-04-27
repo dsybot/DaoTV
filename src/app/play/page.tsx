@@ -5591,6 +5591,33 @@ function PlayPageClient() {
                 return '打开快进快退设置面板';
               },
             },
+            {
+              name: '控制栏透明度',
+              html: '控制栏透明度',
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg>',
+              tooltip: (() => {
+                const opacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.8');
+                return `${Math.round(opacity * 100)}%`;
+              })(),
+              range: [
+                parseFloat(localStorage.getItem('control_bar_opacity') || '0.8'),
+                0.3,
+                1.0,
+                0.1
+              ],
+              onChange: function (item: any) {
+                const opacity = item.range[0];
+                localStorage.setItem('control_bar_opacity', opacity.toString());
+
+                // 实时应用透明度到控制栏
+                const bottomBar = document.querySelector('.art-bottom') as HTMLElement;
+                if (bottomBar) {
+                  bottomBar.style.background = `linear-gradient(0deg, rgba(0, 0, 0, ${opacity}) 0%, transparent 100%)`;
+                }
+
+                return `${Math.round(opacity * 100)}%`;
+              },
+            },
             ...(webGPUSupported
               ? [
                   {
@@ -5969,6 +5996,13 @@ function PlayPageClient() {
             localStorage.getItem('video_object_fit') || 'contain';
           if (video) {
             video.style.objectFit = savedObjectFit;
+          }
+
+          // 🎨 应用保存的控制栏透明度设置
+          const savedOpacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.8');
+          const bottomBar = document.querySelector('.art-bottom') as HTMLElement;
+          if (bottomBar) {
+            bottomBar.style.background = `linear-gradient(0deg, rgba(0, 0, 0, ${savedOpacity}) 0%, transparent 100%)`;
           }
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）

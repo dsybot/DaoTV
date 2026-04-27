@@ -4,6 +4,12 @@
    ⚠️ 重要：保留所有 !important 确保正确覆盖
    ============================================ */
 
+/* ===== Control Bar Transparency (控制栏透明度) ===== */
+/* 默认半透明背景，避免遮挡硬编码字幕（特别是韩国片源） */
+.art-bottom {
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%) !important;
+}
+
 /* ===== Poster (封面图) ===== */
 .art-poster {
   background-size: contain !important;
