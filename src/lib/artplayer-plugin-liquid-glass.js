@@ -5,7 +5,7 @@
 export default function artplayerPluginLiquidGlass(option = {}) {
   return (art) => {
     const { constructor } = art;
-    const { addClass, removeClass, append, createElement } = constructor.utils;
+    const { addClass, append, createElement } = constructor.utils;
     const { $bottom, $progress, $controls, $player } = art.template;
 
     const $liquidGlass = createElement('div');
@@ -17,46 +17,8 @@ export default function artplayerPluginLiquidGlass(option = {}) {
     append($liquidGlass, $progress);
     append($liquidGlass, $controls);
 
-    // 🔧 修复Chrome全屏模式下backdrop-filter导致的鼠标事件延迟问题
-    // 通过JavaScript监听全屏状态变化，动态添加/移除类
-    art.on('fullscreen', (state) => {
-      if (state) {
-        addClass($player, 'art-fullscreen-active');
-      } else {
-        removeClass($player, 'art-fullscreen-active');
-      }
-    });
-
-    // 同时监听网页全屏
-    art.on('fullscreenWeb', (state) => {
-      if (state) {
-        addClass($player, 'art-fullscreen-web-active');
-      } else {
-        removeClass($player, 'art-fullscreen-web-active');
-      }
-    });
-
-    // 🔧 修复控制栏隐藏时样式闪烁问题
-    // 通过延迟移除样式类，让ArtPlayer的opacity动画先完成
-    let hideTimer = null;
-    addClass($player, 'art-liquid-glass-styled');
-
-    art.on('control', (state) => {
-      if (hideTimer) {
-        clearTimeout(hideTimer);
-        hideTimer = null;
-      }
-
-      if (state) {
-        // 控制栏显示时，立即添加样式类
-        addClass($player, 'art-liquid-glass-styled');
-      } else {
-        // 控制栏隐藏时，延迟移除样式类（等待opacity动画完成）
-        hideTimer = setTimeout(() => {
-          removeClass($player, 'art-liquid-glass-styled');
-        }, 300);
-      }
-    });
+    // 与上游保持一致：不再用自定义 class 追踪控制栏显隐。
+    // 控制栏显示状态由 ArtPlayer 原生 art-control-show 统一驱动，避免全屏切换时样式状态和可点击层不同步。
 
     return {
       name: 'artplayerPluginLiquidGlass',
