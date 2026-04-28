@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig } from '@/lib/config';
 import { encWbi, getBuvid3, getBilibiliHeaders } from '@/lib/bilibili-wbi';
+import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -32,6 +33,32 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`🔍 B站搜索: "${keyword}"`);
+
+    // Bilibili搜索缓存：60分钟（与YouTube相同）
+    const BILIBILI_CACHE_TIME = 60 * 60; // 60分钟（秒）
+    const isLoggedIn = biliConfig?.loginStatus === 'logged_in' ? 'logged' : 'guest';
+    const cacheKey = `bilibili-search-${isLoggedIn}-${encodeURIComponent(keyword)}`;
+
+    console.log(`🔍 检查Bilibili搜索缓存: ${cacheKey}`);
+
+    // 检查缓存
+    try {
+      const cached = await db.getCache(cacheKey);
+      if (cached) {
+        console.log(`✅ Bilibili搜索缓存命中(数据库): "${keyword}"`);
+        return NextResponse.json({
+          ...cached,
+          fromCache: true,
+          cacheSource: 'database',
+          cacheTimestamp: new Date().toISOString()
+        });
+      }
+
+      console.log(`❌ Bilibili搜索缓存未命中: "${keyword}"`);
+    } catch (cacheError) {
+      console.warn('Bilibili搜索缓存读取失败:', cacheError);
+      // 缓存失败不影响主流程，继续执行
+    }
 
     // 获取 buvid3 和登录 cookies
     const buvid3 = biliConfig?.buvid3 || await getBuvid3();
@@ -97,14 +124,24 @@ export async function GET(request: NextRequest) {
       console.log('📸 番剧封面示例:', results.bangumi[0].cover);
     }
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       keyword,
       videos: results.videos,
       bangumi: results.bangumi,
       total: results.total,
       source: 'bilibili'
-    });
+    };
+
+    // 保存到缓存
+    try {
+      await db.setCache(cacheKey, responseData, BILIBILI_CACHE_TIME);
+      console.log(`💾 Bilibili搜索结果已缓存(数据库): "${keyword}" - ${results.total} 个结果, TTL: ${BILIBILI_CACHE_TIME}s`);
+    } catch (cacheError) {
+      console.warn('Bilibili搜索缓存保存失败:', cacheError);
+    }
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error('❌ B站搜索失败:', error);

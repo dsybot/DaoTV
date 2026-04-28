@@ -1105,9 +1105,7 @@ function SearchPageClient() {
         if (
           searchType === 'netdisk' &&
           netdiskResourceType === 'netdisk' &&
-          !netdiskLoading &&
-          !netdiskResults &&
-          !netdiskError
+          !netdiskLoading
         ) {
           handleNetDiskSearch(currentQuery);
         } else if (searchType === 'netdisk' && netdiskResourceType === 'acg') {
@@ -1115,23 +1113,17 @@ function SearchPageClient() {
           setAcgTriggerSearch((prev) => !prev);
         } else if (
           searchType === 'youtube' &&
-          !youtubeLoading &&
-          !youtubeResults &&
-          !youtubeError
+          !youtubeLoading
         ) {
           handleYouTubeSearch(currentQuery);
         } else if (
           searchType === 'bilibili' &&
-          !bilibiliLoading &&
-          !bilibiliResults &&
-          !bilibiliError
+          !bilibiliLoading
         ) {
           handleBilibiliSearch(currentQuery);
         } else if (
           searchType === 'tmdb-actor' &&
-          !tmdbActorLoading &&
-          !tmdbActorResults &&
-          !tmdbActorError
+          !tmdbActorLoading
         ) {
           handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
         }
@@ -1144,17 +1136,9 @@ function SearchPageClient() {
     searchQuery,
     searchParams,
     netdiskLoading,
-    netdiskResults,
-    netdiskError,
     youtubeLoading,
-    youtubeResults,
-    youtubeError,
     bilibiliLoading,
-    bilibiliResults,
-    bilibiliError,
     tmdbActorLoading,
-    tmdbActorResults,
-    tmdbActorError,
   ]);
 
   useEffect(() => {

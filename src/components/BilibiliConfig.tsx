@@ -208,7 +208,7 @@ const BilibiliConfig = ({ config, refreshConfig }: BilibiliConfigProps) => {
           <div className="flex items-center space-x-4 mb-4">
             {userInfo.face && (
               <img
-                src={userInfo.face}
+                src={`/api/image-proxy?url=${encodeURIComponent(userInfo.face)}`}
                 alt={userInfo.username}
                 className="w-16 h-16 rounded-full"
               />

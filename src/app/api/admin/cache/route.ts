@@ -91,7 +91,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const cacheType = searchParams.get('type'); // all, douban, shortdrama, danmu, netdisk, youtube, search
+  const cacheType = searchParams.get('type'); // all, douban, shortdrama, danmu, netdisk, youtube, bilibili, search
 
   try {
     let clearedCount = 0;
@@ -126,6 +126,11 @@ export async function DELETE(request: NextRequest) {
       case 'youtube':
         clearedCount = await clearYouTubeCache();
         message = `已清理 ${clearedCount} 个YouTube搜索缓存项`;
+        break;
+
+      case 'bilibili':
+        clearedCount = await clearBilibiliCache();
+        message = `已清理 ${clearedCount} 个Bilibili搜索缓存项`;
         break;
 
       case 'search':
@@ -183,6 +188,7 @@ async function getCacheStats() {
       danmu: { count: 0, size: 0 },
       netdisk: { count: 0, size: 0 },
       youtube: { count: 0, size: 0 },
+      bilibili: { count: 0, size: 0 },
       search: { count: 0, size: 0 },
       other: { count: 0, size: 0 },
       total: { count: 0, size: 0 },
@@ -196,6 +202,7 @@ async function getCacheStats() {
         danmu: '0 B',
         netdisk: '0 B',
         youtube: '0 B',
+        bilibili: '0 B',
         search: '0 B',
         other: '0 B',
         total: '0 B'
@@ -322,6 +329,27 @@ async function clearYouTubeCache(): Promise<number> {
   return clearedCount;
 }
 
+// 清理Bilibili缓存
+async function clearBilibiliCache(): Promise<number> {
+  let clearedCount = 0;
+
+  const dbCleared = await DatabaseCacheManager.clearCacheByType('bilibili');
+  clearedCount += dbCleared;
+
+  if (typeof localStorage !== 'undefined') {
+    const keys = Object.keys(localStorage).filter(key =>
+      key.startsWith('bilibili-search')
+    );
+    keys.forEach(key => {
+      localStorage.removeItem(key);
+      clearedCount++;
+    });
+    console.log(`🗑️ localStorage中清理了 ${keys.length} 个Bilibili搜索缓存项`);
+  }
+
+  return clearedCount;
+}
+
 // 清理网盘搜索缓存
 async function clearNetdiskCache(): Promise<number> {
   let clearedCount = 0;
@@ -426,9 +454,10 @@ async function clearAllCache(): Promise<number> {
   const danmuCount = await clearDanmuCache();
   const netdiskCount = await clearNetdiskCache();
   const youtubeCount = await clearYouTubeCache();
+  const bilibiliCount = await clearBilibiliCache();
   const searchCount = await clearSearchCache();
 
-  return doubanCount + shortdramaCount + tmdbCount + danmuCount + netdiskCount + youtubeCount + searchCount;
+  return doubanCount + shortdramaCount + tmdbCount + danmuCount + netdiskCount + youtubeCount + bilibiliCount + searchCount;
 }
 
 // 格式化字节大小
