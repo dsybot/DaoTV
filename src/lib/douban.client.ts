@@ -43,11 +43,7 @@ function getCacheKey(prefix: string, params: Record<string, any>): string {
 // 统一缓存获取方法
 async function getCache(key: string): Promise<any | null> {
   try {
-    // 优先从统一存储获取
-    const cached = await ClientCache.get(key);
-    if (cached) return cached;
-
-    // 兜底：从localStorage获取（兼容性）
+    // 优先读本地缓存，弱网下避免为命中缓存也多等一次接口。
     if (typeof localStorage !== 'undefined') {
       const localCached = localStorage.getItem(key);
       if (localCached) {
@@ -58,6 +54,9 @@ async function getCache(key: string): Promise<any | null> {
         localStorage.removeItem(key);
       }
     }
+
+    const cached = await ClientCache.get(key);
+    if (cached !== null && cached !== undefined) return cached;
 
     return null;
   } catch (e) {
@@ -73,8 +72,10 @@ async function setCache(
   expireSeconds: number,
 ): Promise<void> {
   try {
-    // 主要存储：统一存储
-    await ClientCache.set(key, data, expireSeconds);
+    // 服务端缓存后台写入，不阻塞页面展示。
+    void ClientCache.set(key, data, expireSeconds).catch((error) => {
+      console.warn('Failed to set Douban cache:', error);
+    });
 
     // 兜底存储：localStorage（兼容性，短期缓存）
     if (typeof localStorage !== 'undefined') {
