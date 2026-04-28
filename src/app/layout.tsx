@@ -2,7 +2,6 @@
 
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { cookies } from 'next/headers';
 import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 
@@ -26,13 +25,10 @@ export const dynamic = 'force-dynamic';
 
 // 动态生成 metadata，支持配置更新后的标题变化
 export async function generateMetadata(): Promise<Metadata> {
-  // 🔥 调用 cookies() 强制动态渲染，防止 Docker 环境下的缓存问题
-  await cookies();
-
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
-  const config = await getConfig();
   let siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'MoonTV';
   if (storageType !== 'localstorage') {
+    const config = await getConfig();
     siteName = config.SiteConfig.SiteName;
   }
 
@@ -52,9 +48,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 🔥 调用 cookies() 强制动态渲染，防止 Docker 环境下的缓存问题
-  await cookies();
-
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
 
   let siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'MoonTV';
@@ -159,11 +152,9 @@ export default async function RootLayout({
               <DownloadProvider>
                 <WatchRoomProvider>
                   <SiteProvider siteName={siteName} announcement={announcement}>
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-                      <SessionTracker />
-                      {children}
-                      <GlobalErrorIndicator />
-                    </Suspense>
+                    <SessionTracker />
+                    {children}
+                    <GlobalErrorIndicator />
                   </SiteProvider>
                   <Suspense fallback={null}>
                     <DownloadPanel />

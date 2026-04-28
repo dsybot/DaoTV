@@ -2,7 +2,6 @@
 
 'use client';
 
-import { queryOptions, useQuery } from '@tanstack/react-query';
 import {
   Cat,
   Clover,
@@ -36,31 +35,6 @@ interface NavItem {
   href: string;
 }
 
-const userEmbyConfigOptions = () =>
-  queryOptions({
-    queryKey: ['user', 'emby-config'],
-    queryFn: async () => {
-      const res = await fetch('/api/user/emby-config');
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.config;
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
-const publicSourcesOptions = () =>
-  queryOptions({
-    queryKey: ['emby', 'public-sources'],
-    queryFn: async () => {
-      const res = await fetch('/api/emby/public-sources');
-      if (!res.ok) return { sources: [] };
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
 const ModernNav = ({ activePath }: ModernNavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -79,9 +53,7 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
   });
   const [hasCustomCategories, setHasCustomCategories] = useState(false);
   const [enableWebLive, setEnableWebLive] = useState(false);
-
-  const { data: userEmbyConfig } = useQuery(userEmbyConfigOptions());
-  const { data: publicSourcesData } = useQuery(publicSourcesOptions());
+  const [embyEnabled, setEmbyEnabled] = useState(false);
 
   const baseNavItems = useMemo<NavItem[]>(
     () => [
@@ -106,6 +78,9 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     setHasCustomCategories(runtimeConfig?.CUSTOM_CATEGORIES?.length > 0);
     setEnableWebLive(Boolean(runtimeConfig?.ENABLE_WEB_LIVE));
+    setEmbyEnabled(
+      Boolean(runtimeConfig?.EMBY_ENABLED || runtimeConfig?.PRIVATE_LIBRARY_ENABLED),
+    );
   }, []);
 
   const navItems = useMemo<NavItem[]>(() => {
@@ -123,22 +98,16 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
       });
     }
 
-    const hasUserEmby = userEmbyConfig?.sources?.some(
-      (source: any) => source.enabled && source.ServerURL,
-    );
-    const hasPublicEmby = (publicSourcesData?.sources?.length ?? 0) > 0;
-
-    if (hasUserEmby || hasPublicEmby) {
+    if (embyEnabled) {
       items.push({ icon: FolderOpen, label: 'Emby', href: '/emby' });
     }
 
     return items;
   }, [
     baseNavItems,
+    embyEnabled,
     enableWebLive,
     hasCustomCategories,
-    publicSourcesData,
-    userEmbyConfig,
   ]);
 
   const isActive = useCallback(

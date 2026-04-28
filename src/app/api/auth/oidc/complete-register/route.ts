@@ -201,7 +201,24 @@ export async function POST(request: NextRequest) {
         undefined  // enabledApis
       );
 
-      // 重新获取配置（此时会调用 configSelfCheck 从数据库获取最新用户列表）
+      if (!config.UserConfig.Users.some((user: any) => user.username === username)) {
+        const newUserConfig: any = {
+          username,
+          role: 'user',
+          banned: false,
+          createdAt: Date.now(),
+          oidcSub: oidcSession.sub,
+        };
+
+        if (defaultTags) {
+          newUserConfig.tags = defaultTags;
+        }
+
+        config.UserConfig.Users.push(newUserConfig);
+        await db.saveAdminConfig(config);
+      }
+
+      // 清除缓存，让后续请求读取刚写入的用户配置
       clearConfigCache();
 
       // 设置认证cookie

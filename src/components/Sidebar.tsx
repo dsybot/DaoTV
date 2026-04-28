@@ -3,7 +3,7 @@
 'use client';
 
 import { Cat, Clover, Film, Globe, Home, Menu, PlaySquare, Radio, Search, Star, Tv } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 import { FastLink } from './FastLink';
 import {
@@ -13,7 +13,6 @@ import {
   useEffect,
   useLayoutEffect,
   useState,
-  startTransition,
   useMemo,
 } from 'react';
 
@@ -62,7 +61,6 @@ declare global {
 }
 
 const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   // 若同一次 SPA 会话中已经读取过折叠状态，则直接复用，避免闪烁
@@ -122,13 +120,6 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
     }
     onToggle?.(newState);
   }, [isCollapsed, onToggle]);
-
-  const handleSearchClick = useCallback(() => {
-    // 使用 startTransition 优化导航性能
-    startTransition(() => {
-      router.push('/search');
-    });
-  }, [router]);
 
   const contextValue = useMemo(() => ({
     isCollapsed,
@@ -257,11 +248,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
               <FastLink
                 href='/search'
                 useTransitionNav
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSearchClick();
-                  setActive('/search');
-                }}
+                onClick={() => setActive('/search')}
                 data-active={active === '/search'}
                 className={`group relative flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-linear-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-600 data-[active=true]:bg-linear-to-r data-[active=true]:from-blue-500/20 data-[active=true]:to-cyan-500/20 data-[active=true]:text-blue-700 font-medium transition-colors duration-150 min-h-[40px] dark:text-gray-300 dark:hover:from-blue-500/10 dark:hover:to-cyan-500/10 dark:hover:text-blue-400 dark:data-[active=true]:from-blue-500/15 dark:data-[active=true]:to-cyan-500/15 dark:data-[active=true]:text-blue-400 ${isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
                   } gap-3 justify-start`}

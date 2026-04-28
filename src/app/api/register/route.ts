@@ -177,6 +177,22 @@ export async function POST(req: NextRequest) {
         await db.registerUser(username, password);
       }
 
+      if (!config.UserConfig.Users.some((user: any) => user.username === username)) {
+        const newUserConfig: any = {
+          username,
+          role: 'user',
+          banned: false,
+          createdAt: Date.now(),
+        };
+
+        if (defaultTags) {
+          newUserConfig.tags = defaultTags;
+        }
+
+        config.UserConfig.Users.push(newUserConfig);
+        await db.saveAdminConfig(config);
+      }
+
       // 如果启用了邀请码系统，标记邀请码已使用
       const requireInviteCode = config.UserConfig?.RequireInviteCode === true;
       if (requireInviteCode && inviteCode) {
@@ -188,7 +204,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 清除缓存，让 configSelfCheck 从数据库同步最新用户列表（包括 tags）
+      // 清除缓存，让后续请求读取刚写入的用户配置
       clearConfigCache();
 
       // 验证用户是否成功创建并包含tags（调试用）

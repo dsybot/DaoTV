@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { startTransition, type MouseEvent, type ReactNode } from 'react';
+import { type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 
 interface FastLinkProps {
   href: string;
@@ -14,8 +13,7 @@ interface FastLinkProps {
    */
   forceRefresh?: boolean;
   /**
-   * Use React 18's startTransition to mark navigation as non-blocking.
-   * Keeps the UI responsive during navigation.
+   * Kept for backward compatibility with older callers.
    */
   useTransitionNav?: boolean;
   /**
@@ -41,23 +39,20 @@ interface FastLinkProps {
   /**
    * Style object
    */
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
 
 /**
  * FastLink - High-performance navigation component
  *
- * Supports three navigation modes:
- * 1. Default: SPA navigation with prefetch disabled
- * 2. forceRefresh: Hard browser navigation bypassing React
- * 3. useTransitionNav: Non-blocking navigation using React 18's startTransition
+ * Compatibility wrapper around Next Link.
+ * `useTransitionNav` is intentionally ignored so navigation stays native.
  */
 export function FastLink({
   href,
   children,
   className,
   forceRefresh = false,
-  useTransitionNav = false,
   onClick,
   'aria-label': ariaLabel,
   target,
@@ -65,51 +60,27 @@ export function FastLink({
   'data-active': dataActive,
   style,
 }: FastLinkProps) {
-  const router = useRouter();
-
-  // Handle click events
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
-    // Call custom onClick handler if provided
     onClick?.(e);
 
-    // If default was prevented by onClick handler, respect it
     if (e.defaultPrevented) {
       return;
     }
 
-    // Respect modifier keys for opening in new tabs
     const isModifiedClick =
       e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || target === '_blank';
 
-    if (isModifiedClick) {
-      // Let the browser handle modified clicks naturally
+    if (
+      isModifiedClick ||
+      !forceRefresh ||
+      href.startsWith('http://') ||
+      href.startsWith('https://')
+    ) {
       return;
     }
 
-    // External links - let browser handle naturally
-    if (href.startsWith('http://') || href.startsWith('https://')) {
-      return;
-    }
-
-    // Prevent default navigation
     e.preventDefault();
-
-    // Mode 1: Force refresh - bypass React entirely
-    if (forceRefresh) {
-      window.location.assign(href);
-      return;
-    }
-
-    // Mode 2: Transition navigation - non-blocking
-    if (useTransitionNav) {
-      startTransition(() => {
-        router.push(href);
-      });
-      return;
-    }
-
-    // Mode 3: Default - standard Next.js navigation
-    router.push(href);
+    window.location.assign(href);
   };
 
   return (

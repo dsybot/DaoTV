@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-console, @typescript-eslint/no-non-null-assertion */
 
-import { unstable_noStore } from 'next/cache';
-
 import { db } from '@/lib/db';
 
 import { AdminConfig } from './admin.types';
@@ -56,9 +54,8 @@ export const API_CONFIG = {
 };
 
 // 在模块加载时根据环境决定配置来源
-let cachedConfig: AdminConfig;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5000; // 缓存5秒，避免 Vercel Serverless 多实例缓存不一致
+let cachedConfig: AdminConfig | null = null;
+let configInitPromise: Promise<AdminConfig> | null = null;
 
 // 从配置文件补充管理员配置
 export function refineConfig(adminConfig: AdminConfig): AdminConfig {
@@ -325,37 +322,40 @@ async function getInitConfig(configFile: string, subConfig: {
 }
 
 export async function getConfig(): Promise<AdminConfig> {
-  // 🔥 防止 Next.js 在 Docker 环境下缓存配置（解决站点名称更新问题）
-  unstable_noStore();
-
-  // 🔥 完全移除内存缓存检查 - Docker 环境下模块级变量不会被清除
-  // 参考：https://nextjs.org/docs/app/guides/memory-usage
-  // 每次都从数据库读取最新配置，确保动态配置立即生效
-
-  // 读 db
-  let adminConfig: AdminConfig | null = null;
-  try {
-    adminConfig = await db.getAdminConfig();
-  } catch (e) {
-    console.error('获取管理员配置失败:', e);
+  if (cachedConfig) {
+    return cachedConfig;
   }
 
-  // db 中无配置，执行一次初始化
-  if (!adminConfig) {
-    adminConfig = await getInitConfig("");
+  if (configInitPromise) {
+    return configInitPromise;
   }
-  adminConfig = await configSelfCheck(adminConfig);
 
-  // 🔥 仍然更新 cachedConfig 以保持向后兼容，但不再依赖它
-  cachedConfig = adminConfig;
+  const initPromise = (async () => {
+    let adminConfig: AdminConfig | null = null;
+    try {
+      adminConfig = await db.getAdminConfig();
+    } catch (e) {
+      console.error('获取管理员配置失败:', e);
+    }
 
-  return adminConfig;
+    if (!adminConfig) {
+      adminConfig = await getInitConfig("");
+    }
+    adminConfig = await configSelfCheck(adminConfig);
+
+    cachedConfig = adminConfig;
+    configInitPromise = null;
+    return cachedConfig;
+  })();
+
+  configInitPromise = initPromise;
+  return initPromise;
 }
 
 // 清除配置缓存，强制重新从数据库读取
 export function clearConfigCache(): void {
-  cachedConfig = null as any;
-  cacheTimestamp = 0; // 同时清除时间戳
+  cachedConfig = null;
+  configInitPromise = null;
 }
 
 export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminConfig> {
@@ -367,75 +367,8 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
     adminConfig.UserConfig.Users = [];
   }
 
-  // 🔥 关键修复：每次都从数据库获取最新的用户列表
-  try {
-    const dbUsers = await db.getAllUsers();
-    const ownerUser = process.env.USERNAME;
-
-    // 创建用户列表：保留数据库中存在的用户的配置信息
-    const updatedUsers = await Promise.all(dbUsers.map(async username => {
-      // 查找现有配置中是否有这个用户
-      const existingUserConfig = adminConfig.UserConfig.Users.find(u => u.username === username);
-
-      if (existingUserConfig) {
-        // 保留现有配置
-        return existingUserConfig;
-      } else {
-        // 新用户，创建默认配置
-        let createdAt = Date.now();
-        let oidcSub: string | undefined;
-        let tags: string[] | undefined;
-        let role: 'owner' | 'admin' | 'user' = username === ownerUser ? 'owner' : 'user';
-        let banned = false;
-        let enabledApis: string[] | undefined;
-
-        try {
-          // 从数据库V2获取用户信息（OIDC/新版用户）
-          const userInfoV2 = await db.getUserInfoV2(username);
-          console.log(`=== configSelfCheck: 用户 ${username} 数据库信息 ===`, userInfoV2);
-          if (userInfoV2) {
-            createdAt = userInfoV2.createdAt || Date.now();
-            oidcSub = userInfoV2.oidcSub;
-            tags = userInfoV2.tags;
-            role = userInfoV2.role || role;
-            banned = userInfoV2.banned || false;
-            enabledApis = userInfoV2.enabledApis;
-            console.log(`=== configSelfCheck: 用户 ${username} tags ===`, tags);
-          }
-        } catch (err) {
-          console.warn(`获取用户 ${username} 信息失败:`, err);
-        }
-
-        const newUserConfig: any = {
-          username,
-          role,
-          banned,
-          createdAt,
-        };
-
-        if (oidcSub) {
-          newUserConfig.oidcSub = oidcSub;
-        }
-        if (tags && tags.length > 0) {
-          newUserConfig.tags = tags;
-          console.log(`=== configSelfCheck: 用户 ${username} 最终配置包含tags ===`, newUserConfig.tags);
-        } else {
-          console.log(`=== configSelfCheck: 用户 ${username} 没有tags (tags=${tags}) ===`);
-        }
-        if (enabledApis && enabledApis.length > 0) {
-          newUserConfig.enabledApis = enabledApis;
-        }
-
-        return newUserConfig;
-      }
-    }));
-
-    // 更新用户列表
-    adminConfig.UserConfig.Users = updatedUsers;
-  } catch (e) {
-    console.error('获取最新用户列表失败:', e);
-    // 失败时继续使用现有配置
-  }
+  // Keep config normalization synchronous and cheap. User records are updated by
+  // register/admin flows; doing a full user table scan here blocks navigation.
   // 确保 AllowRegister 有默认值
   if (adminConfig.UserConfig.AllowRegister === undefined) {
     adminConfig.UserConfig.AllowRegister = true;
