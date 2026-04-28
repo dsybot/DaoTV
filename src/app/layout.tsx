@@ -13,6 +13,7 @@ import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
+import TopProgressBar from '../components/TopProgressBar';
 import { WatchRoomProvider } from '../components/WatchRoomProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
 import { GlobalCacheProvider } from '../contexts/GlobalCacheContext';
@@ -147,6 +148,7 @@ export default async function RootLayout({
           forcedTheme='dark'
           disableTransitionOnChange
         >
+          <TopProgressBar />
           <QueryProvider>
             <GlobalCacheProvider>
               <DownloadProvider>

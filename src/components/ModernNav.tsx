@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Globe,
   Home,
+  Menu,
   MoreHorizontal,
   Play,
   PlaySquare,
@@ -19,7 +20,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { FastLink } from './FastLink';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
@@ -33,6 +40,12 @@ interface NavItem {
   icon: LucideIcon;
   label: string;
   href: string;
+}
+
+declare global {
+  interface Window {
+    __sidebarCollapsed?: boolean;
+  }
 }
 
 const ModernNav = ({ activePath }: ModernNavProps) => {
@@ -54,6 +67,15 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
   const [hasCustomCategories, setHasCustomCategories] = useState(false);
   const [enableWebLive, setEnableWebLive] = useState(false);
   const [embyEnabled, setEmbyEnabled] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.__sidebarCollapsed === 'boolean'
+    ) {
+      return window.__sidebarCollapsed;
+    }
+    return false;
+  });
 
   const baseNavItems = useMemo<NavItem[]>(
     () => [
@@ -79,9 +101,35 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
     setHasCustomCategories(runtimeConfig?.CUSTOM_CATEGORIES?.length > 0);
     setEnableWebLive(Boolean(runtimeConfig?.ENABLE_WEB_LIVE));
     setEmbyEnabled(
-      Boolean(runtimeConfig?.EMBY_ENABLED || runtimeConfig?.PRIVATE_LIBRARY_ENABLED),
+      Boolean(
+        runtimeConfig?.EMBY_ENABLED || runtimeConfig?.PRIVATE_LIBRARY_ENABLED,
+      ),
     );
   }, []);
+
+  useLayoutEffect(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    if (saved !== null) {
+      const nextCollapsed = JSON.parse(saved);
+      setIsCollapsed(nextCollapsed);
+      window.__sidebarCollapsed = nextCollapsed;
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    if (isCollapsed) {
+      document.documentElement.dataset.sidebarCollapsed = 'true';
+    } else {
+      delete document.documentElement.dataset.sidebarCollapsed;
+    }
+  }, [isCollapsed]);
+
+  const handleToggle = useCallback(() => {
+    const nextCollapsed = !isCollapsed;
+    setIsCollapsed(nextCollapsed);
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(nextCollapsed));
+    window.__sidebarCollapsed = nextCollapsed;
+  }, [isCollapsed]);
 
   const navItems = useMemo<NavItem[]>(() => {
     const items = [...baseNavItems];
@@ -284,27 +332,76 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
       )}
 
       <nav className='hidden md:block fixed left-0 top-0 bottom-0 z-700 pointer-events-none'>
-        <div className='relative h-full w-44 xl:w-48'>
-          <div className='absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-black/90 via-black/52 to-transparent' />
-          <div className='pointer-events-auto relative z-10 flex h-full w-40 xl:w-44 flex-col px-5 py-7 text-white'>
-            <FastLink
-              href='/'
-              useTransitionNav
-              onClick={() => setActive('/')}
-              className='flex items-center gap-2.5'
+        <div
+          className={`relative h-full transition-[width] duration-200 ${
+            isCollapsed ? 'w-20' : 'w-44 xl:w-48'
+          }`}
+        >
+          <div
+            className={`absolute inset-y-0 left-0 bg-gradient-to-r from-black/90 via-black/52 to-transparent transition-[width] duration-200 ${
+              isCollapsed ? 'w-24' : 'w-64'
+            }`}
+          />
+          <div
+            className={`pointer-events-auto relative z-10 flex h-full flex-col py-7 text-white transition-[width,padding] duration-200 ${
+              isCollapsed ? 'w-16 px-3' : 'w-40 px-5 xl:w-44'
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 ${
+                isCollapsed ? 'justify-center' : 'justify-between'
+              }`}
             >
-              <span className='flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
-                <Play
-                  className='ml-0.5 h-4 w-4 text-black'
-                  fill='currentColor'
-                />
-              </span>
-              <span className='text-lg font-bold tracking-tight text-white drop-shadow-lg'>
-                {siteName}
-              </span>
-            </FastLink>
+              <FastLink
+                href='/'
+                useTransitionNav
+                onClick={() => setActive('/')}
+                className={`flex min-w-0 items-center gap-2.5 ${
+                  isCollapsed ? 'justify-center' : ''
+                }`}
+              >
+                <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
+                  <Play
+                    className='ml-0.5 h-4 w-4 text-black'
+                    fill='currentColor'
+                  />
+                </span>
+                {!isCollapsed && (
+                  <span className='truncate text-lg font-bold tracking-tight text-white drop-shadow-lg'>
+                    {siteName}
+                  </span>
+                )}
+              </FastLink>
+              {!isCollapsed && (
+                <button
+                  type='button'
+                  onClick={handleToggle}
+                  className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white'
+                  title='收起侧边栏'
+                  aria-label='收起侧边栏'
+                >
+                  <Menu className='h-4 w-4' />
+                </button>
+              )}
+            </div>
 
-            <ul className='mt-9 flex flex-1 flex-col gap-2 overflow-y-auto pr-4 scrollbar-hide'>
+            {isCollapsed && (
+              <button
+                type='button'
+                onClick={handleToggle}
+                className='mt-4 flex h-9 w-full items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white'
+                title='展开侧边栏'
+                aria-label='展开侧边栏'
+              >
+                <Menu className='h-4 w-4' />
+              </button>
+            )}
+
+            <ul
+              className={`mt-9 flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-hide ${
+                isCollapsed ? 'pr-0' : 'pr-4'
+              }`}
+            >
               {navItems.map((item) => {
                 const activeItem = isActive(item.href);
                 const Icon = item.icon;
@@ -316,7 +413,12 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                       href={item.href}
                       useTransitionNav
                       onClick={() => setActive(item.href)}
-                      className={`group flex h-12 items-center gap-3 rounded-full px-3.5 text-[15px] font-semibold transition-all duration-200 ${
+                      title={item.label}
+                      className={`group flex h-12 items-center rounded-full text-[15px] font-semibold transition-all duration-200 ${
+                        isCollapsed
+                          ? 'justify-center px-0'
+                          : 'gap-3 px-3.5'
+                      } ${
                         activeItem
                           ? `${theme.active} bg-white/10 shadow-lg shadow-black/20`
                           : `text-zinc-300/90 hover:bg-white/10 hover:text-white ${theme.hover}`
@@ -329,7 +431,7 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                             : 'opacity-80 group-hover:scale-110 group-hover:opacity-100'
                         }`}
                       />
-                      <span>{item.label}</span>
+                      {!isCollapsed && <span>{item.label}</span>}
                     </FastLink>
                   </li>
                 );

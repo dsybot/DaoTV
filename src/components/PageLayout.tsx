@@ -48,7 +48,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const mainSpacingClass =
     isHomePage
       ? 'md:mt-0'
-      : 'md:mt-24 md:pl-48 xl:pl-52 md:pr-6 xl:pr-8';
+      : 'dao-content-main md:mt-24 md:pl-48 xl:pl-52 md:pr-6 xl:pr-8';
 
   const handleDesktopSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

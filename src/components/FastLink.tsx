@@ -32,6 +32,7 @@ interface FastLinkProps {
    * Rel attribute for security when using target="_blank"
    */
   rel?: string;
+  title?: string;
   /**
    * Data attributes for styling
    */
@@ -57,6 +58,7 @@ export function FastLink({
   'aria-label': ariaLabel,
   target,
   rel,
+  title,
   'data-active': dataActive,
   style,
 }: FastLinkProps) {
@@ -91,6 +93,7 @@ export function FastLink({
       prefetch={false}
       aria-label={ariaLabel}
       target={target}
+      title={title}
       rel={target === '_blank' ? rel || 'noopener noreferrer' : rel}
       data-active={dataActive}
       style={style}
