@@ -1122,8 +1122,6 @@ function SearchPageClient() {
         } else if (searchType === 'tmdb-actor') {
           handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
         }
-      } else if (searchType === 'bilibili' && !bilibiliPopular) {
-        handleBilibiliPopular();
       }
     }
   }, [

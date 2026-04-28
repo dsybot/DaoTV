@@ -37,6 +37,7 @@ interface BilibiliUpuserCardProps {
 
 const BilibiliUpuserCard = ({ upuser }: BilibiliUpuserCardProps) => {
   const [imageError, setImageError] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null); // 正在播放的视频 bvid
 
   const handleOpenProfile = () => {
     window.open(`https://space.bilibili.com/${upuser.mid}`, '_blank');
@@ -44,6 +45,15 @@ const BilibiliUpuserCard = ({ upuser }: BilibiliUpuserCardProps) => {
 
   const handleOpenVideo = (bvid: string) => {
     window.open(`https://www.bilibili.com/video/${bvid}`, '_blank');
+  };
+
+  const handlePlayVideo = (bvid: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    setPlayingVideo(bvid);
+  };
+
+  const handleClosePlayer = () => {
+    setPlayingVideo(null);
   };
 
   const formatNumber = (num: number | string) => {
@@ -117,33 +127,67 @@ const BilibiliUpuserCard = ({ upuser }: BilibiliUpuserCardProps) => {
             <div className="space-y-2">
               {upuser.res.slice(0, 3).map((video) => {
                 const proxiedPic = video.pic ? `/api/image-proxy?url=${encodeURIComponent(video.pic)}` : '';
+                const isPlaying = playingVideo === video.bvid;
+
                 return (
-                  <div
-                    key={video.bvid}
-                    onClick={() => handleOpenVideo(video.bvid)}
-                    className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-1 transition-colors"
-                  >
-                    <div className="relative w-20 h-12 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                      {proxiedPic && (
-                        <Image
-                          src={proxiedPic}
-                          alt={video.title}
-                          fill
-                          className="object-cover"
+                  <div key={video.bvid} className="relative">
+                    {isPlaying ? (
+                      // 播放器
+                      <div className="relative w-full aspect-video bg-black rounded overflow-hidden">
+                        <iframe
+                          src={`https://player.bilibili.com/player.html?bvid=${video.bvid}&autoplay=1`}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          title={video.title}
                         />
-                      )}
-                      <div className="absolute bottom-0 right-0 bg-black/75 text-white text-xs px-1">
-                        {video.duration}
+                        <button
+                          onClick={handleClosePlayer}
+                          className="absolute top-2 right-2 bg-black/75 text-white p-1.5 rounded-full hover:bg-black/90 transition-opacity z-10"
+                          aria-label="关闭播放"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-900 dark:text-gray-100 line-clamp-2">
-                        {video.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatNumber(video.play)} 播放
-                      </p>
-                    </div>
+                    ) : (
+                      // 视频缩略图
+                      <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-1 transition-colors group">
+                        <div
+                          className="relative w-20 h-12 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden"
+                          onClick={(e) => handlePlayVideo(video.bvid, e)}
+                        >
+                          {proxiedPic && (
+                            <Image
+                              src={proxiedPic}
+                              alt={video.title}
+                              fill
+                              className="object-cover"
+                            />
+                          )}
+                          {/* 播放按钮覆盖层 */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-pink-600 hover:bg-pink-700 text-white rounded-full p-1">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="absolute bottom-0 right-0 bg-black/75 text-white text-xs px-1">
+                            {video.duration}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0" onClick={() => handleOpenVideo(video.bvid)}>
+                          <p className="text-xs text-gray-900 dark:text-gray-100 line-clamp-2">
+                            {video.title}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatNumber(video.play)} 播放
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
