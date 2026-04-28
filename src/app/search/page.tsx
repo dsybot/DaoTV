@@ -31,6 +31,7 @@ import {
 import { SearchResult } from '@/lib/types';
 
 import AcgSearch from '@/components/AcgSearch';
+import BilibiliVideoCard from '@/components/BilibiliVideoCard';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
 import ImageViewer from '@/components/ImageViewer';
@@ -60,7 +61,7 @@ type StreamedState = {
   completedSources: number;
 };
 
-type SearchType = 'video' | 'netdisk' | 'youtube' | 'tmdb-actor';
+type SearchType = 'video' | 'netdisk' | 'youtube' | 'bilibili' | 'tmdb-actor';
 
 const STREAMED_INITIAL: StreamedState = {
   results: [],
@@ -480,6 +481,12 @@ function SearchPageClient() {
   >('relevance');
   const [youtubeMode, setYoutubeMode] = useState<'search' | 'direct'>('search'); // 新增：YouTube模式
 
+  // Bilibili搜索相关状态
+  const [bilibiliResults, setBilibiliResults] = useState<any[] | null>(null);
+  const [bilibiliLoading, setBilibiliLoading] = useState(false);
+  const [bilibiliError, setBilibiliError] = useState<string | null>(null);
+  const [bilibiliTab, setBilibiliTab] = useState<'video' | 'bangumi'>('video');
+
   // TMDB演员搜索相关状态
   const [tmdbActorResults, setTmdbActorResults] = useState<any[] | null>(null);
   const [tmdbActorLoading, setTmdbActorLoading] = useState(false);
@@ -506,6 +513,10 @@ function SearchPageClient() {
 
   // TMDB筛选面板显示状态
   const [tmdbFilterVisible, setTmdbFilterVisible] = useState(false);
+  const visibleBilibiliResults = useMemo(
+    () => (bilibiliResults || []).filter((item) => item.type === bilibiliTab),
+    [bilibiliResults, bilibiliTab],
+  );
   // 聚合卡片 refs 与聚合统计缓存
   const groupRefs = useRef<Map<string, React.RefObject<VideoCardHandle>>>(
     new Map(),
@@ -1080,11 +1091,12 @@ function SearchPageClient() {
     };
   }, []);
 
-  // 监听搜索类型变化，如果切换到网盘/YouTube/TMDB演员搜索且有搜索词，立即搜索
+  // 监听搜索类型变化，如果切换到网盘/YouTube/Bilibili/TMDB演员搜索且有搜索词，立即搜索
   useEffect(() => {
     if (
       (searchType === 'netdisk' ||
         searchType === 'youtube' ||
+        searchType === 'bilibili' ||
         searchType === 'tmdb-actor') &&
       showResults
     ) {
@@ -1109,6 +1121,13 @@ function SearchPageClient() {
         ) {
           handleYouTubeSearch(currentQuery);
         } else if (
+          searchType === 'bilibili' &&
+          !bilibiliLoading &&
+          !bilibiliResults &&
+          !bilibiliError
+        ) {
+          handleBilibiliSearch(currentQuery);
+        } else if (
           searchType === 'tmdb-actor' &&
           !tmdbActorLoading &&
           !tmdbActorResults &&
@@ -1130,6 +1149,9 @@ function SearchPageClient() {
     youtubeLoading,
     youtubeResults,
     youtubeError,
+    bilibiliLoading,
+    bilibiliResults,
+    bilibiliError,
     tmdbActorLoading,
     tmdbActorResults,
     tmdbActorError,
@@ -1227,6 +1249,42 @@ function SearchPageClient() {
       setYoutubeError(errorMessage);
     } finally {
       setYoutubeLoading(false);
+    }
+  };
+
+  // Bilibili搜索函数
+  const handleBilibiliSearch = async (query: string) => {
+    if (!query.trim()) return;
+
+    setBilibiliLoading(true);
+    setBilibiliError(null);
+    setBilibiliResults(null);
+
+    try {
+      const response = await fetch(
+        `/api/bilibili/search?q=${encodeURIComponent(query.trim())}`,
+      );
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const allResults = [
+          ...(data.videos || []).map((video: any) => ({
+            ...video,
+            type: 'video',
+          })),
+          ...(data.bangumi || []).map((bangumi: any) => ({
+            ...bangumi,
+            type: 'bangumi',
+          })),
+        ];
+        setBilibiliResults(allResults);
+      } else {
+        setBilibiliError(data.error || 'Bilibili搜索失败');
+      }
+    } catch {
+      setBilibiliError('Bilibili搜索请求失败，请稍后重试');
+    } finally {
+      setBilibiliLoading(false);
     }
   };
 
@@ -1352,6 +1410,10 @@ function SearchPageClient() {
       // YouTube搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
       handleYouTubeSearch(trimmed);
+    } else if (searchType === 'bilibili') {
+      // Bilibili搜索
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+      handleBilibiliSearch(trimmed);
     } else if (searchType === 'tmdb-actor') {
       // TMDB演员搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
@@ -1385,6 +1447,8 @@ function SearchPageClient() {
       setNetdiskTotal(0);
       setYoutubeResults(null);
       setYoutubeError(null);
+      setBilibiliResults(null);
+      setBilibiliError(null);
       setTmdbActorResults(null);
       setTmdbActorError(null);
 
@@ -1399,6 +1463,8 @@ function SearchPageClient() {
       setNetdiskResults(null);
       setYoutubeResults(null);
       setYoutubeError(null);
+      setBilibiliResults(null);
+      setBilibiliError(null);
       setTmdbActorResults(null);
       setTmdbActorError(null);
 
@@ -1415,11 +1481,30 @@ function SearchPageClient() {
       setNetdiskResults(null);
       setNetdiskError(null);
       setNetdiskTotal(0);
+      setBilibiliResults(null);
+      setBilibiliError(null);
       setTmdbActorResults(null);
       setTmdbActorError(null);
 
       if (currentQuery && showResults) {
         setTimeout(() => handleYouTubeSearch(currentQuery), 0);
+      }
+      return;
+    }
+
+    if (type === 'bilibili') {
+      setBilibiliError(null);
+      setBilibiliResults(null);
+      setNetdiskResults(null);
+      setNetdiskError(null);
+      setNetdiskTotal(0);
+      setYoutubeResults(null);
+      setYoutubeError(null);
+      setTmdbActorResults(null);
+      setTmdbActorError(null);
+
+      if (currentQuery && showResults) {
+        setTimeout(() => handleBilibiliSearch(currentQuery), 0);
       }
       return;
     }
@@ -1431,6 +1516,8 @@ function SearchPageClient() {
     setNetdiskTotal(0);
     setYoutubeResults(null);
     setYoutubeError(null);
+    setBilibiliResults(null);
+    setBilibiliError(null);
 
     if (currentQuery && showResults) {
       handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
@@ -1477,6 +1564,11 @@ function SearchPageClient() {
                   icon: <Youtube size={16} />,
                 },
                 {
+                  label: 'Bilibili',
+                  value: 'bilibili',
+                  icon: <Play size={16} />,
+                },
+                {
                   label: 'TMDB演员',
                   value: 'tmdb-actor',
                   icon: <UserRound size={16} />,
@@ -1506,7 +1598,9 @@ function SearchPageClient() {
                       ? '💾 搜索网盘资源...'
                       : searchType === 'youtube'
                         ? '📺 搜索YouTube视频...'
-                        : '🎭 搜索演员姓名...'
+                        : searchType === 'bilibili'
+                          ? '📺 搜索Bilibili视频...'
+                          : '🎭 搜索演员姓名...'
                 }
                 autoComplete='off'
                 className='w-full h-14 rounded-xl bg-white/90 py-4 pl-12 pr-14 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:bg-white border-2 border-gray-200/80 shadow-lg hover:shadow-xl focus:shadow-2xl focus:border-green-400 transition-all duration-300 dark:bg-gray-800/90 dark:text-gray-300 dark:placeholder-gray-500 dark:focus:bg-gray-800 dark:border-gray-700 dark:focus:border-green-500 backdrop-blur-sm'
@@ -1970,6 +2064,81 @@ function SearchPageClient() {
                       ) : null}
                     </>
                   )}
+                </>
+              ) : searchType === 'bilibili' ? (
+                /* Bilibili搜索结果 */
+                <>
+                  <div className='mb-4'>
+                    <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
+                      Bilibili视频
+                      {bilibiliLoading && (
+                        <span className='ml-2 inline-block align-middle'>
+                          <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-pink-500 rounded-full animate-spin'></span>
+                        </span>
+                      )}
+                    </h2>
+
+                    <div className='mt-3 flex items-center gap-2'>
+                      <div className='inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 space-x-1'>
+                        {[
+                          { key: 'video', label: '视频' },
+                          { key: 'bangumi', label: '番剧' },
+                        ].map((tab) => (
+                          <button
+                            key={tab.key}
+                            type='button'
+                            onClick={() =>
+                              setBilibiliTab(tab.key as 'video' | 'bangumi')
+                            }
+                            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                              bilibiliTab === tab.key
+                                ? 'bg-pink-500 text-white shadow-sm'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {bilibiliError ? (
+                    <div className='text-center py-8'>
+                      <div className='text-red-500 mb-2'>{bilibiliError}</div>
+                      <button
+                        onClick={() => {
+                          const currentQuery =
+                            searchQuery.trim() || searchParams?.get('q');
+                          if (currentQuery) {
+                            handleBilibiliSearch(currentQuery);
+                          }
+                        }}
+                        className='px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors'
+                      >
+                        重试
+                      </button>
+                    </div>
+                  ) : bilibiliResults && bilibiliResults.length > 0 ? (
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                      {visibleBilibiliResults.length > 0 ? (
+                        visibleBilibiliResults.map((video, index) => (
+                          <BilibiliVideoCard
+                            key={`${video.type}-${video.bvid || video.season_id || index}`}
+                            video={video}
+                          />
+                        ))
+                      ) : (
+                        <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
+                          当前分类暂无结果
+                        </div>
+                      )}
+                    </div>
+                  ) : !bilibiliLoading ? (
+                    <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
+                      未找到相关Bilibili视频
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 /* 原有的影视搜索结果 */
