@@ -67,6 +67,7 @@ const BilibiliVideoCard = ({ video }: BilibiliVideoCardProps) => {
   };
 
   const coverUrl = video.pic || video.cover || '';
+  const proxiedCoverUrl = coverUrl ? `/api/image-proxy?url=${encodeURIComponent(coverUrl)}` : '';
   const isBangumi = video.type === 'bangumi';
   const hasBadge = isBangumi && video.badges && video.badges.length > 0;
 
@@ -106,9 +107,9 @@ const BilibiliVideoCard = ({ video }: BilibiliVideoCardProps) => {
           </div>
         ) : (
           <>
-            {!imageError && coverUrl ? (
+            {!imageError && proxiedCoverUrl ? (
               <Image
-                src={coverUrl}
+                src={proxiedCoverUrl}
                 alt={video.title}
                 fill
                 className="object-cover"
