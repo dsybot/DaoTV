@@ -1494,6 +1494,8 @@ function SearchPageClient() {
     }
 
     if (type === 'bilibili') {
+      setShowResults(true);
+      setShowSuggestions(false);
       setBilibiliError(null);
       setBilibiliResults(null);
       setNetdiskResults(null);
@@ -1504,14 +1506,10 @@ function SearchPageClient() {
       setTmdbActorResults(null);
       setTmdbActorError(null);
 
-      if (currentQuery && showResults) {
+      if (currentQuery) {
         setTimeout(() => handleBilibiliSearch(currentQuery), 0);
-      } else {
-        setShowResults(true);
-        setShowSuggestions(false);
-        if (!bilibiliPopular) {
-          setTimeout(() => handleBilibiliPopular(), 0);
-        }
+      } else if (!bilibiliPopular) {
+        setTimeout(() => handleBilibiliPopular(), 0);
       }
       return;
     }
