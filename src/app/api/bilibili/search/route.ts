@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     // 解析搜索结果
     const results = parseSearchResults(data.data);
 
-    console.log(`✅ B站搜索完成: "${keyword}" - ${results.videos.length} 个视频, ${results.bangumi.length} 个番剧`);
+    console.log(`✅ B站搜索完成: "${keyword}" - ${results.videos.length} 个视频, ${results.bangumi.length} 个番剧, ${results.upusers.length} 个UP主`);
 
     // 调试：打印第一个结果的图片URL
     if (results.videos.length > 0) {
@@ -129,6 +129,7 @@ export async function GET(request: NextRequest) {
       keyword,
       videos: results.videos,
       bangumi: results.bangumi,
+      upusers: results.upusers,
       total: results.total,
       source: 'bilibili'
     };
@@ -158,10 +159,11 @@ export async function GET(request: NextRequest) {
 function parseSearchResults(data: any) {
   const videos: any[] = [];
   const bangumi: any[] = [];
+  const upusers: any[] = [];
   let total = 0;
 
   if (!data || !data.result) {
-    return { videos, bangumi, total };
+    return { videos, bangumi, upusers, total };
   }
 
   // 遍历搜索结果
@@ -179,6 +181,8 @@ function parseSearchResults(data: any) {
         duration: v.duration,
         play: v.play,
         danmaku: v.video_review,
+        favorites: v.favorites,
+        review: v.review,
         pubdate: v.pubdate,
         description: v.description
       })));
@@ -198,10 +202,36 @@ function parseSearchResults(data: any) {
         is_follow: b.is_follow,
         badges: b.badges
       })));
+    } else if (item.result_type === 'bili_user' && item.data) {
+      // UP主
+      upusers.push(...item.data.map((u: any) => ({
+        type: 'upuser',
+        mid: u.mid,
+        uname: u.uname,
+        usign: u.usign,
+        fans: u.fans,
+        videos: u.videos,
+        upic: u.upic?.startsWith('//') ? `https:${u.upic}` : u.upic,
+        level: u.level,
+        gender: u.gender,
+        is_upuser: u.is_upuser,
+        is_live: u.is_live,
+        room_id: u.room_id,
+        official_verify: u.official_verify,
+        res: u.res?.map((r: any) => ({
+          aid: r.aid,
+          bvid: r.bvid,
+          title: r.title,
+          pic: r.pic?.startsWith('//') ? `https:${r.pic}` : r.pic,
+          play: r.play,
+          duration: r.duration,
+          pubdate: r.pubdate
+        })) || []
+      })));
     }
   }
 
-  total = videos.length + bangumi.length;
+  total = videos.length + bangumi.length + upusers.length;
 
-  return { videos, bangumi, total };
+  return { videos, bangumi, upusers, total };
 }

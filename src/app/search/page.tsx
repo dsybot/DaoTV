@@ -31,6 +31,7 @@ import {
 import { SearchResult } from '@/lib/types';
 
 import AcgSearch from '@/components/AcgSearch';
+import BilibiliUpuserCard from '@/components/BilibiliUpuserCard';
 import BilibiliVideoCard from '@/components/BilibiliVideoCard';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
@@ -485,7 +486,9 @@ function SearchPageClient() {
   const [bilibiliResults, setBilibiliResults] = useState<any[] | null>(null);
   const [bilibiliLoading, setBilibiliLoading] = useState(false);
   const [bilibiliError, setBilibiliError] = useState<string | null>(null);
-  const [bilibiliTab, setBilibiliTab] = useState<'video' | 'bangumi'>('video');
+  const [bilibiliTab, setBilibiliTab] = useState<
+    'video' | 'bangumi' | 'upuser'
+  >('video');
 
   // TMDB演员搜索相关状态
   const [tmdbActorResults, setTmdbActorResults] = useState<any[] | null>(null);
@@ -1245,6 +1248,10 @@ function SearchPageClient() {
           ...(data.bangumi || []).map((bangumi: any) => ({
             ...bangumi,
             type: 'bangumi',
+          })),
+          ...(data.upusers || []).map((upuser: any) => ({
+            ...upuser,
+            type: 'upuser',
           })),
         ];
         setBilibiliResults(allResults);
@@ -2053,12 +2060,15 @@ function SearchPageClient() {
                         {[
                           { key: 'video', label: '视频' },
                           { key: 'bangumi', label: '番剧' },
+                          { key: 'upuser', label: 'UP主' },
                         ].map((tab) => (
                           <button
                             key={tab.key}
                             type='button'
                             onClick={() =>
-                              setBilibiliTab(tab.key as 'video' | 'bangumi')
+                              setBilibiliTab(
+                                tab.key as 'video' | 'bangumi' | 'upuser',
+                              )
                             }
                             className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                               bilibiliTab === tab.key
@@ -2092,12 +2102,19 @@ function SearchPageClient() {
                   ) : bilibiliResults && bilibiliResults.length > 0 ? (
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                       {visibleBilibiliResults.length > 0 ? (
-                        visibleBilibiliResults.map((video, index) => (
-                          <BilibiliVideoCard
-                            key={`${video.type}-${video.bvid || video.season_id || index}`}
-                            video={video}
-                          />
-                        ))
+                        visibleBilibiliResults.map((item, index) =>
+                          item.type === 'upuser' ? (
+                            <BilibiliUpuserCard
+                              key={`upuser-${item.mid || index}`}
+                              upuser={item}
+                            />
+                          ) : (
+                            <BilibiliVideoCard
+                              key={`${item.type}-${item.bvid || item.season_id || index}`}
+                              video={item}
+                            />
+                          ),
+                        )
                       ) : (
                         <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
                           当前分类暂无结果
