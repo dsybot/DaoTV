@@ -1104,27 +1104,17 @@ function SearchPageClient() {
       if (currentQuery) {
         if (
           searchType === 'netdisk' &&
-          netdiskResourceType === 'netdisk' &&
-          !netdiskLoading
+          netdiskResourceType === 'netdisk'
         ) {
           handleNetDiskSearch(currentQuery);
         } else if (searchType === 'netdisk' && netdiskResourceType === 'acg') {
           // ACG 搜索：触发 AcgSearch 组件搜索
           setAcgTriggerSearch((prev) => !prev);
-        } else if (
-          searchType === 'youtube' &&
-          !youtubeLoading
-        ) {
+        } else if (searchType === 'youtube') {
           handleYouTubeSearch(currentQuery);
-        } else if (
-          searchType === 'bilibili' &&
-          !bilibiliLoading
-        ) {
+        } else if (searchType === 'bilibili') {
           handleBilibiliSearch(currentQuery);
-        } else if (
-          searchType === 'tmdb-actor' &&
-          !tmdbActorLoading
-        ) {
+        } else if (searchType === 'tmdb-actor') {
           handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
         }
       }
@@ -1135,10 +1125,6 @@ function SearchPageClient() {
     showResults,
     searchQuery,
     searchParams,
-    netdiskLoading,
-    youtubeLoading,
-    bilibiliLoading,
-    tmdbActorLoading,
   ]);
 
   useEffect(() => {
