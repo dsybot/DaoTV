@@ -215,8 +215,87 @@ body {
 }
 
 @media (min-width: 768px) {
-  html[data-sidebar-collapsed='true'] .dao-content-main {
-    padding-left: 5rem !important;
+  html {
+    --dao-sidebar-current-width: 10rem;
+    --dao-content-left: 10rem;
+    --dao-content-right: clamp(1.5rem, 3vw, 2.5rem);
+    --dao-hero-content-left: clamp(10rem, 10vw, 12rem);
+    --dao-layout-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html:not([data-sidebar-collapsed='true']) {
+    --dao-sidebar-current-width: 10rem;
+    --dao-content-left: 10rem;
+    --dao-hero-content-left: clamp(10rem, 10vw, 12rem);
+  }
+
+  html[data-sidebar-collapsed='true'] {
+    --dao-sidebar-current-width: 4rem;
+    --dao-content-left: 4.75rem;
+    --dao-hero-content-left: 6.25rem;
+  }
+
+  .dao-content-main {
+    padding-left: var(--dao-content-left) !important;
+    padding-right: var(--dao-content-right);
+    transition:
+      padding-left 500ms var(--dao-layout-ease),
+      padding-right 500ms var(--dao-layout-ease);
+    will-change: padding-left;
+  }
+
+  .dao-home-shell {
+    padding-left: var(--dao-content-left);
+    padding-right: var(--dao-content-right);
+    transition:
+      padding-left 500ms var(--dao-layout-ease),
+      padding-right 500ms var(--dao-layout-ease);
+    will-change: padding-left;
+  }
+
+  .dao-hero-wrap {
+    margin-left: calc(-1 * var(--dao-content-left));
+    margin-right: calc(-1 * var(--dao-content-right));
+    transition:
+      margin-left 500ms var(--dao-layout-ease),
+      margin-right 500ms var(--dao-layout-ease);
+    will-change: margin-left;
+  }
+
+  .dao-hero-content {
+    padding-left: var(--dao-hero-content-left);
+    padding-right: clamp(4rem, 5vw, 6rem);
+    transition:
+      padding-left 500ms var(--dao-layout-ease),
+      padding-right 500ms var(--dao-layout-ease);
+    will-change: padding-left;
+  }
+
+  .dao-hero-prev {
+    left: calc(var(--dao-hero-content-left) - 2rem);
+    transition:
+      left 500ms var(--dao-layout-ease),
+      opacity 200ms ease,
+      background-color 200ms ease,
+      transform 200ms ease;
+    will-change: left;
+  }
+
+  .dao-desktop-search {
+    left: calc(
+      var(--dao-sidebar-current-width) +
+        (100vw - var(--dao-sidebar-current-width)) / 2
+    );
+    transition: left 500ms var(--dao-layout-ease);
+    will-change: left;
+  }
+}
+
+@media (min-width: 1280px) {
+  html:not([data-sidebar-collapsed='true']) {
+    --dao-sidebar-current-width: 11rem;
+    --dao-content-left: 11rem;
+    --dao-hero-content-left: 12rem;
   }
 }
 

@@ -47,8 +47,8 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
   const isHomePage = pathname === '/' && activePath === '/';
   const mainSpacingClass =
     isHomePage
-      ? 'md:mt-0'
-      : 'dao-content-main md:mt-24 md:pl-48 xl:pl-52 md:pr-6 xl:pr-8';
+      ? 'dao-home-main md:mt-0'
+      : 'dao-content-main md:mt-24';
 
   const handleDesktopSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -98,7 +98,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
             <div className='relative h-20 w-full'>
               <form
                 onSubmit={handleDesktopSearch}
-                className='pointer-events-auto absolute left-1/2 top-4 flex w-[min(44rem,46vw)] -translate-x-1/2 items-start gap-2'
+                className='dao-desktop-search pointer-events-auto absolute top-4 flex w-[min(44rem,46vw)] -translate-x-1/2 items-start gap-2'
               >
                 <div className='group relative h-12 flex-1 rounded-full border border-white/10 bg-black/40 shadow-2xl shadow-black/20 backdrop-blur-[18px] transition-all duration-300 hover:bg-black/50 focus-within:border-white/25 focus-within:bg-black/50'>
                   <input

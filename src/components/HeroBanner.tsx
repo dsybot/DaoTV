@@ -224,7 +224,7 @@ function HeroBanner({
 
   return (
     <div
-      className='relative w-full aspect-[16/9] overflow-hidden bg-black group rounded-xl sm:rounded-2xl md:left-1/2 md:w-screen md:max-w-none md:-translate-x-1/2 md:aspect-auto md:h-[72vh] md:min-h-[560px] md:max-h-[820px] md:rounded-none'
+      className='dao-hero-banner relative w-full aspect-[16/9] overflow-hidden bg-black group rounded-xl sm:rounded-2xl md:left-1/2 md:w-screen md:max-w-none md:-translate-x-1/2 md:aspect-auto md:h-[72vh] md:min-h-[560px] md:max-h-[820px] md:rounded-none'
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...swipeHandlers}
@@ -311,7 +311,7 @@ function HeroBanner({
         <div className='absolute inset-y-0 right-0 w-[18%] bg-gradient-to-l from-black/45 to-transparent' />
       </div>
 
-      <div className='absolute bottom-0 left-0 right-0 px-4 pb-10 sm:px-8 sm:pb-16 md:pl-52 md:pr-20 md:pb-24 lg:pl-56 xl:pl-60'>
+      <div className='dao-hero-content absolute bottom-0 left-0 right-0 px-4 pb-10 sm:px-8 sm:pb-16 md:pb-24'>
         <div className='max-w-2xl space-y-3 sm:space-y-4 md:space-y-5'>
           <h1 className='line-clamp-1 text-3xl font-bold leading-tight text-white drop-shadow-2xl sm:text-5xl md:line-clamp-2 md:text-6xl xl:text-7xl'>
             {currentItem.title}
@@ -381,7 +381,7 @@ function HeroBanner({
           <button
             type='button'
             onClick={handlePrev}
-            className='hidden absolute left-48 top-1/2 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-0 transition-all hover:bg-black/60 group-hover:opacity-100 md:flex lg:left-52'
+            className='dao-hero-prev hidden absolute top-1/2 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-0 transition-all hover:bg-black/60 group-hover:opacity-100 md:flex'
             aria-label='上一张'
           >
             <ChevronLeft className='h-7 w-7' />

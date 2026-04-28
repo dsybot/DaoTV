@@ -333,22 +333,22 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
 
       <nav className='hidden md:block fixed left-0 top-0 bottom-0 z-700 pointer-events-none'>
         <div
-          className={`relative h-full transition-[width] duration-200 ${
-            isCollapsed ? 'w-20' : 'w-44 xl:w-48'
+          className={`relative h-full transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isCollapsed ? 'w-16' : 'w-40 xl:w-44'
           }`}
         >
           <div
-            className={`absolute inset-y-0 left-0 bg-gradient-to-r from-black/90 via-black/52 to-transparent transition-[width] duration-200 ${
-              isCollapsed ? 'w-24' : 'w-64'
+            className={`absolute inset-y-0 left-0 bg-gradient-to-r from-black/90 via-black/52 to-transparent transition-[width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isCollapsed ? 'w-24 opacity-90' : 'w-56 opacity-100'
             }`}
           />
           <div
-            className={`pointer-events-auto relative z-10 flex h-full flex-col py-7 text-white transition-[width,padding] duration-200 ${
-              isCollapsed ? 'w-16 px-3' : 'w-40 px-5 xl:w-44'
+            className={`pointer-events-auto relative z-10 flex h-full flex-col py-7 text-white transition-[width,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isCollapsed ? 'w-16 px-3' : 'w-36 px-4 xl:w-40'
             }`}
           >
             <div
-              className={`flex items-center gap-2 ${
+              className={`relative flex items-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 isCollapsed ? 'justify-center' : 'justify-between'
               }`}
             >
@@ -356,9 +356,10 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                 href='/'
                 useTransitionNav
                 onClick={() => setActive('/')}
-                className={`flex min-w-0 items-center gap-2.5 ${
-                  isCollapsed ? 'justify-center' : ''
+                className={`flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden ${
+                  isCollapsed ? 'justify-center' : 'pr-7'
                 }`}
+                title={siteName}
               >
                 <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
                   <Play
@@ -366,17 +367,21 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                     fill='currentColor'
                   />
                 </span>
-                {!isCollapsed && (
-                  <span className='truncate text-lg font-bold tracking-tight text-white drop-shadow-lg'>
-                    {siteName}
-                  </span>
-                )}
+                <span
+                  className={`min-w-0 overflow-hidden whitespace-nowrap text-base font-bold tracking-tight text-white drop-shadow-lg transition-[max-width,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:text-lg ${
+                    isCollapsed
+                      ? 'max-w-0 -translate-x-2 opacity-0'
+                      : 'max-w-[4.75rem] translate-x-0 opacity-100 xl:max-w-[5.75rem]'
+                  }`}
+                >
+                  {siteName}
+                </span>
               </FastLink>
               {!isCollapsed && (
                 <button
                   type='button'
                   onClick={handleToggle}
-                  className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white'
+                  className='absolute right-0 top-0 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-95'
                   title='收起侧边栏'
                   aria-label='收起侧边栏'
                 >
@@ -389,7 +394,7 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
               <button
                 type='button'
                 onClick={handleToggle}
-                className='mt-4 flex h-9 w-full items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white'
+                className='mt-4 flex h-9 w-full items-center justify-center rounded-full text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-95'
                 title='展开侧边栏'
                 aria-label='展开侧边栏'
               >
@@ -398,7 +403,7 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
             )}
 
             <ul
-              className={`mt-9 flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-hide ${
+              className={`mt-9 flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-hide transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 isCollapsed ? 'pr-0' : 'pr-4'
               }`}
             >
@@ -414,7 +419,7 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                       useTransitionNav
                       onClick={() => setActive(item.href)}
                       title={item.label}
-                      className={`group flex h-12 items-center rounded-full text-[15px] font-semibold transition-all duration-200 ${
+                      className={`group flex h-12 items-center overflow-hidden rounded-full text-[15px] font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                         isCollapsed
                           ? 'justify-center px-0'
                           : 'gap-3 px-3.5'
@@ -431,7 +436,15 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                             : 'opacity-80 group-hover:scale-110 group-hover:opacity-100'
                         }`}
                       />
-                      {!isCollapsed && <span>{item.label}</span>}
+                      <span
+                        className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                          isCollapsed
+                            ? 'max-w-0 -translate-x-2 opacity-0'
+                            : 'max-w-24 translate-x-0 opacity-100'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
                     </FastLink>
                   </li>
                 );

@@ -814,14 +814,14 @@ function HomeClient() {
         </div>
       </div>
 
-      <div className='overflow-visible pb-32 md:pb-safe-bottom'>
+      <div className='dao-home-shell overflow-visible pb-32 md:pb-safe-bottom'>
         {/* 轮播图 - 在所有tab显示 */}
         {!loading &&
           (hotMovies.length > 0 ||
             hotTvShows.length > 0 ||
             hotVarietyShows.length > 0 ||
             hotShortDramas.length > 0) && (
-            <div className='mb-5 md:mb-4'>
+            <div className='dao-hero-wrap mb-5 md:mb-4'>
               <HeroBanner
                 items={[
                   // 豆瓣电影
@@ -908,7 +908,7 @@ function HomeClient() {
         </div>
 
         <div
-          className={`max-w-[95%] mx-auto md:pl-44 lg:pl-48 ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
+          className={`w-full max-w-[95%] mx-auto ${isPending ? 'opacity-70 transition-opacity duration-150' : ''}`}
         >
           {/* 想看视图 */}
           <section
