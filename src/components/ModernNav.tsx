@@ -27,6 +27,12 @@ import {
   useState,
 } from 'react';
 
+import {
+  fetchRuntimeConfig,
+  getWindowRuntimeConfig,
+  normalizeCustomCategories,
+} from '@/lib/runtime-config.client';
+
 import { FastLink } from './FastLink';
 import { GlassmorphismEffect } from './GlassmorphismEffect';
 import { useSite } from './SiteProvider';
@@ -95,9 +101,10 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
     setActive(fullPath);
   }, [pathname, searchParams]);
 
-  useEffect(() => {
-    const runtimeConfig = (window as any).RUNTIME_CONFIG;
-    setHasCustomCategories(runtimeConfig?.CUSTOM_CATEGORIES?.length > 0);
+  const applyRuntimeConfig = useCallback((runtimeConfig: any) => {
+    setHasCustomCategories(
+      normalizeCustomCategories(runtimeConfig?.CUSTOM_CATEGORIES).length > 0,
+    );
     setEnableWebLive(Boolean(runtimeConfig?.ENABLE_WEB_LIVE));
     setEmbyEnabled(
       Boolean(
@@ -105,6 +112,55 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
       ),
     );
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const apply = (runtimeConfig: any) => {
+      if (!cancelled) {
+        applyRuntimeConfig(runtimeConfig);
+      }
+    };
+    const refreshRuntimeConfig = () => {
+      apply(getWindowRuntimeConfig());
+      fetchRuntimeConfig()
+        .then(apply)
+        .catch((error) => {
+          console.warn('Failed to refresh runtime config:', error);
+        });
+    };
+    const handleRuntimeConfigUpdated = (event: Event) => {
+      apply((event as CustomEvent).detail);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshRuntimeConfig();
+      }
+    };
+
+    refreshRuntimeConfig();
+    window.addEventListener('runtimeConfigUpdated', handleRuntimeConfigUpdated);
+    window.addEventListener(
+      'runtimeConfigRefreshRequested',
+      refreshRuntimeConfig,
+    );
+    window.addEventListener('focus', refreshRuntimeConfig);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(
+        'runtimeConfigUpdated',
+        handleRuntimeConfigUpdated,
+      );
+      window.removeEventListener(
+        'runtimeConfigRefreshRequested',
+        refreshRuntimeConfig,
+      );
+      window.removeEventListener('focus', refreshRuntimeConfig);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [applyRuntimeConfig]);
 
   useLayoutEffect(() => {
     const saved = localStorage.getItem('sidebarCollapsed');

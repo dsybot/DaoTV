@@ -5483,6 +5483,7 @@ const CategoryConfig = ({
 
       // 成功后刷新配置
       await refreshConfig();
+      window.dispatchEvent(new Event('runtimeConfigRefreshRequested'));
     } catch (err) {
       showError(err instanceof Error ? err.message : '操作失败', showAlert);
       throw err; // 向上抛出方便调用处判断

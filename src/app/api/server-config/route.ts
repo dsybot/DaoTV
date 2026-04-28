@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
-import { CURRENT_VERSION } from '@/lib/version'
+import { CURRENT_VERSION } from '@/lib/version';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +25,21 @@ export async function GET(request: NextRequest) {
   }
 
   const result: any = {
+    CUSTOM_CATEGORIES: config.CustomCategories.filter(
+      (category) => !category.disabled
+    ).map((category) => ({
+      name: category.name || '',
+      type: category.type,
+      query: category.query,
+    })),
+    ENABLE_WEB_LIVE: config.SiteConfig.EnableWebLive ?? false,
+    EMBY_ENABLED: !!(
+      config.EmbyConfig?.Sources &&
+      config.EmbyConfig.Sources.length > 0 &&
+      config.EmbyConfig.Sources.some(
+        (source) => source.enabled && source.ServerURL
+      )
+    ),
     SiteName: config.SiteConfig.SiteName,
     StorageType: process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
     Version: CURRENT_VERSION,
@@ -77,5 +92,11 @@ export async function GET(request: NextRequest) {
     };
   }
 
-  return NextResponse.json(result);
+  result.PRIVATE_LIBRARY_ENABLED = result.EMBY_ENABLED;
+
+  return NextResponse.json(result, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    },
+  });
 }

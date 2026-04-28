@@ -15,6 +15,11 @@ import {
   getDoubanList,
   getDoubanRecommends,
 } from '@/lib/douban.client';
+import {
+  fetchRuntimeConfig,
+  getWindowCustomCategories,
+  normalizeCustomCategories,
+} from '@/lib/runtime-config.client';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
@@ -129,10 +134,64 @@ function DoubanPageClient() {
 
   // 获取自定义分类数据
   useEffect(() => {
-    const runtimeConfig = (window as any).RUNTIME_CONFIG;
-    if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setCustomCategories(runtimeConfig.CUSTOM_CATEGORIES);
-    }
+    let cancelled = false;
+
+    const applyCategories = (
+      categories: Array<{ name: string; type: 'movie' | 'tv'; query: string }>,
+    ) => {
+      if (!cancelled) {
+        setCustomCategories(categories);
+      }
+    };
+
+    const refreshCustomCategories = () => {
+      applyCategories(getWindowCustomCategories());
+      fetchRuntimeConfig()
+        .then((runtimeConfig) => {
+          applyCategories(
+            normalizeCustomCategories(runtimeConfig.CUSTOM_CATEGORIES),
+          );
+        })
+        .catch((error) => {
+          console.warn('Failed to refresh custom categories:', error);
+        });
+    };
+
+    const handleRuntimeConfigUpdated = (event: Event) => {
+      applyCategories(
+        normalizeCustomCategories(
+          (event as CustomEvent).detail?.CUSTOM_CATEGORIES,
+        ),
+      );
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshCustomCategories();
+      }
+    };
+
+    refreshCustomCategories();
+    window.addEventListener('runtimeConfigUpdated', handleRuntimeConfigUpdated);
+    window.addEventListener(
+      'runtimeConfigRefreshRequested',
+      refreshCustomCategories,
+    );
+    window.addEventListener('focus', refreshCustomCategories);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(
+        'runtimeConfigUpdated',
+        handleRuntimeConfigUpdated,
+      );
+      window.removeEventListener(
+        'runtimeConfigRefreshRequested',
+        refreshCustomCategories,
+      );
+      window.removeEventListener('focus', refreshCustomCategories);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // 页面级别的AI权限检测 - 只检测一次
