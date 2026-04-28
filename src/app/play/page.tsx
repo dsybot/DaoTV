@@ -5609,14 +5609,14 @@ function PlayPageClient() {
                 const opacity = item.range[0];
                 localStorage.setItem('control_bar_opacity', opacity.toString());
 
-                // 实时应用透明度到毛玻璃容器
+                // 实时应用遮挡度到毛玻璃容器，避免直接覆盖 backdrop-filter。
                 const liquidGlass = document.querySelector('.art-liquid-glass') as HTMLElement;
                 if (liquidGlass) {
-                  // 调整背景色透明度
-                  liquidGlass.style.setProperty('background-color', `rgba(0, 0, 0, ${opacity})`, 'important');
-                  // 同时调整模糊效果：透明度越低，模糊越少
-                  const blurAmount = Math.max(0, opacity * 15); // 0-12px
-                  liquidGlass.style.setProperty('backdrop-filter', `blur(${blurAmount}px)`, 'important');
+                  liquidGlass.style.removeProperty('background-color');
+                  liquidGlass.style.removeProperty('backdrop-filter');
+                  liquidGlass.style.removeProperty('-webkit-backdrop-filter');
+                  liquidGlass.style.setProperty('--art-liquid-glass-opacity', opacity.toString());
+                  liquidGlass.style.setProperty('--art-liquid-glass-blur', `${Math.max(0, opacity * 15)}px`);
                 }
 
                 return `${Math.round(opacity * 100)}%`;
@@ -5918,6 +5918,18 @@ function PlayPageClient() {
           ],
         });
 
+        const revealControlsAfterFullscreenChange = () => {
+          const revealControls = () => {
+            if (artPlayerRef.current?.controls) {
+              artPlayerRef.current.controls.show = true;
+            }
+          };
+
+          revealControls();
+          requestAnimationFrame(revealControls);
+          window.setTimeout(revealControls, 120);
+        };
+
         // 监听全屏状态变化
         artPlayerRef.current.on('fullscreen', (isFullscreenNow: boolean) => {
           console.log('Fullscreen state changed:', isFullscreenNow);
@@ -5932,11 +5944,7 @@ function PlayPageClient() {
           // Portal 容器已固定为 ArtPlayer $player 元素，无需切换
 
           if (isFullscreenNow) {
-            setTimeout(() => {
-              if (artPlayerRef.current?.controls) {
-                artPlayerRef.current.controls.show = true;
-              }
-            }, 100);
+            revealControlsAfterFullscreenChange();
           }
         });
 
@@ -5952,6 +5960,9 @@ function PlayPageClient() {
               titleLayer.style.display = isFullscreenWebNow ? 'block' : 'none';
             }
 
+            if (isFullscreenWebNow) {
+              revealControlsAfterFullscreenChange();
+            }
           },
         );
 
@@ -5977,11 +5988,11 @@ function PlayPageClient() {
           const savedOpacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.5');
           const liquidGlass = document.querySelector('.art-liquid-glass') as HTMLElement;
           if (liquidGlass) {
-            // 调整背景色透明度
-            liquidGlass.style.setProperty('background-color', `rgba(0, 0, 0, ${savedOpacity})`, 'important');
-            // 同时调整模糊效果：透明度越低，模糊越少
-            const blurAmount = Math.max(0, savedOpacity * 15); // 0-12px
-            liquidGlass.style.setProperty('backdrop-filter', `blur(${blurAmount}px)`, 'important');
+            liquidGlass.style.removeProperty('background-color');
+            liquidGlass.style.removeProperty('backdrop-filter');
+            liquidGlass.style.removeProperty('-webkit-backdrop-filter');
+            liquidGlass.style.setProperty('--art-liquid-glass-opacity', savedOpacity.toString());
+            liquidGlass.style.setProperty('--art-liquid-glass-blur', `${Math.max(0, savedOpacity * 15)}px`);
           }
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）
