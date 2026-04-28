@@ -11,7 +11,6 @@ import {
   Home,
   Menu,
   MoreHorizontal,
-  Play,
   PlaySquare,
   Radio,
   Star,
@@ -348,35 +347,32 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
             }`}
           >
             <div
-              className={`relative flex items-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                isCollapsed ? 'justify-center' : 'justify-between'
-              }`}
+              className='relative flex h-8 items-center transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
             >
-              <FastLink
-                href='/'
-                useTransitionNav
-                onClick={() => setActive('/')}
-                className={`flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden ${
-                  isCollapsed ? 'justify-center' : 'pr-7'
-                }`}
-                title={siteName}
-              >
-                <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 via-green-400 to-yellow-300 shadow-lg shadow-cyan-400/25'>
-                  <Play
-                    className='ml-0.5 h-4 w-4 text-black'
-                    fill='currentColor'
-                  />
-                </span>
-                <span
-                  className={`min-w-0 overflow-hidden whitespace-nowrap text-base font-bold tracking-tight text-white drop-shadow-lg transition-[max-width,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:text-lg ${
-                    isCollapsed
-                      ? 'max-w-0 -translate-x-2 opacity-0'
-                      : 'max-w-[4.75rem] translate-x-0 opacity-100 xl:max-w-[5.75rem]'
-                  }`}
+              {!isCollapsed && (
+                <FastLink
+                  href='/'
+                  useTransitionNav
+                  onClick={() => setActive('/')}
+                  className='flex min-w-0 flex-1 items-center overflow-hidden pr-7'
+                  title={siteName}
                 >
-                  {siteName}
-                </span>
-              </FastLink>
+                  <span className='min-w-0 max-w-[6.5rem] overflow-hidden whitespace-nowrap text-base font-bold tracking-tight text-white drop-shadow-lg transition-[max-width,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:max-w-[7.5rem] xl:text-lg'>
+                    {siteName}
+                  </span>
+                </FastLink>
+              )}
+              {isCollapsed && (
+                <button
+                  type='button'
+                  onClick={handleToggle}
+                  className='flex h-8 w-full items-center justify-center rounded-full text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-95'
+                  title='展开侧边栏'
+                  aria-label='展开侧边栏'
+                >
+                  <Menu className='h-4 w-4' />
+                </button>
+              )}
               {!isCollapsed && (
                 <button
                   type='button'
@@ -389,18 +385,6 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
                 </button>
               )}
             </div>
-
-            {isCollapsed && (
-              <button
-                type='button'
-                onClick={handleToggle}
-                className='mt-4 flex h-9 w-full items-center justify-center rounded-full text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-95'
-                title='展开侧边栏'
-                aria-label='展开侧边栏'
-              >
-                <Menu className='h-4 w-4' />
-              </button>
-            )}
 
             <ul
               className={`mt-9 flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-hide transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
