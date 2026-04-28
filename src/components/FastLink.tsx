@@ -1,7 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  type CSSProperties,
+  type FocusEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+  type TouchEvent,
+  useCallback,
+} from 'react';
+
+type LinkPrefetch = boolean | 'auto' | null;
+
+const intentPrefetchedHrefs = new Set<string>();
+
+function isExternalHref(href: string) {
+  return href.startsWith('http://') || href.startsWith('https://');
+}
 
 interface FastLinkProps {
   href: string;
@@ -20,6 +37,18 @@ interface FastLinkProps {
    * Additional onClick handler
    */
   onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
+  onFocus?: (e: FocusEvent<HTMLAnchorElement>) => void;
+  onPointerEnter?: (e: PointerEvent<HTMLAnchorElement>) => void;
+  onTouchStart?: (e: TouchEvent<HTMLAnchorElement>) => void;
+  /**
+   * Next.js route prefetching.
+   * Defaults to "auto" so visible app links can be warmed in the background.
+   */
+  prefetch?: LinkPrefetch;
+  /**
+   * Also prefetch once the user shows intent to navigate.
+   */
+  intentPrefetch?: boolean;
   /**
    * Accessibility label
    */
@@ -55,6 +84,11 @@ export function FastLink({
   className,
   forceRefresh = false,
   onClick,
+  onFocus,
+  onPointerEnter,
+  onTouchStart,
+  prefetch = 'auto',
+  intentPrefetch = true,
   'aria-label': ariaLabel,
   target,
   rel,
@@ -62,6 +96,28 @@ export function FastLink({
   'data-active': dataActive,
   style,
 }: FastLinkProps) {
+  const router = useRouter();
+
+  const prefetchOnIntent = useCallback(() => {
+    if (
+      !intentPrefetch ||
+      prefetch === false ||
+      forceRefresh ||
+      target === '_blank' ||
+      isExternalHref(href) ||
+      intentPrefetchedHrefs.has(href)
+    ) {
+      return;
+    }
+
+    intentPrefetchedHrefs.add(href);
+    try {
+      router.prefetch(href);
+    } catch {
+      intentPrefetchedHrefs.delete(href);
+    }
+  }, [forceRefresh, href, intentPrefetch, prefetch, router, target]);
+
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(e);
 
@@ -75,8 +131,7 @@ export function FastLink({
     if (
       isModifiedClick ||
       !forceRefresh ||
-      href.startsWith('http://') ||
-      href.startsWith('https://')
+      isExternalHref(href)
     ) {
       return;
     }
@@ -85,12 +140,36 @@ export function FastLink({
     window.location.assign(href);
   };
 
+  const handleFocus = (e: FocusEvent<HTMLAnchorElement>) => {
+    onFocus?.(e);
+    if (!e.defaultPrevented) {
+      prefetchOnIntent();
+    }
+  };
+
+  const handlePointerEnter = (e: PointerEvent<HTMLAnchorElement>) => {
+    onPointerEnter?.(e);
+    if (!e.defaultPrevented) {
+      prefetchOnIntent();
+    }
+  };
+
+  const handleTouchStart = (e: TouchEvent<HTMLAnchorElement>) => {
+    onTouchStart?.(e);
+    if (!e.defaultPrevented) {
+      prefetchOnIntent();
+    }
+  };
+
   return (
     <Link
       href={href}
       onClick={handleClick}
+      onFocus={handleFocus}
+      onPointerEnter={handlePointerEnter}
+      onTouchStart={handleTouchStart}
       className={className}
-      prefetch={false}
+      prefetch={prefetch}
       aria-label={ariaLabel}
       target={target}
       title={title}

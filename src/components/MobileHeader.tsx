@@ -56,7 +56,6 @@ const MobileHeader = ({
           <div className='flex items-center gap-2 z-10'>
             <Link
               href='/search'
-              prefetch={false}
               aria-label='Search'
               className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
             >
@@ -81,7 +80,6 @@ const MobileHeader = ({
           <div className='absolute top-1/2 left-1/2 max-w-[42vw] -translate-x-1/2 -translate-y-1/2'>
             <Link
               href='/'
-              prefetch={false}
               className='block truncate text-2xl font-bold text-green-600 dark:text-green-400 tracking-tight hover:opacity-80 transition-opacity'
             >
               {siteName}
