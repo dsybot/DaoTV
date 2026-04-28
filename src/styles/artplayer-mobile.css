@@ -70,3 +70,8 @@
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* 锁定状态下隐藏毛玻璃效果 */
+.art-video-player.art-lock .art-liquid-glass {
+  opacity: 0 !important;
+}
