@@ -12,6 +12,23 @@
   background-color: #000 !important;
 }
 
+/* ===== Native Control Bar Stability ===== */
+.art-video-player .art-bottom {
+  backface-visibility: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
+.art-video-player.art-native-control-opacity .art-bottom {
+  background-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, var(--art-native-control-opacity, 0.5)),
+    rgba(0, 0, 0, var(--art-native-control-mid-opacity, 0.28)),
+    transparent
+  ) !important;
+}
+
 /* ===== Volume Control Hover Fix ===== */
 /* 修复音量面板 hover 时消失的问题 - 让面板始终接收鼠标事件 */
 @media (hover: hover) {

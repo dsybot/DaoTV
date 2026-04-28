@@ -19,7 +19,6 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
-import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import artplayerPluginSeekButtons from '@/lib/artplayer-plugin-seek-buttons';
 import { ClientCache } from '@/lib/client-cache';
 import {
@@ -81,6 +80,27 @@ import { useWatchRoomSync } from './hooks/useWatchRoomSync';
 // 播放速率持久化
 const PLAYER_PLAYBACK_RATE_KEY = 'moontv_player_playback_rate';
 const PREFERRED_AUDIO_LANG_KEY = 'preferred_audio_lang';
+const CONTROL_BAR_OPACITY_KEY = 'control_bar_opacity';
+
+function applyNativeControlBarOpacity(
+  player: HTMLElement | null | undefined,
+  opacity: number,
+) {
+  if (!player) return;
+
+  const normalizedOpacity =
+    Number.isFinite(opacity) && opacity >= 0 ? Math.min(opacity, 0.8) : 0.5;
+
+  player.classList.add('art-native-control-opacity');
+  player.style.setProperty(
+    '--art-native-control-opacity',
+    normalizedOpacity.toString(),
+  );
+  player.style.setProperty(
+    '--art-native-control-mid-opacity',
+    (normalizedOpacity * 0.55).toString(),
+  );
+}
 
 function sanitizePlaybackRate(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 1.0;
@@ -5596,36 +5616,29 @@ function PlayPageClient() {
               html: '控制栏遮挡度',
               icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg>',
               tooltip: (() => {
-                const opacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.5');
+                const opacity = parseFloat(
+                  localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
+                );
                 return `${Math.round(opacity * 100)}%`;
               })(),
               range: [
-                parseFloat(localStorage.getItem('control_bar_opacity') || '0.5'),
+                parseFloat(
+                  localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
+                ),
                 0.0,
                 0.8,
-                0.1
+                0.1,
               ],
               onChange: function (item: any) {
                 const opacity = item.range[0];
-                localStorage.setItem('control_bar_opacity', opacity.toString());
-
-                // 实时应用遮挡度，避免直接覆盖 backdrop-filter 造成全屏重绘不同步。
-                const liquidGlass = artPlayerRef.current?.template?.$player?.querySelector(
-                  '.art-liquid-glass',
-                ) as HTMLElement | null;
-                if (liquidGlass) {
-                  liquidGlass.style.removeProperty('background-color');
-                  liquidGlass.style.removeProperty('backdrop-filter');
-                  liquidGlass.style.removeProperty('-webkit-backdrop-filter');
-                  liquidGlass.style.setProperty(
-                    '--art-liquid-glass-opacity',
-                    opacity.toString(),
-                  );
-                  liquidGlass.style.setProperty(
-                    '--art-liquid-glass-blur',
-                    `${Math.max(0, opacity * 15)}px`,
-                  );
-                }
+                localStorage.setItem(
+                  CONTROL_BAR_OPACITY_KEY,
+                  opacity.toString(),
+                );
+                applyNativeControlBarOpacity(
+                  artPlayerRef.current?.template?.$player,
+                  opacity,
+                );
 
                 return `${Math.round(opacity * 100)}%`;
               },
@@ -5912,9 +5925,6 @@ function PlayPageClient() {
                   }),
                 ]
               : []),
-            // 毛玻璃效果控制栏插件 - 现代化悬浮设计
-            // CSS已优化：桌面98%宽度，移动端100%，按钮可自动缩小适应
-            artplayerPluginLiquidGlass(),
             // 快进/快退按钮插件 - 在控制栏添加 ±10秒 按钮
             artplayerPluginSeekButtons({
               seekTime: parseInt(localStorage.getItem('seek_time') || '10', 10),
@@ -6055,24 +6065,14 @@ function PlayPageClient() {
             video.style.objectFit = savedObjectFit;
           }
 
-          // 🎨 应用保存的控制栏透明度设置（毛玻璃效果）
-          const savedOpacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.5');
-          const liquidGlass = artPlayerRef.current.template.$player.querySelector(
-            '.art-liquid-glass',
-          ) as HTMLElement | null;
-          if (liquidGlass) {
-            liquidGlass.style.removeProperty('background-color');
-            liquidGlass.style.removeProperty('backdrop-filter');
-            liquidGlass.style.removeProperty('-webkit-backdrop-filter');
-            liquidGlass.style.setProperty(
-              '--art-liquid-glass-opacity',
-              savedOpacity.toString(),
-            );
-            liquidGlass.style.setProperty(
-              '--art-liquid-glass-blur',
-              `${Math.max(0, savedOpacity * 15)}px`,
-            );
-          }
+          // Apply the saved opacity to ArtPlayer's native control bar.
+          const savedOpacity = parseFloat(
+            localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
+          );
+          applyNativeControlBarOpacity(
+            artPlayerRef.current.template.$player,
+            savedOpacity,
+          );
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）
           const fsEpisodeName =
