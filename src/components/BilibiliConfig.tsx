@@ -273,7 +273,7 @@ const BilibiliConfig = ({ config, refreshConfig }: BilibiliConfigProps) => {
             🔐 账号登录（可选）
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            登录后可以让所有用户共享你的会员权限观看大会员内容
+            登录后搜索时会使用你的账号凭证，可能获得更好的搜索结果
           </p>
           <button
             onClick={handleGetQRCode}
@@ -406,23 +406,27 @@ const BilibiliConfig = ({ config, refreshConfig }: BilibiliConfigProps) => {
           </li>
           <li className="flex items-start">
             <span className="mr-2">•</span>
-            <span>播放器是用户浏览器直接访问 B站，服务器端代理无效</span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">•</span>
-            <span>番剧/影视内容有地区限制，用户需要自己配置 VPN</span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">•</span>
             <span className="font-semibold">
               {isLoggedIn
-                ? '✅ 已登录：所有用户可以观看大会员内容（如果你有会员）'
-                : '❌ 未登录：大会员内容需要用户自己有会员才能观看'}
+                ? '✅ 已登录：搜索时会使用管理员凭证，可能看到更多结果'
+                : '❌ 未登录：搜索结果可能受限'}
             </span>
           </li>
           <li className="flex items-start">
             <span className="mr-2">•</span>
-            <span>登录后会共享你的会员权限给所有用户，请谨慎使用</span>
+            <span className="font-semibold text-red-600 dark:text-red-400">
+              ⚠️ 播放限制：iframe 播放器是用户浏览器直接访问 B站，无法使用服务器端登录凭证
+            </span>
+          </li>
+          <li className="flex items-start">
+            <span className="mr-2">•</span>
+            <span>
+              要观看会员内容，用户需要在自己的浏览器登录 B站账号（打开 bilibili.com 登录）
+            </span>
+          </li>
+          <li className="flex items-start">
+            <span className="mr-2">•</span>
+            <span>番剧/影视内容有地区限制，用户需要自己配置 VPN</span>
           </li>
         </ul>
       </div>

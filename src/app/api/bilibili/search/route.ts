@@ -33,8 +33,21 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔍 B站搜索: "${keyword}"`);
 
-    // 获取 buvid3
-    const buvid3 = await getBuvid3();
+    // 获取 buvid3 和登录 cookies
+    const buvid3 = biliConfig?.buvid3 || await getBuvid3();
+
+    // 构建 Cookie 字符串
+    let cookieStr = `buvid3=${buvid3}`;
+    if (biliConfig?.loginStatus === 'logged_in' && biliConfig.sessdata) {
+      cookieStr += `; SESSDATA=${biliConfig.sessdata}`;
+      if (biliConfig.bili_jct) {
+        cookieStr += `; bili_jct=${biliConfig.bili_jct}`;
+      }
+      if (biliConfig.dedeuserid) {
+        cookieStr += `; DedeUserID=${biliConfig.dedeuserid}`;
+      }
+      console.log('🔐 使用管理员登录凭证搜索');
+    }
 
     // 准备搜索参数
     const params = {
@@ -50,7 +63,10 @@ export async function GET(request: NextRequest) {
     const response = await fetch(
       `https://api.bilibili.com/x/web-interface/wbi/search/all/v2?${signedQuery}`,
       {
-        headers: getBilibiliHeaders(buvid3)
+        headers: {
+          ...getBilibiliHeaders(buvid3),
+          'Cookie': cookieStr,
+        }
       }
     );
 
@@ -72,6 +88,14 @@ export async function GET(request: NextRequest) {
     const results = parseSearchResults(data.data);
 
     console.log(`✅ B站搜索完成: "${keyword}" - ${results.videos.length} 个视频, ${results.bangumi.length} 个番剧`);
+
+    // 调试：打印第一个结果的图片URL
+    if (results.videos.length > 0) {
+      console.log('📸 视频封面示例:', results.videos[0].pic);
+    }
+    if (results.bangumi.length > 0) {
+      console.log('📸 番剧封面示例:', results.bangumi[0].cover);
+    }
 
     return NextResponse.json({
       success: true,
