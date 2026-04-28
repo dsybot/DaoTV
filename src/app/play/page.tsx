@@ -5609,14 +5609,14 @@ function PlayPageClient() {
                 const opacity = item.range[0];
                 localStorage.setItem('control_bar_opacity', opacity.toString());
 
-                // 实时应用遮挡度到毛玻璃容器，避免直接覆盖 backdrop-filter。
+                // 实时应用透明度到毛玻璃容器
                 const liquidGlass = document.querySelector('.art-liquid-glass') as HTMLElement;
                 if (liquidGlass) {
-                  liquidGlass.style.removeProperty('background-color');
-                  liquidGlass.style.removeProperty('backdrop-filter');
-                  liquidGlass.style.removeProperty('-webkit-backdrop-filter');
-                  liquidGlass.style.setProperty('--art-liquid-glass-opacity', opacity.toString());
-                  liquidGlass.style.setProperty('--art-liquid-glass-blur', `${Math.max(0, opacity * 15)}px`);
+                  // 调整背景色透明度
+                  liquidGlass.style.setProperty('background-color', `rgba(0, 0, 0, ${opacity})`, 'important');
+                  // 同时调整模糊效果：透明度越低，模糊越少
+                  const blurAmount = Math.max(0, opacity * 15); // 0-12px
+                  liquidGlass.style.setProperty('backdrop-filter', `blur(${blurAmount}px)`, 'important');
                 }
 
                 return `${Math.round(opacity * 100)}%`;
@@ -5918,18 +5918,6 @@ function PlayPageClient() {
           ],
         });
 
-        const revealControlsAfterFullscreenChange = () => {
-          const revealControls = () => {
-            if (artPlayerRef.current?.controls) {
-              artPlayerRef.current.controls.show = true;
-            }
-          };
-
-          revealControls();
-          requestAnimationFrame(revealControls);
-          window.setTimeout(revealControls, 120);
-        };
-
         // 监听全屏状态变化
         artPlayerRef.current.on('fullscreen', (isFullscreenNow: boolean) => {
           console.log('Fullscreen state changed:', isFullscreenNow);
@@ -5943,8 +5931,23 @@ function PlayPageClient() {
 
           // Portal 容器已固定为 ArtPlayer $player 元素，无需切换
 
+          // 🔧 修复：进入全屏后自动隐藏控制栏
           if (isFullscreenNow) {
-            revealControlsAfterFullscreenChange();
+            // 模拟鼠标移动事件来触发ArtPlayer的自动隐藏逻辑
+            setTimeout(() => {
+              if (artPlayerRef.current) {
+                // 显示控制栏
+                artPlayerRef.current.controls.show = true;
+                // 然后让ArtPlayer的自动隐藏机制接管（通常3秒后隐藏）
+                // 通过触发一个假的鼠标移动事件来启动自动隐藏计时器
+                const event = new MouseEvent('mousemove', {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window,
+                });
+                artPlayerRef.current.template.$player.dispatchEvent(event);
+              }
+            }, 100);
           }
         });
 
@@ -5961,7 +5964,22 @@ function PlayPageClient() {
             }
 
             if (isFullscreenWebNow) {
-              revealControlsAfterFullscreenChange();
+              // 🔧 修复：进入网页全屏后自动隐藏控制栏
+              // 模拟鼠标移动事件来触发ArtPlayer的自动隐藏逻辑
+              setTimeout(() => {
+                if (artPlayerRef.current) {
+                  // 显示控制栏
+                  artPlayerRef.current.controls.show = true;
+                  // 然后让ArtPlayer的自动隐藏机制接管（通常3秒后隐藏）
+                  // 通过触发一个假的鼠标移动事件来启动自动隐藏计时器
+                  const event = new MouseEvent('mousemove', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                  });
+                  artPlayerRef.current.template.$player.dispatchEvent(event);
+                }
+              }, 100);
             }
           },
         );
@@ -5988,11 +6006,11 @@ function PlayPageClient() {
           const savedOpacity = parseFloat(localStorage.getItem('control_bar_opacity') || '0.5');
           const liquidGlass = document.querySelector('.art-liquid-glass') as HTMLElement;
           if (liquidGlass) {
-            liquidGlass.style.removeProperty('background-color');
-            liquidGlass.style.removeProperty('backdrop-filter');
-            liquidGlass.style.removeProperty('-webkit-backdrop-filter');
-            liquidGlass.style.setProperty('--art-liquid-glass-opacity', savedOpacity.toString());
-            liquidGlass.style.setProperty('--art-liquid-glass-blur', `${Math.max(0, savedOpacity * 15)}px`);
+            // 调整背景色透明度
+            liquidGlass.style.setProperty('background-color', `rgba(0, 0, 0, ${savedOpacity})`, 'important');
+            // 同时调整模糊效果：透明度越低，模糊越少
+            const blurAmount = Math.max(0, savedOpacity * 15); // 0-12px
+            liquidGlass.style.setProperty('backdrop-filter', `blur(${blurAmount}px)`, 'important');
           }
 
           // 🎬 添加顶部标题层（全屏/网页全屏时显示）

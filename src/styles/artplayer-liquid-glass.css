@@ -3,37 +3,42 @@
    毛玻璃效果控制栏插件样式
    ============================================ */
 
-.artplayer-plugin-liquid-glass.art-control-show {
+/* 🔧 使用自定义类控制样式，避免依赖art-control-show导致的闪烁 */
+.artplayer-plugin-liquid-glass.art-liquid-glass-styled {
   --art-control-height: 42px;
   --art-control-icon-size: 24px;
   --art-control-icon-scale: 1.1;
 }
 
-.artplayer-plugin-liquid-glass.art-control-show .art-bottom {
+.artplayer-plugin-liquid-glass.art-liquid-glass-styled .art-bottom {
   align-items: center;
   background-image: none;
   padding-bottom: var(--art-padding);
 }
 
-.artplayer-plugin-liquid-glass.art-control-show .art-bottom .art-liquid-glass {
+.artplayer-plugin-liquid-glass.art-liquid-glass-styled .art-bottom .art-liquid-glass {
   border-radius: 8px;
-  -webkit-backdrop-filter: blur(var(--art-liquid-glass-blur, 12px));
-  backdrop-filter: blur(var(--art-liquid-glass-blur, 12px));
-  background-color: rgba(0, 0, 0, var(--art-liquid-glass-opacity, 0.25));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(0, 0, 0, 0.25);
   padding: var(--art-padding) calc(var(--art-padding) * 1.5) 5px;
 }
 
-.artplayer-plugin-liquid-glass.art-control-show .art-settings {
-  bottom: calc(
-    var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding)
-  );
+/* 🔧 修复Chrome全屏模式下backdrop-filter导致的鼠标事件延迟问题 */
+/* 全屏模式下禁用毛玻璃效果，使用纯色半透明背景代替 */
+.artplayer-plugin-liquid-glass.art-fullscreen-active .art-bottom .art-liquid-glass,
+.artplayer-plugin-liquid-glass.art-fullscreen-web-active .art-bottom .art-liquid-glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
 }
 
-.artplayer-plugin-liquid-glass.art-control-show .art-layer-auto-playback {
-  bottom: calc(
-    var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding) * 4 +
-      10px
-  );
+.artplayer-plugin-liquid-glass.art-liquid-glass-styled .art-settings {
+  bottom: calc(var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding));
+}
+
+.artplayer-plugin-liquid-glass.art-liquid-glass-styled .art-layer-auto-playback {
+  bottom: calc(var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding) * 4 + 10px);
 }
 
 /* 让按钮可自动缩小，防止溢出 */
