@@ -5,7 +5,18 @@ import {
   experimental_streamedQuery as streamedQuery,
   useQuery,
 } from '@tanstack/react-query';
-import { ChevronUp, Grid2x2, List, Play, Search, X } from 'lucide-react';
+import {
+  ChevronUp,
+  Film,
+  Grid2x2,
+  HardDrive,
+  List,
+  Play,
+  Search,
+  UserRound,
+  X,
+  Youtube,
+} from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import stcasc from 'switch-chinese';
@@ -20,6 +31,7 @@ import {
 import { SearchResult } from '@/lib/types';
 
 import AcgSearch from '@/components/AcgSearch';
+import CapsuleSwitch from '@/components/CapsuleSwitch';
 import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
 import ImageViewer from '@/components/ImageViewer';
 import NetDiskSearchResults from '@/components/NetDiskSearchResults';
@@ -47,6 +59,8 @@ type StreamedState = {
   totalSources: number;
   completedSources: number;
 };
+
+type SearchType = 'video' | 'netdisk' | 'youtube' | 'tmdb-actor';
 
 const STREAMED_INITIAL: StreamedState = {
   results: [],
@@ -438,9 +452,7 @@ function SearchPageClient() {
   const [exactSearch, setExactSearch] = useState(true);
 
   // 网盘搜索相关状态
-  const [searchType, setSearchType] = useState<
-    'video' | 'netdisk' | 'youtube' | 'tmdb-actor'
-  >('video');
+  const [searchType, setSearchType] = useState<SearchType>('video');
   const [netdiskResourceType, setNetdiskResourceType] = useState<
     'netdisk' | 'acg'
   >('netdisk'); // 网盘资源类型：普通网盘或动漫磁力
@@ -1362,6 +1374,69 @@ function SearchPageClient() {
     // 其余由 searchParams 变化的 effect 处理
   };
 
+  const handleSearchTypeChange = (type: SearchType) => {
+    setSearchType(type);
+
+    const currentQuery = searchQuery.trim() || searchParams?.get('q');
+
+    if (type === 'video') {
+      setNetdiskResults(null);
+      setNetdiskError(null);
+      setNetdiskTotal(0);
+      setYoutubeResults(null);
+      setYoutubeError(null);
+      setTmdbActorResults(null);
+      setTmdbActorError(null);
+
+      if (currentQuery && showResults) {
+        router.push(`/search?q=${encodeURIComponent(currentQuery)}`);
+      }
+      return;
+    }
+
+    if (type === 'netdisk') {
+      setNetdiskError(null);
+      setNetdiskResults(null);
+      setYoutubeResults(null);
+      setYoutubeError(null);
+      setTmdbActorResults(null);
+      setTmdbActorError(null);
+
+      if (currentQuery && showResults) {
+        handleNetDiskSearch(currentQuery);
+      }
+      return;
+    }
+
+    if (type === 'youtube') {
+      setYoutubeError(null);
+      setYoutubeWarning(null);
+      setYoutubeResults(null);
+      setNetdiskResults(null);
+      setNetdiskError(null);
+      setNetdiskTotal(0);
+      setTmdbActorResults(null);
+      setTmdbActorError(null);
+
+      if (currentQuery && showResults) {
+        setTimeout(() => handleYouTubeSearch(currentQuery), 0);
+      }
+      return;
+    }
+
+    setTmdbActorError(null);
+    setTmdbActorResults(null);
+    setNetdiskResults(null);
+    setNetdiskError(null);
+    setNetdiskTotal(0);
+    setYoutubeResults(null);
+    setYoutubeError(null);
+
+    if (currentQuery && showResults) {
+      handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
+    }
+  };
+
   // 返回顶部功能 - 同时滚动页面和重置虚拟列表
   const scrollToTop = () => {
     try {
@@ -1381,129 +1456,35 @@ function SearchPageClient() {
       <div className='overflow-visible mb-10 -mt-6 md:mt-0'>
         {/* 搜索框区域 - 美化版 */}
         <div className='mb-8 pt-4 md:pt-0'>
-          {/* 搜索类型选项卡 - 移动优先响应式设计 */}
-          <div className='max-w-3xl mx-auto mb-6 px-3 sm:px-0'>
-            {/* 移动端：可滚动横向布局；桌面端：居中排列 */}
-            <div className='overflow-x-auto scrollbar-hide sm:mx-0 mt-2 sm:mt-0'>
-              <div className='inline-flex sm:flex items-center justify-start sm:justify-center min-w-full sm:min-w-0 bg-gradient-to-r from-gray-100 via-white to-gray-100 dark:from-gray-900/95 dark:via-gray-800/95 dark:to-gray-900/95 rounded-2xl p-2 gap-2 sm:gap-2.5 sm:shadow-xl border border-gray-200/70 dark:border-gray-800/70 backdrop-blur-md mx-0 sm:mx-auto'>
-                <button
-                  type='button'
-                  onClick={() => {
-                    setSearchType('video');
-                    // 切换到影视搜索时，清除网盘、YouTube和TMDB演员搜索状态
-                    setNetdiskResults(null);
-                    setNetdiskError(null);
-                    setNetdiskTotal(0);
-                    setYoutubeResults(null);
-                    setYoutubeError(null);
-                    setTmdbActorResults(null);
-                    setTmdbActorError(null);
-                    // 如果有搜索词且当前显示结果，触发影视搜索
-                    const currentQuery =
-                      searchQuery.trim() || searchParams?.get('q');
-                    if (currentQuery && showResults) {
-                      router.push(
-                        `/search?q=${encodeURIComponent(currentQuery)}`,
-                      );
-                    }
-                  }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'video'
-                      ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
-                >
-                  🎬 影视资源
-                </button>
-                <button
-                  type='button'
-                  onClick={() => {
-                    setSearchType('netdisk');
-                    // 清除之前的网盘搜索状态，确保重新开始
-                    setNetdiskError(null);
-                    setNetdiskResults(null);
-                    setYoutubeResults(null);
-                    setYoutubeError(null);
-                    setTmdbActorResults(null);
-                    setTmdbActorError(null);
-                    // 如果当前有搜索词，立即触发网盘搜索
-                    const currentQuery =
-                      searchQuery.trim() || searchParams?.get('q');
-                    if (currentQuery && showResults) {
-                      handleNetDiskSearch(currentQuery);
-                    }
-                  }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'netdisk'
-                      ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
-                >
-                  💾 网盘资源
-                </button>
-                <button
-                  type='button'
-                  onClick={() => {
-                    setSearchType('youtube');
-                    // 清除之前的YouTube搜索状态，确保重新开始
-                    setYoutubeError(null);
-                    setYoutubeWarning(null);
-                    setYoutubeResults(null);
-                    // 注意：不重置排序和内容类型，保持用户选择
-                    setNetdiskResults(null);
-                    setNetdiskError(null);
-                    setNetdiskTotal(0);
-                    setTmdbActorResults(null);
-                    setTmdbActorError(null);
-                    // 如果当前有搜索词，立即触发YouTube搜索
-                    const currentQuery =
-                      searchQuery.trim() || searchParams?.get('q');
-                    if (currentQuery && showResults) {
-                      // 如果已经在YouTube标签，或者是新切换，都强制重新搜索
-                      setTimeout(() => handleYouTubeSearch(currentQuery), 0);
-                    }
-                  }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'youtube'
-                      ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
-                >
-                  📺 YouTube
-                </button>
-                <button
-                  type='button'
-                  onClick={() => {
-                    setSearchType('tmdb-actor');
-                    // 清除之前的搜索状态
-                    setTmdbActorError(null);
-                    setTmdbActorResults(null);
-                    setNetdiskResults(null);
-                    setNetdiskError(null);
-                    setNetdiskTotal(0);
-                    setYoutubeResults(null);
-                    setYoutubeError(null);
-                    // 如果当前有搜索词，立即触发TMDB演员搜索
-                    const currentQuery =
-                      searchQuery.trim() || searchParams?.get('q');
-                    if (currentQuery && showResults) {
-                      handleTmdbActorSearch(
-                        currentQuery,
-                        tmdbActorType,
-                        tmdbFilterState,
-                      );
-                    }
-                  }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
-                    searchType === 'tmdb-actor'
-                      ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
-                      : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
-                  }`}
-                >
-                  🎬 TMDB演员
-                </button>
-              </div>
-            </div>
+          {/* 搜索类型选项卡 */}
+          <div className='mb-6 flex justify-center px-3 sm:px-0'>
+            <CapsuleSwitch
+              variant='soft'
+              options={[
+                {
+                  label: '影视资源',
+                  value: 'video',
+                  icon: <Film size={16} />,
+                },
+                {
+                  label: '网盘资源',
+                  value: 'netdisk',
+                  icon: <HardDrive size={16} />,
+                },
+                {
+                  label: 'YouTube',
+                  value: 'youtube',
+                  icon: <Youtube size={16} />,
+                },
+                {
+                  label: 'TMDB演员',
+                  value: 'tmdb-actor',
+                  icon: <UserRound size={16} />,
+                },
+              ]}
+              active={searchType}
+              onChange={(value) => handleSearchTypeChange(value as SearchType)}
+            />
           </div>
 
           <form onSubmit={handleSearch} className='max-w-2xl mx-auto'>
