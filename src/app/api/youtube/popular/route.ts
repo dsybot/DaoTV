@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const regionCode = searchParams.get('regionCode') || 'US'; // 默认美国
+  const pageToken = searchParams.get('pageToken') || ''; // 分页token
 
   try {
     // 获取YouTube配置
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
 
     // YouTube热门视频缓存：30分钟（热门视频更新较慢）
     const YOUTUBE_POPULAR_CACHE_TIME = 30 * 60; // 30分钟（秒）
-    const cacheKey = `youtube-popular-${youtubeConfig.enabled}-${youtubeConfig.enableDemo}-${maxResults}-${regionCode}`;
+    const cacheKey = `youtube-popular-${youtubeConfig.enabled}-${youtubeConfig.enableDemo}-${maxResults}-${regionCode}-${pageToken}`;
 
     console.log(`🔍 检查YouTube热门视频缓存: ${cacheKey}`);
 
@@ -199,7 +200,8 @@ export async function GET(request: NextRequest) {
       `part=snippet,statistics&` +
       `chart=mostPopular&` +
       `maxResults=${maxResults}&` +
-      `regionCode=${regionCode}`;
+      `regionCode=${regionCode}` +
+      (pageToken ? `&pageToken=${pageToken}` : '');
 
     const response = await fetch(popularUrl);
 
@@ -243,6 +245,8 @@ export async function GET(request: NextRequest) {
       success: true,
       videos: data.items || [],
       total: data.pageInfo?.totalResults || 0,
+      nextPageToken: data.nextPageToken || null,
+      prevPageToken: data.prevPageToken || null,
       source: 'youtube'
     };
 
