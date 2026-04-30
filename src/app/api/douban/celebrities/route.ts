@@ -1,25 +1,133 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
-
-// 用户代理池
-const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-];
+import { fetchDoubanWithVerification } from '@/lib/douban-anti-crawler';
+import { bypassDoubanChallenge } from '@/lib/puppeteer';
+import {
+  getRandomUserAgentWithInfo,
+  getSecChUaHeaders,
+} from '@/lib/user-agent';
 
 // 请求限制器
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2000; // 2秒最小间隔
 
-function getRandomUserAgent(): string {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-}
-
 function randomDelay(min = 1000, max = 3000): Promise<void> {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
   return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+async function getDoubanCookies(): Promise<string | null> {
+  try {
+    const config = await getConfig();
+    return config.DoubanConfig?.cookies || null;
+  } catch (error) {
+    console.warn('[Douban Celebrities] 获取 cookies 配置失败:', error);
+    return null;
+  }
+}
+
+function isDoubanChallengePage(html: string): boolean {
+  return (
+    html.includes('sec.douban.com') ||
+    html.includes('form name="sec"') ||
+    (html.includes('name="tok"') && html.includes('name="cha"')) ||
+    (html.includes('sha512') &&
+      html.includes('process(cha)') &&
+      html.includes('载入中'))
+  );
+}
+
+async function tryFetchWithAntiCrawler(url: string): Promise<string | null> {
+  try {
+    console.log('[Douban Celebrities] 尝试使用反爬验证');
+    const response = await fetchDoubanWithVerification(url);
+
+    if (!response.ok) {
+      console.log(
+        `[Douban Celebrities] 反爬验证返回状态: ${response.status}`,
+      );
+      return null;
+    }
+
+    const html = await response.text();
+    if (isDoubanChallengePage(html)) {
+      console.log('[Douban Celebrities] 反爬验证仍返回 challenge 页面');
+      return null;
+    }
+
+    console.log(
+      `[Douban Celebrities] 反爬验证成功，页面长度: ${html.length}`,
+    );
+    return html;
+  } catch (error) {
+    console.warn('[Douban Celebrities] 反爬验证失败:', error);
+    return null;
+  }
+}
+
+async function fetchDoubanHtml(url: string): Promise<string> {
+  const antiCrawlerHtml = await tryFetchWithAntiCrawler(url);
+  if (antiCrawlerHtml) return antiCrawlerHtml;
+
+  const { ua, browser, platform } = getRandomUserAgentWithInfo();
+  const secChHeaders = getSecChUaHeaders(browser, platform);
+  const doubanCookies = await getDoubanCookies();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'max-age=0',
+        DNT: '1',
+        ...secChHeaders,
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': ua,
+        ...(Math.random() > 0.5
+          ? { Referer: 'https://movie.douban.com/' }
+          : {}),
+        ...(doubanCookies ? { Cookie: doubanCookies } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    let html = await response.text();
+    if (!isDoubanChallengePage(html)) {
+      return html;
+    }
+
+    const config = await getConfig();
+    const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
+
+    if (!enablePuppeteer) {
+      throw new Error('豆瓣反爬虫激活，请在管理后台启用 Puppeteer 或配置 Cookies');
+    }
+
+    console.log('[Douban Celebrities] Puppeteer 已启用，尝试绕过 Challenge');
+    const puppeteerResult = await bypassDoubanChallenge(url);
+    html = puppeteerResult.html;
+
+    if (isDoubanChallengePage(html)) {
+      throw new Error('豆瓣反爬虫激活，Puppeteer 未能绕过 Challenge');
+    }
+
+    return html;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export const runtime = 'nodejs';
@@ -39,11 +147,15 @@ export async function GET(request: Request) {
   const config = await getConfig();
   const proxyUrl = config.SiteConfig.DoubanDetailProxy || '';
 
-  const originalUrl = `https://movie.douban.com/subject/${id}/celebrities`;
+  const celebritiesUrl = `https://movie.douban.com/subject/${id}/celebrities`;
+  const detailsUrl = `https://movie.douban.com/subject/${id}/`;
   // 如果配置了代理，使用代理地址
   const target = proxyUrl
-    ? `${proxyUrl}${encodeURIComponent(originalUrl)}`
-    : originalUrl;
+    ? `${proxyUrl}${encodeURIComponent(celebritiesUrl)}`
+    : celebritiesUrl;
+  const detailTarget = proxyUrl
+    ? `${proxyUrl}${encodeURIComponent(detailsUrl)}`
+    : detailsUrl;
 
   console.log(`[豆瓣演员表] 请求URL: ${target}`);
 
@@ -61,41 +173,42 @@ export async function GET(request: Request) {
     // 添加随机延时
     await randomDelay(500, 1500);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const html = await fetchDoubanHtml(target);
 
-    const fetchOptions = {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Cache-Control': 'max-age=0',
-        // 随机添加Referer
-        ...(Math.random() > 0.5 ? { 'Referer': 'https://movie.douban.com/' } : {}),
-      },
-    };
-
-    const response = await fetch(target, fetchOptions);
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+    // 先解析完整演员页；如果为空，回退解析详情页的 #celebrities 区块。
+    let celebrities = parseDoubanCelebrities(html);
+    if (celebrities.length === 0) {
+      console.warn('[豆瓣演员表] 演员页解析为空，尝试从详情页演员区回退解析');
+      const detailHtml = await fetchDoubanHtml(detailTarget);
+      celebrities = parseDoubanCelebrities(detailHtml);
     }
 
-    const html = await response.text();
+    // 代理返回不完整时，再尝试直连源站。这里仍会走反爬验证/Cookies/Puppeteer。
+    if (proxyUrl && celebrities.length === 0) {
+      console.warn('[豆瓣演员表] 代理解析为空，尝试直连豆瓣演员页');
+      const directHtml = await fetchDoubanHtml(celebritiesUrl);
+      celebrities = parseDoubanCelebrities(directHtml);
+    }
 
-    // 解析演员列表
-    const celebrities = parseDoubanCelebrities(html);
+    if (proxyUrl && celebrities.length === 0) {
+      console.warn('[豆瓣演员表] 直连演员页仍为空，尝试直连豆瓣详情页');
+      const directDetailHtml = await fetchDoubanHtml(detailsUrl);
+      celebrities = parseDoubanCelebrities(directDetailHtml);
+    }
 
     const cacheTime = await getCacheTime();
+    const cacheHeaders =
+      celebrities.length > 0
+        ? {
+            'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+            'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+            'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+            'Netlify-Vary': 'query',
+          }
+        : {
+            'Cache-Control': 'no-store',
+          };
+
     return NextResponse.json({
       code: 200,
       message: '获取成功',
@@ -104,12 +217,7 @@ export async function GET(request: Request) {
         count: celebrities.length
       }
     }, {
-      headers: {
-        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
-        'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-        'Netlify-Vary': 'query',
-      },
+      headers: cacheHeaders,
     });
   } catch (error) {
     return NextResponse.json(
@@ -137,6 +245,11 @@ function decodeHtmlText(text: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) =>
+      String.fromCharCode(parseInt(code, 16)),
+    )
     .trim();
 }
 
@@ -185,6 +298,44 @@ function parseDoubanName(fullName: string): {
   return { name, name_en, aliases };
 }
 
+function stripHtmlTags(text: string): string {
+  return decodeHtmlText(text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
+}
+
+function extractRoleInfo(item: string): { role: string; character: string } {
+  const roleAttrMatch = item.match(
+    /<span[^>]*class=["'][^"']*role[^"']*["'][^>]*title=["']([^"']+)["'][^>]*>/,
+  );
+  const roleTextMatch = item.match(
+    /<span[^>]*class=["'][^"']*role[^"']*["'][^>]*>([\s\S]*?)<\/span>/,
+  );
+  const roleText = stripHtmlTags(roleAttrMatch?.[1] || roleTextMatch?.[1] || '');
+  const roleTypeMatch = roleText.match(/^([^\s(（]+)/);
+  const isActor = roleText.includes('演员') || /\bActor\b/i.test(roleText);
+  const characterMatch = roleText.match(/饰(?:演)?\s*[:：]?\s*([^)）]+)/);
+
+  return {
+    role: isActor ? '演员' : roleTypeMatch?.[1] || '',
+    character: characterMatch ? characterMatch[1].trim() : '',
+  };
+}
+
+function collectCelebrityItems(html: string): string[] {
+  const sectionMatch = html.match(
+    /<div[^>]*id=["']celebrities["'][\s\S]*?<ul[^>]*class=["'][^"']*celebrities-list[^"']*["'][^>]*>([\s\S]*?)<\/ul>/,
+  );
+  const source = sectionMatch?.[1] || html;
+  const items = source.match(
+    /<li[^>]*class=["'][^"']*celebrity[^"']*["'][^>]*>[\s\S]*?<\/li>/g,
+  );
+
+  if (items && items.length > 0) {
+    return items;
+  }
+
+  return sectionMatch ? sectionMatch[1].match(/<li[\s\S]*?<\/li>/g) || [] : [];
+}
+
 function parseDoubanCelebrities(html: string): DoubanCelebrity[] {
   const celebrities: DoubanCelebrity[] = [];
 
@@ -198,40 +349,36 @@ function parseDoubanCelebrities(html: string): DoubanCelebrity[] {
     //     <span class="works">...</span>
     //   </div>
     // </li>
-    const celebrityRegex = /<li class="celebrity">([\s\S]*?)<\/li>/g;
-    let match;
+    const celebrityItems = collectCelebrityItems(html);
+    const seen = new Set<string>();
 
-    while ((match = celebrityRegex.exec(html)) !== null) {
+    celebrityItems.forEach((item) => {
       try {
-        const item = match[1];
-
         // 提取演员ID和姓名 - 支持 personage 和 celebrity 两种URL格式
-        const idMatch = item.match(/href="https:\/\/www\.douban\.com\/(?:personage|celebrity)\/(\d+)\/[^"]*"/);
-        const titleMatch = item.match(/<a[^>]*title="([^"]+)"/);
-        if (!idMatch || !titleMatch) continue;
+        const idMatch = item.match(
+          /href=["']https:\/\/www\.douban\.com\/(?:personage|celebrity)\/(\d+)\/[^"']*["']/,
+        );
+        const titleMatch = item.match(/<a[^>]*title=["']([^"']+)["']/);
+        const nameMatch = item.match(
+          /<span[^>]*class=["'][^"']*name[^"']*["'][^>]*>([\s\S]*?)<\/span>/,
+        );
+
+        if (!idMatch || (!titleMatch && !nameMatch)) return;
 
         const douban_id = idMatch[1];
-        const fullName = decodeHtmlText(titleMatch[1]);
+        const fullName = titleMatch
+          ? decodeHtmlText(titleMatch[1])
+          : stripHtmlTags(nameMatch?.[1] || '');
+        if (!fullName) return;
+
         const { name, name_en, aliases } = parseDoubanName(fullName);
+        const { role, character } = extractRoleInfo(item);
 
-        // 提取角色信息 - 从 span.role 的 title 属性
-        const roleMatch = item.match(/<span class="role"[^>]*title="([^"]+)"/);
-        let role = '';
-        let character = '';
+        if (name && (role === '演员' || role.includes('演员'))) {
+          const dedupeKey = douban_id || name.toLowerCase();
+          if (seen.has(dedupeKey)) return;
+          seen.add(dedupeKey);
 
-        if (roleMatch) {
-          const roleText = roleMatch[1];
-          // 解析角色信息，格式如 "演员 Actor (饰 赤发)" 或 "导演 Director"
-          const roleTypeMatch = roleText.match(/^([^\s(]+)/);
-          role = roleTypeMatch ? roleTypeMatch[1] : '';
-
-          // 提取饰演的角色名
-          const characterMatch = roleText.match(/饰\s*([^)]+)/);
-          character = characterMatch ? characterMatch[1].trim() : '';
-        }
-
-        // 只添加演员（有角色名的）
-        if (name && role === '演员') {
           celebrities.push({
             name,
             full_name: fullName,
@@ -244,10 +391,9 @@ function parseDoubanCelebrities(html: string): DoubanCelebrity[] {
           });
         }
       } catch (e) {
-        // 跳过解析失败的单条记录
         console.warn('解析单条演员信息失败:', e);
       }
-    }
+    });
 
     return celebrities;
   } catch (error) {

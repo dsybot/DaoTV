@@ -287,7 +287,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
 
     const fetchDoubanCelebrities = async () => {
       try {
-        const response = await fetch(`/api/douban/celebrities?id=${doubanId}&v=2`);
+        const response = await fetch(`/api/douban/celebrities?id=${doubanId}&v=3`);
         const data = await response.json();
         if (!cancelled && data.code === 200 && data.data?.celebrities) {
           setDoubanCelebrities(data.data.celebrities);
