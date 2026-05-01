@@ -266,16 +266,6 @@ export interface AdminConfig {
     // 最后检查时间
     lastCheckTime?: number;
   };
-  HomePageConfig?: {
-    showHeroBanner: boolean;
-    showContinueWatching: boolean;
-    showUpcomingReleases: boolean;
-    showHotMovies: boolean;
-    showHotTvShows: boolean;
-    showNewAnime: boolean;
-    showHotVariety: boolean;
-    showHotShortDramas: boolean;
-  };
 }
 
 export interface AdminConfigResult {
