@@ -1,7 +1,11 @@
 /* eslint-disable no-console */
 
 import { getConfig } from './config';
-import type { SearchResult, ShortDramaParseResult } from './types';
+import type {
+  SearchResult,
+  ShortDramaItem,
+  ShortDramaParseResult,
+} from './types';
 import { DEFAULT_USER_AGENT } from './user-agent';
 import { cleanHtmlTags } from './utils';
 
@@ -27,6 +31,24 @@ type CmsDetailItem = {
   vod_douban_id?: number;
   type_name?: string;
   vod_play_url?: string;
+};
+
+type ShortDramaCategoryItem = {
+  type_id: number;
+  type_name: string;
+};
+
+type ShortDramaRecommendSourceItem = {
+  vod_id?: number | string;
+  vod_name?: string;
+  vod_pic?: string;
+  vod_time?: string;
+  vod_score?: string | number;
+  vod_remarks?: string;
+  vod_content?: string;
+  vod_blurb?: string;
+  vod_actor?: string;
+  vod_pic_slide?: string;
 };
 
 function getShortDramaSources(
@@ -93,6 +115,133 @@ function parseEpisodesFromVodPlayUrl(vodPlayUrl?: string): {
   }
 
   return { episodes, titles };
+}
+
+async function findShortDramaCategoryId(
+  api: string,
+): Promise<number | undefined> {
+  const response = await fetch(`${api}?ac=list`, {
+    headers: {
+      'User-Agent': DEFAULT_USER_AGENT,
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const categories = (data.class || []) as ShortDramaCategoryItem[];
+  const shortDramaCategory = categories.find(
+    (cat) => cat.type_name && cat.type_name.includes('短剧'),
+  );
+
+  return shortDramaCategory?.type_id;
+}
+
+async function fetchRecommendedShortDramasFromSource(
+  api: string,
+  size: number,
+  category?: number,
+): Promise<ShortDramaItem[]> {
+  const categoryId = category || (await findShortDramaCategoryId(api));
+  if (!categoryId) {
+    console.log('该源没有短剧分类');
+    return [];
+  }
+
+  const response = await fetch(`${api}?ac=detail&t=${categoryId}&pg=1`, {
+    headers: {
+      'User-Agent': DEFAULT_USER_AGENT,
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const items = (data.list || []) as ShortDramaRecommendSourceItem[];
+
+  return items.slice(0, size).map((item) => ({
+    id: Number(item.vod_id) || 0,
+    name: item.vod_name || '',
+    cover: item.vod_pic || '',
+    update_time: item.vod_time || new Date().toISOString(),
+    score: Number.parseFloat(String(item.vod_score || 0)) || 0,
+    episode_count: Number.parseInt(
+      item.vod_remarks?.replace(/[^\d]/g, '') || '1',
+      10,
+    ),
+    description: item.vod_content || item.vod_blurb || '',
+    author: item.vod_actor || '',
+    backdrop: item.vod_pic_slide || item.vod_pic || '',
+    vote_average: Number.parseFloat(String(item.vod_score || 0)) || 0,
+  }));
+}
+
+export async function getRecommendedShortDramas(
+  category?: number,
+  size = 10,
+): Promise<ShortDramaItem[]> {
+  const config = await getConfig();
+  const sources = getShortDramaSources(config);
+
+  try {
+    console.log(`📺 找到 ${sources.length} 个可用短剧源`);
+    const results = await Promise.allSettled(
+      sources.map((source) => {
+        console.log(`🔄 请求短剧源: ${source.name}`);
+        return fetchRecommendedShortDramasFromSource(
+          source.api,
+          size,
+          category,
+        );
+      }),
+    );
+
+    const allItems: ShortDramaItem[] = [];
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        console.log(
+          `✅ ${sources[index].name}: 获取到 ${result.value.length} 条数据`,
+        );
+        allItems.push(...result.value);
+      } else {
+        console.error(`❌ ${sources[index].name}: 请求失败`, result.reason);
+      }
+    });
+
+    const uniqueItems = Array.from(
+      new Map(allItems.map((item) => [item.name, item])).values(),
+    );
+    uniqueItems.sort(
+      (a, b) =>
+        new Date(b.update_time).getTime() - new Date(a.update_time).getTime(),
+    );
+
+    const finalItems = uniqueItems.slice(0, size);
+    console.log(`📊 最终返回 ${finalItems.length} 条短剧数据`);
+
+    return finalItems;
+  } catch (error) {
+    console.error('获取短剧推荐失败:', error);
+    try {
+      console.log('⚠️ 出错，fallback到默认源');
+      return await fetchRecommendedShortDramasFromSource(
+        DEFAULT_SHORT_DRAMA_API,
+        size,
+        category,
+      );
+    } catch (fallbackError) {
+      console.error('默认源也失败:', fallbackError);
+      return [];
+    }
+  }
 }
 
 async function fetchShortDramaDetailItem(

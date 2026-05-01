@@ -256,6 +256,16 @@ async function getInitConfig(configFile: string, subConfig: {
     SourceConfig: [],
     CustomCategories: [],
     LiveConfig: [],
+    HomePageConfig: {
+      showHeroBanner: true,
+      showContinueWatching: true,
+      showUpcomingReleases: true,
+      showHotMovies: true,
+      showHotTvShows: true,
+      showNewAnime: true,
+      showHotVariety: true,
+      showHotShortDramas: true,
+    },
   };
 
   // 补充用户信息
@@ -381,6 +391,18 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
   }
   if (!adminConfig.LiveConfig || !Array.isArray(adminConfig.LiveConfig)) {
     adminConfig.LiveConfig = [];
+  }
+  if (!adminConfig.HomePageConfig) {
+    adminConfig.HomePageConfig = {
+      showHeroBanner: true,
+      showContinueWatching: true,
+      showUpcomingReleases: true,
+      showHotMovies: true,
+      showHotTvShows: true,
+      showNewAnime: true,
+      showHotVariety: true,
+      showHotShortDramas: true,
+    };
   }
 
   // 确保网盘搜索配置有默认值

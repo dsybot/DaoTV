@@ -210,7 +210,7 @@ function generateTrustedAuthCookie(request: NextRequest): NextResponse {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 处理 /adult/ 路径前缀，重写为实际 API 路径
@@ -257,38 +257,6 @@ async function handleAuthentication(
   pathname: string,
   response?: NextResponse
 ) {
-  const earlyStorageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
-
-  if (!process.env.PASSWORD) {
-    const warningUrl = new URL('/warning', request.url);
-    return NextResponse.redirect(warningUrl);
-  }
-
-  const earlyAuthInfo = getAuthInfoFromCookie(request);
-  if (earlyAuthInfo) {
-    if (earlyStorageType === 'localstorage') {
-      if (earlyAuthInfo.password === process.env.PASSWORD) {
-        return response || NextResponse.next();
-      }
-    } else {
-      if (earlyAuthInfo.trustedNetwork) {
-        return response || NextResponse.next();
-      }
-
-      if (earlyAuthInfo.username && earlyAuthInfo.signature) {
-        const isValidSignature = await verifySignature(
-          earlyAuthInfo.username,
-          earlyAuthInfo.signature,
-          process.env.PASSWORD || ''
-        );
-
-        if (isValidSignature) {
-          return response || NextResponse.next();
-        }
-      }
-    }
-  }
-
   // 🔥 检查信任网络模式（环境变量优先，然后数据库）
   const trustedNetworkConfig = await getTrustedNetworkConfig(request);
   if (trustedNetworkConfig?.enabled && trustedNetworkConfig.trustedIPs.length > 0) {
