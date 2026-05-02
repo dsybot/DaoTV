@@ -115,6 +115,7 @@ function HeroBanner({
   const [isMuted, setIsMuted] = useState(true);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isMountedRef = useRef(true);
 
   const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
   const refreshTrailerMutation = useRefreshTrailerUrlMutation();
@@ -232,6 +233,12 @@ function HeroBanner({
     };
   }, [enableVideo, items, refreshedTrailerUrls, refreshTrailerUrl]);
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   if (!items || items.length === 0) {
     return null;
   }
@@ -294,22 +301,33 @@ function HeroBanner({
                   playsInline
                   preload='metadata'
                   onError={async (event) => {
+                    if (!isMountedRef.current) return;
+
                     const video = event.currentTarget;
 
                     if (item.douban_id) {
-                      if (refreshedTrailerUrls[item.douban_id]) {
-                        clearTrailerMutation.mutate({
-                          doubanId: item.douban_id,
-                        });
-                      }
+                      try {
+                        if (refreshedTrailerUrls[item.douban_id]) {
+                          clearTrailerMutation.mutate({
+                            doubanId: item.douban_id,
+                          });
+                        }
 
-                      const newUrl = await refreshTrailerUrl(item.douban_id);
-                      if (newUrl) {
-                        video.load();
+                        const newUrl = await refreshTrailerUrl(item.douban_id);
+                        if (newUrl && isMountedRef.current) {
+                          video.load();
+                        }
+                      } catch (error) {
+                        console.warn(
+                          '[HeroBanner] 刷新trailer URL失败，将继续显示背景图片:',
+                          error,
+                        );
                       }
                     }
                   }}
                   onLoadedData={(event) => {
+                    if (!isMountedRef.current) return;
+
                     setVideoLoaded(true);
                     event.currentTarget.play().catch(() => {});
                   }}
