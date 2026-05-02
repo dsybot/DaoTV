@@ -5804,8 +5804,16 @@ function PlayPageClient() {
                         const currentVisibleCount = document.querySelectorAll(
                           '.art-danmuku [data-state="emit"]',
                         ).length;
-                        const maxConcurrentDanmu =
-                          devicePerformance === 'high'
+                        const isFullscreen =
+                          artPlayerRef.current?.fullscreen ||
+                          artPlayerRef.current?.fullscreenWeb;
+                        const maxConcurrentDanmu = isFullscreen
+                          ? devicePerformance === 'high'
+                            ? 40
+                            : devicePerformance === 'medium'
+                              ? 25
+                              : 15
+                          : devicePerformance === 'high'
                             ? 60
                             : devicePerformance === 'medium'
                               ? 40

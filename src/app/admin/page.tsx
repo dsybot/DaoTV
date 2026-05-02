@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-console, @typescript-eslint/no-non-null-assertion,react-hooks/exhaustive-deps,@typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any, no-console, react-hooks/exhaustive-deps, unused-imports/no-unused-vars, @next/next/no-img-element */
 
 'use client';
 
@@ -25,7 +25,6 @@ import {
   Activity,
   AlertCircle,
   AlertTriangle,
-  Brain,
   Check,
   CheckCircle,
   ChevronDown,
@@ -61,31 +60,32 @@ import { createPortal } from 'react-dom';
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
+import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
 import AIRecommendConfig from '@/components/AIRecommendConfig';
+import BilibiliConfig from '@/components/BilibiliConfig';
 import CacheManager from '@/components/CacheManager';
+import CustomAdFilterConfig from '@/components/CustomAdFilterConfig';
+import DanmuApiConfig from '@/components/DanmuApiConfig';
 import DataMigration from '@/components/DataMigration';
+import EmbyConfig from '@/components/EmbyConfig';
+import HomePageConfig from '@/components/HomePageConfig';
 import ImportExportModal from '@/components/ImportExportModal';
+import InviteCodeManager from '@/components/InviteCodeManager';
+// import ShortDramaConfig from '@/components/ShortDramaConfig'; // 暂时隐藏短剧API配置
+import DownloadConfig from '@/components/OfflineDownloadConfig';
+import { OIDCAuthConfig } from '@/components/OIDCAuthConfig';
+import PageLayout from '@/components/PageLayout';
 import SourceTestModule from '@/components/SourceTestModule';
 import { TelegramAuthConfig } from '@/components/TelegramAuthConfig';
-import { OIDCAuthConfig } from '@/components/OIDCAuthConfig';
-import TVBoxSecurityConfig from '@/components/TVBoxSecurityConfig';
+import ToggleSwitch from '@/components/ToggleSwitch';
 import TrustedNetworkConfig from '@/components/TrustedNetworkConfig';
+import TVBoxSecurityConfig from '@/components/TVBoxSecurityConfig';
 import {
   TVBoxTokenCell,
   TVBoxTokenModal,
 } from '@/components/TVBoxTokenManager';
-import YouTubeConfig from '@/components/YouTubeConfig';
-import BilibiliConfig from '@/components/BilibiliConfig';
-// import ShortDramaConfig from '@/components/ShortDramaConfig'; // 暂时隐藏短剧API配置
-import DownloadConfig from '@/components/OfflineDownloadConfig';
-import EmbyConfig from '@/components/EmbyConfig';
-import CustomAdFilterConfig from '@/components/CustomAdFilterConfig';
 import WatchRoomConfig from '@/components/WatchRoomConfig';
-import DanmuApiConfig from '@/components/DanmuApiConfig';
-import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
-import InviteCodeManager from '@/components/InviteCodeManager';
-import PageLayout from '@/components/PageLayout';
-import ToggleSwitch from '@/components/ToggleSwitch';
+import YouTubeConfig from '@/components/YouTubeConfig';
 
 // 统一按钮样式系统
 const buttonStyles = {
@@ -171,15 +171,19 @@ const AlertModal = ({
 
     if (isOpen) {
       dialog.showModal();
-      setIsVisible(true);
+      const frame = requestAnimationFrame(() => setIsVisible(true));
       if (timer) {
         setTimeout(() => {
           onClose();
         }, timer);
       }
+      return () => cancelAnimationFrame(frame);
     } else {
-      setIsVisible(false);
-      dialog.close();
+      const frame = requestAnimationFrame(() => {
+        setIsVisible(false);
+        dialog.close();
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [isOpen, timer, onClose]);
 
@@ -1055,35 +1059,49 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     <ToggleSwitch
                       checked={config.UserConfig.RequireInviteCode}
                       onChange={async () => {
-                        await withLoading('toggleRequireInviteCode', async () => {
-                          try {
-                            const response = await fetch('/api/admin/config', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                ...config,
-                                UserConfig: {
-                                  ...config.UserConfig,
-                                  RequireInviteCode: !config.UserConfig.RequireInviteCode
-                                }
-                              })
-                            });
+                        await withLoading(
+                          'toggleRequireInviteCode',
+                          async () => {
+                            try {
+                              const response = await fetch(
+                                '/api/admin/config',
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    ...config,
+                                    UserConfig: {
+                                      ...config.UserConfig,
+                                      RequireInviteCode:
+                                        !config.UserConfig.RequireInviteCode,
+                                    },
+                                  }),
+                                },
+                              );
 
-                            if (response.ok) {
-                              await refreshConfig();
-                              showAlert({
-                                type: 'success',
-                                title: '设置已更新',
-                                message: config.UserConfig.RequireInviteCode ? '已关闭邀请码注册' : '已开启邀请码注册',
-                                timer: 2000
-                              });
-                            } else {
-                              throw new Error('更新配置失败');
+                              if (response.ok) {
+                                await refreshConfig();
+                                showAlert({
+                                  type: 'success',
+                                  title: '设置已更新',
+                                  message: config.UserConfig.RequireInviteCode
+                                    ? '已关闭邀请码注册'
+                                    : '已开启邀请码注册',
+                                  timer: 2000,
+                                });
+                              } else {
+                                throw new Error('更新配置失败');
+                              }
+                            } catch (err) {
+                              showError(
+                                err instanceof Error ? err.message : '操作失败',
+                                showAlert,
+                              );
                             }
-                          } catch (err) {
-                            showError(err instanceof Error ? err.message : '操作失败', showAlert);
-                          }
-                        });
+                          },
+                        );
                       }}
                     />
                     <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
@@ -7617,7 +7635,8 @@ const LiveSourceConfig = ({
         }
 
         const key = typeof rawItem.key === 'string' ? rawItem.key.trim() : '';
-        const name = typeof rawItem.name === 'string' ? rawItem.name.trim() : '';
+        const name =
+          typeof rawItem.name === 'string' ? rawItem.name.trim() : '';
         const url = typeof rawItem.url === 'string' ? rawItem.url.trim() : '';
         const ua = typeof rawItem.ua === 'string' ? rawItem.ua.trim() : '';
         const epg = typeof rawItem.epg === 'string' ? rawItem.epg.trim() : '';
@@ -7909,20 +7928,6 @@ const LiveSourceConfig = ({
     );
   };
 
-  if (!config) {
-    return (
-      <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
-          <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-            加载配置中...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // 📊 读取 CORS 统计数据
   const [corsStats, setCorsStats] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('live-cors-stats');
@@ -7937,6 +7942,20 @@ const LiveSourceConfig = ({
     return { directCount: 0, proxyCount: 0, totalChecked: 0 };
   });
 
+  if (!config) {
+    return (
+      <div className='flex justify-center items-center py-8'>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+          <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+            加载配置中...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 📊 读取 CORS 统计数据
   // 清除CORS统计和缓存
   const handleClearCorsCache = () => {
     if (typeof window !== 'undefined') {
@@ -8403,12 +8422,8 @@ const LiveSourceConfig = ({
       {/* 通用弹窗组件 */}
       {showM3UImportForm &&
         createPortal(
-          <div
-            className='fixed inset-0 bg-black/60 backdrop-blur-sm z-9999 flex items-center justify-center p-4'
-          >
-            <div
-              className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden'
-            >
+          <div className='fixed inset-0 bg-black/60 backdrop-blur-sm z-9999 flex items-center justify-center p-4'>
+            <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden'>
               <div className='relative px-5 py-4 bg-gradient-to-r from-blue-600 to-cyan-600'>
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center space-x-3'>
@@ -8812,6 +8827,7 @@ function AdminPageClient() {
     tvboxSecurityConfig: false,
     trustedNetworkConfig: false,
     danmuApiConfig: false,
+    homePageConfig: false,
     telegramAuthConfig: false,
     oidcAuthConfig: false,
     inviteCodeManager: false,
@@ -8994,7 +9010,10 @@ function AdminPageClient() {
               <CollapsibleTab
                 title='邀请码管理'
                 icon={
-                  <Ticket size={20} className='text-blue-500 dark:text-blue-400' />
+                  <Ticket
+                    size={20}
+                    className='text-blue-500 dark:text-blue-400'
+                  />
                 }
                 isExpanded={expandedTabs.inviteCodeManager}
                 onToggle={() => toggleTab('inviteCodeManager')}
@@ -9108,10 +9127,7 @@ function AdminPageClient() {
             <CollapsibleTab
               title='Bilibili配置'
               icon={
-                <Video
-                  size={20}
-                  className='text-pink-600 dark:text-pink-400'
-                />
+                <Video size={20} className='text-pink-600 dark:text-pink-400' />
               }
               isExpanded={expandedTabs.bilibiliConfig}
               onToggle={() => toggleTab('bilibiliConfig')}
@@ -9211,6 +9227,21 @@ function AdminPageClient() {
               onToggle={() => toggleTab('danmuApiConfig')}
             >
               <DanmuApiConfig config={config} refreshConfig={fetchConfig} />
+            </CollapsibleTab>
+
+            {/* 首页模块配置标签 */}
+            <CollapsibleTab
+              title='首页模块配置'
+              icon={
+                <Settings
+                  size={20}
+                  className='text-gray-600 dark:text-gray-400'
+                />
+              }
+              isExpanded={expandedTabs.homePageConfig}
+              onToggle={() => toggleTab('homePageConfig')}
+            >
+              <HomePageConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
             {/* TVBox安全配置标签 */}

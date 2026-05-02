@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-console, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-explicit-any, no-console, unused-imports/no-unused-vars */
 
 import { db } from '@/lib/db';
+import { defaultHomePageConfig } from '@/lib/homepage-config';
 
 import { AdminConfig } from './admin.types';
 import { DEFAULT_USER_AGENT } from './user-agent';
@@ -32,7 +33,7 @@ interface ConfigFileStruct {
   }[];
   lives?: {
     [key: string]: LiveCfg;
-  }
+  };
 }
 
 export const API_CONFIG = {
@@ -71,8 +72,7 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
 
   // 保留所有现有源（包括 custom 和 config），以便保留用户的手动修改
   const currentApiSites = new Map(
-    (adminConfig.SourceConfig || [])
-      .map((s) => [s.key, s])
+    (adminConfig.SourceConfig || []).map((s) => [s.key, s]),
   );
 
   // 获取配置文件中的所有源 key
@@ -115,12 +115,13 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
 
   // 保留所有现有自定义分类（包括 custom 和 config），以便保留用户的手动修改
   const currentCustomCategories = new Map(
-    (adminConfig.CustomCategories || [])
-      .map((c) => [c.query + c.type, c])
+    (adminConfig.CustomCategories || []).map((c) => [c.query + c.type, c]),
   );
 
   // 获取配置文件中的所有分类 key
-  const categoryKeysInFile = new Set(customCategoriesFromFile.map((c) => c.query + c.type));
+  const categoryKeysInFile = new Set(
+    customCategoriesFromFile.map((c) => c.query + c.type),
+  );
 
   // 删除不在配置文件中的 from='config' 的分类
   currentCustomCategories.forEach((category, key) => {
@@ -158,8 +159,7 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
 
   // 保留所有现有直播源（包括 custom 和 config），以便保留用户的手动修改
   const currentLives = new Map(
-    (adminConfig.LiveConfig || [])
-      .map((l) => [l.key, l])
+    (adminConfig.LiveConfig || []).map((l) => [l.key, l]),
   );
 
   // 获取配置文件中的所有直播源 key
@@ -203,15 +203,18 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
   return adminConfig;
 }
 
-async function getInitConfig(configFile: string, subConfig: {
-  URL: string;
-  AutoUpdate: boolean;
-  LastCheck: string;
-} = {
-    URL: "",
+async function getInitConfig(
+  configFile: string,
+  subConfig: {
+    URL: string;
+    AutoUpdate: boolean;
+    LastCheck: string;
+  } = {
+    URL: '',
     AutoUpdate: false,
-    LastCheck: "",
-  }): Promise<AdminConfig> {
+    LastCheck: '',
+  },
+): Promise<AdminConfig> {
   let cfgFile: ConfigFileStruct;
   try {
     cfgFile = JSON.parse(configFile) as ConfigFileStruct;
@@ -229,8 +232,7 @@ async function getInitConfig(configFile: string, subConfig: {
       SearchDownstreamMaxPage:
         Number(process.env.NEXT_PUBLIC_SEARCH_MAX_PAGE) || 5,
       SiteInterfaceCacheTime: cfgFile.cache_time || 7200,
-      DoubanProxyType:
-        process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct',
+      DoubanProxyType: process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct',
       DoubanProxy: process.env.NEXT_PUBLIC_DOUBAN_PROXY || '',
       DoubanImageProxyType:
         process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE || 'direct',
@@ -239,12 +241,11 @@ async function getInitConfig(configFile: string, subConfig: {
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
       ShowAdultContent: false, // 默认不显示成人内容，可在管理面板修改
-      FluidSearch:
-        process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
+      FluidSearch: process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
       EnableWebLive: false,
       // TMDB配置默认值
       TMDBApiKey: process.env.TMDB_API_KEY || '',
-      TMDBApiKeys: [],  // 多个API Key（轮询使用）
+      TMDBApiKeys: [], // 多个API Key（轮询使用）
       TMDBLanguage: 'zh-CN',
       EnableTMDBActorSearch: false, // 默认关闭，需要配置API Key后手动开启
       TMDBWorkerProxy: process.env.TMDB_WORKER_PROXY || '', // Cloudflare Workers 代理地址
@@ -256,6 +257,7 @@ async function getInitConfig(configFile: string, subConfig: {
     SourceConfig: [],
     CustomCategories: [],
     LiveConfig: [],
+    HomePageConfig: defaultHomePageConfig,
   };
 
   // 补充用户信息
@@ -265,11 +267,13 @@ async function getInitConfig(configFile: string, subConfig: {
   } catch (e) {
     console.error('获取用户列表失败:', e);
   }
-  const allUsers = userNames.filter((u) => u !== process.env.USERNAME).map((u) => ({
-    username: u,
-    role: 'user',
-    banned: false,
-  }));
+  const allUsers = userNames
+    .filter((u) => u !== process.env.USERNAME)
+    .map((u) => ({
+      username: u,
+      role: 'user',
+      banned: false,
+    }));
   allUsers.unshift({
     username: process.env.USERNAME!,
     role: 'owner',
@@ -339,7 +343,7 @@ export async function getConfig(): Promise<AdminConfig> {
     }
 
     if (!adminConfig) {
-      adminConfig = await getInitConfig("");
+      adminConfig = await getInitConfig('');
     }
     adminConfig = await configSelfCheck(adminConfig);
 
@@ -358,12 +362,17 @@ export function clearConfigCache(): void {
   configInitPromise = null;
 }
 
-export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminConfig> {
+export async function configSelfCheck(
+  adminConfig: AdminConfig,
+): Promise<AdminConfig> {
   // 确保必要的属性存在和初始化
   if (!adminConfig.UserConfig) {
     adminConfig.UserConfig = { AllowRegister: true, Users: [] };
   }
-  if (!adminConfig.UserConfig.Users || !Array.isArray(adminConfig.UserConfig.Users)) {
+  if (
+    !adminConfig.UserConfig.Users ||
+    !Array.isArray(adminConfig.UserConfig.Users)
+  ) {
     adminConfig.UserConfig.Users = [];
   }
 
@@ -376,86 +385,112 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
   if (!adminConfig.SourceConfig || !Array.isArray(adminConfig.SourceConfig)) {
     adminConfig.SourceConfig = [];
   }
-  if (!adminConfig.CustomCategories || !Array.isArray(adminConfig.CustomCategories)) {
+  if (
+    !adminConfig.CustomCategories ||
+    !Array.isArray(adminConfig.CustomCategories)
+  ) {
     adminConfig.CustomCategories = [];
   }
   if (!adminConfig.LiveConfig || !Array.isArray(adminConfig.LiveConfig)) {
     adminConfig.LiveConfig = [];
   }
+  if (!adminConfig.HomePageConfig) {
+    adminConfig.HomePageConfig = defaultHomePageConfig;
+  } else {
+    adminConfig.HomePageConfig = {
+      ...defaultHomePageConfig,
+      showHeroBanner: adminConfig.HomePageConfig.showHeroBanner ?? true,
+      showContinueWatching:
+        adminConfig.HomePageConfig.showContinueWatching ?? true,
+      showUpcomingReleases:
+        adminConfig.HomePageConfig.showUpcomingReleases ?? true,
+      showHotMovies: adminConfig.HomePageConfig.showHotMovies ?? true,
+      showHotTvShows: adminConfig.HomePageConfig.showHotTvShows ?? true,
+      showNewAnime: adminConfig.HomePageConfig.showNewAnime ?? true,
+      showHotVariety: adminConfig.HomePageConfig.showHotVariety ?? true,
+      showHotShortDramas: adminConfig.HomePageConfig.showHotShortDramas ?? true,
+    };
+  }
 
   // 确保网盘搜索配置有默认值
   if (!adminConfig.NetDiskConfig) {
     adminConfig.NetDiskConfig = {
-      enabled: true,                                    // 默认启用
-      pansouUrl: 'https://so.252035.xyz',               // 默认公益服务
-      timeout: 30,                                      // 默认30秒超时
-      enabledCloudTypes: ['baidu', 'aliyun', 'quark'] // 默认只启用百度、阿里、夸克三大主流网盘
+      enabled: true, // 默认启用
+      pansouUrl: 'https://so.252035.xyz', // 默认公益服务
+      timeout: 30, // 默认30秒超时
+      enabledCloudTypes: ['baidu', 'aliyun', 'quark'], // 默认只启用百度、阿里、夸克三大主流网盘
     };
   }
 
   // 确保AI推荐配置有默认值
   if (!adminConfig.AIRecommendConfig) {
     adminConfig.AIRecommendConfig = {
-      enabled: false,                                   // 默认关闭
-      apiUrl: 'https://api.openai.com/v1',             // 默认OpenAI API
-      apiKey: '',                                       // 默认为空，需要管理员配置
-      model: 'gpt-3.5-turbo',                          // 默认模型
-      temperature: 0.7,                                // 默认温度
-      maxTokens: 3000                                  // 默认最大token数
+      enabled: false, // 默认关闭
+      apiUrl: 'https://api.openai.com/v1', // 默认OpenAI API
+      apiKey: '', // 默认为空，需要管理员配置
+      model: 'gpt-3.5-turbo', // 默认模型
+      temperature: 0.7, // 默认温度
+      maxTokens: 3000, // 默认最大token数
     };
   }
 
   // 确保YouTube配置有默认值
   if (!adminConfig.YouTubeConfig) {
     adminConfig.YouTubeConfig = {
-      enabled: false,                                   // 默认关闭
-      apiKey: '',                                       // 默认为空，需要管理员配置
-      enableDemo: true,                                 // 默认启用演示模式
-      maxResults: 25,                                   // 默认每页25个结果
+      enabled: false, // 默认关闭
+      apiKey: '', // 默认为空，需要管理员配置
+      enableDemo: true, // 默认启用演示模式
+      maxResults: 25, // 默认每页25个结果
       enabledRegions: ['US', 'CN', 'JP', 'KR', 'GB', 'DE', 'FR'], // 默认启用的地区
-      enabledCategories: ['Film & Animation', 'Music', 'Gaming', 'News & Politics', 'Entertainment'] // 默认启用的分类
+      enabledCategories: [
+        'Film & Animation',
+        'Music',
+        'Gaming',
+        'News & Politics',
+        'Entertainment',
+      ], // 默认启用的分类
     };
   }
 
   // 确保短剧配置有默认值
   if (!adminConfig.ShortDramaConfig) {
     adminConfig.ShortDramaConfig = {
-      primaryApiUrl: 'https://wwzy.tv/api.php/provide/vod',  // 默认主API
-      alternativeApiUrl: '',                            // 默认为空，需要管理员配置
-      enableAlternative: false,                         // 默认关闭备用API
+      primaryApiUrl: 'https://wwzy.tv/api.php/provide/vod', // 默认主API
+      alternativeApiUrl: '', // 默认为空，需要管理员配置
+      enableAlternative: false, // 默认关闭备用API
     };
   }
 
   // 确保下载配置有默认值
   if (!adminConfig.DownloadConfig) {
     adminConfig.DownloadConfig = {
-      enabled: true,                                    // 默认启用下载功能
+      enabled: true, // 默认启用下载功能
     };
   }
 
   // 确保豆瓣配置有默认值
   if (!adminConfig.DoubanConfig) {
     adminConfig.DoubanConfig = {
-      enablePuppeteer: false,                           // 默认关闭 Puppeteer（省资源）
+      enablePuppeteer: false, // 默认关闭 Puppeteer（省资源）
     };
   }
 
   // 确保 Cron 配置有默认值
   if (!adminConfig.CronConfig) {
     adminConfig.CronConfig = {
-      enableAutoRefresh: true,                          // 默认启用自动刷新
-      maxRecordsPerRun: 100,                            // 每次最多处理 100 条记录
-      onlyRefreshRecent: true,                          // 仅刷新最近活跃的记录
-      recentDays: 30,                                   // 最近 30 天内活跃
-      onlyRefreshOngoing: true,                         // 仅刷新连载中的剧集
+      enableAutoRefresh: true, // 默认启用自动刷新
+      maxRecordsPerRun: 100, // 每次最多处理 100 条记录
+      onlyRefreshRecent: true, // 仅刷新最近活跃的记录
+      recentDays: 30, // 最近 30 天内活跃
+      onlyRefreshOngoing: true, // 仅刷新连载中的剧集
     };
   }
 
   // 确保 Bilibili 配置有默认值
   if (!adminConfig.BilibiliConfig) {
     adminConfig.BilibiliConfig = {
-      enabled: true,                                    // 默认启用（无需API Key）
-      loginStatus: 'not_logged_in',                     // 默认未登录
+      enabled: true, // 默认启用（无需API Key）
+      loginStatus: 'not_logged_in', // 默认未登录
     };
   }
 
@@ -469,29 +504,39 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
       providerId = 'google';
     } else if (issuer.includes('github')) {
       providerId = 'github';
-    } else if (issuer.includes('microsoft') || issuer.includes('login.microsoftonline.com')) {
+    } else if (
+      issuer.includes('microsoft') ||
+      issuer.includes('login.microsoftonline.com')
+    ) {
       providerId = 'microsoft';
-    } else if (issuer.includes('linux.do') || issuer.includes('connect.linux.do')) {
+    } else if (
+      issuer.includes('linux.do') ||
+      issuer.includes('connect.linux.do')
+    ) {
       providerId = 'linuxdo';
     }
 
     // 迁移到新格式
-    adminConfig.OIDCProviders = [{
-      id: providerId,
-      name: adminConfig.OIDCAuthConfig.buttonText || providerId.toUpperCase(),
-      enabled: adminConfig.OIDCAuthConfig.enabled,
-      enableRegistration: adminConfig.OIDCAuthConfig.enableRegistration,
-      issuer: adminConfig.OIDCAuthConfig.issuer,
-      authorizationEndpoint: adminConfig.OIDCAuthConfig.authorizationEndpoint,
-      tokenEndpoint: adminConfig.OIDCAuthConfig.tokenEndpoint,
-      userInfoEndpoint: adminConfig.OIDCAuthConfig.userInfoEndpoint,
-      clientId: adminConfig.OIDCAuthConfig.clientId,
-      clientSecret: adminConfig.OIDCAuthConfig.clientSecret,
-      buttonText: adminConfig.OIDCAuthConfig.buttonText,
-      minTrustLevel: adminConfig.OIDCAuthConfig.minTrustLevel || 0,
-    }];
+    adminConfig.OIDCProviders = [
+      {
+        id: providerId,
+        name: adminConfig.OIDCAuthConfig.buttonText || providerId.toUpperCase(),
+        enabled: adminConfig.OIDCAuthConfig.enabled,
+        enableRegistration: adminConfig.OIDCAuthConfig.enableRegistration,
+        issuer: adminConfig.OIDCAuthConfig.issuer,
+        authorizationEndpoint: adminConfig.OIDCAuthConfig.authorizationEndpoint,
+        tokenEndpoint: adminConfig.OIDCAuthConfig.tokenEndpoint,
+        userInfoEndpoint: adminConfig.OIDCAuthConfig.userInfoEndpoint,
+        clientId: adminConfig.OIDCAuthConfig.clientId,
+        clientSecret: adminConfig.OIDCAuthConfig.clientSecret,
+        buttonText: adminConfig.OIDCAuthConfig.buttonText,
+        minTrustLevel: adminConfig.OIDCAuthConfig.minTrustLevel || 0,
+      },
+    ];
 
-    console.log(`[Config Migration] Migrated OIDCAuthConfig to OIDCProviders with provider: ${providerId}`);
+    console.log(
+      `[Config Migration] Migrated OIDCAuthConfig to OIDCProviders with provider: ${providerId}`,
+    );
 
     // 保留旧配置一段时间以防回滚需要
     // delete adminConfig.OIDCAuthConfig;
@@ -510,8 +555,12 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
     return true;
   });
   // 过滤站长
-  const originOwnerCfg = adminConfig.UserConfig.Users.find((u) => u.username === ownerUser);
-  adminConfig.UserConfig.Users = adminConfig.UserConfig.Users.filter((user) => user.username !== ownerUser);
+  const originOwnerCfg = adminConfig.UserConfig.Users.find(
+    (u) => u.username === ownerUser,
+  );
+  adminConfig.UserConfig.Users = adminConfig.UserConfig.Users.filter(
+    (user) => user.username !== ownerUser,
+  );
   // 其他用户不得拥有 owner 权限
   adminConfig.UserConfig.Users.forEach((user) => {
     if (user.role === 'owner') {
@@ -539,13 +588,15 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
 
   // 自定义分类去重
   const seenCustomCategoryKeys = new Set<string>();
-  adminConfig.CustomCategories = adminConfig.CustomCategories.filter((category) => {
-    if (seenCustomCategoryKeys.has(category.query + category.type)) {
-      return false;
-    }
-    seenCustomCategoryKeys.add(category.query + category.type);
-    return true;
-  });
+  adminConfig.CustomCategories = adminConfig.CustomCategories.filter(
+    (category) => {
+      if (seenCustomCategoryKeys.has(category.query + category.type)) {
+        return false;
+      }
+      seenCustomCategoryKeys.add(category.query + category.type);
+      return true;
+    },
+  );
 
   // 直播源去重
   const seenLiveKeys = new Set<string>();
@@ -570,7 +621,10 @@ export async function resetConfig() {
   if (!originConfig) {
     originConfig = {} as AdminConfig;
   }
-  const adminConfig = await getInitConfig(originConfig.ConfigFile, originConfig.ConfigSubscribtion);
+  const adminConfig = await getInitConfig(
+    originConfig.ConfigFile,
+    originConfig.ConfigSubscribtion,
+  );
   cachedConfig = adminConfig;
   await db.saveAdminConfig(adminConfig);
 
@@ -593,13 +647,15 @@ function applyVideoProxy(sites: ApiSite[], config: AdminConfig): ApiSite[] {
 
   const proxyBaseUrl = proxyConfig.proxyUrl.replace(/\/$/, ''); // Remove trailing slash
 
-  return sites.map(source => {
+  return sites.map((source) => {
     // Extract real API URL (remove old proxy if exists)
     let realApiUrl = source.api;
     const urlMatch = source.api.match(/[?&]url=([^&]+)/);
     if (urlMatch) {
       realApiUrl = decodeURIComponent(urlMatch[1]);
-      console.log(`[Video Proxy] ${source.name}: Detected old proxy, replacing with new proxy`);
+      console.log(
+        `[Video Proxy] ${source.name}: Detected old proxy, replacing with new proxy`,
+      );
     }
 
     // Extract source ID from real API URL
@@ -610,13 +666,24 @@ function applyVideoProxy(sites: ApiSite[], config: AdminConfig): ApiSite[] {
         const parts = hostname.split('.');
 
         // For caiji.xxx.com or api.xxx.com format, take second-to-last part
-        if (parts.length >= 3 && (parts[0] === 'caiji' || parts[0] === 'api' || parts[0] === 'cj' || parts[0] === 'www')) {
-          return parts[parts.length - 2].toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (
+          parts.length >= 3 &&
+          (parts[0] === 'caiji' ||
+            parts[0] === 'api' ||
+            parts[0] === 'cj' ||
+            parts[0] === 'www')
+        ) {
+          return parts[parts.length - 2]
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
         }
 
         // Otherwise take first part (remove zyapi/zy suffix)
         let name = parts[0].toLowerCase();
-        name = name.replace(/zyapi$/, '').replace(/zy$/, '').replace(/api$/, '');
+        name = name
+          .replace(/zyapi$/, '')
+          .replace(/zy$/, '')
+          .replace(/api$/, '');
         return name.replace(/[^a-z0-9]/g, '') || 'source';
       } catch {
         return source.key || source.name.replace(/[^a-z0-9]/g, '');
@@ -650,18 +717,26 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
         showAdultContent = userConfig.showAdultContent;
       }
       // 如果用户没有设置，检查用户组设置
-      else if (userConfig.tags && userConfig.tags.length > 0 && config.UserConfig.Tags) {
+      else if (
+        userConfig.tags &&
+        userConfig.tags.length > 0 &&
+        config.UserConfig.Tags
+      ) {
         // 如果用户有多个用户组，只要有一个用户组允许就允许（取并集）
-        const hasAnyTagAllowAdult = userConfig.tags.some(tagName => {
-          const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+        const hasAnyTagAllowAdult = userConfig.tags.some((tagName) => {
+          const tagConfig = config.UserConfig.Tags?.find(
+            (t) => t.name === tagName,
+          );
           return tagConfig?.showAdultContent === true;
         });
         if (hasAnyTagAllowAdult) {
           showAdultContent = true;
         } else {
           // 检查是否有任何用户组明确禁止
-          const hasAnyTagDenyAdult = userConfig.tags.some(tagName => {
-            const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+          const hasAnyTagDenyAdult = userConfig.tags.some((tagName) => {
+            const tagConfig = config.UserConfig.Tags?.find(
+              (t) => t.name === tagName,
+            );
             return tagConfig?.showAdultContent === false;
           });
           if (hasAnyTagDenyAdult) {
@@ -691,12 +766,14 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
   // 优先根据用户自己的 enabledApis 配置查找
   if (userConfig.enabledApis && userConfig.enabledApis.length > 0) {
     const userApiSitesSet = new Set(userConfig.enabledApis);
-    const userSites = allApiSites.filter((s) => userApiSitesSet.has(s.key)).map((s) => ({
-      key: s.key,
-      name: s.name,
-      api: s.api,
-      detail: s.detail,
-    }));
+    const userSites = allApiSites
+      .filter((s) => userApiSitesSet.has(s.key))
+      .map((s) => ({
+        key: s.key,
+        name: s.name,
+        api: s.api,
+        detail: s.detail,
+      }));
     return applyVideoProxy(userSites, config);
   }
 
@@ -705,20 +782,24 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
     const enabledApisFromTags = new Set<string>();
 
     // 遍历用户的所有 tags，收集对应的 enabledApis
-    userConfig.tags.forEach(tagName => {
-      const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+    userConfig.tags.forEach((tagName) => {
+      const tagConfig = config.UserConfig.Tags?.find((t) => t.name === tagName);
       if (tagConfig && tagConfig.enabledApis) {
-        tagConfig.enabledApis.forEach(apiKey => enabledApisFromTags.add(apiKey));
+        tagConfig.enabledApis.forEach((apiKey) =>
+          enabledApisFromTags.add(apiKey),
+        );
       }
     });
 
     if (enabledApisFromTags.size > 0) {
-      const tagSites = allApiSites.filter((s) => enabledApisFromTags.has(s.key)).map((s) => ({
-        key: s.key,
-        name: s.name,
-        api: s.api,
-        detail: s.detail,
-      }));
+      const tagSites = allApiSites
+        .filter((s) => enabledApisFromTags.has(s.key))
+        .map((s) => ({
+          key: s.key,
+          name: s.name,
+          api: s.api,
+          detail: s.detail,
+        }));
       return applyVideoProxy(tagSites, config);
     }
   }
@@ -735,7 +816,7 @@ export async function setCachedConfig(config: AdminConfig) {
 export async function hasSpecialFeaturePermission(
   username: string,
   feature: 'ai-recommend' | 'youtube-search',
-  providedConfig?: AdminConfig
+  providedConfig?: AdminConfig,
 ): Promise<boolean> {
   try {
     // 站长默认拥有所有权限
@@ -744,8 +825,10 @@ export async function hasSpecialFeaturePermission(
     }
 
     // 使用提供的配置或获取新配置
-    const config = providedConfig || await getConfig();
-    const userConfig = config.UserConfig.Users.find((u) => u.username === username);
+    const config = providedConfig || (await getConfig());
+    const userConfig = config.UserConfig.Users.find(
+      (u) => u.username === username,
+    );
 
     // 如果用户不在配置中，检查是否是新注册用户
     if (!userConfig) {
@@ -766,10 +849,20 @@ export async function hasSpecialFeaturePermission(
     }
 
     // 如果没有直接配置，检查用户组 tags 的权限
-    if (userConfig.tags && userConfig.tags.length > 0 && config.UserConfig.Tags) {
+    if (
+      userConfig.tags &&
+      userConfig.tags.length > 0 &&
+      config.UserConfig.Tags
+    ) {
       for (const tagName of userConfig.tags) {
-        const tagConfig = config.UserConfig.Tags.find(t => t.name === tagName);
-        if (tagConfig && tagConfig.enabledApis && tagConfig.enabledApis.includes(feature)) {
+        const tagConfig = config.UserConfig.Tags.find(
+          (t) => t.name === tagName,
+        );
+        if (
+          tagConfig &&
+          tagConfig.enabledApis &&
+          tagConfig.enabledApis.includes(feature)
+        ) {
           return true;
         }
       }

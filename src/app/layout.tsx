@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Suspense } from 'react';
@@ -9,22 +7,23 @@ import './globals.css';
 
 import { getConfig } from '@/lib/config';
 
+import { CinematicLoadingFallback } from '../components/CinematicLoadingFallback';
+import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
+import QueryProvider from '../components/QueryProvider';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import TopProgressBar from '../components/TopProgressBar';
+import ChatFloatingWindow from '../components/watch-room/ChatFloatingWindow';
 import { WatchRoomProvider } from '../components/WatchRoomProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
 import { GlobalCacheProvider } from '../contexts/GlobalCacheContext';
-import { DownloadPanel } from '../components/download/DownloadPanel';
-import ChatFloatingWindow from '../components/watch-room/ChatFloatingWindow';
-import QueryProvider from '../components/QueryProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 export const dynamic = 'force-dynamic';
 
-// 动态生成 metadata，支持配置更新后的标题变化
+// Generate dynamic metadata from runtime config.
 export async function generateMetadata(): Promise<Metadata> {
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
   let siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'MoonTV';
@@ -54,7 +53,7 @@ export default async function RootLayout({
   let siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'MoonTV';
   let announcement =
     process.env.ANNOUNCEMENT ||
-    '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。';
+    'This site only provides media search metadata from third-party sources.';
 
   let doubanProxyType = process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct';
   let doubanProxy = process.env.NEXT_PUBLIC_DOUBAN_PROXY || '';
@@ -84,7 +83,7 @@ export default async function RootLayout({
     doubanImageProxy = config.SiteConfig.DoubanImageProxy;
     disableYellowFilter = config.SiteConfig.DisableYellowFilter;
     customCategories = config.CustomCategories.filter(
-      (category) => !category.disabled
+      (category) => !category.disabled,
     ).map((category) => ({
       name: category.name || '',
       type: category.type,
@@ -98,11 +97,11 @@ export default async function RootLayout({
     embyEnabled = !!(
       config.EmbyConfig?.Sources &&
       config.EmbyConfig.Sources.length > 0 &&
-      config.EmbyConfig.Sources.some(s => s.enabled && s.ServerURL)
+      config.EmbyConfig.Sources.some((s) => s.enabled && s.ServerURL)
     );
   }
 
-  // 将运行时配置注入到全局 window 对象，供客户端在运行时读取
+  // Inject runtime config for client-side code.
   const runtimeConfig = {
     STORAGE_TYPE: process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
     DOUBAN_PROXY_TYPE: doubanProxyType,
@@ -117,8 +116,9 @@ export default async function RootLayout({
     AI_RECOMMEND_ENABLED: aiRecommendEnabled,
     EMBY_ENABLED: embyEnabled,
     PRIVATE_LIBRARY_ENABLED: embyEnabled,
-    // 禁用预告片：Vercel 自动检测，或用户手动设置 DISABLE_HERO_TRAILER=true
-    DISABLE_HERO_TRAILER: process.env.VERCEL === '1' || process.env.DISABLE_HERO_TRAILER === 'true',
+    // 禁用预告片：Vercel 自动检测，或用户手动设�?DISABLE_HERO_TRAILER=true
+    DISABLE_HERO_TRAILER:
+      process.env.VERCEL === '1' || process.env.DISABLE_HERO_TRAILER === 'true',
   };
 
   return (
@@ -131,7 +131,7 @@ export default async function RootLayout({
         <meta name='color-scheme' content='light dark' />
         <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        {}
         <script
           dangerouslySetInnerHTML={{
             __html: `window.RUNTIME_CONFIG = ${JSON.stringify(runtimeConfig)};`,
@@ -154,9 +154,11 @@ export default async function RootLayout({
               <DownloadProvider>
                 <WatchRoomProvider>
                   <SiteProvider siteName={siteName} announcement={announcement}>
-                    <SessionTracker />
-                    {children}
-                    <GlobalErrorIndicator />
+                    <Suspense fallback={<CinematicLoadingFallback />}>
+                      <SessionTracker />
+                      {children}
+                      <GlobalErrorIndicator />
+                    </Suspense>
                   </SiteProvider>
                   <Suspense fallback={null}>
                     <DownloadPanel />
@@ -166,7 +168,7 @@ export default async function RootLayout({
               </DownloadProvider>
             </GlobalCacheProvider>
           </QueryProvider>
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster position='top-center' richColors closeButton />
         </ThemeProvider>
       </body>
     </html>
