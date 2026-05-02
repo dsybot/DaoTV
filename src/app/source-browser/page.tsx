@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element, unused-imports/no-unused-vars */
 
 'use client';
 
@@ -8,8 +8,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { ClientCache } from '@/lib/client-cache';
+import type {
+  DoubanItem,
+  SearchResult as GlobalSearchResult,
+} from '@/lib/types';
+
 import PageLayout from '@/components/PageLayout';
-import type { DoubanItem, SearchResult as GlobalSearchResult } from '@/lib/types';
 
 // 自定义优雅的 Select 组件
 function CustomSelect<T extends string>({
@@ -30,7 +34,10 @@ function CustomSelect<T extends string>({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+      if (
+        selectRef.current &&
+        !selectRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -48,15 +55,23 @@ function CustomSelect<T extends string>({
         className='group relative inline-flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap'
         title={title}
       >
-        <span className='truncate'>{selectedOption?.label || placeholder || '请选择'}</span>
+        <span className='truncate'>
+          {selectedOption?.label || placeholder || '请选择'}
+        </span>
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''
-            }`}
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 shrink-0 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
           fill='none'
           stroke='currentColor'
           viewBox='0 0 24 24'
         >
-          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+          <path
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            strokeWidth={2}
+            d='M19 9l-7 7-7-7'
+          />
         </svg>
       </button>
 
@@ -71,14 +86,19 @@ function CustomSelect<T extends string>({
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${option.value === value
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  option.value === value
                     ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
                     : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
-                  }`}
+                }`}
               >
                 <div className='flex items-center gap-2 min-w-0'>
                   {option.value === value && (
-                    <svg className='w-4 h-4 shrink-0' fill='currentColor' viewBox='0 0 20 20'>
+                    <svg
+                      className='w-4 h-4 shrink-0'
+                      fill='currentColor'
+                      viewBox='0 0 20 20'
+                    >
                       <path
                         fillRule='evenodd'
                         d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
@@ -86,7 +106,11 @@ function CustomSelect<T extends string>({
                       />
                     </svg>
                   )}
-                  <span className={`truncate ${option.value === value ? '' : 'ml-6'}`}>{option.label}</span>
+                  <span
+                    className={`truncate ${option.value === value ? '' : 'ml-6'}`}
+                  >
+                    {option.label}
+                  </span>
                 </div>
               </button>
             ))}
@@ -117,7 +141,7 @@ export default function SourceBrowserPage() {
   const [activeSourceKey, setActiveSourceKey] = useState('');
   const activeSource = useMemo(
     () => sources.find((s) => s.key === activeSourceKey),
-    [sources, activeSourceKey]
+    [sources, activeSourceKey],
   );
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -153,13 +177,18 @@ export default function SourceBrowserPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewData, setPreviewData] = useState<GlobalSearchResult | null>(null);
+  const [previewData, setPreviewData] = useState<GlobalSearchResult | null>(
+    null,
+  );
   const [previewItem, setPreviewItem] = useState<Item | null>(null);
   const [previewDouban, setPreviewDouban] = useState<DoubanItem | null>(null);
   const [previewDoubanLoading, setPreviewDoubanLoading] = useState(false);
   const [previewDoubanId, setPreviewDoubanId] = useState<number | null>(null);
   type BangumiTag = { name: string };
-  type BangumiInfoboxValue = string | { v: string } | Array<string | { v: string }>;
+  type BangumiInfoboxValue =
+    | string
+    | { v: string }
+    | Array<string | { v: string }>;
   type BangumiInfoboxEntry = { key: string; value: BangumiInfoboxValue };
   type BangumiSubject = {
     name?: string;
@@ -170,9 +199,12 @@ export default function SourceBrowserPage() {
     infobox?: BangumiInfoboxEntry[];
     summary?: string;
   };
-  const [previewBangumi, setPreviewBangumi] = useState<BangumiSubject | null>(null);
+  const [previewBangumi, setPreviewBangumi] = useState<BangumiSubject | null>(
+    null,
+  );
   const [previewBangumiLoading, setPreviewBangumiLoading] = useState(false);
-  const [previewSearchPick, setPreviewSearchPick] = useState<GlobalSearchResult | null>(null);
+  const [previewSearchPick, setPreviewSearchPick] =
+    useState<GlobalSearchResult | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
   // 检测客户端渲染
@@ -226,7 +258,7 @@ export default function SourceBrowserPage() {
     setCategoryError(null);
     try {
       const res = await fetch(
-        `/api/source-browser/categories?source=${encodeURIComponent(sourceKey)}`
+        `/api/source-browser/categories?source=${encodeURIComponent(sourceKey)}`,
       );
       if (!res.ok) throw new Error('获取分类失败');
       const data = await res.json();
@@ -251,7 +283,7 @@ export default function SourceBrowserPage() {
       sourceKey: string,
       typeId: string | number,
       p = 1,
-      append = false
+      append = false,
     ) => {
       if (!sourceKey || !typeId) return;
       if (append) setLoadingMore(true);
@@ -260,8 +292,8 @@ export default function SourceBrowserPage() {
       try {
         const res = await fetch(
           `/api/source-browser/list?source=${encodeURIComponent(
-            sourceKey
-          )}&type_id=${encodeURIComponent(String(typeId))}&page=${p}`
+            sourceKey,
+          )}&type_id=${encodeURIComponent(String(typeId))}&page=${p}`,
         );
         if (!res.ok) throw new Error('获取列表失败');
         const data = (await res.json()) as {
@@ -274,7 +306,7 @@ export default function SourceBrowserPage() {
         setPageCount(Number(data.meta?.pagecount || 1));
         // 更新可选年份
         const years = Array.from(
-          new Set(list.map((i) => (i.year || '').trim()).filter(Boolean))
+          new Set(list.map((i) => (i.year || '').trim()).filter(Boolean)),
         );
         years.sort((a, b) => (parseInt(b) || 0) - (parseInt(a) || 0));
         setAvailableYears(years);
@@ -289,7 +321,7 @@ export default function SourceBrowserPage() {
         else setLoadingItems(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -317,8 +349,8 @@ export default function SourceBrowserPage() {
       try {
         const res = await fetch(
           `/api/source-browser/search?source=${encodeURIComponent(
-            sourceKey
-          )}&q=${encodeURIComponent(q)}&page=${p}`
+            sourceKey,
+          )}&q=${encodeURIComponent(q)}&page=${p}`,
         );
         if (!res.ok) throw new Error('搜索失败');
         const data = (await res.json()) as {
@@ -330,7 +362,7 @@ export default function SourceBrowserPage() {
         setPage(Number(data.meta?.page || p));
         setPageCount(Number(data.meta?.pagecount || 1));
         const years = Array.from(
-          new Set(list.map((i) => (i.year || '').trim()).filter(Boolean))
+          new Set(list.map((i) => (i.year || '').trim()).filter(Boolean)),
         );
         years.sort((a, b) => (parseInt(b) || 0) - (parseInt(a) || 0));
         setAvailableYears(years);
@@ -345,7 +377,7 @@ export default function SourceBrowserPage() {
         else setLoadingItems(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -385,7 +417,7 @@ export default function SourceBrowserPage() {
           }
         }
       },
-      { root: null, rootMargin: '200px', threshold: 0 }
+      { root: null, rootMargin: '200px', threshold: 0 },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -467,7 +499,7 @@ export default function SourceBrowserPage() {
       arr = arr.filter(
         (i) =>
           (i.title || '').toLowerCase().includes(kw) ||
-          (i.remarks || '').toLowerCase().includes(kw)
+          (i.remarks || '').toLowerCase().includes(kw),
       );
     }
     // 年份筛选（精确匹配）
@@ -481,11 +513,11 @@ export default function SourceBrowserPage() {
         return arr.sort((a, b) => b.title.localeCompare(a.title));
       case 'year-asc':
         return arr.sort(
-          (a, b) => (parseInt(a.year) || 0) - (parseInt(b.year) || 0)
+          (a, b) => (parseInt(a.year) || 0) - (parseInt(b.year) || 0),
         );
       case 'year-desc':
         return arr.sort(
-          (a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0)
+          (a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0),
         );
       default:
         return arr; // 保持上游顺序
@@ -506,13 +538,14 @@ export default function SourceBrowserPage() {
 
       // 2) 缓存未命中，回源请求 /api/douban/details
       const fallback = await fetch(
-        `/api/douban/details?id=${encodeURIComponent(String(doubanId))}`
+        `/api/douban/details?id=${encodeURIComponent(String(doubanId))}`,
       );
       if (fallback.ok) {
         const dbData = (await fallback.json()) as
           | { code: number; message: string; data?: DoubanItem }
           | DoubanItem;
-        const normalized = (dbData as { data?: DoubanItem }).data || (dbData as DoubanItem);
+        const normalized =
+          (dbData as { data?: DoubanItem }).data || (dbData as DoubanItem);
         setPreviewDouban(normalized);
         // 3) 回写缓存（4小时）
         try {
@@ -537,7 +570,9 @@ export default function SourceBrowserPage() {
     try {
       setPreviewBangumiLoading(true);
       setPreviewBangumi(null);
-      const res = await fetch(`/api/proxy/bangumi?path=v0/subjects/${bangumiId}`);
+      const res = await fetch(
+        `/api/proxy/bangumi?path=v0/subjects/${bangumiId}`,
+      );
       if (res.ok) {
         const data = (await res.json()) as {
           name?: string;
@@ -570,8 +605,8 @@ export default function SourceBrowserPage() {
     try {
       const res = await fetch(
         `/api/detail?source=${encodeURIComponent(
-          activeSourceKey
-        )}&id=${encodeURIComponent(item.id)}`
+          activeSourceKey,
+        )}&id=${encodeURIComponent(item.id)}`,
       );
       if (!res.ok) throw new Error('获取详情失败');
       const data = (await res.json()) as GlobalSearchResult;
@@ -583,15 +618,15 @@ export default function SourceBrowserPage() {
         const normalize = (s: string) =>
           (s || '').replace(/\s+/g, '').toLowerCase();
         const variants = Array.from(
-          new Set([item.title, (item.title || '').replace(/\s+/g, '')])
+          new Set([item.title, (item.title || '').replace(/\s+/g, '')]),
         ).filter(Boolean) as string[];
 
         for (const v of variants) {
           try {
             const res = await fetch(
               `/api/search/one?resourceId=${encodeURIComponent(
-                activeSourceKey
-              )}&q=${encodeURIComponent(v)}`
+                activeSourceKey,
+              )}&q=${encodeURIComponent(v)}`,
             );
             if (!res.ok) continue;
             const payload = (await res.json()) as {
@@ -606,11 +641,11 @@ export default function SourceBrowserPage() {
                 (!item.year ||
                   (r.year &&
                     String(r.year).toLowerCase() ===
-                    String(item.year).toLowerCase())) &&
-                r.douban_id
+                      String(item.year).toLowerCase())) &&
+                r.douban_id,
             );
             const matchTitleOnly = list.find(
-              (r) => normalize(r.title) === tNorm && r.douban_id
+              (r) => normalize(r.title) === tNorm && r.douban_id,
             );
             const pick = matchStrict || matchTitleOnly || null;
             if (pick && pick.douban_id) {
@@ -653,7 +688,7 @@ export default function SourceBrowserPage() {
 
   return (
     <PageLayout activePath='/source-browser'>
-      <div className='max-w-7xl mx-auto px-4 pb-4 pt-12 md:pt-20 md:px-6 md:pb-6 space-y-6'>
+      <div className='max-w-7xl mx-auto px-4 pb-40 pt-12 md:pt-20 md:px-6 md:pb-safe-bottom space-y-6'>
         {/* Header - 美化版 */}
         <div className='relative'>
           <div className='absolute inset-0 bg-linear-to-r from-emerald-400/10 via-green-400/10 to-teal-400/10 rounded-2xl blur-3xl'></div>
@@ -704,7 +739,9 @@ export default function SourceBrowserPage() {
               </div>
             ) : sourceError ? (
               <div className='flex items-center gap-2 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'>
-                <span className='text-sm text-red-600 dark:text-red-400'>{sourceError}</span>
+                <span className='text-sm text-red-600 dark:text-red-400'>
+                  {sourceError}
+                </span>
               </div>
             ) : sources.length === 0 ? (
               <div className='text-center py-8'>
@@ -719,10 +756,11 @@ export default function SourceBrowserPage() {
                   <button
                     key={s.key}
                     onClick={() => setActiveSourceKey(s.key)}
-                    className={`group relative px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${activeSourceKey === s.key
+                    className={`group relative px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
+                      activeSourceKey === s.key
                         ? 'bg-linear-to-r from-emerald-500 to-green-500 text-white border-transparent shadow-lg shadow-emerald-500/30'
                         : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-emerald-50 hover:to-green-50 dark:hover:from-emerald-900/20 dark:hover:to-green-900/20 hover:border-emerald-300 dark:hover:border-emerald-700'
-                      }`}
+                    }`}
                     style={{
                       animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`,
                     }}
@@ -860,10 +898,11 @@ export default function SourceBrowserPage() {
                       <button
                         key={String(c.type_id)}
                         onClick={() => setActiveCategory(c.type_id)}
-                        className={`group relative px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${activeCategory === c.type_id
+                        className={`group relative px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
+                          activeCategory === c.type_id
                             ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-lg shadow-blue-500/30'
                             : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-300 dark:hover:border-blue-700'
-                          }`}
+                        }`}
                         style={{
                           animation: `fadeInUp 0.3s ease-out ${index * 0.03}s both`,
                         }}
@@ -917,9 +956,11 @@ export default function SourceBrowserPage() {
                           <div
                             className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-20'
                             style={{
-                              background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+                              background:
+                                'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
                               backgroundSize: '200% 100%',
-                              animation: 'cover-shimmer 2.5s ease-in-out infinite',
+                              animation:
+                                'cover-shimmer 2.5s ease-in-out infinite',
                             }}
                           />
                           <div className='absolute inset-0 bg-linear-to-t from-blue-500/0 via-blue-500/0 to-blue-500/0 group-hover:from-blue-500/10 group-hover:via-blue-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none z-10'></div>
@@ -936,7 +977,9 @@ export default function SourceBrowserPage() {
                               <div className='w-full h-full flex items-center justify-center text-gray-400 text-xs sm:text-sm'>
                                 <div className='text-center'>
                                   <Tv className='w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-1 sm:mb-2 opacity-50' />
-                                  <div className='text-[10px] sm:text-sm'>无封面</div>
+                                  <div className='text-[10px] sm:text-sm'>
+                                    无封面
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -994,241 +1037,265 @@ export default function SourceBrowserPage() {
         )}
 
         {/* 预览弹层 - 使用 Portal 渲染到 body */}
-        {isMounted && previewOpen && createPortal(
-          <div
-            className='fixed inset-0 z-1000 flex items-center justify-center bg-black/60 backdrop-blur-sm px-3 py-6 sm:p-4 pb-20 md:pb-4 animate-fadeIn'
-            role='dialog'
-            aria-modal='true'
-            onClick={() => setPreviewOpen(false)}
-          >
+        {isMounted &&
+          previewOpen &&
+          createPortal(
             <div
-              className='w-full max-w-5xl bg-linear-to-br from-white via-blue-50/20 to-white dark:from-gray-800 dark:via-blue-900/10 dark:to-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] md:max-h-[90vh] border-2 border-gray-200/50 dark:border-gray-700/50 animate-scaleIn'
-              onClick={(e) => e.stopPropagation()}
+              className='fixed inset-0 z-1000 flex items-center justify-center bg-black/60 backdrop-blur-sm px-3 py-6 sm:p-4 pb-20 md:pb-4 animate-fadeIn'
+              role='dialog'
+              aria-modal='true'
+              onClick={() => setPreviewOpen(false)}
             >
-              {/* 头部 */}
-              <div className='relative flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm'>
-                <div className='flex items-center gap-3 flex-1 min-w-0'>
-                  <div className='w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg'>
-                    <Tv className='w-5 h-5 text-white' />
+              <div
+                className='w-full max-w-5xl bg-linear-to-br from-white via-blue-50/20 to-white dark:from-gray-800 dark:via-blue-900/10 dark:to-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] md:max-h-[90vh] border-2 border-gray-200/50 dark:border-gray-700/50 animate-scaleIn'
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* 头部 */}
+                <div className='relative flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm'>
+                  <div className='flex items-center gap-3 flex-1 min-w-0'>
+                    <div className='w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg'>
+                      <Tv className='w-5 h-5 text-white' />
+                    </div>
+                    <div className='font-bold text-lg sm:text-xl text-gray-900 dark:text-white truncate'>
+                      {previewItem?.title || '详情预览'}
+                    </div>
                   </div>
-                  <div className='font-bold text-lg sm:text-xl text-gray-900 dark:text-white truncate'>
-                    {previewItem?.title || '详情预览'}
-                  </div>
-                </div>
-                <button
-                  className='ml-3 shrink-0 w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
-                  onClick={() => setPreviewOpen(false)}
-                  title='关闭'
-                >
-                  <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-                  </svg>
-                </button>
-              </div>
-              {/* 内容区 */}
-              <div className='p-5 sm:p-6 overflow-auto flex-1'>
-                {previewLoading ? (
-                  <div className='flex flex-col items-center justify-center py-12'>
-                    <div className='w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4'></div>
-                    <div className='text-sm text-gray-500'>加载详情...</div>
-                  </div>
-                ) : previewError ? (
-                  <div className='flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400'>
-                    <svg className='w-5 h-5 shrink-0' fill='currentColor' viewBox='0 0 20 20'>
-                      <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clipRule='evenodd' />
+                  <button
+                    className='ml-3 shrink-0 w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
+                    onClick={() => setPreviewOpen(false)}
+                    title='关闭'
+                  >
+                    <svg
+                      className='w-5 h-5'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M6 18L18 6M6 6l12 12'
+                      />
                     </svg>
-                    {previewError}
-                  </div>
-                ) : !previewData ? (
-                  <div className='text-center py-12'>
-                    <div className='w-20 h-20 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center'>
-                      <Tv className='w-10 h-10 text-gray-400' />
+                  </button>
+                </div>
+                {/* 内容区 */}
+                <div className='p-5 sm:p-6 overflow-auto flex-1'>
+                  {previewLoading ? (
+                    <div className='flex flex-col items-center justify-center py-12'>
+                      <div className='w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4'></div>
+                      <div className='text-sm text-gray-500'>加载详情...</div>
                     </div>
-                    <div className='text-sm text-gray-500'>暂无详情</div>
-                  </div>
-                ) : (
-                  <div className='grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6'>
-                    {/* 左侧封面 - 移动端紧凑显示 */}
-                    <div className='md:col-span-1'>
-                      <div className='md:sticky md:top-0'>
-                        {previewItem?.poster ? (
-                          <div className='relative rounded-xl md:rounded-2xl overflow-hidden shadow-lg md:shadow-2xl border border-gray-200 dark:border-gray-700 md:border-2 group max-w-[200px] mx-auto md:max-w-none'>
-                            <img
-                              src={previewItem.poster}
-                              alt={previewItem.title}
-                              className='w-full group-hover:scale-105 transition-transform duration-300'
-                            />
-                            <div className='absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity'></div>
-                          </div>
-                        ) : (
-                          <div className='w-full max-w-[200px] mx-auto md:max-w-none aspect-[2/3] bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl md:rounded-2xl flex items-center justify-center border border-gray-200 dark:border-gray-700 md:border-2'>
-                            <div className='text-center text-gray-400'>
-                              <Tv className='w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-50' />
-                              <div className='text-xs md:text-sm'>暂无封面</div>
+                  ) : previewError ? (
+                    <div className='flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400'>
+                      <svg
+                        className='w-5 h-5 shrink-0'
+                        fill='currentColor'
+                        viewBox='0 0 20 20'
+                      >
+                        <path
+                          fillRule='evenodd'
+                          d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                          clipRule='evenodd'
+                        />
+                      </svg>
+                      {previewError}
+                    </div>
+                  ) : !previewData ? (
+                    <div className='text-center py-12'>
+                      <div className='w-20 h-20 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center'>
+                        <Tv className='w-10 h-10 text-gray-400' />
+                      </div>
+                      <div className='text-sm text-gray-500'>暂无详情</div>
+                    </div>
+                  ) : (
+                    <div className='grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6'>
+                      {/* 左侧封面 - 移动端紧凑显示 */}
+                      <div className='md:col-span-1'>
+                        <div className='md:sticky md:top-0'>
+                          {previewItem?.poster ? (
+                            <div className='relative rounded-xl md:rounded-2xl overflow-hidden shadow-lg md:shadow-2xl border border-gray-200 dark:border-gray-700 md:border-2 group max-w-[200px] mx-auto md:max-w-none'>
+                              <img
+                                src={previewItem.poster}
+                                alt={previewItem.title}
+                                className='w-full group-hover:scale-105 transition-transform duration-300'
+                              />
+                              <div className='absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity'></div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className='md:col-span-2 space-y-2'>
-                      <div className='flex items-center gap-2 sm:gap-3 flex-wrap'>
-                        <div className='text-base sm:text-lg font-semibold text-gray-900 dark:text-white'>
-                          {previewData.title || previewItem?.title}
+                          ) : (
+                            <div className='w-full max-w-[200px] mx-auto md:max-w-none aspect-[2/3] bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl md:rounded-2xl flex items-center justify-center border border-gray-200 dark:border-gray-700 md:border-2'>
+                              <div className='text-center text-gray-400'>
+                                <Tv className='w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-50' />
+                                <div className='text-xs md:text-sm'>
+                                  暂无封面
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        {/* 评分徽章 */}
-                        {(() => {
-                          const d = previewDouban;
-                          if (d?.rate) {
-                            return (
-                              <span className='px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'>
-                                豆瓣 {d.rate}
-                              </span>
-                            );
-                          }
-                          if (previewBangumi?.rating?.score) {
-                            return (
-                              <span className='px-2 py-0.5 rounded-md text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'>
-                                Bangumi {previewBangumi.rating.score}
-                              </span>
-                            );
-                          }
-                          return null;
-                        })()}
-                        {/* 外链按钮 */}
-                        {(() => {
-                          const d = previewDouban;
-                          if (d?.id) {
-                            return (
-                              <a
-                                href={`https://movie.douban.com/subject/${d.id}/`}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                className='inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline'
-                                title='打开豆瓣页面'
-                              >
-                                <ExternalLink className='w-3.5 h-3.5' /> 豆瓣
-                              </a>
-                            );
-                          }
-                          if (previewBangumi && previewDoubanId) {
-                            return (
-                              <a
-                                href={`https://bgm.tv/subject/${previewDoubanId}`}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                className='inline-flex items-center gap-1 text-xs text-purple-600 dark:text-purple-300 hover:underline'
-                                title='打开 Bangumi 页面'
-                              >
-                                <ExternalLink className='w-3.5 h-3.5' /> Bangumi
-                              </a>
-                            );
-                          }
-                          return null;
-                        })()}
                       </div>
-                      <div className='text-xs sm:text-sm text-gray-900 dark:text-gray-300'>
-                        年份：{previewData.year || previewItem?.year || '—'}
-                      </div>
-                      <div className='text-xs sm:text-sm text-gray-900 dark:text-gray-300'>
-                        来源：{activeSource?.name}
-                      </div>
-                      <div className='flex flex-wrap gap-2 text-xs'>
-                        {previewItem?.type_name && (
-                          <span className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'>
-                            {previewItem.type_name}
-                          </span>
-                        )}
-                        {previewData?.class && (
-                          <span className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'>
-                            {previewData.class}
-                          </span>
-                        )}
-                      </div>
-                      {(() => {
-                        const desc =
-                          (previewData?.desc && previewData.desc.trim()) ||
-                          (previewSearchPick?.desc &&
-                            String(previewSearchPick.desc).trim()) ||
-                          (previewItem?.remarks && previewItem.remarks.trim());
-                        return desc ? (
-                          <div className='mt-1 border rounded-md p-2 sm:p-3 bg-gray-50 dark:bg-gray-900 text-xs sm:text-sm text-gray-900 dark:text-gray-300 max-h-32 sm:max-h-40 overflow-auto whitespace-pre-line'>
-                            {desc}
+                      <div className='md:col-span-2 space-y-2'>
+                        <div className='flex items-center gap-2 sm:gap-3 flex-wrap'>
+                          <div className='text-base sm:text-lg font-semibold text-gray-900 dark:text-white'>
+                            {previewData.title || previewItem?.title}
                           </div>
-                        ) : null;
-                      })()}
-                      {/* 按需：应你的要求，预览不再展示集数选择列表，保持布局紧凑 */}
-                      {/* Douban/Bangumi 扩展信息 */}
-                      <div className='pt-2 space-y-2'>
-                        {/* Douban */}
-                        {previewDoubanLoading && !previewBangumiLoading && (
-                          <div className='text-sm text-gray-500'>
-                            加载豆瓣信息...
-                          </div>
-                        )}
-                        {previewDouban &&
-                          (() => {
+                          {/* 评分徽章 */}
+                          {(() => {
                             const d = previewDouban;
-                            return (
-                              <div className='text-sm text-gray-900 dark:text-gray-300 space-y-1'>
-                                <div className='font-semibold'>豆瓣信息</div>
-                                {d.title && (
-                                  <div>
-                                    标题：{d.title}
-                                    {d.rate ? (
-                                      <span>（评分 {d.rate}）</span>
-                                    ) : null}
-                                  </div>
-                                )}
-                                {d.directors && d.directors.length > 0 && (
-                                  <div>导演：{d.directors.join('、')}</div>
-                                )}
-                                {d.screenwriters &&
-                                  d.screenwriters.length > 0 && (
+                            if (d?.rate) {
+                              return (
+                                <span className='px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'>
+                                  豆瓣 {d.rate}
+                                </span>
+                              );
+                            }
+                            if (previewBangumi?.rating?.score) {
+                              return (
+                                <span className='px-2 py-0.5 rounded-md text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'>
+                                  Bangumi {previewBangumi.rating.score}
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {/* 外链按钮 */}
+                          {(() => {
+                            const d = previewDouban;
+                            if (d?.id) {
+                              return (
+                                <a
+                                  href={`https://movie.douban.com/subject/${d.id}/`}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  className='inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline'
+                                  title='打开豆瓣页面'
+                                >
+                                  <ExternalLink className='w-3.5 h-3.5' /> 豆瓣
+                                </a>
+                              );
+                            }
+                            if (previewBangumi && previewDoubanId) {
+                              return (
+                                <a
+                                  href={`https://bgm.tv/subject/${previewDoubanId}`}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  className='inline-flex items-center gap-1 text-xs text-purple-600 dark:text-purple-300 hover:underline'
+                                  title='打开 Bangumi 页面'
+                                >
+                                  <ExternalLink className='w-3.5 h-3.5' />{' '}
+                                  Bangumi
+                                </a>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                        <div className='text-xs sm:text-sm text-gray-900 dark:text-gray-300'>
+                          年份：{previewData.year || previewItem?.year || '—'}
+                        </div>
+                        <div className='text-xs sm:text-sm text-gray-900 dark:text-gray-300'>
+                          来源：{activeSource?.name}
+                        </div>
+                        <div className='flex flex-wrap gap-2 text-xs'>
+                          {previewItem?.type_name && (
+                            <span className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'>
+                              {previewItem.type_name}
+                            </span>
+                          )}
+                          {previewData?.class && (
+                            <span className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'>
+                              {previewData.class}
+                            </span>
+                          )}
+                        </div>
+                        {(() => {
+                          const desc =
+                            (previewData?.desc && previewData.desc.trim()) ||
+                            (previewSearchPick?.desc &&
+                              String(previewSearchPick.desc).trim()) ||
+                            (previewItem?.remarks &&
+                              previewItem.remarks.trim());
+                          return desc ? (
+                            <div className='mt-1 border rounded-md p-2 sm:p-3 bg-gray-50 dark:bg-gray-900 text-xs sm:text-sm text-gray-900 dark:text-gray-300 max-h-32 sm:max-h-40 overflow-auto whitespace-pre-line'>
+                              {desc}
+                            </div>
+                          ) : null;
+                        })()}
+                        {/* 按需：应你的要求，预览不再展示集数选择列表，保持布局紧凑 */}
+                        {/* Douban/Bangumi 扩展信息 */}
+                        <div className='pt-2 space-y-2'>
+                          {/* Douban */}
+                          {previewDoubanLoading && !previewBangumiLoading && (
+                            <div className='text-sm text-gray-500'>
+                              加载豆瓣信息...
+                            </div>
+                          )}
+                          {previewDouban &&
+                            (() => {
+                              const d = previewDouban;
+                              return (
+                                <div className='text-sm text-gray-900 dark:text-gray-300 space-y-1'>
+                                  <div className='font-semibold'>豆瓣信息</div>
+                                  {d.title && (
                                     <div>
-                                      编剧：{d.screenwriters.join('、')}
+                                      标题：{d.title}
+                                      {d.rate ? (
+                                        <span>（评分 {d.rate}）</span>
+                                      ) : null}
                                     </div>
                                   )}
-                                {d.cast && d.cast.length > 0 && (
-                                  <div>
-                                    主演：{d.cast.slice(0, 8).join('、')}
-                                    {d.cast.length > 8 ? '…' : ''}
+                                  {d.directors && d.directors.length > 0 && (
+                                    <div>导演：{d.directors.join('、')}</div>
+                                  )}
+                                  {d.screenwriters &&
+                                    d.screenwriters.length > 0 && (
+                                      <div>
+                                        编剧：{d.screenwriters.join('、')}
+                                      </div>
+                                    )}
+                                  {d.cast && d.cast.length > 0 && (
+                                    <div>
+                                      主演：{d.cast.slice(0, 8).join('、')}
+                                      {d.cast.length > 8 ? '…' : ''}
+                                    </div>
+                                  )}
+                                  <div className='flex flex-wrap gap-2 text-xs'>
+                                    {d.genres &&
+                                      d.genres.map((g: string) => (
+                                        <span
+                                          key={g}
+                                          className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
+                                        >
+                                          {g}
+                                        </span>
+                                      ))}
+                                    {d.countries &&
+                                      d.countries.map((c: string) => (
+                                        <span
+                                          key={c}
+                                          className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
+                                        >
+                                          {c}
+                                        </span>
+                                      ))}
+                                    {d.languages &&
+                                      d.languages.map((l: string) => (
+                                        <span
+                                          key={l}
+                                          className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
+                                        >
+                                          {l}
+                                        </span>
+                                      ))}
                                   </div>
-                                )}
-                                <div className='flex flex-wrap gap-2 text-xs'>
-                                  {d.genres &&
-                                    d.genres.map((g: string) => (
-                                      <span
-                                        key={g}
-                                        className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
-                                      >
-                                        {g}
-                                      </span>
-                                    ))}
-                                  {d.countries &&
-                                    d.countries.map((c: string) => (
-                                      <span
-                                        key={c}
-                                        className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
-                                      >
-                                        {c}
-                                      </span>
-                                    ))}
-                                  {d.languages &&
-                                    d.languages.map((l: string) => (
-                                      <span
-                                        key={l}
-                                        className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
-                                      >
-                                        {l}
-                                      </span>
-                                    ))}
-                                </div>
-                                {d.first_aired && (
-                                  <div>首播/上映：{d.first_aired}</div>
-                                )}
-                                {(d.episodes ||
-                                  d.episode_length ||
-                                  d.movie_duration) && (
+                                  {d.first_aired && (
+                                    <div>首播/上映：{d.first_aired}</div>
+                                  )}
+                                  {(d.episodes ||
+                                    d.episode_length ||
+                                    d.movie_duration) && (
                                     <div className='text-xs text-gray-800 dark:text-gray-400'>
                                       {d.episodes ? `集数：${d.episodes} ` : ''}
                                       {d.episode_length
@@ -1239,119 +1306,125 @@ export default function SourceBrowserPage() {
                                         : ''}
                                     </div>
                                   )}
-                                {d.plot_summary && (
-                                  <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
-                                    {d.plot_summary}
+                                  {d.plot_summary && (
+                                    <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
+                                      {d.plot_summary}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                          {/* Bangumi */}
+                          {previewBangumiLoading && (
+                            <div className='text-sm text-gray-500'>
+                              加载 Bangumi 信息...
+                            </div>
+                          )}
+                          {previewBangumi && (
+                            <div className='text-sm text-gray-900 dark:text-gray-300 space-y-1'>
+                              <div className='font-semibold'>Bangumi 信息</div>
+                              <div>
+                                标题：
+                                {previewBangumi.name_cn || previewBangumi.name}
+                                {previewBangumi.rating?.score ? (
+                                  <span>
+                                    （评分 {previewBangumi.rating.score}）
+                                  </span>
+                                ) : null}
+                              </div>
+                              {previewBangumi.date && (
+                                <div>首播：{previewBangumi.date}</div>
+                              )}
+                              {Array.isArray(previewBangumi.tags) &&
+                                previewBangumi.tags.length > 0 && (
+                                  <div className='flex flex-wrap gap-2 text-xs'>
+                                    {previewBangumi.tags
+                                      .slice(0, 10)
+                                      .map((t) => (
+                                        <span
+                                          key={t.name}
+                                          className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
+                                        >
+                                          {t.name}
+                                        </span>
+                                      ))}
                                   </div>
                                 )}
-                              </div>
-                            );
-                          })()}
-
-                        {/* Bangumi */}
-                        {previewBangumiLoading && (
-                          <div className='text-sm text-gray-500'>
-                            加载 Bangumi 信息...
-                          </div>
-                        )}
-                        {previewBangumi && (
-                          <div className='text-sm text-gray-900 dark:text-gray-300 space-y-1'>
-                            <div className='font-semibold'>Bangumi 信息</div>
-                            <div>
-                              标题：
-                              {previewBangumi.name_cn || previewBangumi.name}
-                              {previewBangumi.rating?.score ? (
-                                <span>
-                                  （评分 {previewBangumi.rating.score}）
-                                </span>
-                              ) : null}
-                            </div>
-                            {previewBangumi.date && (
-                              <div>首播：{previewBangumi.date}</div>
-                            )}
-                            {Array.isArray(previewBangumi.tags) &&
-                              previewBangumi.tags.length > 0 && (
-                                <div className='flex flex-wrap gap-2 text-xs'>
-                                  {previewBangumi.tags
-                                    .slice(0, 10)
-                                    .map((t) => (
-                                      <span
-                                        key={t.name}
-                                        className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700'
-                                      >
-                                        {t.name}
-                                      </span>
-                                    ))}
-                                </div>
-                              )}
-                            {Array.isArray(previewBangumi.infobox) &&
-                              previewBangumi.infobox.length > 0 && (
-                                <div className='text-xs text-gray-800 dark:text-gray-400 space-y-0.5'>
-                                  {previewBangumi.infobox
-                                    .slice(0, 10)
-                                    .map((info, idx: number) => (
-                                      <div key={idx}>
-                                        {info.key}：
-                                        {Array.isArray(info.value)
-                                          ? info.value
-                                            .map((v) =>
-                                              typeof v === 'string' ? v : v.v
-                                            )
-                                            .join('、')
-                                          : typeof info.value === 'string'
+                              {Array.isArray(previewBangumi.infobox) &&
+                                previewBangumi.infobox.length > 0 && (
+                                  <div className='text-xs text-gray-800 dark:text-gray-400 space-y-0.5'>
+                                    {previewBangumi.infobox
+                                      .slice(0, 10)
+                                      .map((info, idx: number) => (
+                                        <div key={idx}>
+                                          {info.key}：
+                                          {Array.isArray(info.value)
                                             ? info.value
-                                            : info.value.v}
-                                      </div>
-                                    ))}
+                                                .map((v) =>
+                                                  typeof v === 'string'
+                                                    ? v
+                                                    : v.v,
+                                                )
+                                                .join('、')
+                                            : typeof info.value === 'string'
+                                              ? info.value
+                                              : info.value.v}
+                                        </div>
+                                      ))}
+                                  </div>
+                                )}
+                              {previewBangumi.summary && (
+                                <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
+                                  {previewBangumi.summary}
                                 </div>
                               )}
-                            {previewBangumi.summary && (
-                              <div className='text-xs text-gray-800 dark:text-gray-400 leading-relaxed'>
-                                {previewBangumi.summary}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-              {/* 底部操作栏 */}
-              <div className='px-5 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-linear-to-r from-white/90 via-blue-50/50 to-white/90 dark:from-gray-800/90 dark:via-blue-900/10 dark:to-gray-800/90 backdrop-blur-md flex items-center justify-between gap-3'>
-                <div className='text-xs sm:text-sm text-gray-700 dark:text-gray-400'>
-                  {previewData?.class && (
-                    <span className='inline-flex items-center gap-1.5'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-blue-500'></span>
-                      {previewData.class}
-                    </span>
                   )}
                 </div>
-                <div className='flex items-center gap-2 sm:gap-3'>
-                  <button
-                    onClick={() => setPreviewOpen(false)}
-                    className='px-3 sm:px-4 py-2 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium transition-colors'
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (previewItem) goPlay(previewItem);
-                    }}
-                    className='group relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105'
-                  >
-                    <div className='absolute inset-0 rounded-xl bg-linear-to-r from-blue-400 to-indigo-400 blur-lg opacity-0 group-hover:opacity-50 transition-opacity -z-10'></div>
-                    <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'>
-                      <path d='M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z' />
-                    </svg>
-                    立即播放
-                  </button>
+                {/* 底部操作栏 */}
+                <div className='px-5 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-linear-to-r from-white/90 via-blue-50/50 to-white/90 dark:from-gray-800/90 dark:via-blue-900/10 dark:to-gray-800/90 backdrop-blur-md flex items-center justify-between gap-3'>
+                  <div className='text-xs sm:text-sm text-gray-700 dark:text-gray-400'>
+                    {previewData?.class && (
+                      <span className='inline-flex items-center gap-1.5'>
+                        <span className='w-1.5 h-1.5 rounded-full bg-blue-500'></span>
+                        {previewData.class}
+                      </span>
+                    )}
+                  </div>
+                  <div className='flex items-center gap-2 sm:gap-3'>
+                    <button
+                      onClick={() => setPreviewOpen(false)}
+                      className='px-3 sm:px-4 py-2 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium transition-colors'
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (previewItem) goPlay(previewItem);
+                      }}
+                      className='group relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105'
+                    >
+                      <div className='absolute inset-0 rounded-xl bg-linear-to-r from-blue-400 to-indigo-400 blur-lg opacity-0 group-hover:opacity-50 transition-opacity -z-10'></div>
+                      <svg
+                        className='w-4 h-4'
+                        fill='currentColor'
+                        viewBox='0 0 20 20'
+                      >
+                        <path d='M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z' />
+                      </svg>
+                      立即播放
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>,
-          document.body
-        )}
+            </div>,
+            document.body,
+          )}
       </div>
     </PageLayout>
   );

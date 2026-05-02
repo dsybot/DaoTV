@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any, no-console */
 'use client';
 
 import {
@@ -1136,10 +1136,7 @@ function SearchPageClient() {
     ) {
       const currentQuery = searchQuery.trim() || searchParams.get('q');
       if (currentQuery) {
-        if (
-          searchType === 'netdisk' &&
-          netdiskResourceType === 'netdisk'
-        ) {
+        if (searchType === 'netdisk' && netdiskResourceType === 'netdisk') {
           handleNetDiskSearch(currentQuery);
         } else if (searchType === 'netdisk' && netdiskResourceType === 'acg') {
           // ACG 搜索：触发 AcgSearch 组件搜索
@@ -1394,9 +1391,7 @@ function SearchPageClient() {
 
       if (response.ok && data.success) {
         setBilibiliPopular(data.videos || []);
-        console.log(
-          `✅ Bilibili热门加载成功: ${data.videos?.length} 个视频`,
-        );
+        console.log(`✅ Bilibili热门加载成功: ${data.videos?.length} 个视频`);
       } else {
         console.error('获取热门视频失败:', data.error);
         setBilibiliPopular([]);
@@ -1678,7 +1673,7 @@ function SearchPageClient() {
 
   return (
     <PageLayout activePath='/search'>
-      <div className='overflow-visible mb-10 pt-2 md:pt-0'>
+      <div className='overflow-visible mb-10 pt-2 md:pt-0 pb-40 md:pb-safe-bottom'>
         {/* 搜索框区域 - 美化版 */}
         <div className='mb-8 pt-4 md:pt-0'>
           {/* 搜索类型选项卡 */}
@@ -1777,10 +1772,7 @@ function SearchPageClient() {
                   setShowResults(true);
                   setShowSuggestions(false);
 
-                  if (
-                    searchType !== 'bilibili' ||
-                    bilibiliMode === 'search'
-                  ) {
+                  if (searchType !== 'bilibili' || bilibiliMode === 'search') {
                     router.push(`/search?q=${encodeURIComponent(trimmed)}`);
                   }
                 }}
@@ -2945,7 +2937,6 @@ function SearchPageClient() {
                   </div>
                 </section>
               )}
-
             </>
           )}
         </div>

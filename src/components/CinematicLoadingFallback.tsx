@@ -92,52 +92,52 @@ export function CinematicLoadingFallback() {
         ))}
       </div>
 
-      <div className='relative z-10 text-center px-4 max-w-md'>
-        <div className='mb-8 relative'>
+      <div className='relative z-10 text-center px-4 sm:px-6 max-w-md w-full'>
+        <div className='mb-6 sm:mb-8 relative'>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='w-32 h-32 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow' />
+            <div className='w-24 h-24 sm:w-32 sm:h-32 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow' />
           </div>
 
           <div className='relative flex items-center justify-center'>
-            <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center animate-spin-gentle backdrop-blur-sm border-2 border-white/10'>
-              <div className='absolute w-3 h-3 bg-gray-900 rounded-full top-2 left-2' />
-              <div className='absolute w-3 h-3 bg-gray-900 rounded-full top-2 right-2' />
-              <div className='absolute w-3 h-3 bg-gray-900 rounded-full bottom-2 left-2' />
-              <div className='absolute w-3 h-3 bg-gray-900 rounded-full bottom-2 right-2' />
+            <div className='w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center animate-spin-gentle backdrop-blur-sm border-2 border-white/10'>
+              <div className='absolute w-2 h-2 sm:w-3 sm:h-3 bg-gray-900 rounded-full top-1.5 left-1.5 sm:top-2 sm:left-2' />
+              <div className='absolute w-2 h-2 sm:w-3 sm:h-3 bg-gray-900 rounded-full top-1.5 right-1.5 sm:top-2 sm:right-2' />
+              <div className='absolute w-2 h-2 sm:w-3 sm:h-3 bg-gray-900 rounded-full bottom-1.5 left-1.5 sm:bottom-2 sm:left-2' />
+              <div className='absolute w-2 h-2 sm:w-3 sm:h-3 bg-gray-900 rounded-full bottom-1.5 right-1.5 sm:bottom-2 sm:right-2' />
 
-              <div className='w-20 h-20 rounded-full bg-gray-900 flex items-center justify-center'>
-                <IconComponent className='w-10 h-10 text-white' />
+              <div className='w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-900 flex items-center justify-center'>
+                <IconComponent className='w-8 h-8 sm:w-10 sm:h-10 text-white' />
               </div>
             </div>
           </div>
         </div>
 
-        <div className='mb-6 space-y-3'>
-          <div className='text-4xl'>{currentMessage.emoji}</div>
-          <h2 className='text-xl font-medium text-white transition-opacity duration-500'>
+        <div className='mb-5 sm:mb-6 space-y-2 sm:space-y-3'>
+          <div className='text-3xl sm:text-4xl'>{currentMessage.emoji}</div>
+          <h2 className='text-lg sm:text-xl font-medium text-white transition-opacity duration-500 leading-relaxed'>
             {currentMessage.text}
           </h2>
         </div>
 
-        <div className='flex justify-center gap-2 mb-8'>
+        <div className='flex justify-center gap-2 mb-6 sm:mb-8'>
           <div
-            className='w-3 h-3 bg-blue-500 rounded-full animate-pulse-dot'
+            className='w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-500 rounded-full animate-pulse-dot'
             style={{ animationDelay: '0s' }}
           />
           <div
-            className='w-3 h-3 bg-purple-500 rounded-full animate-pulse-dot'
+            className='w-2.5 h-2.5 sm:w-3 sm:h-3 bg-purple-500 rounded-full animate-pulse-dot'
             style={{ animationDelay: '0.15s' }}
           />
           <div
-            className='w-3 h-3 bg-pink-500 rounded-full animate-pulse-dot'
+            className='w-2.5 h-2.5 sm:w-3 sm:h-3 bg-pink-500 rounded-full animate-pulse-dot'
             style={{ animationDelay: '0.3s' }}
           />
         </div>
 
-        <div className='mt-8 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 backdrop-blur-sm'>
-          <p className='text-sm text-gray-400'>
+        <div className='mt-6 sm:mt-8 p-2.5 sm:p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 backdrop-blur-sm'>
+          <p className='text-xs sm:text-sm text-gray-400 leading-relaxed'>
             💡 快捷键{' '}
-            <kbd className='px-2 py-0.5 bg-gray-700/50 rounded text-xs mx-1'>
+            <kbd className='px-1.5 py-0.5 sm:px-2 bg-gray-700/50 rounded text-xs mx-1'>
               Space
             </kbd>{' '}
             播放/暂停
