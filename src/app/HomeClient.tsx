@@ -510,6 +510,9 @@ function HomeClient({
   }, [favoriteItems]);
 
   useEffect(() => {
+    let isMounted = true;
+    const abortController = new AbortController();
+
     // 清理过期缓存
     cleanExpiredCache().catch(console.error);
 
@@ -521,12 +524,18 @@ function HomeClient({
     // 🔄 异步加载即将上映数据（不阻塞页面显示）
     const fetchUpcomingReleases = async () => {
       try {
-        const response = await fetch('/api/release-calendar?limit=100');
+        const response = await fetch('/api/release-calendar?limit=100', {
+          signal: abortController.signal,
+        });
         if (!response.ok) {
-          console.error('获取即将上映数据失败，状态码:', response.status);
+          if (isMounted) {
+            console.error('获取即将上映数据失败，状态码:', response.status);
+          }
           return;
         }
         const data = await response.json();
+        if (!isMounted) return;
+
         const releases = data.items || [];
         console.log('📅 获取到的即将上映数据:', releases.length, '条');
 
@@ -542,6 +551,8 @@ function HomeClient({
             );
 
             workerRef.current.onmessage = (e: MessageEvent) => {
+              if (!isMounted) return;
+
               const { selectedItems, stats, error } = e.data;
 
               if (error) {
@@ -558,17 +569,21 @@ function HomeClient({
             };
 
             workerRef.current.onerror = (error) => {
+              if (!isMounted) return;
+
               console.error('📅 [Worker] 错误:', error);
               dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
             };
           } catch (error) {
-            console.error('📅 [Worker] 初始化失败:', error);
-            dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
+            if (isMounted) {
+              console.error('📅 [Worker] 初始化失败:', error);
+              dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
+            }
           }
         }
 
         // 发送数据到Worker处理
-        if (workerRef.current) {
+        if (workerRef.current && isMounted) {
           const todayStr = new Date()
             .toLocaleDateString('zh-CN', {
               timeZone: 'Asia/Shanghai',
@@ -583,14 +598,16 @@ function HomeClient({
             releases,
             today: todayStr,
           });
-        } else {
+        } else if (isMounted) {
           // Fallback: Worker不可用时的处理
           console.warn('📅 Web Worker不可用，跳过即将上映数据处理');
           dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
         }
       } catch (error) {
-        console.error('获取即将上映数据失败:', error);
-        dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
+        if (isMounted && (error as Error).name !== 'AbortError') {
+          console.error('获取即将上映数据失败:', error);
+          dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
+        }
       }
     };
 
@@ -598,6 +615,9 @@ function HomeClient({
 
     // 🚀 清理Web Worker
     return () => {
+      isMounted = false;
+      abortController.abort();
+
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;
@@ -628,9 +648,12 @@ function HomeClient({
   useEffect(() => {
     if (!homeData) return;
 
+    let isMounted = true;
+    const timeouts: NodeJS.Timeout[] = [];
+
     // 延迟加载电影详情
     if (state.homePageConfig.showHotMovies && homeData.hotMovies.length > 0) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         Promise.all(
           homeData.hotMovies.slice(0, 2).map(async (movie) => {
             try {
@@ -649,23 +672,26 @@ function HomeClient({
             return null;
           }),
         ).then((results) => {
-          dispatch({
-            type: 'UPDATE_HOT_MOVIES',
-            payload: (prev) => {
-              const updated = homeData.hotMovies.map((m) => {
-                const detail = results.find((r) => r?.id === m.id);
-                return detail ? { ...m, ...detail } : m;
-              });
-              return updated;
-            },
-          });
+          if (isMounted) {
+            dispatch({
+              type: 'UPDATE_HOT_MOVIES',
+              payload: (prev) => {
+                const updated = homeData.hotMovies.map((m) => {
+                  const detail = results.find((r) => r?.id === m.id);
+                  return detail ? { ...m, ...detail } : m;
+                });
+                return updated;
+              },
+            });
+          }
         });
       }, 2000);
+      timeouts.push(timeout);
     }
 
     // 延迟加载剧集详情
     if (state.homePageConfig.showHotTvShows && homeData.hotTvShows.length > 0) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         Promise.all(
           homeData.hotTvShows.slice(0, 2).map(async (show) => {
             try {
@@ -684,27 +710,30 @@ function HomeClient({
             return null;
           }),
         ).then((results) => {
-          dispatch({
-            type: 'UPDATE_HOT_TV_SHOWS',
-            payload: (prev) => {
-              const updated = homeData.hotTvShows.map((s) => {
-                const detail = results.find((r) => r?.id === s.id);
-                return detail ? { ...s, ...detail } : s;
-              });
-              return updated;
-            },
-          });
+          if (isMounted) {
+            dispatch({
+              type: 'UPDATE_HOT_TV_SHOWS',
+              payload: (prev) => {
+                const updated = homeData.hotTvShows.map((s) => {
+                  const detail = results.find((r) => r?.id === s.id);
+                  return detail ? { ...s, ...detail } : s;
+                });
+                return updated;
+              },
+            });
+          }
         });
       }, 2000);
+      timeouts.push(timeout);
     }
 
     // 延迟加载动漫详情
     if (state.homePageConfig.showNewAnime && homeData.hotAnime.length > 0) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         const anime = homeData.hotAnime[0];
         getDoubanDetails(anime.id)
           .then((detailsRes) => {
-            if (detailsRes.code === 200 && detailsRes.data) {
+            if (isMounted && detailsRes.code === 200 && detailsRes.data) {
               dispatch({
                 type: 'UPDATE_HOT_ANIME',
                 payload: (prev) => {
@@ -717,9 +746,12 @@ function HomeClient({
             }
           })
           .catch((error) => {
-            console.warn(`获取动漫 ${anime.id} 详情失败:`, error);
+            if (isMounted) {
+              console.warn(`获取动漫 ${anime.id} 详情失败:`, error);
+            }
           });
       }, 3000);
+      timeouts.push(timeout);
     }
 
     // 延迟加载综艺详情
@@ -727,11 +759,11 @@ function HomeClient({
       state.homePageConfig.showHotVariety &&
       homeData.hotVarietyShows.length > 0
     ) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         const show = homeData.hotVarietyShows[0];
         getDoubanDetails(show.id)
           .then((detailsRes) => {
-            if (detailsRes.code === 200 && detailsRes.data) {
+            if (isMounted && detailsRes.code === 200 && detailsRes.data) {
               dispatch({
                 type: 'UPDATE_HOT_VARIETY_SHOWS',
                 payload: (prev) => {
@@ -744,10 +776,18 @@ function HomeClient({
             }
           })
           .catch((error) => {
-            console.warn(`获取综艺 ${show.id} 详情失败:`, error);
+            if (isMounted) {
+              console.warn(`获取综艺 ${show.id} 详情失败:`, error);
+            }
           });
       }, 3000);
+      timeouts.push(timeout);
     }
+
+    return () => {
+      isMounted = false;
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+    };
   }, [homeData, state.homePageConfig]);
 
   // 🚀 TanStack Query - 使用 useMutation 管理清空收藏操作
