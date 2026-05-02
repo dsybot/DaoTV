@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 
 'use client';
 
@@ -200,19 +200,36 @@ function HeroBanner({
   useEffect(() => {
     if (!enableVideo) return;
 
-    const timer = setTimeout(async () => {
+    let isMounted = true;
+
+    const checkAndRefreshMissingTrailers = async () => {
       for (const item of items) {
+        if (!isMounted) break;
+
         if (
           item.douban_id &&
           !item.trailerUrl &&
           !refreshedTrailerUrls[item.douban_id]
         ) {
-          await refreshTrailerUrl(item.douban_id);
+          try {
+            await refreshTrailerUrl(item.douban_id);
+          } catch (error) {
+            console.warn('[HeroBanner] 获取 trailer 失败:', error);
+          }
         }
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        checkAndRefreshMissingTrailers();
       }
     }, 1000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [enableVideo, items, refreshedTrailerUrls, refreshTrailerUrl]);
 
   if (!items || items.length === 0) {
@@ -297,7 +314,10 @@ function HeroBanner({
                     event.currentTarget.play().catch(() => {});
                   }}
                 >
-                  <source src={getProxiedVideoUrl(trailerUrl)} type='video/mp4' />
+                  <source
+                    src={getProxiedVideoUrl(trailerUrl)}
+                    type='video/mp4'
+                  />
                 </video>
               )}
             </div>
