@@ -116,10 +116,19 @@ function HeroBanner({
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isMountedRef = useRef(true);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
   const refreshTrailerMutation = useRefreshTrailerUrlMutation();
   const clearTrailerMutation = useClearTrailerUrlMutation();
+
+  // 重置越界的 currentIndex
+  useEffect(() => {
+    if (items.length > 0 && currentIndex >= items.length) {
+      console.warn('[HeroBanner] currentIndex out of bounds, resetting to 0');
+      setCurrentIndex(0);
+    }
+  }, [items.length, currentIndex]);
 
   const refreshTrailerUrl = useCallback(
     async (doubanId: number | string) => {
@@ -139,27 +148,56 @@ function HeroBanner({
   );
 
   const handleNext = useCallback(() => {
-    if (isTransitioning || items.length <= 1) return;
+    if (isTransitioning || items.length <= 1 || !isMountedRef.current) return;
     setIsTransitioning(true);
     setVideoLoaded(false);
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    setTimeout(() => setIsTransitioning(false), 800);
+
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
+
+    transitionTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsTransitioning(false);
+      }
+    }, 800);
   }, [isTransitioning, items.length]);
 
   const handlePrev = useCallback(() => {
-    if (isTransitioning || items.length <= 1) return;
+    if (isTransitioning || items.length <= 1 || !isMountedRef.current) return;
     setIsTransitioning(true);
     setVideoLoaded(false);
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    setTimeout(() => setIsTransitioning(false), 800);
+
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
+
+    transitionTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsTransitioning(false);
+      }
+    }, 800);
   }, [isTransitioning, items.length]);
 
   const handleIndicatorClick = (index: number) => {
-    if (isTransitioning || index === currentIndex) return;
+    if (isTransitioning || index === currentIndex || !isMountedRef.current) {
+      return;
+    }
     setIsTransitioning(true);
     setVideoLoaded(false);
     setCurrentIndex(index);
-    setTimeout(() => setIsTransitioning(false), 800);
+
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
+
+    transitionTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsTransitioning(false);
+      }
+    }, 800);
   };
 
   const toggleMute = () => {
@@ -201,11 +239,9 @@ function HeroBanner({
   useEffect(() => {
     if (!enableVideo) return;
 
-    let isMounted = true;
-
     const checkAndRefreshMissingTrailers = async () => {
       for (const item of items) {
-        if (!isMounted) break;
+        if (!isMountedRef.current) break;
 
         if (
           item.douban_id &&
@@ -214,21 +250,23 @@ function HeroBanner({
         ) {
           try {
             await refreshTrailerUrl(item.douban_id);
+            if (!isMountedRef.current) break;
           } catch (error) {
-            console.warn('[HeroBanner] 获取 trailer 失败:', error);
+            if (isMountedRef.current) {
+              console.warn('[HeroBanner] 获取 trailer 失败:', error);
+            }
           }
         }
       }
     };
 
     const timer = setTimeout(() => {
-      if (isMounted) {
+      if (isMountedRef.current) {
         checkAndRefreshMissingTrailers();
       }
     }, 1000);
 
     return () => {
-      isMounted = false;
       clearTimeout(timer);
     };
   }, [enableVideo, items, refreshedTrailerUrls, refreshTrailerUrl]);
@@ -236,6 +274,9 @@ function HeroBanner({
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -243,7 +284,21 @@ function HeroBanner({
     return null;
   }
 
-  const currentItem = items[currentIndex];
+  // 确保 currentIndex 在有效范围内
+  const safeIndex = Math.min(currentIndex, items.length - 1);
+  const currentItem = items[safeIndex];
+
+  // 防御性检查：如果 currentItem 仍然是 undefined，返回 null
+  if (!currentItem) {
+    console.error(
+      '[HeroBanner] currentItem is undefined, items:',
+      items,
+      'currentIndex:',
+      currentIndex,
+    );
+    return null;
+  }
+
   const currentTrailerUrl = getEffectiveTrailerUrl(currentItem);
 
   return (
@@ -318,10 +373,12 @@ function HeroBanner({
                           video.load();
                         }
                       } catch (error) {
-                        console.warn(
-                          '[HeroBanner] 刷新trailer URL失败，将继续显示背景图片:',
-                          error,
-                        );
+                        if (isMountedRef.current) {
+                          console.warn(
+                            '[HeroBanner] 刷新trailer URL失败，将继续显示背景图片:',
+                            error,
+                          );
+                        }
                       }
                     }
                   }}

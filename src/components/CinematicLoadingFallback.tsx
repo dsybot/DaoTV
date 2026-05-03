@@ -3,7 +3,7 @@
 'use client';
 
 import { Film, Popcorn, Sparkles, Star } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const loadingMessages = [
   { icon: Film, text: '正在为您准备今晚的观影清单...', emoji: '🎬' },
@@ -27,9 +27,9 @@ export function CinematicLoadingFallback() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [bingWallpaper, setBingWallpaper] = useState('');
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    let isMounted = true;
     const abortController = new AbortController();
 
     const fetchBingWallpaper = async () => {
@@ -38,11 +38,11 @@ export function CinematicLoadingFallback() {
           signal: abortController.signal,
         });
         const data = await response.json();
-        if (data.url && isMounted) {
+        if (data.url && isMountedRef.current) {
           setBingWallpaper(data.url);
         }
       } catch (error) {
-        if (isMounted && (error as Error).name !== 'AbortError') {
+        if (isMountedRef.current && (error as Error).name !== 'AbortError') {
           console.log('Failed to fetch Bing wallpaper:', error);
         }
       }
@@ -51,21 +51,32 @@ export function CinematicLoadingFallback() {
     fetchBingWallpaper();
 
     return () => {
-      isMounted = false;
       abortController.abort();
     };
   }, []);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setIsVisible(true));
+    const frame = requestAnimationFrame(() => {
+      if (isMountedRef.current) {
+        setIsVisible(true);
+      }
+    });
     return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      if (isMountedRef.current) {
+        setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      }
     }, 2500);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const currentMessage = loadingMessages[messageIndex];
