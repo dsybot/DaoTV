@@ -117,6 +117,7 @@ function HeroBanner({
   const videoRef = useRef<HTMLVideoElement>(null);
   const isMountedRef = useRef(true);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const videoErrorRetryCount = useRef<Record<string, number>>({});
 
   const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
   const refreshTrailerMutation = useRefreshTrailerUrlMutation();
@@ -237,24 +238,24 @@ function HeroBanner({
   }, [currentIndex, items]);
 
   useEffect(() => {
-    if (!enableVideo) return;
+    if (!enableVideo || items.length === 0) return;
 
-    const checkAndRefreshMissingTrailers = async () => {
-      for (const item of items) {
-        if (!isMountedRef.current) break;
+    const currentItem = items[currentIndex];
+    if (!currentItem) return;
 
-        if (
-          item.douban_id &&
-          !item.trailerUrl &&
-          !refreshedTrailerUrls[item.douban_id]
-        ) {
-          try {
-            await refreshTrailerUrl(item.douban_id);
-            if (!isMountedRef.current) break;
-          } catch (error) {
-            if (isMountedRef.current) {
-              console.warn('[HeroBanner] 获取 trailer 失败:', error);
-            }
+    const checkCurrentItemTrailer = async () => {
+      if (!isMountedRef.current) return;
+
+      if (
+        currentItem.douban_id &&
+        !currentItem.trailerUrl &&
+        !refreshedTrailerUrls[currentItem.douban_id]
+      ) {
+        try {
+          await refreshTrailerUrl(currentItem.douban_id);
+        } catch (error) {
+          if (isMountedRef.current) {
+            console.warn('[HeroBanner] 获取当前item的trailer失败:', error);
           }
         }
       }
@@ -262,14 +263,20 @@ function HeroBanner({
 
     const timer = setTimeout(() => {
       if (isMountedRef.current) {
-        checkAndRefreshMissingTrailers();
+        checkCurrentItemTrailer();
       }
-    }, 1000);
+    }, 1500);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [enableVideo, items, refreshedTrailerUrls, refreshTrailerUrl]);
+  }, [
+    currentIndex,
+    enableVideo,
+    items,
+    refreshedTrailerUrls,
+    refreshTrailerUrl,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -277,6 +284,7 @@ function HeroBanner({
       if (transitionTimeoutRef.current) {
         clearTimeout(transitionTimeoutRef.current);
       }
+      videoErrorRetryCount.current = {};
     };
   }, []);
 
@@ -359,9 +367,27 @@ function HeroBanner({
                     if (!isMountedRef.current) return;
 
                     const video = event.currentTarget;
+                    const itemKey = `${item.douban_id || item.id}`;
+
+                    console.error('[HeroBanner] 视频加载失败:', {
+                      title: item.title,
+                      trailerUrl: item.trailerUrl,
+                      error: event,
+                    });
+
+                    const retryCount =
+                      videoErrorRetryCount.current[itemKey] || 0;
+                    if (retryCount >= 1) {
+                      console.warn(
+                        '[HeroBanner] 视频已重试过，不再尝试，显示背景图片',
+                      );
+                      return;
+                    }
 
                     if (item.douban_id) {
                       try {
+                        videoErrorRetryCount.current[itemKey] = retryCount + 1;
+
                         if (refreshedTrailerUrls[item.douban_id]) {
                           clearTrailerMutation.mutate({
                             doubanId: item.douban_id,
