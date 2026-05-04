@@ -206,63 +206,96 @@ function HomeClient({
   });
 
   const { announcement } = useSite();
+  const prevHotMoviesRef = useRef<any[]>([]);
+  const prevHotTvShowsRef = useRef<any[]>([]);
+  const prevHotVarietyShowsRef = useRef<any[]>([]);
+  const prevHotAnimeRef = useRef<any[]>([]);
+  const prevHotShortDramasRef = useRef<any[]>([]);
 
   // 🚀 从 TanStack Query 获取首页数据，本地状态作为详情增强
   const hotMovies = useMemo(() => {
     const cached = homeData?.hotMovies || [];
-    // 合并本地详情数据
-    if (state.hotMovies.length > 0 && cached.length > 0) {
-      return cached.map((m) => {
+    if (cached.length > 0) {
+      prevHotMoviesRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching ? prevHotMoviesRef.current : cached;
+    if (state.hotMovies.length > 0 && dataToUse.length > 0) {
+      return dataToUse.map((m) => {
         const local = state.hotMovies.find((lm) => lm.id === m.id);
         return local ? { ...m, ...local } : m;
       });
     }
-    return cached;
-  }, [homeData?.hotMovies, state.hotMovies]);
+    return dataToUse;
+  }, [homeData?.hotMovies, state.hotMovies, homeFetching]);
 
   const hotTvShows = useMemo(() => {
     const cached = homeData?.hotTvShows || [];
-    if (state.hotTvShows.length > 0 && cached.length > 0) {
-      return cached.map((s) => {
+    if (cached.length > 0) {
+      prevHotTvShowsRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching ? prevHotTvShowsRef.current : cached;
+    if (state.hotTvShows.length > 0 && dataToUse.length > 0) {
+      return dataToUse.map((s) => {
         const local = state.hotTvShows.find((ls) => ls.id === s.id);
         return local ? { ...s, ...local } : s;
       });
     }
-    return cached;
-  }, [homeData?.hotTvShows, state.hotTvShows]);
+    return dataToUse;
+  }, [homeData?.hotTvShows, state.hotTvShows, homeFetching]);
 
   const hotVarietyShows = useMemo(() => {
     const cached = homeData?.hotVarietyShows || [];
-    if (state.hotVarietyShows.length > 0 && cached.length > 0) {
-      return cached.map((s) => {
+    if (cached.length > 0) {
+      prevHotVarietyShowsRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching
+        ? prevHotVarietyShowsRef.current
+        : cached;
+    if (state.hotVarietyShows.length > 0 && dataToUse.length > 0) {
+      return dataToUse.map((s) => {
         const local = state.hotVarietyShows.find((ls) => ls.id === s.id);
         return local ? { ...s, ...local } : s;
       });
     }
-    return cached;
-  }, [homeData?.hotVarietyShows, state.hotVarietyShows]);
+    return dataToUse;
+  }, [homeData?.hotVarietyShows, state.hotVarietyShows, homeFetching]);
 
   const hotAnime = useMemo(() => {
     const cached = homeData?.hotAnime || [];
-    if (state.hotAnime.length > 0 && cached.length > 0) {
-      return cached.map((a) => {
+    if (cached.length > 0) {
+      prevHotAnimeRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching ? prevHotAnimeRef.current : cached;
+    if (state.hotAnime.length > 0 && dataToUse.length > 0) {
+      return dataToUse.map((a) => {
         const local = state.hotAnime.find((la) => la.id === a.id);
         return local ? { ...a, ...local } : a;
       });
     }
-    return cached;
-  }, [homeData?.hotAnime, state.hotAnime]);
+    return dataToUse;
+  }, [homeData?.hotAnime, state.hotAnime, homeFetching]);
 
   const hotShortDramas = useMemo(() => {
     const cached = homeData?.hotShortDramas || [];
-    if (state.hotShortDramas.length > 0 && cached.length > 0) {
-      return cached.map((d) => {
+    if (cached.length > 0) {
+      prevHotShortDramasRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching
+        ? prevHotShortDramasRef.current
+        : cached;
+    if (state.hotShortDramas.length > 0 && dataToUse.length > 0) {
+      return dataToUse.map((d) => {
         const local = state.hotShortDramas.find((ld) => ld.id === d.id);
         return local ? { ...d, ...local } : d;
       });
     }
-    return cached;
-  }, [homeData?.hotShortDramas, state.hotShortDramas]);
+    return dataToUse;
+  }, [homeData?.hotShortDramas, state.hotShortDramas, homeFetching]);
 
   const bangumiCalendarData = homeData?.bangumiCalendar || [];
 
@@ -802,12 +835,13 @@ function HomeClient({
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
 
-  if (loading) {
-    return <CinematicLoadingFallback />;
-  }
-
   return (
     <PageLayout>
+      {loading && (
+        <div className='fixed inset-0 z-50'>
+          <CinematicLoadingFallback />
+        </div>
+      )}
       {/* Telegram 新用户欢迎弹窗 */}
       <TelegramWelcomeModal />
 
@@ -870,7 +904,6 @@ function HomeClient({
       <div className='dao-home-shell overflow-visible pb-32 md:pb-safe-bottom'>
         {/* 轮播图 - 在所有tab显示 */}
         {state.homePageConfig.showHeroBanner &&
-          !loading &&
           (hotMovies.length > 0 ||
             hotTvShows.length > 0 ||
             hotVarietyShows.length > 0 ||
@@ -1473,7 +1506,6 @@ function HomeClient({
 
             {/* 即将上映 */}
             {state.homePageConfig.showUpcomingReleases &&
-              !loading &&
               upcomingReleases.length > 0 && (
                 <section className='mb-4 sm:mb-8'>
                   <div className='mb-3 sm:mb-4 flex items-center justify-between'>

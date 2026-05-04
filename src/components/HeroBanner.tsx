@@ -1,15 +1,7 @@
-/* eslint-disable no-console */
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  Play,
-  Volume2,
-  VolumeX,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Play, Volume2, VolumeX } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -44,64 +36,6 @@ interface HeroBannerProps {
   enableVideo?: boolean;
 }
 
-const getProxiedImageUrl = (url: string) => {
-  if (url?.includes('douban') || url?.includes('doubanio')) {
-    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
-  }
-  return url;
-};
-
-const getHDBackdrop = (url?: string) => {
-  if (!url) return url;
-  return url
-    .replace('/view/photo/s/', '/view/photo/l/')
-    .replace('/view/photo/m/', '/view/photo/l/')
-    .replace('/view/photo/sqxs/', '/view/photo/l/')
-    .replace('/s_ratio_poster/', '/l_ratio_poster/')
-    .replace('/m_ratio_poster/', '/l_ratio_poster/');
-};
-
-const getProxiedVideoUrl = (url: string) => {
-  if (url?.includes('douban') || url?.includes('doubanio')) {
-    return `/api/video-proxy?url=${encodeURIComponent(url)}`;
-  }
-  return url;
-};
-
-const getTypeLabel = (type?: string) => {
-  switch (type) {
-    case 'movie':
-      return '电影';
-    case 'tv':
-      return '剧集';
-    case 'variety':
-      return '综艺';
-    case 'shortdrama':
-      return '短剧';
-    case 'anime':
-      return '动漫';
-    default:
-      return '剧集';
-  }
-};
-
-const getPlayHref = (item: BannerItem) => {
-  if (item.type === 'shortdrama') {
-    return `/play?title=${encodeURIComponent(item.title)}&shortdrama_id=${item.id}`;
-  }
-
-  return `/play?title=${encodeURIComponent(item.title)}${
-    item.year ? `&year=${item.year}` : ''
-  }${item.douban_id ? `&douban_id=${item.douban_id}` : ''}${
-    item.type ? `&stype=${item.type}` : ''
-  }`;
-};
-
-const getDetailHref = (item: BannerItem) => {
-  if (item.type === 'shortdrama') return '/shortdrama';
-  return `/douban?type=${item.type === 'variety' ? 'show' : item.type || 'movie'}`;
-};
-
 function HeroBanner({
   items,
   autoPlayInterval = 8000,
@@ -115,25 +49,38 @@ function HeroBanner({
   const [isMuted, setIsMuted] = useState(true);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const isMountedRef = useRef(true);
-  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const videoErrorRetryCount = useRef<Record<string, number>>({});
 
   const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
   const refreshTrailerMutation = useRefreshTrailerUrlMutation();
   const clearTrailerMutation = useClearTrailerUrlMutation();
 
-  // 重置越界的 currentIndex
-  useEffect(() => {
-    if (items.length > 0 && currentIndex >= items.length) {
-      console.warn('[HeroBanner] currentIndex out of bounds, resetting to 0');
-      setCurrentIndex(0);
+  const getProxiedImageUrl = (url: string) => {
+    if (url?.includes('douban') || url?.includes('doubanio')) {
+      return `/api/image-proxy?url=${encodeURIComponent(url)}`;
     }
-  }, [items.length, currentIndex]);
+    return url;
+  };
+
+  const getHDBackdrop = (url?: string) => {
+    if (!url) return url;
+    return url
+      .replace('/view/photo/s/', '/view/photo/l/')
+      .replace('/view/photo/m/', '/view/photo/l/')
+      .replace('/view/photo/sqxs/', '/view/photo/l/')
+      .replace('/s_ratio_poster/', '/l_ratio_poster/')
+      .replace('/m_ratio_poster/', '/l_ratio_poster/');
+  };
+
+  const getProxiedVideoUrl = (url: string) => {
+    if (url?.includes('douban') || url?.includes('doubanio')) {
+      return `/api/video-proxy?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
 
   const refreshTrailerUrl = useCallback(
-    async (doubanId: number | string) => {
-      return refreshTrailerMutation.mutateAsync({ doubanId });
+    async (doubanId: number | string, force = false) => {
+      return refreshTrailerMutation.mutateAsync({ doubanId, force });
     },
     [refreshTrailerMutation],
   );
@@ -141,7 +88,14 @@ function HeroBanner({
   const getEffectiveTrailerUrl = useCallback(
     (item: BannerItem) => {
       if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
-        return refreshedTrailerUrls[item.douban_id];
+        const cachedUrl = refreshedTrailerUrls[item.douban_id];
+        if (
+          cachedUrl.startsWith('NO_TRAILER_') ||
+          cachedUrl.startsWith('FAILED_')
+        ) {
+          return null;
+        }
+        return cachedUrl;
       }
       return item.trailerUrl;
     },
@@ -149,62 +103,36 @@ function HeroBanner({
   );
 
   const handleNext = useCallback(() => {
-    if (isTransitioning || items.length <= 1 || !isMountedRef.current) return;
+    if (isTransitioning) return;
     setIsTransitioning(true);
     setVideoLoaded(false);
     setCurrentIndex((prev) => (prev + 1) % items.length);
-
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-    }
-
-    transitionTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        setIsTransitioning(false);
-      }
-    }, 800);
+    setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning, items.length]);
 
   const handlePrev = useCallback(() => {
-    if (isTransitioning || items.length <= 1 || !isMountedRef.current) return;
+    if (isTransitioning) return;
     setIsTransitioning(true);
     setVideoLoaded(false);
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-    }
-
-    transitionTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        setIsTransitioning(false);
-      }
-    }, 800);
+    setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning, items.length]);
 
   const handleIndicatorClick = (index: number) => {
-    if (isTransitioning || index === currentIndex || !isMountedRef.current) {
+    if (isTransitioning || index === currentIndex) {
       return;
     }
     setIsTransitioning(true);
     setVideoLoaded(false);
     setCurrentIndex(index);
-
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-    }
-
-    transitionTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        setIsTransitioning(false);
-      }
-    }, 800);
+    setTimeout(() => setIsTransitioning(false), 800);
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
   };
 
   useAutoplay({
@@ -221,8 +149,6 @@ function HeroBanner({
   });
 
   useEffect(() => {
-    if (items.length === 0) return;
-
     const indicesToPreload = [
       currentIndex,
       (currentIndex - 1 + items.length) % items.length,
@@ -231,83 +157,111 @@ function HeroBanner({
 
     indicesToPreload.forEach((index) => {
       const item = items[index];
-      if (!item) return;
-      const img = new window.Image();
-      img.src = getProxiedImageUrl(getHDBackdrop(item.backdrop) || item.poster);
+      if (item) {
+        const img = new window.Image();
+        const imageUrl = getHDBackdrop(item.backdrop) || item.poster;
+        img.src = getProxiedImageUrl(imageUrl);
+      }
     });
-  }, [currentIndex, items]);
-
-  useEffect(() => {
-    if (!enableVideo || items.length === 0) return;
-
-    const currentItem = items[currentIndex];
-    if (!currentItem) return;
-
-    const checkCurrentItemTrailer = async () => {
-      if (!isMountedRef.current) return;
-
-      if (
-        currentItem.douban_id &&
-        !currentItem.trailerUrl &&
-        !refreshedTrailerUrls[currentItem.douban_id]
-      ) {
-        try {
-          await refreshTrailerUrl(currentItem.douban_id);
-        } catch (error) {
-          if (isMountedRef.current) {
-            console.warn('[HeroBanner] 获取当前item的trailer失败:', error);
-          }
-        }
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (isMountedRef.current) {
-        checkCurrentItemTrailer();
-      }
-    }, 1500);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [
-    currentIndex,
-    enableVideo,
-    items,
-    refreshedTrailerUrls,
-    refreshTrailerUrl,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
-      videoErrorRetryCount.current = {};
-    };
-  }, []);
+  }, [items, currentIndex]);
 
   if (!items || items.length === 0) {
     return null;
   }
 
-  // 确保 currentIndex 在有效范围内
-  const safeIndex = Math.min(currentIndex, items.length - 1);
-  const currentItem = items[safeIndex];
+  const currentItem = items[currentIndex];
 
-  // 防御性检查：如果 currentItem 仍然是 undefined，返回 null
-  if (!currentItem) {
-    console.error(
-      '[HeroBanner] currentItem is undefined, items:',
-      items,
-      'currentIndex:',
-      currentIndex,
-    );
-    return null;
-  }
+  console.log('[HeroBanner] 当前项目:', {
+    title: currentItem.title,
+    hasBackdrop: !!currentItem.backdrop,
+    hasTrailer: !!currentItem.trailerUrl,
+    trailerUrl: currentItem.trailerUrl,
+    enableVideo,
+  });
 
-  const currentTrailerUrl = getEffectiveTrailerUrl(currentItem);
+  useEffect(() => {
+    if (!enableVideo) {
+      return;
+    }
+
+    const checkAndRefreshMissingTrailers = async () => {
+      const RETRY_COOLDOWN = 5 * 60 * 1000;
+      const NO_TRAILER_COOLDOWN = 24 * 60 * 60 * 1000;
+      const REQUEST_DELAY = 2000;
+      const MAX_REQUESTS_PER_SESSION = 3;
+
+      let requestCount = 0;
+
+      for (const item of items) {
+        const doubanId = item.douban_id;
+        if (!doubanId) {
+          continue;
+        }
+
+        if (requestCount >= MAX_REQUESTS_PER_SESSION) {
+          console.log('[HeroBanner] 已达到本次请求上限，剩余项目将在下次检查');
+          break;
+        }
+
+        const cachedValue = refreshedTrailerUrls[doubanId];
+
+        if (!item.trailerUrl && !cachedValue) {
+          console.log('[HeroBanner] 检测到缺失的 trailer，尝试获取:', item.title);
+          await refreshTrailerUrl(doubanId);
+          requestCount++;
+          if (requestCount < MAX_REQUESTS_PER_SESSION) {
+            await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
+          }
+        } else if (cachedValue?.startsWith('NO_TRAILER_')) {
+          const parts = cachedValue.split('_');
+          const markedTime = parseInt(parts[parts.length - 1], 10);
+          const now = Date.now();
+          if (now - markedTime > NO_TRAILER_COOLDOWN) {
+            console.log(
+              '[HeroBanner] 无预告片标记已过期（24小时），重新尝试:',
+              item.title,
+            );
+            await refreshTrailerUrl(doubanId);
+            requestCount++;
+            if (requestCount < MAX_REQUESTS_PER_SESSION) {
+              await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
+            }
+          } else {
+            const remainingHours = Math.ceil(
+              (NO_TRAILER_COOLDOWN - (now - markedTime)) / 3600000,
+            );
+            console.log(
+              `[HeroBanner] 该影片无预告片，${remainingHours}小时后重试:`,
+              item.title,
+            );
+          }
+        } else if (cachedValue?.startsWith('FAILED_')) {
+          const parts = cachedValue.split('_');
+          const failedTime = parseInt(parts[parts.length - 1], 10);
+          const now = Date.now();
+          if (now - failedTime > RETRY_COOLDOWN) {
+            console.log('[HeroBanner] 失败冷却期已过，重新尝试:', item.title);
+            await refreshTrailerUrl(doubanId);
+            requestCount++;
+            if (requestCount < MAX_REQUESTS_PER_SESSION) {
+              await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
+            }
+          } else {
+            const remainingMinutes = Math.ceil(
+              (RETRY_COOLDOWN - (now - failedTime)) / 60000,
+            );
+            console.log(
+              `[HeroBanner] 该影片获取失败，${remainingMinutes}分钟后重试:`,
+              item.title,
+            );
+          }
+        }
+      }
+    };
+
+    const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
+    return () => clearTimeout(timer);
+  }, [items, refreshedTrailerUrls, refreshTrailerUrl, enableVideo]);
 
   return (
     <div
@@ -328,7 +282,6 @@ function HeroBanner({
           if (!shouldRender) return null;
 
           const imageUrl = getHDBackdrop(item.backdrop) || item.poster;
-          const trailerUrl = getEffectiveTrailerUrl(item);
 
           return (
             <div
@@ -352,7 +305,7 @@ function HeroBanner({
                 }
               />
 
-              {enableVideo && trailerUrl && index === currentIndex && (
+              {enableVideo && getEffectiveTrailerUrl(item) && index === currentIndex && (
                 <video
                   ref={videoRef}
                   className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
@@ -364,10 +317,7 @@ function HeroBanner({
                   playsInline
                   preload='metadata'
                   onError={async (event) => {
-                    if (!isMountedRef.current) return;
-
                     const video = event.currentTarget;
-                    const itemKey = `${item.douban_id || item.id}`;
 
                     console.error('[HeroBanner] 视频加载失败:', {
                       title: item.title,
@@ -375,48 +325,32 @@ function HeroBanner({
                       error: event,
                     });
 
-                    const retryCount =
-                      videoErrorRetryCount.current[itemKey] || 0;
-                    if (retryCount >= 1) {
-                      console.warn(
-                        '[HeroBanner] 视频已重试过，不再尝试，显示背景图片',
-                      );
-                      return;
-                    }
-
                     if (item.douban_id) {
-                      try {
-                        videoErrorRetryCount.current[itemKey] = retryCount + 1;
+                      if (refreshedTrailerUrls[item.douban_id]) {
+                        clearTrailerMutation.mutate({
+                          doubanId: item.douban_id,
+                        });
+                      }
 
-                        if (refreshedTrailerUrls[item.douban_id]) {
-                          clearTrailerMutation.mutate({
-                            doubanId: item.douban_id,
-                          });
-                        }
-
-                        const newUrl = await refreshTrailerUrl(item.douban_id);
-                        if (newUrl && isMountedRef.current) {
-                          video.load();
-                        }
-                      } catch (error) {
-                        if (isMountedRef.current) {
-                          console.warn(
-                            '[HeroBanner] 刷新trailer URL失败，将继续显示背景图片:',
-                            error,
-                          );
-                        }
+                      const newUrl = await refreshTrailerUrl(
+                        item.douban_id,
+                        true,
+                      );
+                      if (newUrl) {
+                        video.load();
                       }
                     }
                   }}
                   onLoadedData={(event) => {
-                    if (!isMountedRef.current) return;
-
+                    console.log('[HeroBanner] 视频加载成功:', item.title);
                     setVideoLoaded(true);
-                    event.currentTarget.play().catch(() => {});
+                    event.currentTarget.play().catch((error) => {
+                      console.error('[HeroBanner] 视频自动播放失败:', error);
+                    });
                   }}
                 >
                   <source
-                    src={getProxiedVideoUrl(trailerUrl)}
+                    src={getProxiedVideoUrl(getEffectiveTrailerUrl(item) || '')}
                     type='video/mp4'
                   />
                 </video>
@@ -452,7 +386,17 @@ function HeroBanner({
             )}
             {currentItem.type && (
               <span className='rounded border border-white/25 bg-white/20 px-2.5 py-1 font-medium text-white/90 backdrop-blur-[8px]'>
-                {getTypeLabel(currentItem.type)}
+                {currentItem.type === 'movie'
+                  ? '电影'
+                  : currentItem.type === 'tv'
+                    ? '剧集'
+                    : currentItem.type === 'variety'
+                      ? '综艺'
+                      : currentItem.type === 'shortdrama'
+                        ? '短剧'
+                        : currentItem.type === 'anime'
+                          ? '动漫'
+                          : '剧集'}
               </span>
             )}
           </div>
@@ -465,14 +409,30 @@ function HeroBanner({
 
           <div className='flex gap-2 pt-1 sm:gap-3 sm:pt-2'>
             <Link
-              href={getPlayHref(currentItem)}
+              href={
+                currentItem.type === 'shortdrama'
+                  ? `/play?title=${encodeURIComponent(currentItem.title)}&shortdrama_id=${currentItem.id}`
+                  : `/play?title=${encodeURIComponent(currentItem.title)}${
+                      currentItem.year ? `&year=${currentItem.year}` : ''
+                    }${currentItem.douban_id ? `&douban_id=${currentItem.douban_id}` : ''}${
+                      currentItem.type ? `&stype=${currentItem.type}` : ''
+                    }`
+              }
               className='flex items-center gap-2 rounded-full bg-white/90 px-5 py-2.5 text-sm font-bold text-black shadow-xl transition-all hover:bg-white active:scale-95 sm:px-8 sm:py-3 sm:text-base'
             >
               <Play className='h-5 w-5' fill='currentColor' />
               <span>立即播放</span>
             </Link>
             <Link
-              href={getDetailHref(currentItem)}
+              href={
+                currentItem.type === 'shortdrama'
+                  ? '/shortdrama'
+                  : `/douban?type=${
+                      currentItem.type === 'variety'
+                        ? 'show'
+                        : currentItem.type || 'movie'
+                    }`
+              }
               className='flex items-center gap-2 rounded-full border border-white/25 bg-white/20 px-5 py-2.5 text-sm font-bold text-white shadow-xl backdrop-blur-[12px] transition-all hover:bg-white/25 active:scale-95 sm:px-8 sm:py-3 sm:text-base'
             >
               <Info className='h-5 w-5' />
@@ -482,7 +442,7 @@ function HeroBanner({
         </div>
       </div>
 
-      {enableVideo && currentTrailerUrl && (
+      {enableVideo && getEffectiveTrailerUrl(currentItem) && (
         <button
           type='button'
           onClick={toggleMute}

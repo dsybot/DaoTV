@@ -3,7 +3,7 @@
 'use client';
 
 import { Film, Popcorn, Sparkles, Star } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const loadingMessages = [
   { icon: Film, text: '正在为您准备今晚的观影清单...', emoji: '🎬' },
@@ -12,71 +12,36 @@ const loadingMessages = [
   { icon: Sparkles, text: '正在寻找最适合您的推荐...', emoji: '✨' },
 ];
 
-const starPositions = [
-  { left: 12, top: 18, delay: 0.2, duration: 3.4 },
-  { left: 28, top: 72, delay: 1.1, duration: 4.1 },
-  { left: 43, top: 26, delay: 2.2, duration: 3.8 },
-  { left: 58, top: 84, delay: 0.7, duration: 4.7 },
-  { left: 69, top: 15, delay: 1.8, duration: 3.2 },
-  { left: 76, top: 52, delay: 2.8, duration: 4.4 },
-  { left: 86, top: 33, delay: 0.4, duration: 3.9 },
-  { left: 93, top: 68, delay: 1.5, duration: 4.8 },
-];
-
 export function CinematicLoadingFallback() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [bingWallpaper, setBingWallpaper] = useState('');
-  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    const abortController = new AbortController();
-
     const fetchBingWallpaper = async () => {
       try {
-        const response = await fetch('/api/bing-wallpaper', {
-          signal: abortController.signal,
-        });
+        const response = await fetch('/api/bing-wallpaper');
         const data = await response.json();
-        if (data.url && isMountedRef.current) {
+        if (data.url) {
           setBingWallpaper(data.url);
         }
       } catch (error) {
-        if (isMountedRef.current && (error as Error).name !== 'AbortError') {
-          console.log('Failed to fetch Bing wallpaper:', error);
-        }
+        console.log('Failed to fetch Bing wallpaper:', error);
       }
     };
 
     fetchBingWallpaper();
-
-    return () => {
-      abortController.abort();
-    };
   }, []);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      if (isMountedRef.current) {
-        setIsVisible(true);
-      }
-    });
-    return () => cancelAnimationFrame(frame);
+    setIsVisible(true);
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isMountedRef.current) {
-        setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-      }
+      setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
     }, 2500);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
   }, []);
 
   const currentMessage = loadingMessages[messageIndex];
@@ -101,15 +66,15 @@ export function CinematicLoadingFallback() {
       <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
       <div className='absolute inset-0 overflow-hidden'>
-        {starPositions.map((star, i) => (
+        {[...Array(8)].map((_, i) => (
           <div
             key={i}
             className='absolute w-1 h-1 bg-white rounded-full animate-twinkle'
             style={{
-              left: `${star.left}%`,
-              top: `${star.top}%`,
-              animationDelay: `${star.delay}s`,
-              animationDuration: `${star.duration}s`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`,
             }}
           />
         ))}

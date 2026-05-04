@@ -11,7 +11,6 @@ export function useRefreshedTrailerUrlsQuery() {
   return useQuery<Record<string, string>>({
     queryKey: ['refreshedTrailerUrls'],
     queryFn: () => {
-      // Read from localStorage as the source of truth
       if (typeof window !== 'undefined') {
         try {
           const stored = localStorage.getItem('refreshed-trailer-urls');
@@ -23,7 +22,6 @@ export function useRefreshedTrailerUrlsQuery() {
       }
       return {};
     },
-    // Initialize immediately from localStorage (no loading state)
     initialData: () => {
       if (typeof window !== 'undefined') {
         try {
@@ -35,7 +33,7 @@ export function useRefreshedTrailerUrlsQuery() {
       }
       return {};
     },
-    staleTime: Infinity, // Never refetch automatically - only updated via mutations
+    staleTime: Infinity,
     gcTime: Infinity,
   });
 }
@@ -49,42 +47,52 @@ export function useRefreshedTrailerUrlsQuery() {
 export function useRefreshTrailerUrlMutation() {
   const queryClient = useQueryClient();
 
-  return useMutation<string | null, Error, { doubanId: number | string }>({
-    mutationFn: async ({ doubanId }) => {
-      console.log('[HeroBanner] 检测到trailer URL过期，重新获取:', doubanId);
+  return useMutation<
+    string | null,
+    Error,
+    { doubanId: number | string; force?: boolean }
+  >({
+    mutationFn: async ({ doubanId, force = false }) => {
+      console.log(
+        '[HeroBanner] 检测到trailer URL过期，重新获取:',
+        doubanId,
+        force ? '(强制刷新)' : '',
+      );
 
-      try {
-        const response = await fetch(
-          `/api/douban/refresh-trailer?id=${doubanId}`,
-        );
+      const url = `/api/douban/refresh-trailer?id=${doubanId}${force ? '&force=true' : ''}`;
+      const response = await fetch(url);
+      const data = await response.json();
 
-        if (!response.ok) {
-          console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
-          return null;
-        }
+      if (response.status === 404 && data.error === 'NO_TRAILER') {
+        console.warn('[HeroBanner] 该影片没有预告片，记录状态避免重复请求');
+        return `NO_TRAILER_${Date.now()}`;
+      }
 
-        const data = await response.json();
-        if (data.code === 200 && data.data?.trailerUrl) {
-          console.log('[HeroBanner] 成功获取新的trailer URL');
-          return data.data.trailerUrl;
-        }
+      if (response.status >= 500) {
+        console.error('[HeroBanner] 服务端错误，记录失败状态:', response.status);
+        return `FAILED_${Date.now()}`;
+      }
 
-        console.warn('[HeroBanner] 未能获取新的trailer URL:', data.message);
-        return null;
-      } catch (error) {
-        console.error('[HeroBanner] 刷新trailer URL时发生网络错误:', error);
+      if (!response.ok) {
+        console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
         return null;
       }
+
+      if (data.code === 200 && data.data?.trailerUrl) {
+        console.log('[HeroBanner] 成功获取新的trailer URL');
+        return data.data.trailerUrl;
+      }
+
+      console.warn('[HeroBanner] 未能获取新的trailer URL:', data.message);
+      return null;
     },
     onSuccess: (newUrl, { doubanId }) => {
       if (newUrl) {
-        // Update query cache with new URL
         queryClient.setQueryData<Record<string, string>>(
           ['refreshedTrailerUrls'],
           (prev = {}) => {
             const updated = { ...prev, [doubanId]: newUrl };
 
-            // Persist to localStorage
             try {
               localStorage.setItem(
                 'refreshed-trailer-urls',
@@ -98,9 +106,6 @@ export function useRefreshTrailerUrlMutation() {
           },
         );
       }
-    },
-    onError: (error, { doubanId }) => {
-      console.error('[HeroBanner] Mutation失败:', { doubanId, error });
     },
   });
 }
@@ -116,14 +121,12 @@ export function useClearTrailerUrlMutation() {
     mutationFn: async ({ doubanId }) => {
       console.log('[HeroBanner] localStorage中的URL也过期了，清除并重新获取');
 
-      // Update query cache - remove the expired URL
       queryClient.setQueryData<Record<string, string>>(
         ['refreshedTrailerUrls'],
         (prev = {}) => {
           const updated = { ...prev };
           delete updated[doubanId as string];
 
-          // Persist to localStorage
           try {
             localStorage.setItem(
               'refreshed-trailer-urls',

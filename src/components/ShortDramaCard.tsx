@@ -108,16 +108,12 @@ function ShortDramaCard({
 
   // 获取真实集数（优先使用备用API）
   useEffect(() => {
-    let isMounted = true;
-
     const fetchEpisodeCount = async () => {
       const cacheKey = getCacheKey('episodes', { id: drama.id });
 
       // 检查统一缓存
       const cached = await getCache(cacheKey);
       if (cached && typeof cached === 'number') {
-        if (!isMounted) return;
-
         if (cached > 1) {
           setRealEpisodeCount(cached);
           setShowEpisodeCount(true);
@@ -147,13 +143,10 @@ function ShortDramaCard({
         let response = await fetch(
           `/api/shortdrama/parse?id=${drama.id}&episode=0&name=${encodeURIComponent(drama.name)}`,
         );
-        if (!isMounted) return;
-
         let result = null;
 
         if (response.ok) {
           result = await response.json();
-          if (!isMounted) return;
         }
 
         // 如果第1集失败，尝试第2集（episode=1）
@@ -161,11 +154,8 @@ function ShortDramaCard({
           response = await fetch(
             `/api/shortdrama/parse?id=${drama.id}&episode=1&name=${encodeURIComponent(drama.name)}`,
           );
-          if (!isMounted) return;
-
           if (response.ok) {
             result = await response.json();
-            if (!isMounted) return;
           }
         }
 
@@ -184,8 +174,6 @@ function ShortDramaCard({
           await setCache(cacheKey, 0, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
         }
       } catch (error) {
-        if (!isMounted) return;
-
         console.error('获取集数失败:', error);
         // 网络错误时不显示集数标签
         setShowEpisodeCount(false);
@@ -198,9 +186,6 @@ function ShortDramaCard({
       fetchEpisodeCount();
     }
 
-    return () => {
-      isMounted = false;
-    };
   }, [drama.id, drama.episode_count, drama.name]);
 
   // 处理收藏切换 - 使用 TanStack Query mutation
