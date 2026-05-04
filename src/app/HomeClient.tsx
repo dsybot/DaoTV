@@ -172,6 +172,22 @@ function HomeClient({
     () => ({ ...defaultHomePageConfig, ...initialConfig }),
     [initialConfig],
   );
+  const homeQueryConfig = useMemo(
+    () => ({
+      showHotMovies: homePageConfig.showHotMovies,
+      showHotTvShows: homePageConfig.showHotTvShows,
+      showHotVariety: homePageConfig.showHotVariety,
+      showNewAnime: homePageConfig.showNewAnime,
+      showHotShortDramas: homePageConfig.showHotShortDramas,
+    }),
+    [
+      homePageConfig.showHotMovies,
+      homePageConfig.showHotTvShows,
+      homePageConfig.showHotVariety,
+      homePageConfig.showNewAnime,
+      homePageConfig.showHotShortDramas,
+    ],
+  );
 
   // 🚀 TanStack Query - 首页数据查询（替代 GlobalCache）
   const {
@@ -180,13 +196,7 @@ function HomeClient({
     isFetching: homeFetching,
     errors: homeErrors,
     refetch: refetchHomeData,
-  } = useHomePageQueries({
-    showHotMovies: homePageConfig.showHotMovies,
-    showHotTvShows: homePageConfig.showHotTvShows,
-    showHotVariety: homePageConfig.showHotVariety,
-    showNewAnime: homePageConfig.showNewAnime,
-    showHotShortDramas: homePageConfig.showHotShortDramas,
-  });
+  } = useHomePageQueries(homeQueryConfig);
 
   // 🎯 优化：使用 useTransition 让 tab 切换不阻塞 UI
   const [isPending, startTransition] = useTransition();
