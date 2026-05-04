@@ -80,6 +80,27 @@ export async function GET(request: Request) {
       'Connection': 'keep-alive'
     };
 
+    // 转发 Referer/Origin 到上游（解决某些源站的403白名单校验）
+    // 优先级：URL参数 ?referer= > 请求头 Referer > 上游URL自身的origin
+    const explicitReferer = searchParams.get('referer');
+    const inboundReferer = request.headers.get('referer');
+    let fallbackReferer: string | undefined;
+    try {
+      fallbackReferer = new URL(decodedUrl).origin + '/';
+    } catch {
+      // ignore
+    }
+    const refererToSend = explicitReferer || inboundReferer || fallbackReferer;
+
+    if (refererToSend) {
+      headers['Referer'] = refererToSend;
+      try {
+        headers['Origin'] = new URL(refererToSend).origin;
+      } catch {
+        // ignore
+      }
+    }
+
     response = await fetch(decodedUrl, {
       cache: 'no-cache',
       redirect: 'follow',
@@ -248,6 +269,11 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
   const proxyBase = `${protocol}://${host}/api/proxy`;
   const sourceParam = sourceKey ? `&moontv-source=${sourceKey}` : '';
 
+  // 提取当前请求的referer参数，用于透传到variant URL
+  const { searchParams } = new URL(req.url);
+  const explicitReferer = searchParams.get('referer');
+  const refererParam = explicitReferer ? `&referer=${encodeURIComponent(explicitReferer)}` : '';
+
   const lines = content.split('\n');
   const rewrittenLines: string[] = [];
   const variables = new Map<string, string>(); // 用于 EXT-X-DEFINE 变量替换
@@ -313,7 +339,8 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
         if (nextLine && !nextLine.startsWith('#')) {
           let resolvedUrl = resolveUrl(baseUrl, nextLine);
           resolvedUrl = substituteVariables(resolvedUrl, variables);
-          const proxyUrl = `${proxyBase}/m3u8?url=${encodeURIComponent(resolvedUrl)}${sourceParam}`;
+          // 把当前请求的referer参数透传到variant URL，否则下一跳会因为没有Referer被上游拒绝
+          const proxyUrl = `${proxyBase}/m3u8?url=${encodeURIComponent(resolvedUrl)}${sourceParam}${refererParam}`;
           rewrittenLines.push(proxyUrl);
         } else {
           rewrittenLines.push(nextLine);
