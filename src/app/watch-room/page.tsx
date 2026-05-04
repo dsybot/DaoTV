@@ -15,7 +15,7 @@ type TabType = 'create' | 'join' | 'list';
 export default function WatchRoomPage() {
   const router = useRouter();
   const watchRoom = useWatchRoomContext();
-  const { getRoomList, isConnected, createRoom, joinRoom, leaveRoom, currentRoom, isOwner, members, configLoading } = watchRoom;
+  const { getRoomList, isConnected, createRoom, joinRoom, leaveRoom, currentRoom, isOwner, members, configLoading, hasOwnerToken, dismissRoomFromList } = watchRoom;
   const [activeTab, setActiveTab] = useState<TabType>('create');
 
   // 获取当前登录用户
@@ -153,6 +153,26 @@ export default function WatchRoomPage() {
   const handleLeaveRoom = () => {
     if (confirm(isOwner ? '确定要解散房间吗？所有成员将被踢出房间。' : '确定要退出房间吗？')) {
       leaveRoom();
+    }
+  };
+
+  // 从房间列表解散房间
+  const handleDismissRoom = async (roomId: string, roomName: string) => {
+    if (!confirm(`确定要解散房间"${roomName}"吗？所有成员将被踢出房间。`)) {
+      return;
+    }
+
+    try {
+      const result = await dismissRoomFromList(roomId);
+      if (result.success) {
+        // 刷新房间列表
+        await loadRooms();
+      } else {
+        alert(result.error || '解散房间失败');
+      }
+    } catch (error) {
+      console.error('[WatchRoom] Failed to dismiss room:', error);
+      alert('解散房间失败');
     }
   };
 
@@ -966,12 +986,27 @@ export default function WatchRoomPage() {
                         );
                       })()}
 
-                      <button
-                        onClick={() => handleJoinFromList(room)}
-                        className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2.5 rounded-lg transition-colors"
-                      >
-                        加入房间
-                      </button>
+                      {/* 按钮区域 */}
+                      <div className="space-y-2">
+                        {/* 如果有 ownerToken，显示解散房间按钮 */}
+                        {hasOwnerToken(room.id) && (
+                          <button
+                            onClick={() => handleDismissRoom(room.id, room.name)}
+                            className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            解散房间
+                          </button>
+                        )}
+
+                        {/* 加入房间按钮 */}
+                        <button
+                          onClick={() => handleJoinFromList(room)}
+                          className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2.5 rounded-lg transition-colors"
+                        >
+                          加入房间
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

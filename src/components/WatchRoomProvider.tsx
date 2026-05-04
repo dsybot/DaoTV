@@ -31,6 +31,8 @@ export interface WatchRoomContextType {
   }) => Promise<{ room: Room; members: Member[] }>;
   leaveRoom: () => void;
   getRoomList: () => Promise<Room[]>;
+  hasOwnerToken: (roomId: string) => boolean;
+  dismissRoomFromList: (roomId: string) => Promise<{ success: boolean; error?: string }>;
 
   // 聊天
   sendChatMessage: (content: string, type?: 'text' | 'emoji') => void;
@@ -228,6 +230,8 @@ export function WatchRoomProvider({ children }: WatchRoomProviderProps) {
     },
     leaveRoom: watchRoom.leaveRoom,
     getRoomList: watchRoom.getRoomList,
+    hasOwnerToken: watchRoom.hasOwnerToken,
+    dismissRoomFromList: watchRoom.dismissRoomFromList,
     sendChatMessage: watchRoom.sendMessage,
     updatePlayState: watchRoom.updatePlayState,
     seekPlayback: watchRoom.seekTo,
