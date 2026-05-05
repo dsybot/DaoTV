@@ -87,8 +87,15 @@ export async function GET(request: Request) {
 
     if (!response.ok) {
       segmentStats.errors++;
+      const upstreamStatus = response.status;
+      let errorMessage = `Failed to fetch segment: ${response.status} ${response.statusText}`;
+
+      if (upstreamStatus === 401 || upstreamStatus === 403) {
+        errorMessage = `上游资源拒绝访问（${upstreamStatus}），已尝试自动补齐鉴权和防盗链请求头`;
+      }
+
       return NextResponse.json({
-        error: `Failed to fetch segment: ${response.status} ${response.statusText}`
+        error: errorMessage
       }, { status: response.status >= 500 ? 500 : response.status });
     }
 
@@ -106,8 +113,12 @@ export async function GET(request: Request) {
     headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Range, Origin, Accept, User-Agent');
     headers.set('Accept-Ranges', 'bytes');
-    headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Content-Type, Accept-Ranges');
+    headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Content-Type, Accept-Ranges, X-Upstream-Url');
     headers.set('Cache-Control', 'public, max-age=300'); // 5分钟缓存
+
+    if (response.url) {
+      headers.set('X-Upstream-Url', response.url);
+    }
 
     // 复制原始响应的重要头部（不转发 Content-Length，因为流式传输使用 chunked encoding，两者冲突）
     const importantHeaders = ['Content-Range', 'Last-Modified', 'ETag'];

@@ -168,6 +168,30 @@ function HomeClient({
 }: {
   initialConfig: HomePageModuleConfig;
 }) {
+  // 所有本地状态先声明，保证 Hook 调用顺序稳定
+  const [showWelcomeToast, setShowWelcomeToast] = useState(false);
+  const [showClearFavoritesDialog, setShowClearFavoritesDialog] =
+    useState(false);
+  const [requireClearConfirmation, setRequireClearConfirmation] =
+    useState(false);
+  const [favoriteFilter, setFavoriteFilter] = useState<
+    'all' | 'movie' | 'tv' | 'shortdrama' | 'live' | 'variety' | 'anime'
+  >('all');
+  const [favoriteSortBy, setFavoriteSortBy] = useState<'recent' | 'title'>(
+    'recent',
+  );
+  const [upcomingFilter, setUpcomingFilter] = useState<'all' | 'movie' | 'tv'>(
+    'all',
+  );
+  const [reminderFilter, setReminderFilter] = useState<
+    'all' | 'upcoming' | 'today' | 'released'
+  >('all');
+  const [showClearRemindersDialog, setShowClearRemindersDialog] =
+    useState(false);
+
+  // 🎯 优化：使用 useTransition 让 tab 切换不阻塞 UI
+  const [isPending, startTransition] = useTransition();
+
   const homePageConfig = useMemo(
     () => ({ ...defaultHomePageConfig, ...initialConfig }),
     [initialConfig],
@@ -197,9 +221,6 @@ function HomeClient({
     errors: homeErrors,
     refetch: refetchHomeData,
   } = useHomePageQueries(homeQueryConfig);
-
-  // 🎯 优化：使用 useTransition 让 tab 切换不阻塞 UI
-  const [isPending, startTransition] = useTransition();
 
   // 🎯 优化：使用 useReducer 合并本地状态
   const [state, dispatch] = useReducer(homeReducer, {
@@ -309,6 +330,65 @@ function HomeClient({
 
   const bangumiCalendarData = homeData?.bangumiCalendar || [];
 
+  const heroBannerItems = useMemo(
+    () => [
+      ...hotMovies.slice(0, 2).map((movie) => ({
+        id: movie.id,
+        title: movie.title,
+        poster: movie.poster,
+        backdrop: movie.backdrop,
+        trailerUrl: movie.trailerUrl,
+        description: movie.plot_summary,
+        year: movie.year,
+        rate: movie.rate,
+        douban_id: Number(movie.id),
+        type: 'movie' as const,
+      })),
+      ...hotTvShows.slice(0, 2).map((show) => ({
+        id: show.id,
+        title: show.title,
+        poster: show.poster,
+        backdrop: show.backdrop,
+        trailerUrl: show.trailerUrl,
+        description: show.plot_summary,
+        year: show.year,
+        rate: show.rate,
+        douban_id: Number(show.id),
+        type: 'tv' as const,
+      })),
+      ...hotVarietyShows.slice(0, 1).map((show) => ({
+        id: show.id,
+        title: show.title,
+        poster: show.poster,
+        backdrop: show.backdrop,
+        trailerUrl: show.trailerUrl,
+        description: show.plot_summary,
+        year: show.year,
+        rate: show.rate,
+        douban_id: Number(show.id),
+        type: 'variety' as const,
+      })),
+      ...hotAnime.slice(0, 1).map((anime) => ({
+        id: anime.id,
+        title: anime.title,
+        poster: anime.poster,
+        backdrop: anime.backdrop,
+        trailerUrl: anime.trailerUrl,
+        description: anime.plot_summary,
+        year: anime.year,
+        rate: anime.rate,
+        douban_id: Number(anime.id),
+        type: 'anime' as const,
+      })),
+    ],
+    [hotMovies, hotTvShows, hotVarietyShows, hotAnime],
+  );
+
+  const enableVideo = useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    return !(window as any).RUNTIME_CONFIG?.DISABLE_HERO_TRAILER;
+  }, []);
+
   const hasAnyData =
     homeData &&
     (homeData.hotMovies.length > 0 ||
@@ -321,8 +401,6 @@ function HomeClient({
 
   // 解构本地状态
   const { activeTab, upcomingReleases, username, showAnnouncement } = state;
-
-  const [showWelcomeToast, setShowWelcomeToast] = useState(false);
 
   // 🚀 Web Worker引用
   const workerRef = useRef<Worker | null>(null);
@@ -358,11 +436,6 @@ function HomeClient({
     });
     return dateStr.replace(/\//g, '-');
   }, []); // 空依赖，只在组件挂载时计算一次
-
-  const [showClearFavoritesDialog, setShowClearFavoritesDialog] =
-    useState(false);
-  const [requireClearConfirmation, setRequireClearConfirmation] =
-    useState(false);
 
   // 合并初始化逻辑 - 优化性能，减少重渲染
   useEffect(() => {
@@ -498,21 +571,6 @@ function HomeClient({
         };
       });
   }, [allReminders]);
-
-  const [favoriteFilter, setFavoriteFilter] = useState<
-    'all' | 'movie' | 'tv' | 'shortdrama' | 'live' | 'variety' | 'anime'
-  >('all');
-  const [favoriteSortBy, setFavoriteSortBy] = useState<'recent' | 'title'>(
-    'recent',
-  );
-  const [upcomingFilter, setUpcomingFilter] = useState<'all' | 'movie' | 'tv'>(
-    'all',
-  );
-  const [reminderFilter, setReminderFilter] = useState<
-    'all' | 'upcoming' | 'today' | 'released'
-  >('all');
-  const [showClearRemindersDialog, setShowClearRemindersDialog] =
-    useState(false);
 
   // 🔄 优化：缓存收藏夹统计信息计算
   const favoriteStats = useMemo(() => {
@@ -913,76 +971,17 @@ function HomeClient({
 
       <div className='dao-home-shell overflow-visible pb-32 md:pb-safe-bottom'>
         {/* 轮播图 - 在所有tab显示 */}
-        {state.homePageConfig.showHeroBanner &&
-          (hotMovies.length > 0 ||
-            hotTvShows.length > 0 ||
-            hotVarietyShows.length > 0 ||
-            hotShortDramas.length > 0) && (
-            <div className='dao-hero-wrap mb-5 md:mb-4'>
-              <HeroBanner
-                items={[
-                  // 豆瓣电影
-                  ...hotMovies.slice(0, 2).map((movie) => ({
-                    id: movie.id,
-                    title: movie.title,
-                    poster: movie.poster,
-                    backdrop: movie.backdrop,
-                    trailerUrl: movie.trailerUrl,
-                    description: movie.plot_summary,
-                    year: movie.year,
-                    rate: movie.rate,
-                    douban_id: Number(movie.id),
-                    type: 'movie' as const,
-                  })),
-                  // 豆瓣电视剧
-                  ...hotTvShows.slice(0, 2).map((show) => ({
-                    id: show.id,
-                    title: show.title,
-                    poster: show.poster,
-                    backdrop: show.backdrop,
-                    trailerUrl: show.trailerUrl,
-                    description: show.plot_summary,
-                    year: show.year,
-                    rate: show.rate,
-                    douban_id: Number(show.id),
-                    type: 'tv' as const,
-                  })),
-                  // 豆瓣综艺
-                  ...hotVarietyShows.slice(0, 1).map((show) => ({
-                    id: show.id,
-                    title: show.title,
-                    poster: show.poster,
-                    backdrop: show.backdrop,
-                    trailerUrl: show.trailerUrl,
-                    description: show.plot_summary,
-                    year: show.year,
-                    rate: show.rate,
-                    douban_id: Number(show.id),
-                    type: 'variety' as const,
-                  })),
-                  // 豆瓣动漫
-                  ...hotAnime.slice(0, 1).map((anime) => ({
-                    id: anime.id,
-                    title: anime.title,
-                    poster: anime.poster,
-                    backdrop: anime.backdrop,
-                    trailerUrl: anime.trailerUrl,
-                    description: anime.plot_summary,
-                    year: anime.year,
-                    rate: anime.rate,
-                    douban_id: Number(anime.id),
-                    type: 'anime' as const,
-                  })),
-                ]}
-                autoPlayInterval={8000}
-                showControls={true}
-                showIndicators={true}
-                enableVideo={
-                  !(window as any).RUNTIME_CONFIG?.DISABLE_HERO_TRAILER
-                }
-              />
-            </div>
-          )}
+        {state.homePageConfig.showHeroBanner && heroBannerItems.length > 0 && (
+          <div className='dao-hero-wrap mb-5 md:mb-4'>
+            <HeroBanner
+              items={heroBannerItems}
+              autoPlayInterval={8000}
+              showControls={true}
+              showIndicators={true}
+              enableVideo={enableVideo}
+            />
+          </div>
+        )}
 
         {/* 顶部 Tab 切换 */}
         <div className='relative z-10 mb-8 flex items-center justify-center px-2 sm:px-10 md:-mt-1'>

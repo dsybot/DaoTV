@@ -10,7 +10,7 @@ import { refreshLiveChannels } from '@/lib/live';
 import { getSpiderJar } from '@/lib/spiderJar';
 import { SearchResult, Favorite, PlayRecord } from '@/lib/types';
 import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
-import { migrateOldCache, cleanupExpiredCache, validateCacheSize } from '@/lib/video-cache';
+import { cleanupExpiredCache, validateCacheSize } from '@/lib/video-cache';
 
 export const runtime = 'nodejs';
 
@@ -304,17 +304,6 @@ async function cronJob() {
         console.log('✅ 配置刷新完成');
       } catch (err) {
         console.error('❌ 配置刷新失败:', err);
-      }
-    })(),
-
-    // 视频缓存迁移
-    (async () => {
-      try {
-        console.log('🔄 检查并迁移旧视频缓存...');
-        await migrateOldCache();
-        console.log('✅ 视频缓存迁移完成');
-      } catch (err) {
-        console.error('❌ 视频缓存迁移失败:', err);
       }
     })(),
 

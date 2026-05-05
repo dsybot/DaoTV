@@ -681,6 +681,36 @@ export class DbManager {
       await (this.storage as any).deleteUserEmbyConfig(userName);
     }
   }
+
+  // 崩溃日志相关方法
+  async saveCrashLog(crashLog: any): Promise<void> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).saveCrashLog === 'function') {
+      await (this.storage as any).saveCrashLog(crashLog);
+    }
+  }
+
+  async getCrashLogs(limit?: number): Promise<any[]> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).getCrashLogs === 'function') {
+      return (this.storage as any).getCrashLogs(limit);
+    }
+    return [];
+  }
+
+  async deleteCrashLog(timestamp: string): Promise<void> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).deleteCrashLog === 'function') {
+      await (this.storage as any).deleteCrashLog(timestamp);
+    }
+  }
+
+  async clearCrashLogs(): Promise<void> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).clearCrashLogs === 'function') {
+      await (this.storage as any).clearCrashLogs();
+    }
+  }
 }
 
 // 导出默认实例

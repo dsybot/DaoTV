@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { db } from '@/lib/db';
 import { recordRequest } from '@/lib/performance-monitor';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
@@ -30,6 +31,18 @@ const CACHE_TTL = {
   no_trailer: 24 * 60 * 60,
   failed: 5 * 60,
 };
+
+const pendingRequests = new Map<string, Promise<TrailerCache>>();
+
+let lastDoubanRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 3000;
+
+const RATE_LIMIT_KEY = 'douban:refresh-trailer:rate-limit';
+const RATE_LIMIT_WINDOW = 60;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+
+const lastForceRefreshTime = new Map<string, number>();
+const FORCE_REFRESH_COOLDOWN = 60 * 1000;
 
 function getCacheKey(id: string): string {
   return `trailer:${id}`;
@@ -64,6 +77,60 @@ async function clearCache(id: string): Promise<void> {
   }
 }
 
+async function checkRateLimit(): Promise<{
+  allowed: boolean;
+  remaining: number;
+  resetIn: number;
+}> {
+  try {
+    const count = (await db.getCache(RATE_LIMIT_KEY)) as number | null;
+    const currentCount = count || 0;
+
+    if (currentCount >= RATE_LIMIT_MAX_REQUESTS) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetIn: RATE_LIMIT_WINDOW,
+      };
+    }
+
+    return {
+      allowed: true,
+      remaining: RATE_LIMIT_MAX_REQUESTS - currentCount - 1,
+      resetIn: RATE_LIMIT_WINDOW,
+    };
+  } catch (error) {
+    console.error('[refresh-trailer] 检查限流失败:', error);
+    return { allowed: true, remaining: 0, resetIn: 0 };
+  }
+}
+
+async function incrementRateLimit(): Promise<void> {
+  try {
+    const count = (await db.getCache(RATE_LIMIT_KEY)) as number | null;
+    const newCount = (count || 0) + 1;
+    await db.setCache(RATE_LIMIT_KEY, newCount, RATE_LIMIT_WINDOW);
+    console.log(
+      `[refresh-trailer] 限流计数: ${newCount}/${RATE_LIMIT_MAX_REQUESTS} (${RATE_LIMIT_WINDOW}秒窗口)`,
+    );
+  } catch (error) {
+    console.error('[refresh-trailer] 更新限流计数失败:', error);
+  }
+}
+
+async function waitForRequestInterval(): Promise<void> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastDoubanRequestTime;
+
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    console.log(`[refresh-trailer] 全局限流：等待 ${waitTime}ms 后请求豆瓣`);
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+
+  lastDoubanRequestTime = Date.now();
+}
+
 async function fetchTrailerWithRetry(
   id: string,
   retryCount = 0,
@@ -75,7 +142,7 @@ async function fetchTrailerWithRetry(
   const startTime = Date.now();
 
   try {
-    let mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
+    const mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
     console.log(
       `[refresh-trailer] 开始请求影片 ${id}${retryCount > 0 ? ` (重试 ${retryCount}/${MAX_RETRIES})` : ''}`,
@@ -84,7 +151,7 @@ async function fetchTrailerWithRetry(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
-    let response = await fetch(mobileApiUrl, {
+    const response = await fetch(mobileApiUrl, {
       signal: controller.signal,
       headers: {
         'User-Agent': DEFAULT_USER_AGENT,
@@ -97,35 +164,10 @@ async function fetchTrailerWithRetry(
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
       },
-      redirect: 'manual',
+      redirect: 'follow',
     });
 
     clearTimeout(timeoutId);
-
-    if (response.status >= 300 && response.status < 400) {
-      console.log('[refresh-trailer] 检测到重定向，尝试 TV 端点');
-      mobileApiUrl = `https://m.douban.com/rexxar/api/v2/tv/${id}`;
-
-      const tvController = new AbortController();
-      const tvTimeoutId = setTimeout(() => tvController.abort(), TIMEOUT);
-
-      response = await fetch(mobileApiUrl, {
-        signal: tvController.signal,
-        headers: {
-          'User-Agent': DEFAULT_USER_AGENT,
-          Referer: 'https://movie.douban.com/explore',
-          Accept: 'application/json, text/plain, */*',
-          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'Accept-Encoding': 'gzip, deflate, br',
-          Origin: 'https://movie.douban.com',
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'same-site',
-        },
-      });
-
-      clearTimeout(tvTimeoutId);
-    }
 
     const fetchTime = Date.now() - startTime;
     console.log(
@@ -145,8 +187,9 @@ async function fetchTrailerWithRetry(
     }
 
     const totalTime = Date.now() - startTime;
+    const fetchedAt = new Date().toISOString();
     console.log(
-      `[refresh-trailer] 影片 ${id} 成功获取trailer URL，总耗时: ${totalTime}ms`,
+      `[refresh-trailer] 影片 ${id} 成功获取trailer URL，总耗时: ${totalTime}ms，获取时间: ${fetchedAt}`,
     );
 
     return trailerUrl;
@@ -213,7 +256,98 @@ export async function GET(request: Request) {
   }
 
   if (force) {
-    console.log(`[refresh-trailer] 强制刷新，清除缓存: ${id}`);
+    const now = Date.now();
+    const lastRefreshTime = lastForceRefreshTime.get(id) || 0;
+    const timeSinceLastRefresh = now - lastRefreshTime;
+
+    if (timeSinceLastRefresh < FORCE_REFRESH_COOLDOWN) {
+      const remainingSeconds = Math.ceil(
+        (FORCE_REFRESH_COOLDOWN - timeSinceLastRefresh) / 1000,
+      );
+      console.warn(
+        `[refresh-trailer] 强制刷新冷却中: ${id}，${remainingSeconds}秒后可重试`,
+      );
+
+      const cooldownResponse = {
+        code: 429,
+        message: `强制刷新冷却中，${remainingSeconds}秒后可重试`,
+        error: 'FORCE_REFRESH_COOLDOWN',
+      };
+      const cooldownSize = Buffer.byteLength(
+        JSON.stringify(cooldownResponse),
+        'utf8',
+      );
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/refresh-trailer',
+        statusCode: 429,
+        duration: Date.now() - startTime,
+        memoryUsed:
+          (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize: cooldownSize,
+      });
+
+      return NextResponse.json(cooldownResponse, { status: 429 });
+    }
+
+    lastForceRefreshTime.set(id, now);
+
+    const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE;
+    if (storageType === 'kvrocks') {
+      try {
+        const videoFileExists = await isVideoCached('', id);
+
+        if (videoFileExists) {
+          console.log(
+            `[refresh-trailer] 强制刷新但命中视频文件缓存: ${id}，直接返回，不清除 Redis 缓存`,
+          );
+
+          const tempUrl = `https://vt1.doubanio.com/placeholder/M/${id}.mp4`;
+          const cachedVideoUrl = `/api/video-proxy?url=${encodeURIComponent(tempUrl)}&douban_id=${id}`;
+
+          const successResponse = {
+            code: 200,
+            message: '获取成功（视频文件缓存，跳过强制刷新）',
+            data: {
+              trailerUrl: cachedVideoUrl,
+            },
+          };
+          const responseSize = Buffer.byteLength(
+            JSON.stringify(successResponse),
+            'utf8',
+          );
+
+          recordRequest({
+            timestamp: startTime,
+            method: 'GET',
+            path: '/api/douban/refresh-trailer',
+            statusCode: 200,
+            duration: Date.now() - startTime,
+            memoryUsed:
+              (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+            dbQueries: 0,
+            requestSize: 0,
+            responseSize,
+          });
+
+          return NextResponse.json(successResponse, {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+              Pragma: 'no-cache',
+              Expires: '0',
+            },
+          });
+        }
+      } catch (error) {
+        console.error('[refresh-trailer] 检查视频文件缓存失败:', error);
+      }
+    }
+
+    console.log(`[refresh-trailer] 强制刷新，清除 Redis 缓存: ${id}`);
     await clearCache(id);
   } else {
     const cached = await getCache(id);
@@ -226,11 +360,23 @@ export async function GET(request: Request) {
       );
 
       if (cached.status === 'success' && cached.url) {
+        let trailerUrl = cached.url;
+        if (!trailerUrl.includes('douban_id=')) {
+          if (trailerUrl.startsWith('/api/video-proxy?url=')) {
+            trailerUrl = `${trailerUrl}&douban_id=${id}`;
+          } else if (
+            trailerUrl.includes('douban') ||
+            trailerUrl.includes('doubanio')
+          ) {
+            trailerUrl = `/api/video-proxy?url=${encodeURIComponent(trailerUrl)}&douban_id=${id}`;
+          }
+        }
+
         const successResponse = {
           code: 200,
           message: '获取成功（Redis 缓存）',
           data: {
-            trailerUrl: cached.url,
+            trailerUrl,
           },
         };
         const responseSize = Buffer.byteLength(
@@ -319,13 +465,13 @@ export async function GET(request: Request) {
     const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE;
     if (storageType === 'kvrocks') {
       try {
-        const tempUrl = `https://vt1.doubanio.com/placeholder/M/${id}.mp4`;
-        const videoFileExists = await isVideoCached(tempUrl);
+        const videoFileExists = await isVideoCached('', id);
 
         if (videoFileExists) {
           console.log(`[refresh-trailer] 命中视频文件缓存: ${id}，返回代理 URL`);
 
-          const cachedVideoUrl = `/api/video-proxy?url=${encodeURIComponent(tempUrl)}`;
+          const tempUrl = `https://vt1.doubanio.com/placeholder/M/${id}.mp4`;
+          const cachedVideoUrl = `/api/video-proxy?url=${encodeURIComponent(tempUrl)}&douban_id=${id}`;
 
           const successResponse = {
             code: 200,
@@ -366,121 +512,64 @@ export async function GET(request: Request) {
     }
   }
 
-  try {
-    const trailerUrl = await fetchTrailerWithRetry(id);
+  const rateLimitCheck = await checkRateLimit();
+  if (!rateLimitCheck.allowed) {
+    console.warn(
+      `[refresh-trailer] 触发限流：已达到每分钟 ${RATE_LIMIT_MAX_REQUESTS} 次请求上限，${rateLimitCheck.resetIn}秒后重置`,
+    );
 
-    await setCache(id, {
-      url: trailerUrl,
-      status: 'success',
-      timestamp: Date.now(),
-    });
-
-    const successResponse = {
-      code: 200,
-      message: '获取成功',
-      data: {
-        trailerUrl,
-      },
+    const rateLimitResponse = {
+      code: 429,
+      message: '请求过于频繁，请稍后再试',
+      error: 'RATE_LIMIT_EXCEEDED',
+      details: `每分钟最多 ${RATE_LIMIT_MAX_REQUESTS} 次请求，${rateLimitCheck.resetIn}秒后重置`,
     };
-    const responseSize = Buffer.byteLength(JSON.stringify(successResponse), 'utf8');
+    const rateLimitSize = Buffer.byteLength(
+      JSON.stringify(rateLimitResponse),
+      'utf8',
+    );
 
     recordRequest({
       timestamp: startTime,
       method: 'GET',
       path: '/api/douban/refresh-trailer',
-      statusCode: 200,
+      statusCode: 429,
       duration: Date.now() - startTime,
       memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
       dbQueries: 0,
       requestSize: 0,
-      responseSize,
+      responseSize: rateLimitSize,
     });
 
-    return NextResponse.json(successResponse, {
+    return NextResponse.json(rateLimitResponse, {
+      status: 429,
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        Pragma: 'no-cache',
-        Expires: '0',
+        'Retry-After': rateLimitCheck.resetIn.toString(),
+        'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': (Date.now() + rateLimitCheck.resetIn * 1000).toString(),
       },
     });
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        await setCache(id, {
-          url: null,
-          status: 'failed',
-          timestamp: Date.now(),
-        });
+  }
 
-        const timeoutResponse = {
-          code: 504,
-          message: '请求超时，豆瓣响应过慢',
-          error: 'TIMEOUT',
-        };
-        const timeoutSize = Buffer.byteLength(JSON.stringify(timeoutResponse), 'utf8');
+  const existingRequest = pendingRequests.get(id);
+  if (existingRequest) {
+    console.log(`[refresh-trailer] 检测到正在进行的请求，等待结果: ${id}`);
+    try {
+      const result = await existingRequest;
 
-        recordRequest({
-          timestamp: startTime,
-          method: 'GET',
-          path: '/api/douban/refresh-trailer',
-          statusCode: 504,
-          duration: Date.now() - startTime,
-          memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-          dbQueries: 0,
-          requestSize: 0,
-          responseSize: timeoutSize,
-        });
-
-        return NextResponse.json(timeoutResponse, { status: 504 });
-      }
-
-      if (error.message.includes('没有预告片')) {
-        await setCache(id, {
-          url: null,
-          status: 'no_trailer',
-          timestamp: Date.now(),
-        });
-
-        const noTrailerResponse = {
-          code: 404,
-          message: error.message,
-          error: 'NO_TRAILER',
-        };
-        const noTrailerSize = Buffer.byteLength(
-          JSON.stringify(noTrailerResponse),
-          'utf8',
-        );
-
-        recordRequest({
-          timestamp: startTime,
-          method: 'GET',
-          path: '/api/douban/refresh-trailer',
-          statusCode: 404,
-          duration: Date.now() - startTime,
-          memoryUsed:
-            (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-          dbQueries: 0,
-          requestSize: 0,
-          responseSize: noTrailerSize,
-        });
-
-        return NextResponse.json(noTrailerResponse, { status: 404 });
-      }
-
-      await setCache(id, {
-        url: null,
-        status: 'failed',
-        timestamp: Date.now(),
-      });
-
-      const fetchErrorResponse = {
-        code: 500,
-        message: '刷新 trailer URL 失败',
-        error: 'FETCH_ERROR',
-        details: error.message,
+      const successResponse = {
+        code: 200,
+        message:
+          result.status === 'success'
+            ? '获取成功（等待中的请求）'
+            : '请求完成（等待中的请求）',
+        data: {
+          trailerUrl: result.url,
+        },
       };
-      const fetchErrorSize = Buffer.byteLength(
-        JSON.stringify(fetchErrorResponse),
+      const responseSize = Buffer.byteLength(
+        JSON.stringify(successResponse),
         'utf8',
       );
 
@@ -488,30 +577,186 @@ export async function GET(request: Request) {
         timestamp: startTime,
         method: 'GET',
         path: '/api/douban/refresh-trailer',
-        statusCode: 500,
+        statusCode:
+          result.status === 'success'
+            ? 200
+            : result.status === 'no_trailer'
+              ? 404
+              : 500,
         duration: Date.now() - startTime,
-        memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        memoryUsed:
+          (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
         dbQueries: 0,
         requestSize: 0,
-        responseSize: fetchErrorSize,
+        responseSize,
       });
 
-      return NextResponse.json(fetchErrorResponse, { status: 500 });
+      if (result.status === 'success' && result.url) {
+        return NextResponse.json(successResponse, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        });
+      }
+
+      if (result.status === 'no_trailer') {
+        return NextResponse.json(
+          {
+            code: 404,
+            message: '该影片没有预告片',
+            error: 'NO_TRAILER',
+          },
+          { status: 404 },
+        );
+      }
+
+      return NextResponse.json(
+        {
+          code: 500,
+          message: '刷新 trailer URL 失败',
+          error: 'FETCH_ERROR',
+        },
+        { status: 500 },
+      );
+    } catch (error) {
+      console.error(`[refresh-trailer] 等待请求失败: ${id}`, error);
+    }
+  }
+
+  const requestPromise = (async (): Promise<TrailerCache> => {
+    try {
+      await waitForRequestInterval();
+      await incrementRateLimit();
+
+      const trailerUrl = await fetchTrailerWithRetry(id);
+      const proxiedUrl = trailerUrl
+        ? `/api/video-proxy?url=${encodeURIComponent(trailerUrl)}&douban_id=${id}`
+        : null;
+
+      const cacheData: TrailerCache = {
+        url: proxiedUrl,
+        status: 'success',
+        timestamp: Date.now(),
+      };
+
+      await setCache(id, cacheData);
+
+      return cacheData;
+    } catch (error) {
+      let cacheData: TrailerCache;
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          cacheData = {
+            url: null,
+            status: 'failed',
+            timestamp: Date.now(),
+          };
+        } else if (error.message.includes('没有预告片')) {
+          cacheData = {
+            url: null,
+            status: 'no_trailer',
+            timestamp: Date.now(),
+          };
+        } else {
+          cacheData = {
+            url: null,
+            status: 'failed',
+            timestamp: Date.now(),
+          };
+        }
+      } else {
+        cacheData = {
+          url: null,
+          status: 'failed',
+          timestamp: Date.now(),
+        };
+      }
+
+      await setCache(id, cacheData);
+
+      return cacheData;
+    }
+  })();
+
+  pendingRequests.set(id, requestPromise);
+
+  try {
+    const result = await requestPromise;
+    pendingRequests.delete(id);
+
+    if (result.status === 'success' && result.url) {
+      const successResponse = {
+        code: 200,
+        message: '获取成功',
+        data: {
+          trailerUrl: result.url,
+        },
+      };
+      const responseSize = Buffer.byteLength(
+        JSON.stringify(successResponse),
+        'utf8',
+      );
+
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/refresh-trailer',
+        statusCode: 200,
+        duration: Date.now() - startTime,
+        memoryUsed:
+          (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize,
+      });
+
+      return NextResponse.json(successResponse, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      });
     }
 
-    await setCache(id, {
-      url: null,
-      status: 'failed',
-      timestamp: Date.now(),
-    });
+    if (result.status === 'no_trailer') {
+      const noTrailerResponse = {
+        code: 404,
+        message: '该影片没有预告片',
+        error: 'NO_TRAILER',
+      };
+      const noTrailerSize = Buffer.byteLength(
+        JSON.stringify(noTrailerResponse),
+        'utf8',
+      );
 
-    const unknownErrorResponse = {
+      recordRequest({
+        timestamp: startTime,
+        method: 'GET',
+        path: '/api/douban/refresh-trailer',
+        statusCode: 404,
+        duration: Date.now() - startTime,
+        memoryUsed:
+          (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+        dbQueries: 0,
+        requestSize: 0,
+        responseSize: noTrailerSize,
+      });
+
+      return NextResponse.json(noTrailerResponse, { status: 404 });
+    }
+
+    const failedResponse = {
       code: 500,
       message: '刷新 trailer URL 失败',
-      error: 'UNKNOWN_ERROR',
+      error: 'FETCH_ERROR',
+      details: '服务端错误',
     };
-    const unknownErrorSize = Buffer.byteLength(
-      JSON.stringify(unknownErrorResponse),
+    const failedSize = Buffer.byteLength(
+      JSON.stringify(failedResponse),
       'utf8',
     );
 
@@ -524,9 +769,32 @@ export async function GET(request: Request) {
       memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
       dbQueries: 0,
       requestSize: 0,
-      responseSize: unknownErrorSize,
+      responseSize: failedSize,
     });
 
-    return NextResponse.json(unknownErrorResponse, { status: 500 });
+    return NextResponse.json(failedResponse, { status: 500 });
+  } catch {
+    pendingRequests.delete(id);
+
+    const errorResponse = {
+      code: 500,
+      message: '刷新 trailer URL 失败',
+      error: 'UNKNOWN_ERROR',
+    };
+    const errorSize = Buffer.byteLength(JSON.stringify(errorResponse), 'utf8');
+
+    recordRequest({
+      timestamp: startTime,
+      method: 'GET',
+      path: '/api/douban/refresh-trailer',
+      statusCode: 500,
+      duration: Date.now() - startTime,
+      memoryUsed: (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+      dbQueries: 0,
+      requestSize: 0,
+      responseSize: errorSize,
+    });
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }

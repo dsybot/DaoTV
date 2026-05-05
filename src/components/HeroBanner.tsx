@@ -48,7 +48,11 @@ function HeroBanner({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoErrorTimesRef = useRef<Record<string, number>>({});
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const FORCE_REFRESH_COOLDOWN = 60 * 1000;
+  const FORCE_REFRESH_STORAGE_KEY = 'hero-banner-force-refresh-times';
 
   const { data: refreshedTrailerUrls = {} } = useRefreshedTrailerUrlsQuery();
   const refreshTrailerMutation = useRefreshTrailerUrlMutation();
@@ -71,9 +75,42 @@ function HeroBanner({
       .replace('/m_ratio_poster/', '/l_ratio_poster/');
   };
 
-  const getProxiedVideoUrl = (url: string) => {
+  const getLastForceRefreshTime = (doubanId: string): number => {
+    if (typeof window === 'undefined') return 0;
+    try {
+      const stored = localStorage.getItem(FORCE_REFRESH_STORAGE_KEY);
+      if (stored) {
+        const times = JSON.parse(stored) as Record<string, number>;
+        return times[doubanId] || 0;
+      }
+    } catch (error) {
+      console.error('[HeroBanner] 读取强制刷新时间失败:', error);
+    }
+    return 0;
+  };
+
+  const setLastForceRefreshTime = (doubanId: string, time: number): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem(FORCE_REFRESH_STORAGE_KEY);
+      const times = stored ? JSON.parse(stored) : {};
+      times[doubanId] = time;
+      localStorage.setItem(FORCE_REFRESH_STORAGE_KEY, JSON.stringify(times));
+    } catch (error) {
+      console.error('[HeroBanner] 保存强制刷新时间失败:', error);
+    }
+  };
+
+  const getProxiedVideoUrl = (url: string, doubanId?: string | number) => {
+    if (url?.startsWith('/api/video-proxy')) {
+      return url;
+    }
     if (url?.includes('douban') || url?.includes('doubanio')) {
-      return `/api/video-proxy?url=${encodeURIComponent(url)}`;
+      const proxyUrl = `/api/video-proxy?url=${encodeURIComponent(url)}`;
+      if (doubanId) {
+        return `${proxyUrl}&douban_id=${doubanId}`;
+      }
+      return proxyUrl;
     }
     return url;
   };
@@ -151,7 +188,6 @@ function HeroBanner({
   useEffect(() => {
     const indicesToPreload = [
       currentIndex,
-      (currentIndex - 1 + items.length) % items.length,
       (currentIndex + 1) % items.length,
     ];
 
@@ -184,34 +220,30 @@ function HeroBanner({
       return;
     }
 
-    const checkAndRefreshMissingTrailers = async () => {
+    const checkAndRefreshVisibleTrailers = async () => {
       const RETRY_COOLDOWN = 5 * 60 * 1000;
       const NO_TRAILER_COOLDOWN = 24 * 60 * 60 * 1000;
-      const REQUEST_DELAY = 2000;
-      const MAX_REQUESTS_PER_SESSION = 3;
 
-      let requestCount = 0;
+      const indicesToLoad = [
+        currentIndex,
+        (currentIndex + 1) % items.length,
+      ];
 
-      for (const item of items) {
+      for (const index of indicesToLoad) {
+        const item = items[index];
+        if (!item) {
+          continue;
+        }
         const doubanId = item.douban_id;
         if (!doubanId) {
           continue;
         }
 
-        if (requestCount >= MAX_REQUESTS_PER_SESSION) {
-          console.log('[HeroBanner] 已达到本次请求上限，剩余项目将在下次检查');
-          break;
-        }
-
         const cachedValue = refreshedTrailerUrls[doubanId];
 
-        if (!item.trailerUrl && !cachedValue) {
-          console.log('[HeroBanner] 检测到缺失的 trailer，尝试获取:', item.title);
+        if (!cachedValue) {
+          console.log('[HeroBanner] 延迟加载 trailer:', item.title);
           await refreshTrailerUrl(doubanId);
-          requestCount++;
-          if (requestCount < MAX_REQUESTS_PER_SESSION) {
-            await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
-          }
         } else if (cachedValue?.startsWith('NO_TRAILER_')) {
           const parts = cachedValue.split('_');
           const markedTime = parseInt(parts[parts.length - 1], 10);
@@ -222,18 +254,6 @@ function HeroBanner({
               item.title,
             );
             await refreshTrailerUrl(doubanId);
-            requestCount++;
-            if (requestCount < MAX_REQUESTS_PER_SESSION) {
-              await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
-            }
-          } else {
-            const remainingHours = Math.ceil(
-              (NO_TRAILER_COOLDOWN - (now - markedTime)) / 3600000,
-            );
-            console.log(
-              `[HeroBanner] 该影片无预告片，${remainingHours}小时后重试:`,
-              item.title,
-            );
           }
         } else if (cachedValue?.startsWith('FAILED_')) {
           const parts = cachedValue.split('_');
@@ -242,26 +262,14 @@ function HeroBanner({
           if (now - failedTime > RETRY_COOLDOWN) {
             console.log('[HeroBanner] 失败冷却期已过，重新尝试:', item.title);
             await refreshTrailerUrl(doubanId);
-            requestCount++;
-            if (requestCount < MAX_REQUESTS_PER_SESSION) {
-              await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
-            }
-          } else {
-            const remainingMinutes = Math.ceil(
-              (RETRY_COOLDOWN - (now - failedTime)) / 60000,
-            );
-            console.log(
-              `[HeroBanner] 该影片获取失败，${remainingMinutes}分钟后重试:`,
-              item.title,
-            );
           }
         }
       }
     };
 
-    const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
+    const timer = setTimeout(checkAndRefreshVisibleTrailers, 1000);
     return () => clearTimeout(timer);
-  }, [items, refreshedTrailerUrls, refreshTrailerUrl, enableVideo]);
+  }, [items, currentIndex, refreshedTrailerUrls, refreshTrailerUrl, enableVideo]);
 
   return (
     <div
@@ -307,6 +315,7 @@ function HeroBanner({
 
               {enableVideo && getEffectiveTrailerUrl(item) && index === currentIndex && (
                 <video
+                  key={`video-${item.id}-${currentIndex}`}
                   ref={videoRef}
                   className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
                     videoLoaded ? 'opacity-100' : 'opacity-0'
@@ -318,20 +327,95 @@ function HeroBanner({
                   preload='metadata'
                   onError={async (event) => {
                     const video = event.currentTarget;
+                    const error = (video as any).error;
+                    const errorCode = error?.code;
+                    const errorMessage = error?.message;
+                    const networkState = video.networkState;
+                    const readyState = video.readyState;
+                    const errorType =
+                      errorCode === 1
+                        ? 'ABORTED'
+                        : errorCode === 2
+                          ? 'NETWORK'
+                          : errorCode === 3
+                            ? 'DECODE'
+                            : errorCode === 4
+                              ? 'SRC_NOT_SUPPORTED'
+                              : 'UNKNOWN';
 
-                    console.error('[HeroBanner] 视频加载失败:', {
+                    const errorData = {
                       title: item.title,
+                      douban_id: item.douban_id,
                       trailerUrl: item.trailerUrl,
-                      error: event,
-                    });
+                      effectiveUrl: getEffectiveTrailerUrl(item),
+                      errorCode,
+                      errorMessage,
+                      networkState,
+                      readyState,
+                      errorType,
+                      failedAt: new Date().toISOString(),
+                    };
+
+                    console.error('[HeroBanner] 视频加载失败:', errorData);
+
+                    fetch('/api/client-log', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        level: 'error',
+                        message: `视频加载失败: ${item.title} (douban_id: ${item.douban_id})`,
+                        data: errorData,
+                        timestamp: Date.now(),
+                      }),
+                    }).catch(() => {});
 
                     if (item.douban_id) {
+                      const doubanIdStr = item.douban_id.toString();
+                      const now = Date.now();
+                      const lastErrorTime =
+                        videoErrorTimesRef.current[doubanIdStr] || 0;
+
+                      if (now - lastErrorTime < 5000) {
+                        console.warn(
+                          `[HeroBanner] 影片 ${item.title} onError 触发过于频繁，忽略`,
+                        );
+                        return;
+                      }
+                      videoErrorTimesRef.current[doubanIdStr] = now;
+
+                      if (errorCode !== 2) {
+                        console.warn(
+                          `[HeroBanner] 影片 ${item.title} 非网络错误（code=${errorCode}），不触发强制刷新`,
+                        );
+                        return;
+                      }
+
+                      const lastRefreshTime =
+                        getLastForceRefreshTime(doubanIdStr);
+                      const timeSinceLastRefresh = now - lastRefreshTime;
+
+                      if (timeSinceLastRefresh < FORCE_REFRESH_COOLDOWN) {
+                        const remainingSeconds = Math.ceil(
+                          (FORCE_REFRESH_COOLDOWN - timeSinceLastRefresh) /
+                            1000,
+                        );
+                        console.warn(
+                          `[HeroBanner] 影片 ${item.title} 强制刷新冷却中，${remainingSeconds}秒后可重试`,
+                        );
+                        return;
+                      }
+
+                      setLastForceRefreshTime(doubanIdStr, now);
+
                       if (refreshedTrailerUrls[item.douban_id]) {
                         clearTrailerMutation.mutate({
                           doubanId: item.douban_id,
                         });
                       }
 
+                      console.log(
+                        `[HeroBanner] 强制刷新 trailer URL: ${item.title}`,
+                      );
                       const newUrl = await refreshTrailerUrl(
                         item.douban_id,
                         true,
@@ -350,7 +434,10 @@ function HeroBanner({
                   }}
                 >
                   <source
-                    src={getProxiedVideoUrl(getEffectiveTrailerUrl(item) || '')}
+                    src={getProxiedVideoUrl(
+                      getEffectiveTrailerUrl(item) || '',
+                      item.douban_id,
+                    )}
                     type='video/mp4'
                   />
                 </video>

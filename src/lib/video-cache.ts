@@ -65,16 +65,8 @@ function hashUrl(url: string): string {
  * 这样即使 URL 刷新（时间戳变化），只要是同一个视频就能命中缓存
  */
 function getCacheKey(videoUrl: string): string {
-  // 尝试从 URL 提取 douban_id
-  // 格式: https://vt1.doubanio.com/.../view/movie/M/703230269.mp4
-  const match = videoUrl.match(/\/M\/(\d+)\.mp4/);
-  if (match) {
-    const doubanId = match[1];
-    console.log(`[VideoCache] 使用 douban_id 作为缓存 Key: ${doubanId}`);
-    return `douban_${doubanId}`;
-  }
-
-  // 降级到 URL hash（非豆瓣视频）
+  // 不再从 URL 提取视频 ID，必须使用 doubanMovieId 参数
+  // 如果没有 doubanMovieId，使用 URL hash 作为降级方案
   const urlHash = hashUrl(videoUrl);
   console.log(`[VideoCache] 使用 URL hash 作为缓存 Key: ${urlHash.substring(0, 8)}...`);
   return urlHash;
@@ -137,10 +129,20 @@ export async function cacheTrailerUrl(doubanId: string | number, url: string): P
 
 /**
  * 检查视频文件是否已缓存
+ * @param videoUrl 视频 URL
+ * @param doubanMovieId 豆瓣影片 ID（可选，优先使用）
  */
-export async function isVideoCached(videoUrl: string): Promise<boolean> {
+export async function isVideoCached(videoUrl: string, doubanMovieId?: string | number): Promise<boolean> {
   try {
-    const cacheKey = getCacheKey(videoUrl);
+    let cacheKey: string;
+    if (doubanMovieId) {
+      cacheKey = `movie_${doubanMovieId}`;
+      console.log(`[VideoCache] 使用豆瓣影片 ID 检查缓存: ${cacheKey}`);
+    } else {
+      cacheKey = getCacheKey(videoUrl);
+      console.log(`[VideoCache] 使用视频 URL 检查缓存: ${cacheKey}`);
+    }
+
     const redis = await getKvrocksClient();
     const metaKey = `${KEYS.VIDEO_META}${cacheKey}`;
 
@@ -175,20 +177,26 @@ export async function isVideoCached(videoUrl: string): Promise<boolean> {
 
 /**
  * 获取缓存的视频文件路径
+ * @param videoUrl 视频 URL
+ * @param doubanMovieId 豆瓣影片 ID（可选，优先使用）
  */
-export async function getCachedVideoPath(videoUrl: string): Promise<string | null> {
-  const cacheKey = getCacheKey(videoUrl);
+export async function getCachedVideoPath(videoUrl: string, doubanMovieId?: string | number): Promise<string | null> {
+  let cacheKey: string;
+  if (doubanMovieId) {
+    cacheKey = `movie_${doubanMovieId}`;
+  } else {
+    cacheKey = getCacheKey(videoUrl);
+  }
+
   const filePath = getVideoCachePath(cacheKey);
 
   try {
     await fs.access(filePath);
 
-    // 更新元数据的 TTL（延长缓存时间）
     const redis = await getKvrocksClient();
-    const metaKey = `${KEYS.VIDEO_META}${cacheKey}`;
-    await redis.expire(metaKey, CACHE_CONFIG.VIDEO_TTL);
 
     // 🚀 LRU: 更新访问时间（使用当前时间戳作为 score）
+    // 注意：不重置 TTL，让文件在 12 小时后自然过期，避免热门视频永久占用空间
     const now = Date.now();
     await redis.zAdd(KEYS.VIDEO_LRU, [{ score: now, value: cacheKey }]);
     console.log(`[VideoCache] 更新 LRU 访问时间: ${cacheKey}`);
@@ -201,16 +209,29 @@ export async function getCachedVideoPath(videoUrl: string): Promise<string | nul
 
 /**
  * 缓存视频内容到文件系统
+ * @param videoUrl 视频 URL
+ * @param videoBuffer 视频内容
+ * @param contentType 内容类型
+ * @param doubanMovieId 豆瓣影片 ID（可选，用于生成稳定的文件名）
  */
 export async function cacheVideoContent(
   videoUrl: string,
   videoBuffer: Buffer,
-  contentType: string = 'video/mp4'
+  contentType: string = 'video/mp4',
+  doubanMovieId?: string | number
 ): Promise<string> {
   console.log(`[VideoCache] 开始缓存视频内容，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`);
   await ensureCacheDir();
 
-  const cacheKey = getCacheKey(videoUrl);
+  let cacheKey: string;
+  if (doubanMovieId) {
+    cacheKey = `movie_${doubanMovieId}`;
+    console.log(`[VideoCache] 使用豆瓣影片 ID 作为缓存 Key: ${cacheKey}`);
+  } else {
+    cacheKey = getCacheKey(videoUrl);
+    console.log(`[VideoCache] 使用视频 URL 生成缓存 Key: ${cacheKey}`);
+  }
+
   const filePath = getVideoCachePath(cacheKey);
   const fileSize = videoBuffer.length;
 
@@ -407,78 +428,6 @@ export async function getCacheStats(): Promise<{
       fileCount: 0,
       maxSize: CACHE_CONFIG.MAX_CACHE_SIZE,
     };
-  }
-}
-
-/**
- * 迁移旧的 URL hash 缓存到新的 douban_id 缓存
- * 自动检测并重命名文件，更新元数据
- */
-export async function migrateOldCache(): Promise<void> {
-  try {
-    await ensureCacheDir();
-    const files = await fs.readdir(CACHE_CONFIG.VIDEO_CACHE_DIR);
-    const redis = await getKvrocksClient();
-
-    let migratedCount = 0;
-
-    for (const file of files) {
-      if (!file.endsWith('.mp4')) continue;
-
-      const oldCacheKey = file.replace('.mp4', '');
-
-      // 跳过已经是 douban_id 格式的文件
-      if (oldCacheKey.startsWith('douban_')) continue;
-
-      // 检查是否有旧的元数据
-      const oldMetaKey = `${KEYS.VIDEO_META}${oldCacheKey}`;
-      const oldMeta = await redis.get(oldMetaKey);
-
-      if (!oldMeta) continue; // 没有元数据，跳过
-
-      const metaData = JSON.parse(oldMeta);
-      const videoUrl = metaData.url;
-
-      // 尝试从 URL 提取 douban_id
-      const match = videoUrl.match(/\/M\/(\d+)\.mp4/);
-      if (!match) continue; // 不是豆瓣视频，跳过
-
-      const doubanId = match[1];
-      const newCacheKey = `douban_${doubanId}`;
-
-      console.log(`[VideoCache] 迁移缓存: ${oldCacheKey.substring(0, 8)}... → ${newCacheKey}`);
-
-      // 重命名文件
-      const oldFilePath = path.join(CACHE_CONFIG.VIDEO_CACHE_DIR, file);
-      const newFilePath = path.join(CACHE_CONFIG.VIDEO_CACHE_DIR, `${newCacheKey}.mp4`);
-
-      try {
-        await fs.rename(oldFilePath, newFilePath);
-
-        // 更新元数据
-        const newMetaKey = `${KEYS.VIDEO_META}${newCacheKey}`;
-        metaData.cacheKey = newCacheKey;
-        await redis.setEx(newMetaKey, CACHE_CONFIG.VIDEO_TTL, JSON.stringify(metaData));
-
-        // 删除旧元数据
-        await redis.del(oldMetaKey);
-
-        // 🚀 更新 LRU 列表：移除旧 key，添加新 key
-        await redis.zRem(KEYS.VIDEO_LRU, [oldCacheKey]);
-        const now = Date.now();
-        await redis.zAdd(KEYS.VIDEO_LRU, [{ score: now, value: newCacheKey }]);
-
-        migratedCount++;
-      } catch (error) {
-        console.error(`[VideoCache] 迁移失败: ${oldCacheKey}`, error);
-      }
-    }
-
-    if (migratedCount > 0) {
-      console.log(`[VideoCache] ✅ 迁移完成: ${migratedCount} 个文件已迁移到新格式`);
-    }
-  } catch (error) {
-    console.error('[VideoCache] 迁移缓存失败:', error);
   }
 }
 

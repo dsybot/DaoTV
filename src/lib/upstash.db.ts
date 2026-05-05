@@ -1531,6 +1531,64 @@ export class UpstashRedisStorage implements IStorage {
       throw error;
     }
   }
+
+  async saveCrashLog(crashLog: any): Promise<void> {
+    try {
+      const key = `crash-log:${crashLog.timestamp}`;
+      await withRetry(() =>
+        this.client.set(key, JSON.stringify(crashLog), { ex: 604800 }),
+      );
+      console.log(`崩溃日志已保存: ${crashLog.timestamp}`);
+    } catch (error) {
+      console.error('保存崩溃日志失败:', error);
+      throw error;
+    }
+  }
+
+  async getCrashLogs(limit: number = 50): Promise<any[]> {
+    try {
+      const keys = await withRetry(() => this.client.keys('crash-log:*'));
+      if (keys.length === 0) {
+        return [];
+      }
+
+      const logs = await withRetry(() => this.client.mget(...keys));
+      return logs
+        .filter((log): log is string | Record<string, any> => log !== null)
+        .map((log) => (typeof log === 'string' ? JSON.parse(log) : log))
+        .sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        )
+        .slice(0, limit);
+    } catch (error) {
+      console.error('获取崩溃日志失败:', error);
+      throw error;
+    }
+  }
+
+  async deleteCrashLog(timestamp: string): Promise<void> {
+    try {
+      await withRetry(() => this.client.del(`crash-log:${timestamp}`));
+      console.log(`崩溃日志已删除: ${timestamp}`);
+    } catch (error) {
+      console.error('删除崩溃日志失败:', error);
+      throw error;
+    }
+  }
+
+  async clearCrashLogs(): Promise<void> {
+    try {
+      const keys = await withRetry(() => this.client.keys('crash-log:*'));
+      if (keys.length > 0) {
+        await withRetry(() => this.client.del(...keys));
+        console.log(`已清除 ${keys.length} 条崩溃日志`);
+      }
+    } catch (error) {
+      console.error('清除崩溃日志失败:', error);
+      throw error;
+    }
+  }
 }
 
 // 单例 Upstash Redis 客户端

@@ -54,3 +54,7 @@ $null
 .orchids/
 .windsurfrules
 .claude/
+
+# crash logs
+/logs
+crash-reports.jsonl

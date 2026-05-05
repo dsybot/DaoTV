@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
 import { fetchDoubanWithVerification } from '@/lib/douban-anti-crawler';
-import { bypassDoubanChallenge } from '@/lib/puppeteer';
 import {
   getRandomUserAgentWithInfo,
   getSecChUaHeaders,
@@ -109,22 +108,8 @@ async function fetchDoubanHtml(url: string): Promise<string> {
       return html;
     }
 
-    const config = await getConfig();
-    const enablePuppeteer = config.DoubanConfig?.enablePuppeteer ?? false;
-
-    if (!enablePuppeteer) {
-      throw new Error('豆瓣反爬虫激活，请在管理后台启用 Puppeteer 或配置 Cookies');
-    }
-
-    console.log('[Douban Celebrities] Puppeteer 已启用，尝试绕过 Challenge');
-    const puppeteerResult = await bypassDoubanChallenge(url);
-    html = puppeteerResult.html;
-
-    if (isDoubanChallengePage(html)) {
-      throw new Error('豆瓣反爬虫激活，Puppeteer 未能绕过 Challenge');
-    }
-
-    return html;
+    // Puppeteer 已禁用以减少包体积（78MB）
+    throw new Error('豆瓣反爬虫激活，演职员功能暂时不可用，请配置 Cookies');
   } finally {
     clearTimeout(timeoutId);
   }
@@ -183,7 +168,7 @@ export async function GET(request: Request) {
       celebrities = parseDoubanCelebrities(detailHtml);
     }
 
-    // 代理返回不完整时，再尝试直连源站。这里仍会走反爬验证/Cookies/Puppeteer。
+  // 代理返回不完整时，再尝试直连源站。这里仍会走反爬验证/Cookies。
     if (proxyUrl && celebrities.length === 0) {
       console.warn('[豆瓣演员表] 代理解析为空，尝试直连豆瓣演员页');
       const directHtml = await fetchDoubanHtml(celebritiesUrl);
