@@ -52,6 +52,7 @@ package-lock.json
 debug.log
 $null
 .orchids/
+.agents/
 .windsurfrules
 .claude/
 

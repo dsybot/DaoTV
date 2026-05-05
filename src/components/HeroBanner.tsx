@@ -49,6 +49,7 @@ function HeroBanner({
   const [isMuted, setIsMuted] = useState(true);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoErrorTimesRef = useRef<Record<string, number>>({});
+  const requestedTrailerIdsRef = useRef<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const FORCE_REFRESH_COOLDOWN = 60 * 1000;
@@ -231,11 +232,13 @@ function HeroBanner({
 
       for (const index of indicesToLoad) {
         const item = items[index];
-        if (!item) {
+        if (!item || !item.douban_id) {
           continue;
         }
         const doubanId = item.douban_id;
-        if (!doubanId) {
+        const doubanIdStr = doubanId.toString();
+
+        if (requestedTrailerIdsRef.current.has(doubanIdStr)) {
           continue;
         }
 
@@ -243,6 +246,7 @@ function HeroBanner({
 
         if (!cachedValue) {
           console.log('[HeroBanner] 延迟加载 trailer:', item.title);
+          requestedTrailerIdsRef.current.add(doubanIdStr);
           await refreshTrailerUrl(doubanId);
         } else if (cachedValue?.startsWith('NO_TRAILER_')) {
           const parts = cachedValue.split('_');
@@ -253,6 +257,7 @@ function HeroBanner({
               '[HeroBanner] 无预告片标记已过期（24小时），重新尝试:',
               item.title,
             );
+            requestedTrailerIdsRef.current.add(doubanIdStr);
             await refreshTrailerUrl(doubanId);
           }
         } else if (cachedValue?.startsWith('FAILED_')) {
@@ -261,6 +266,7 @@ function HeroBanner({
           const now = Date.now();
           if (now - failedTime > RETRY_COOLDOWN) {
             console.log('[HeroBanner] 失败冷却期已过，重新尝试:', item.title);
+            requestedTrailerIdsRef.current.add(doubanIdStr);
             await refreshTrailerUrl(doubanId);
           }
         }
@@ -412,6 +418,8 @@ function HeroBanner({
                           doubanId: item.douban_id,
                         });
                       }
+
+                      requestedTrailerIdsRef.current.delete(doubanIdStr);
 
                       console.log(
                         `[HeroBanner] 强制刷新 trailer URL: ${item.title}`,
