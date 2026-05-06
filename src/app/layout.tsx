@@ -11,6 +11,7 @@ import AppShell from '../components/AppShell';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import QueryProvider from '../components/QueryProvider';
+import RouteLoadingState from '../components/RouteLoadingState';
 import RouteWarmup from '../components/RouteWarmup';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
@@ -158,7 +159,9 @@ export default async function RootLayout({
                     <SessionTracker />
                     <RouteWarmup />
                     <AppShell>
-                      <Suspense fallback={null}>{children}</Suspense>
+                      <Suspense fallback={<RouteLoadingState />}>
+                        {children}
+                      </Suspense>
                     </AppShell>
                     <GlobalErrorIndicator />
                   </SiteProvider>

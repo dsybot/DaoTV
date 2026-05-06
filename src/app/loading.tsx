@@ -1,3 +1,5 @@
+import RouteLoadingState from '@/components/RouteLoadingState';
+
 export default function Loading() {
-  return null;
+  return <RouteLoadingState />;
 }
