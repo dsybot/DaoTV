@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
           });
 
           if (!response.ok) {
+            // 特殊处理 202 状态码（WAF Challenge）
+            if (response.status === 202) {
+              return {
+                index,
+                key: key.substring(0, 12) + '...',
+                error: 'WAF_BLOCKED',
+                wafBlocked: true
+              };
+            }
             return {
               index,
               key: key.substring(0, 12) + '...',
@@ -35,10 +44,12 @@ export async function POST(request: NextRequest) {
 
           const text = await response.text();
           if (!text || text.trim().length === 0) {
+            // WAF Challenge 拦截，返回特殊错误码
             return {
               index,
               key: key.substring(0, 12) + '...',
-              error: 'API返回空响应，可能被WAF拦截'
+              error: 'WAF_BLOCKED',
+              wafBlocked: true
             };
           }
 
@@ -58,7 +69,7 @@ export async function POST(request: NextRequest) {
           return {
             index,
             key: key.substring(0, 12) + '...',
-            error: err instanceof Error ? err.message : '查询失败'
+            error: err instanceof Error ? err.message : 'Query failed'
           };
         }
       })
