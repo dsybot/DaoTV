@@ -7,7 +7,7 @@ import './globals.css';
 
 import { getConfig } from '@/lib/config';
 
-import { CinematicLoadingFallback } from '../components/CinematicLoadingFallback';
+import AppShell from '../components/AppShell';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import QueryProvider from '../components/QueryProvider';
@@ -155,12 +155,12 @@ export default async function RootLayout({
               <DownloadProvider>
                 <WatchRoomProvider>
                   <SiteProvider siteName={siteName} announcement={announcement}>
-                    <Suspense fallback={<CinematicLoadingFallback />}>
-                      <SessionTracker />
-                      <RouteWarmup />
-                      {children}
-                      <GlobalErrorIndicator />
-                    </Suspense>
+                    <SessionTracker />
+                    <RouteWarmup />
+                    <AppShell>
+                      <Suspense fallback={null}>{children}</Suspense>
+                    </AppShell>
+                    <GlobalErrorIndicator />
                   </SiteProvider>
                   <Suspense fallback={null}>
                     <DownloadPanel />

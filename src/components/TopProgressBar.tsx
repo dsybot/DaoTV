@@ -1,23 +1,19 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-
-import RouteLoadingShell from './RouteLoadingShell';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function TopProgressBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const isNavigatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failSafeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showOverlay, setShowOverlay] = useState(false);
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -30,14 +26,23 @@ export default function TopProgressBar() {
       clearTimeout(failSafeTimeoutRef.current);
       failSafeTimeoutRef.current = null;
     }
-  };
+  }, []);
 
-  const start = () => {
+  const done = useCallback(() => {
+    clearTimers();
+    setProgress(100);
+    hideTimeoutRef.current = setTimeout(() => {
+      setVisible(false);
+      setProgress(0);
+      isNavigatingRef.current = false;
+    }, 220);
+  }, [clearTimers]);
+
+  const start = useCallback(() => {
     clearTimers();
     isNavigatingRef.current = true;
     setVisible(true);
     setProgress(8);
-    setShowOverlay(true);
     failSafeTimeoutRef.current = setTimeout(() => {
       if (isNavigatingRef.current) {
         done();
@@ -52,30 +57,14 @@ export default function TopProgressBar() {
         return current;
       });
     }, 180);
-  };
-
-  const done = () => {
-    clearTimers();
-    setProgress(100);
-    setShowOverlay(false);
-    hideTimeoutRef.current = setTimeout(() => {
-      setVisible(false);
-      setProgress(0);
-      isNavigatingRef.current = false;
-    }, 220);
-  };
+  }, [clearTimers, done]);
 
   useEffect(() => {
-    const mutableRouter = router as any;
-    const originalPush = mutableRouter.push;
-    const originalReplace = mutableRouter.replace;
-    const originalBack = mutableRouter.back;
-    const originalForward = mutableRouter.forward;
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
 
-    const shouldStartForUrl = (targetUrl: unknown) => {
-      if (typeof window === 'undefined' || typeof targetUrl !== 'string') {
-        return true;
-      }
+    const shouldStartForUrl = (targetUrl: string | URL | null | undefined) => {
+      if (!targetUrl) return false;
 
       try {
         const target = new URL(targetUrl, window.location.href);
@@ -92,24 +81,14 @@ export default function TopProgressBar() {
       }
     };
 
-    mutableRouter.push = (...args: unknown[]) => {
-      if (shouldStartForUrl(args[0])) start();
-      return originalPush.apply(mutableRouter, args);
+    window.history.pushState = function pushState(data, unused, url) {
+      if (shouldStartForUrl(url)) start();
+      return originalPushState.call(this, data, unused, url);
     };
 
-    mutableRouter.replace = (...args: unknown[]) => {
-      if (shouldStartForUrl(args[0])) start();
-      return originalReplace.apply(mutableRouter, args);
-    };
-
-    mutableRouter.back = (...args: unknown[]) => {
-      start();
-      return originalBack.apply(mutableRouter, args);
-    };
-
-    mutableRouter.forward = (...args: unknown[]) => {
-      start();
-      return originalForward.apply(mutableRouter, args);
+    window.history.replaceState = function replaceState(data, unused, url) {
+      if (shouldStartForUrl(url)) start();
+      return originalReplaceState.call(this, data, unused, url);
     };
 
     const handleAnchorClick = (event: MouseEvent) => {
@@ -146,44 +125,48 @@ export default function TopProgressBar() {
     };
 
     const handlePopState = () => start();
+    const handleRouteProgressStart = () => start();
 
     document.addEventListener('click', handleAnchorClick, true);
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener(
+      'dao-route-progress-start',
+      handleRouteProgressStart,
+    );
 
     return () => {
-      mutableRouter.push = originalPush;
-      mutableRouter.replace = originalReplace;
-      mutableRouter.back = originalBack;
-      mutableRouter.forward = originalForward;
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
       document.removeEventListener('click', handleAnchorClick, true);
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener(
+        'dao-route-progress-start',
+        handleRouteProgressStart,
+      );
       clearTimers();
     };
-  }, [router]);
+  }, [clearTimers, start]);
 
   useEffect(() => {
     if (isNavigatingRef.current) {
-      done();
+      queueMicrotask(done);
     }
-  }, [pathname, searchParams]);
+  }, [done, pathname, searchParams]);
 
-  if (!visible && progress === 0 && !showOverlay) return null;
+  if (!visible && progress === 0) return null;
 
   return (
-    <>
-      {showOverlay && <RouteLoadingShell overlay />}
+    <div
+      className='fixed left-0 right-0 top-0 z-9999 h-[2px] bg-transparent pointer-events-none'
+      aria-hidden='true'
+    >
       <div
-        className='fixed left-0 right-0 top-0 z-9999 h-[2px] bg-transparent pointer-events-none'
-        aria-hidden='true'
-      >
-        <div
-          className='h-full bg-linear-to-r from-cyan-400 via-emerald-400 to-lime-300 shadow-[0_0_12px_rgba(45,212,191,0.65)] transition-[width,opacity] duration-200 ease-out'
-          style={{
-            width: `${progress}%`,
-            opacity: visible ? 1 : 0,
-          }}
-        />
-      </div>
-    </>
+        className='h-full bg-linear-to-r from-cyan-400 via-emerald-400 to-lime-300 shadow-[0_0_12px_rgba(45,212,191,0.65)] transition-[width,opacity] duration-200 ease-out'
+        style={{
+          width: `${progress}%`,
+          opacity: visible ? 1 : 0,
+        }}
+      />
+    </div>
   );
 }

@@ -2,8 +2,6 @@ import { Suspense } from 'react';
 
 import { getConfig } from '@/lib/config';
 
-import { CinematicLoadingFallback } from '@/components/CinematicLoadingFallback';
-
 import HomeClient from './HomeClient';
 
 export default async function Home() {
@@ -20,7 +18,7 @@ export default async function Home() {
   };
 
   return (
-    <Suspense fallback={<CinematicLoadingFallback />}>
+    <Suspense fallback={null}>
       <HomeClient initialConfig={homePageConfig} />
     </Suspense>
   );
