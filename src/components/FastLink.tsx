@@ -42,7 +42,7 @@ interface FastLinkProps {
   onTouchStart?: (e: TouchEvent<HTMLAnchorElement>) => void;
   /**
    * Next.js route prefetching.
-   * Defaults to "auto" so visible app links can be warmed in the background.
+   * Defaults to false to avoid warming every visible dynamic route.
    */
   prefetch?: LinkPrefetch;
   /**
@@ -87,7 +87,7 @@ export function FastLink({
   onFocus,
   onPointerEnter,
   onTouchStart,
-  prefetch = 'auto',
+  prefetch = false,
   intentPrefetch = true,
   'aria-label': ariaLabel,
   target,
@@ -101,7 +101,6 @@ export function FastLink({
   const prefetchOnIntent = useCallback(() => {
     if (
       !intentPrefetch ||
-      prefetch === false ||
       forceRefresh ||
       target === '_blank' ||
       isExternalHref(href) ||
@@ -116,7 +115,7 @@ export function FastLink({
     } catch {
       intentPrefetchedHrefs.delete(href);
     }
-  }, [forceRefresh, href, intentPrefetch, prefetch, router, target]);
+  }, [forceRefresh, href, intentPrefetch, router, target]);
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(e);

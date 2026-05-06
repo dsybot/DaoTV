@@ -196,28 +196,6 @@ export const UserMenu: React.FC = () => {
     setMounted(true);
   }, []);
 
-  // 🚀 预加载导航页面 - 当菜单打开时预加载所有可能访问的页面
-  useEffect(() => {
-    if (isOpen) {
-      // 预加载管理面板（仅 owner/admin 有权限）
-      if (authInfo?.role === 'owner' || authInfo?.role === 'admin') {
-        router.prefetch('/admin');
-      }
-      // 预加载播放统计（所有登录用户，且非 localstorage 存储）
-      if (authInfo?.username && storageType !== 'localstorage') {
-        router.prefetch('/play-stats');
-      }
-      // 预加载 TVBox 配置（所有人都能访问）
-      router.prefetch('/tvbox');
-      // 预加载观影室（如果功能启用，所有人都能访问）
-      if (showWatchRoom) {
-        router.prefetch('/watch-room');
-      }
-      // 预加载发布日历（所有人都能访问）
-      router.prefetch('/release-calendar');
-    }
-  }, [isOpen, authInfo, storageType, showWatchRoom, router]);
-
   // 获取认证信息
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -329,31 +307,16 @@ export const UserMenu: React.FC = () => {
     };
   }, [dataQueryEnabled, invalidatePlayRecords]);
 
-  const handleMenuClick = async () => {
+  const handleMenuClick = () => {
     const willOpen = !isOpen;
     setIsOpen(willOpen);
 
-    // 如果是打开菜单，立即检查更新（不受缓存限制）
+    // 打开菜单只读取已有更新缓存，不抢占页面切换时的网络带宽。
     if (willOpen && authInfo?.username && storageType !== 'localstorage') {
-      console.log('打开菜单时强制检查更新...');
-      try {
-        // 暂时清除缓存时间，强制检查一次
-        const lastCheckTime = localStorage.getItem('moontv_last_update_check');
-        localStorage.removeItem('moontv_last_update_check');
-
-        // 执行检查
-        await checkWatchingUpdates();
-
-        // 恢复缓存时间（如果之前有的话）
-        if (lastCheckTime) {
-          localStorage.setItem('moontv_last_update_check', lastCheckTime);
-        }
-
-        // 更新UI状态
-        const updates = getDetailedWatchingUpdates();
+      const updates = getDetailedWatchingUpdates();
+      if (updates) {
         setWatchingUpdates(updates);
 
-        // 重新计算未读状态
         const activeReleases = getActiveReleaseCount(updates);
 
         if (
@@ -364,10 +327,6 @@ export const UserMenu: React.FC = () => {
         } else {
           setHasUnreadUpdates(false);
         }
-
-        console.log('菜单打开时的更新检查完成');
-      } catch (error) {
-        console.error('菜单打开时检查更新失败:', error);
       }
     }
   };
@@ -390,31 +349,26 @@ export const UserMenu: React.FC = () => {
 
   const handleAdminPanel = () => {
     setIsOpen(false);
-    router.refresh();
     router.push('/admin');
   };
 
   const handlePlayStats = () => {
     setIsOpen(false);
-    router.refresh();
     router.push('/play-stats');
   };
 
   const handleTVBoxConfig = () => {
     setIsOpen(false);
-    router.refresh();
     router.push('/tvbox');
   };
 
   const handleWatchRoom = () => {
     setIsOpen(false);
-    router.refresh();
     router.push('/watch-room');
   };
 
   const handleReleaseCalendar = () => {
     setIsOpen(false);
-    router.refresh();
     router.push('/release-calendar');
   };
 

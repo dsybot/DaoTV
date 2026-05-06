@@ -120,6 +120,20 @@ const SEARCH_HISTORY_LIMIT = 20;
 // ---- 内存缓存（用于 Kvrocks/Upstash 模式）----
 const memoryCache: Map<string, UserCacheStore> = new Map();
 
+const inFlightRequests = new Map<string, Promise<unknown>>();
+const backgroundSyncState = new Map<string, number>();
+const BACKGROUND_SYNC_INTERVAL = 60 * 1000;
+
+function shouldRunBackgroundSync(key: string): boolean {
+  const now = Date.now();
+  const lastSync = backgroundSyncState.get(key) || 0;
+  if (now - lastSync < BACKGROUND_SYNC_INTERVAL) {
+    return false;
+  }
+  backgroundSyncState.set(key, now);
+  return true;
+}
+
 // ---- 缓存管理器 ----
 class HybridCacheManager {
   private static instance: HybridCacheManager;
@@ -719,28 +733,45 @@ async function fetchWithAuth(
  * 带重试的 API 请求函数
  */
 async function fetchFromApi<T>(path: string, retries = 2): Promise<T> {
-  let lastError: Error | null = null;
-
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const res = await fetchWithAuth(path);
-      return (await res.json()) as T;
-    } catch (error) {
-      lastError = error as Error;
-      console.warn(`请求失败 (尝试 ${i + 1}/${retries + 1}):`, error);
-
-      // 如果不是最后一次尝试，等待后重试
-      if (i < retries) {
-        // 使用指数退避：第一次重试等待500ms，第二次等待1000ms
-        const delay = 500 * Math.pow(2, i);
-        console.log(`等待 ${delay}ms 后重试...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
+  const requestKey = `${path}::${retries}`;
+  const existingRequest = inFlightRequests.get(requestKey) as
+    | Promise<T>
+    | undefined;
+  if (existingRequest) {
+    return existingRequest;
   }
 
-  // 所有重试都失败，抛出最后一个错误
-  throw lastError || new Error('请求失败');
+  const requestPromise = (async () => {
+    let lastError: Error | null = null;
+
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const res = await fetchWithAuth(path);
+        return (await res.json()) as T;
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`请求失败 (尝试 ${i + 1}/${retries + 1}):`, error);
+
+        // 如果不是最后一次尝试，等待后重试
+        if (i < retries) {
+          // 使用指数退避：第一次重试等待500ms，第二次等待1000ms
+          const delay = 500 * Math.pow(2, i);
+          console.log(`等待 ${delay}ms 后重试...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // 所有重试都失败，抛出最后一个错误
+    throw lastError || new Error('请求失败');
+  })();
+
+  inFlightRequests.set(requestKey, requestPromise);
+  try {
+    return await requestPromise;
+  } finally {
+    inFlightRequests.delete(requestKey);
+  }
 }
 
 /**
@@ -906,6 +937,10 @@ export async function getAllPlayRecords(
     const cachedData = cacheManager.getCachedPlayRecords();
 
     if (cachedData) {
+      if (!shouldRunBackgroundSync('playRecords')) {
+        return cachedData;
+      }
+
       // 返回缓存数据，同时后台异步更新
       fetchFromApi<Record<string, PlayRecord>>(`/api/playrecords`)
         .then((freshData) => {
@@ -1424,6 +1459,10 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
     const cachedData = cacheManager.getCachedFavorites();
 
     if (cachedData) {
+      if (!shouldRunBackgroundSync('favorites')) {
+        return cachedData;
+      }
+
       // 返回缓存数据，同时后台异步更新
       fetchFromApi<Record<string, Favorite>>(`/api/favorites`)
         .then((freshData) => {
@@ -1610,6 +1649,10 @@ export async function isFavorited(
     const cachedFavorites = cacheManager.getCachedFavorites();
 
     if (cachedFavorites) {
+      if (!shouldRunBackgroundSync('favorites')) {
+        return !!cachedFavorites[key];
+      }
+
       // 返回缓存数据，同时后台异步更新
       fetchFromApi<Record<string, Favorite>>(`/api/favorites`)
         .then((freshData) => {
@@ -2711,6 +2754,10 @@ export async function getAllReminders(): Promise<Record<string, Reminder>> {
     const cachedData = cacheManager.getCachedReminders();
 
     if (cachedData) {
+      if (!shouldRunBackgroundSync('reminders')) {
+        return cachedData;
+      }
+
       // 返回缓存数据，同时后台异步更新
       fetchFromApi<Record<string, Reminder>>(`/api/reminders`)
         .then((freshData) => {
@@ -2894,6 +2941,10 @@ export async function isReminded(source: string, id: string): Promise<boolean> {
     const cachedReminders = cacheManager.getCachedReminders();
 
     if (cachedReminders) {
+      if (!shouldRunBackgroundSync('reminders')) {
+        return !!cachedReminders[key];
+      }
+
       // 返回缓存数据，同时后台异步更新
       fetchFromApi<Record<string, Reminder>>(`/api/reminders`)
         .then((freshData) => {

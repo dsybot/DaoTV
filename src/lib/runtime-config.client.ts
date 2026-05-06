@@ -18,6 +18,12 @@ type RuntimeWindow = Window & {
   RUNTIME_CONFIG?: RuntimeConfigPatch;
 };
 
+const RUNTIME_CONFIG_TTL = 10 * 60 * 1000;
+
+let runtimeConfigCache: RuntimeConfigPatch | null = null;
+let runtimeConfigCacheTime = 0;
+let runtimeConfigPromise: Promise<RuntimeConfigPatch> | null = null;
+
 export function normalizeCustomCategories(
   value: unknown,
 ): RuntimeCustomCategory[] {
@@ -65,23 +71,48 @@ export function applyRuntimeConfigPatch(
   return nextConfig;
 }
 
-export async function fetchRuntimeConfig(): Promise<RuntimeConfigPatch> {
-  const response = await fetch(`/api/server-config?_=${Date.now()}`, {
-    cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-    },
-  });
+interface FetchRuntimeConfigOptions {
+  force?: boolean;
+}
 
-  if (!response.ok) {
-    throw new Error(`Failed to load runtime config: ${response.status}`);
+export async function fetchRuntimeConfig({
+  force = false,
+}: FetchRuntimeConfigOptions = {}): Promise<RuntimeConfigPatch> {
+  const now = Date.now();
+  if (
+    !force &&
+    runtimeConfigCache &&
+    now - runtimeConfigCacheTime < RUNTIME_CONFIG_TTL
+  ) {
+    return applyRuntimeConfigPatch(runtimeConfigCache);
   }
 
-  const data = (await response.json()) as RuntimeConfigPatch;
-  return applyRuntimeConfigPatch({
-    CUSTOM_CATEGORIES: normalizeCustomCategories(data.CUSTOM_CATEGORIES),
-    ENABLE_WEB_LIVE: Boolean(data.ENABLE_WEB_LIVE),
-    EMBY_ENABLED: Boolean(data.EMBY_ENABLED),
-    PRIVATE_LIBRARY_ENABLED: Boolean(data.PRIVATE_LIBRARY_ENABLED),
-  });
+  if (!force && runtimeConfigPromise) {
+    return runtimeConfigPromise;
+  }
+
+  runtimeConfigPromise = (async () => {
+    const response = await fetch('/api/server-config');
+
+    if (!response.ok) {
+      throw new Error(`Failed to load runtime config: ${response.status}`);
+    }
+
+    const data = (await response.json()) as RuntimeConfigPatch;
+    const patch = {
+      CUSTOM_CATEGORIES: normalizeCustomCategories(data.CUSTOM_CATEGORIES),
+      ENABLE_WEB_LIVE: Boolean(data.ENABLE_WEB_LIVE),
+      EMBY_ENABLED: Boolean(data.EMBY_ENABLED),
+      PRIVATE_LIBRARY_ENABLED: Boolean(data.PRIVATE_LIBRARY_ENABLED),
+    };
+    runtimeConfigCache = patch;
+    runtimeConfigCacheTime = Date.now();
+    return applyRuntimeConfigPatch(patch);
+  })();
+
+  try {
+    return await runtimeConfigPromise;
+  } finally {
+    runtimeConfigPromise = null;
+  }
 }

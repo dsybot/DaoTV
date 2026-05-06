@@ -19,6 +19,10 @@ const CACHE_DURATION = 30 * 60 * 1000; // 30分钟缓存
 // 内存缓存（用于非 localStorage 模式，避免 QuotaExceededError）
 let memoryWatchingUpdatesCache: WatchingUpdatesCache | null = null;
 let memoryLastCheckTime = 0;
+let sourceMapCache: Map<string, string> | null = null;
+let sourceMapCacheTime = 0;
+let sourceMapPromise: Promise<Map<string, string>> | null = null;
+const SOURCE_MAP_CACHE_DURATION = 10 * 60 * 1000;
 
 // 检测存储模式
 const STORAGE_TYPE = (() => {
@@ -69,6 +73,60 @@ interface WatchingUpdatesCache {
 
 // 全局事件监听器
 const updateListeners = new Set<(hasUpdates: boolean) => void>();
+
+async function getSourceMap(): Promise<Map<string, string>> {
+  const now = Date.now();
+  if (sourceMapCache && now - sourceMapCacheTime < SOURCE_MAP_CACHE_DURATION) {
+    return sourceMapCache;
+  }
+
+  if (sourceMapPromise) {
+    return sourceMapPromise;
+  }
+
+  sourceMapPromise = (async () => {
+    try {
+      const sourcesResponse = await fetch('/api/sources');
+      if (!sourcesResponse.ok) {
+        throw new Error(`Failed to load sources: ${sourcesResponse.status}`);
+      }
+
+      const sources = await sourcesResponse.json();
+      const nextMap = new Map<string, string>();
+      if (Array.isArray(sources)) {
+        sources.forEach((source: any) => {
+          if (source?.key) {
+            nextMap.set(source.key, source.key);
+          }
+          if (source?.name && source?.key) {
+            nextMap.set(source.name, source.key);
+          }
+        });
+      }
+
+      sourceMapCache = nextMap;
+      sourceMapCacheTime = Date.now();
+      return nextMap;
+    } catch (error) {
+      console.warn('数据源映射失败，使用原始名称:', error);
+      return sourceMapCache || new Map<string, string>();
+    } finally {
+      sourceMapPromise = null;
+    }
+  })();
+
+  return sourceMapPromise;
+}
+
+function createRecordLookup(
+  records: Array<PlayRecord & { id: string }>,
+): Map<string, PlayRecord & { id: string }> {
+  const lookup = new Map<string, PlayRecord & { id: string }>();
+  records.forEach((record) => {
+    lookup.set(record.id, record);
+  });
+  return lookup;
+}
 
 /**
  * 检查追番更新
@@ -139,6 +197,8 @@ export async function checkWatchingUpdates(
     let continueWatchingCount = 0;
     let newReleasesCount = 0;
     const updatedSeries: WatchingUpdate['updatedSeries'] = [];
+    const sourceMap = await getSourceMap();
+    const recordLookup = createRecordLookup(records);
 
     // 并发检查所有记录的更新状态
     const updatePromises = candidateRecords.map(async (record) => {
@@ -149,6 +209,8 @@ export async function checkWatchingUpdates(
           record,
           videoId,
           sourceName,
+          sourceMap,
+          recordLookup,
         );
 
         // 使用从 checkSingleRecordUpdate 返回的 protectedTotalEpisodes（已经包含了保护机制）
@@ -377,6 +439,8 @@ async function checkSingleRecordUpdate(
   record: PlayRecord,
   videoId: string,
   storageSourceName?: string,
+  sourceMap?: Map<string, string>,
+  recordLookup?: Map<string, PlayRecord & { id: string }>,
 ): Promise<{
   hasUpdate: boolean;
   hasContinueWatching: boolean;
@@ -387,30 +451,13 @@ async function checkSingleRecordUpdate(
   try {
     let sourceKey = record.source_name;
 
-    // 先尝试获取可用数据源进行映射
-    try {
-      const sourcesResponse = await fetch('/api/sources');
-      if (sourcesResponse.ok) {
-        const sources = await sourcesResponse.json();
-
-        // 查找匹配的数据源
-        const matchedSource = sources.find(
-          (source: any) =>
-            source.key === record.source_name ||
-            source.name === record.source_name,
-        );
-
-        if (matchedSource) {
-          sourceKey = matchedSource.key;
-          console.log(`映射数据源: ${record.source_name} -> ${sourceKey}`);
-        } else {
-          console.warn(
-            `找不到数据源 ${record.source_name} 的映射，使用原始名称`,
-          );
-        }
-      }
-    } catch (mappingError) {
-      console.warn('数据源映射失败，使用原始名称:', mappingError);
+    const sources = sourceMap || (await getSourceMap());
+    const mappedSource = sources.get(record.source_name);
+    if (mappedSource) {
+      sourceKey = mappedSource;
+      console.log(`映射数据源: ${record.source_name} -> ${sourceKey}`);
+    } else {
+      console.warn(`找不到数据源 ${record.source_name} 的映射，使用原始名称`);
     }
 
     // 使用映射后的key调用API（API已默认不缓存，确保集数信息实时更新）
@@ -447,6 +494,7 @@ async function checkSingleRecordUpdate(
       record,
       videoId,
       recordKey,
+      recordLookup,
     );
 
     console.log(`${record.title} 集数对比:`, {
@@ -551,6 +599,7 @@ async function getOriginalEpisodes(
   record: PlayRecord,
   videoId: string,
   recordKey: string,
+  recordLookup?: Map<string, PlayRecord & { id: string }>,
 ): Promise<number> {
   // 添加详细调试信息
   console.log(`🔍 getOriginalEpisodes 调试信息 - ${record.title}:`, {
@@ -560,30 +609,15 @@ async function getOriginalEpisodes(
     完整记录: record,
   });
 
-  // 🔑 关键修复：不信任内存中的 original_episodes（可能来自缓存）
-  // 始终从数据库重新读取最新的 original_episodes
-  try {
-    console.log(`🔍 从数据库读取最新的原始集数: ${record.title}`);
-    const freshRecordsResponse = await fetch('/api/playrecords');
-    if (freshRecordsResponse.ok) {
-      const freshRecords = await freshRecordsResponse.json();
-      const freshRecord = freshRecords[recordKey];
-
-      if (freshRecord?.original_episodes && freshRecord.original_episodes > 0) {
-        console.log(
-          `📚 从数据库读取到最新原始集数: ${record.title} = ${freshRecord.original_episodes}集 (当前播放记录: ${record.total_episodes}集)`,
-        );
-        return freshRecord.original_episodes;
-      }
-    }
-  } catch (error) {
-    console.warn(
-      `⚠️ 从数据库读取原始集数失败: ${record.title}，使用内存值`,
-      error,
+  const freshRecord = recordLookup?.get(recordKey);
+  if (freshRecord?.original_episodes && freshRecord.original_episodes > 0) {
+    console.log(
+      `📚 从当前记录快照读取到原始集数: ${record.title} = ${freshRecord.original_episodes}集 (当前播放记录: ${record.total_episodes}集)`,
     );
+    return freshRecord.original_episodes;
   }
 
-  // 备用方案：如果数据库读取失败，使用内存中的值
+  // 备用方案：使用内存中的值
   if (record.original_episodes && record.original_episodes > 0) {
     console.log(
       `📚 使用内存中的原始集数: ${record.title} = ${record.original_episodes}集 (当前播放记录: ${record.total_episodes}集)`,

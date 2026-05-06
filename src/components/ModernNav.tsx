@@ -121,13 +121,19 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
         applyRuntimeConfig(runtimeConfig);
       }
     };
-    const refreshRuntimeConfig = () => {
+    const refreshRuntimeConfig = (force = false) => {
       apply(getWindowRuntimeConfig());
-      fetchRuntimeConfig()
+      fetchRuntimeConfig({ force })
         .then(apply)
         .catch((error) => {
           console.warn('Failed to refresh runtime config:', error);
         });
+    };
+    const handleRuntimeConfigRefreshRequested = () => {
+      refreshRuntimeConfig(true);
+    };
+    const handleWindowFocus = () => {
+      refreshRuntimeConfig();
     };
     const handleRuntimeConfigUpdated = (event: Event) => {
       apply((event as CustomEvent).detail);
@@ -142,9 +148,9 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
     window.addEventListener('runtimeConfigUpdated', handleRuntimeConfigUpdated);
     window.addEventListener(
       'runtimeConfigRefreshRequested',
-      refreshRuntimeConfig,
+      handleRuntimeConfigRefreshRequested,
     );
-    window.addEventListener('focus', refreshRuntimeConfig);
+    window.addEventListener('focus', handleWindowFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
@@ -155,9 +161,9 @@ const ModernNav = ({ activePath }: ModernNavProps) => {
       );
       window.removeEventListener(
         'runtimeConfigRefreshRequested',
-        refreshRuntimeConfig,
+        handleRuntimeConfigRefreshRequested,
       );
-      window.removeEventListener('focus', refreshRuntimeConfig);
+      window.removeEventListener('focus', handleWindowFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [applyRuntimeConfig]);
