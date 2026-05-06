@@ -476,6 +476,142 @@ div[data-media-provider] video {
   animation: shimmer 2s infinite;
 }
 
+/* Minimal route loading transition */
+.dao-route-loading {
+  --dao-loader-base: rgba(255, 255, 255, 0.075);
+  --dao-loader-mid: rgba(255, 255, 255, 0.14);
+  --dao-loader-accent: rgba(45, 212, 191, 0.42);
+  contain: layout paint style;
+  isolation: isolate;
+  animation: dao-route-loading-in 160ms ease-out both;
+}
+
+.dao-route-loading__wash {
+  background:
+    radial-gradient(
+      circle at 18% 16%,
+      rgba(45, 212, 191, 0.12),
+      transparent 30rem
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 22rem),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.045), transparent 42%);
+}
+
+.dao-route-loading__mark {
+  position: relative;
+  box-shadow: 0 0 28px rgba(45, 212, 191, 0.14);
+}
+
+.dao-route-loading__mark::after {
+  position: absolute;
+  inset: 10px;
+  content: '';
+  border-radius: 999px;
+  background: #5eead4;
+  box-shadow: 0 0 16px rgba(94, 234, 212, 0.72);
+  animation: dao-route-loading-pulse 1.2s ease-in-out infinite;
+}
+
+.dao-route-loading__bar,
+.dao-route-loading__pill,
+.dao-route-loading__headline,
+.dao-route-loading__rail,
+.dao-route-loading__poster {
+  background:
+    linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.16) 45%,
+      transparent 62%
+    ),
+    var(--dao-loader-base);
+  background-size: 220% 100%;
+  animation: dao-route-loading-sheen 1.35s ease-in-out infinite;
+}
+
+.dao-route-loading__headline {
+  background-color: rgba(255, 255, 255, 0.105);
+}
+
+.dao-route-loading__pill,
+.dao-route-loading__rail {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dao-route-loading__poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+}
+
+.dao-route-loading__poster::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background:
+    linear-gradient(180deg, transparent 58%, rgba(0, 0, 0, 0.26)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 46%);
+}
+
+.dao-route-loading__poster span {
+  position: absolute;
+  right: 12%;
+  bottom: 10%;
+  left: 12%;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@keyframes dao-route-loading-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dao-route-loading-sheen {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes dao-route-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.78);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 767px) {
+  .dao-route-loading__poster:nth-child(n + 10) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dao-route-loading,
+  .dao-route-loading *,
+  .dao-route-loading *::before,
+  .dao-route-loading *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 /* VideoCard 光泽扫过动画 - 使用 @property 优化 */
 @keyframes card-shimmer {
   to {
