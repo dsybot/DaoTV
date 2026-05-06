@@ -8,49 +8,68 @@ import { isVideoCached } from '@/lib/video-cache';
 /**
  * 刷新过期的 Douban trailer URL
  *
- * 三层缓存策略：
- * 1. Redis URL 缓存（24小时）- 最快，存储豆瓣返回的 URL
- * 2. 视频文件缓存（12小时）- 次快，本地已有视频文件时直接返回代理 URL
- * 3. 豆瓣 API - 最慢，所有缓存都未命中时才请求
+ * 两层缓存策略：
+ * 1. 视频文件缓存 - 本地已有视频文件时直接返回代理 URL（永久可用）
+ * 2. 豆瓣 API - 本地文件不存在时请求豆瓣，下载并缓存视频文件
+ *
+ * Redis 只缓存失败状态：
+ * - no_trailer: 24小时（避免重复请求没有预告片的影片）
+ * - failed: 5分钟（短暂缓存服务端错误）
  *
  * 优势：
- * - 即使 Redis URL 缓存过期，只要视频文件还在就不需要请求豆瓣
- * - 大幅减少对豆瓣 API 的请求次数，避免被封 IP
+ * - 本地文件永久可用，不受豆瓣 URL 过期影响
+ * - 不缓存 URL，避免"缓存了过期 URL"的问题
+ * - 大幅减少对豆瓣 API 的请求次数
  */
 
-type CacheStatus = 'success' | 'no_trailer' | 'failed';
+// 缓存状态类型
+type CacheStatus = 'no_trailer' | 'failed';
 
 interface TrailerCache {
-  url: string | null;
   status: CacheStatus;
   timestamp: number;
 }
 
+// 成功结果（不缓存）
+interface TrailerSuccess {
+  url: string | null;
+  timestamp: number;
+}
+
+type TrailerResult = TrailerSuccess | TrailerCache;
+
+// 缓存 TTL 配置（秒）
 const CACHE_TTL = {
-  success: 24 * 60 * 60,
-  no_trailer: 24 * 60 * 60,
-  failed: 5 * 60,
+  no_trailer: 24 * 60 * 60, // 24小时（可能是即将上映）
+  failed: 5 * 60, // 5分钟（服务端错误）
 };
 
-const pendingRequests = new Map<string, Promise<TrailerCache>>();
+// 正在进行的请求（防止并发重复请求导致缓存击穿）
+const pendingRequests = new Map<string, Promise<TrailerResult>>();
 
+// 全局限流：记录上次请求豆瓣的时间
 let lastDoubanRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 3000;
+const MIN_REQUEST_INTERVAL = 3000; // 每次请求豆瓣至少间隔 3 秒
 
+// Redis 限流配置
 const RATE_LIMIT_KEY = 'douban:refresh-trailer:rate-limit';
-const RATE_LIMIT_WINDOW = 60;
-const RATE_LIMIT_MAX_REQUESTS = 10;
+const RATE_LIMIT_WINDOW = 60; // 时间窗口：60 秒
+const RATE_LIMIT_MAX_REQUESTS = 10; // 每分钟最多 10 个请求
 
+// 强制刷新冷却期：防止同一个 ID 被多个客户端频繁强制刷新
 const lastForceRefreshTime = new Map<string, number>();
-const FORCE_REFRESH_COOLDOWN = 60 * 1000;
+const FORCE_REFRESH_COOLDOWN = 60 * 1000; // 60 秒冷却期
 
+// 🔥 无视频缓存的强制刷新冷却期：防止无意义的重复请求
 const lastNoCacheForceRefreshTime = new Map<string, number>();
-const NO_CACHE_FORCE_REFRESH_COOLDOWN = 5 * 60 * 1000;
+const NO_CACHE_FORCE_REFRESH_COOLDOWN = 5 * 60 * 1000; // 5 分钟冷却期
 
+// 获取缓存 key
 function getCacheKey(id: string): string {
   return `trailer:${id}`;
 }
 
+// 从 Redis 获取缓存
 async function getCache(id: string): Promise<TrailerCache | null> {
   try {
     const cached = await db.getCache(getCacheKey(id));
@@ -393,6 +412,55 @@ export async function GET(request: Request) {
     console.log(`[refresh-trailer] 强制刷新，清除 Redis 缓存: ${id}`);
     await clearCache(id);
   } else {
+    const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE;
+    if (storageType === 'kvrocks') {
+      try {
+        const videoFileExists = await isVideoCached('', id);
+
+        if (videoFileExists) {
+          console.log(`[refresh-trailer] 命中视频文件缓存: ${id}，返回代理 URL`);
+
+          const tempUrl = `https://vt1.doubanio.com/placeholder/M/${id}.mp4`;
+          const cachedVideoUrl = `/api/video-proxy?url=${encodeURIComponent(tempUrl)}&douban_id=${id}`;
+
+          const successResponse = {
+            code: 200,
+            message: '获取成功（视频文件缓存）',
+            data: {
+              trailerUrl: cachedVideoUrl,
+            },
+          };
+          const responseSize = Buffer.byteLength(
+            JSON.stringify(successResponse),
+            'utf8',
+          );
+
+          recordRequest({
+            timestamp: startTime,
+            method: 'GET',
+            path: '/api/douban/refresh-trailer',
+            statusCode: 200,
+            duration: Date.now() - startTime,
+            memoryUsed:
+              (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+            dbQueries: 0,
+            requestSize: 0,
+            responseSize,
+          });
+
+          return NextResponse.json(successResponse, {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+              Pragma: 'no-cache',
+              Expires: '0',
+            },
+          });
+        }
+      } catch (error) {
+        console.error('[refresh-trailer] 检查视频文件缓存失败:', error);
+      }
+    }
+
     const cached = await getCache(id);
     if (cached) {
       const now = Date.now();
@@ -401,53 +469,6 @@ export async function GET(request: Request) {
       console.log(
         `[refresh-trailer] 命中 Redis 缓存: ${id}，状态: ${cached.status}，年龄: ${age}秒`,
       );
-
-      if (cached.status === 'success' && cached.url) {
-        let trailerUrl = cached.url;
-        if (!trailerUrl.includes('douban_id=')) {
-          if (trailerUrl.startsWith('/api/video-proxy?url=')) {
-            trailerUrl = `${trailerUrl}&douban_id=${id}`;
-          } else if (
-            trailerUrl.includes('douban') ||
-            trailerUrl.includes('doubanio')
-          ) {
-            trailerUrl = `/api/video-proxy?url=${encodeURIComponent(trailerUrl)}&douban_id=${id}`;
-          }
-        }
-
-        const successResponse = {
-          code: 200,
-          message: '获取成功（Redis 缓存）',
-          data: {
-            trailerUrl,
-          },
-        };
-        const responseSize = Buffer.byteLength(
-          JSON.stringify(successResponse),
-          'utf8',
-        );
-
-        recordRequest({
-          timestamp: startTime,
-          method: 'GET',
-          path: '/api/douban/refresh-trailer',
-          statusCode: 200,
-          duration: Date.now() - startTime,
-          memoryUsed:
-            (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-          dbQueries: 0,
-          requestSize: 0,
-          responseSize,
-        });
-
-        return NextResponse.json(successResponse, {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-            Pragma: 'no-cache',
-            Expires: '0',
-          },
-        });
-      }
 
       if (cached.status === 'no_trailer') {
         const noTrailerResponse = {
@@ -504,55 +525,6 @@ export async function GET(request: Request) {
         return NextResponse.json(failedResponse, { status: 500 });
       }
     }
-
-    const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE;
-    if (storageType === 'kvrocks') {
-      try {
-        const videoFileExists = await isVideoCached('', id);
-
-        if (videoFileExists) {
-          console.log(`[refresh-trailer] 命中视频文件缓存: ${id}，返回代理 URL`);
-
-          const tempUrl = `https://vt1.doubanio.com/placeholder/M/${id}.mp4`;
-          const cachedVideoUrl = `/api/video-proxy?url=${encodeURIComponent(tempUrl)}&douban_id=${id}`;
-
-          const successResponse = {
-            code: 200,
-            message: '获取成功（视频文件缓存）',
-            data: {
-              trailerUrl: cachedVideoUrl,
-            },
-          };
-          const responseSize = Buffer.byteLength(
-            JSON.stringify(successResponse),
-            'utf8',
-          );
-
-          recordRequest({
-            timestamp: startTime,
-            method: 'GET',
-            path: '/api/douban/refresh-trailer',
-            statusCode: 200,
-            duration: Date.now() - startTime,
-            memoryUsed:
-              (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-            dbQueries: 0,
-            requestSize: 0,
-            responseSize,
-          });
-
-          return NextResponse.json(successResponse, {
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-              Pragma: 'no-cache',
-              Expires: '0',
-            },
-          });
-        }
-      } catch (error) {
-        console.error('[refresh-trailer] 检查视频文件缓存失败:', error);
-      }
-    }
   }
 
   const rateLimitCheck = await checkRateLimit();
@@ -601,40 +573,39 @@ export async function GET(request: Request) {
     try {
       const result = await existingRequest;
 
-      const successResponse = {
-        code: 200,
-        message:
-          result.status === 'success'
-            ? '获取成功（等待中的请求）'
-            : '请求完成（等待中的请求）',
-        data: {
-          trailerUrl: result.url,
-        },
-      };
-      const responseSize = Buffer.byteLength(
-        JSON.stringify(successResponse),
-        'utf8',
-      );
+      const isSuccess = 'url' in result;
+      const statusCode = isSuccess
+        ? 200
+        : 'status' in result && result.status === 'no_trailer'
+          ? 404
+          : 500;
 
-      recordRequest({
-        timestamp: startTime,
-        method: 'GET',
-        path: '/api/douban/refresh-trailer',
-        statusCode:
-          result.status === 'success'
-            ? 200
-            : result.status === 'no_trailer'
-              ? 404
-              : 500,
-        duration: Date.now() - startTime,
-        memoryUsed:
-          (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
-        dbQueries: 0,
-        requestSize: 0,
-        responseSize,
-      });
+      if (isSuccess) {
+        const successResponse = {
+          code: 200,
+          message: '获取成功（等待中的请求）',
+          data: {
+            trailerUrl: result.url,
+          },
+        };
+        const responseSize = Buffer.byteLength(
+          JSON.stringify(successResponse),
+          'utf8',
+        );
 
-      if (result.status === 'success' && result.url) {
+        recordRequest({
+          timestamp: startTime,
+          method: 'GET',
+          path: '/api/douban/refresh-trailer',
+          statusCode,
+          duration: Date.now() - startTime,
+          memoryUsed:
+            (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+          dbQueries: 0,
+          requestSize: 0,
+          responseSize,
+        });
+
         return NextResponse.json(successResponse, {
           headers: {
             'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -644,7 +615,7 @@ export async function GET(request: Request) {
         });
       }
 
-      if (result.status === 'no_trailer') {
+      if ('status' in result && result.status === 'no_trailer') {
         return NextResponse.json(
           {
             code: 404,
@@ -668,7 +639,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const requestPromise = (async (): Promise<TrailerCache> => {
+  const requestPromise = (async (): Promise<TrailerResult> => {
     try {
       await waitForRequestInterval();
       await incrementRateLimit();
@@ -678,41 +649,34 @@ export async function GET(request: Request) {
         ? `/api/video-proxy?url=${encodeURIComponent(trailerUrl)}&douban_id=${id}`
         : null;
 
-      const cacheData: TrailerCache = {
+      const successResult: TrailerSuccess = {
         url: proxiedUrl,
-        status: 'success',
         timestamp: Date.now(),
       };
 
-      await setCache(id, cacheData);
-
-      return cacheData;
+      return successResult;
     } catch (error) {
       let cacheData: TrailerCache;
 
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           cacheData = {
-            url: null,
             status: 'failed',
             timestamp: Date.now(),
           };
         } else if (error.message.includes('没有预告片')) {
           cacheData = {
-            url: null,
             status: 'no_trailer',
             timestamp: Date.now(),
           };
         } else {
           cacheData = {
-            url: null,
             status: 'failed',
             timestamp: Date.now(),
           };
         }
       } else {
         cacheData = {
-          url: null,
           status: 'failed',
           timestamp: Date.now(),
         };
@@ -730,7 +694,9 @@ export async function GET(request: Request) {
     const result = await requestPromise;
     pendingRequests.delete(id);
 
-    if (result.status === 'success' && result.url) {
+    const isSuccess = 'url' in result;
+
+    if (isSuccess) {
       const successResponse = {
         code: 200,
         message: '获取成功',
@@ -765,7 +731,7 @@ export async function GET(request: Request) {
       });
     }
 
-    if (result.status === 'no_trailer') {
+    if ('status' in result && result.status === 'no_trailer') {
       const noTrailerResponse = {
         code: 404,
         message: '该影片没有预告片',
