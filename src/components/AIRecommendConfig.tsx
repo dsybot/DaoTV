@@ -248,47 +248,27 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
     setTavilyUsage(prev => ({ ...prev, loading: true }));
 
     try {
-      const results = await Promise.all(
-        keysToCheck.map(async (key, idx) => {
-          try {
-            const response = await fetch('https://api.tavily.com/usage', {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${key}`,
-                'Content-Type': 'application/json'
-              }
-            });
+      // 通过后端 API 代理查询，避免浏览器 CORS 和 WAF 问题
+      const response = await fetch('/api/admin/ai-recommend/usage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ apiKeys: keysToCheck })
+      });
 
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '查询失败');
+      }
 
-            const data = await response.json();
-            return {
-              key: key.substring(0, 12) + '...',
-              fullKey: key,
-              index: singleKeyIndex !== undefined ? singleKeyIndex : idx,
-              keyUsage: data.key?.usage || 0,
-              keyLimit: data.key?.limit || 1000,
-              planUsage: data.account?.plan_usage || 0,
-              planLimit: data.account?.plan_limit || 1000,
-              currentPlan: data.account?.current_plan || 'Free'
-            };
-          } catch (err) {
-            return {
-              key: key.substring(0, 12) + '...',
-              fullKey: key,
-              index: singleKeyIndex !== undefined ? singleKeyIndex : idx,
-              keyUsage: 0,
-              keyLimit: 0,
-              planUsage: 0,
-              planLimit: 0,
-              currentPlan: 'Error',
-              error: err instanceof Error ? err.message : '获取失败'
-            };
-          }
-        })
-      );
+      const { results } = await response.json();
+
+      // 将结果映射回正确的索引
+      const mappedResults = results.map((result: any, idx: number) => ({
+        ...result,
+        index: singleKeyIndex !== undefined ? singleKeyIndex : idx
+      }));
 
       if (singleKeyIndex !== undefined) {
         // 单个查询：更新或添加该 Key 的数据
@@ -298,9 +278,9 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
           const existingIndex = newData.findIndex(d => d.index === singleKeyIndex);
 
           if (existingIndex >= 0) {
-            newData[existingIndex] = results[0];
+            newData[existingIndex] = mappedResults[0];
           } else {
-            newData.push(results[0]);
+            newData.push(mappedResults[0]);
           }
 
           return {
@@ -314,14 +294,14 @@ const AIRecommendConfig = ({ config, refreshConfig }: AIRecommendConfigProps) =>
         // 全部查询：替换所有数据
         setTavilyUsage({
           loading: false,
-          data: results,
+          data: mappedResults,
           lastUpdated: new Date().toLocaleString('zh-CN')
         });
         showMessage('success', '✅ 统计数据已更新！请点击下方"保存配置"按钮保存Key到配置文件');
       }
     } catch (err) {
       console.error('获取 Tavily 用量失败:', err);
-      showMessage('error', '获取用量失败，请稍后重试');
+      showMessage('error', err instanceof Error ? err.message : '获取用量失败，请稍后重试');
       setTavilyUsage(prev => ({ ...prev, loading: false }));
     }
   };
