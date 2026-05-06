@@ -541,6 +541,7 @@ export async function validateCacheSize(): Promise<void> {
 
     let actualTotalSize = 0;
     let validFileCount = 0;
+    let rebuiltMetaCount = 0;
 
     for (const file of files) {
       if (!file.endsWith('.mp4')) continue;
@@ -550,18 +551,40 @@ export async function validateCacheSize(): Promise<void> {
         const stats = await fs.stat(filePath);
         actualTotalSize += stats.size;
         validFileCount++;
+
+        const cacheKey = file.replace('.mp4', '');
+        const metaKey = `${KEYS.VIDEO_META}${cacheKey}`;
+
+        const meta = await redis.get(metaKey);
+        if (!meta) {
+          console.log(`[VideoCache] 重建缺失的元数据: ${cacheKey}`);
+          const newMeta = JSON.stringify({
+            url: '',
+            cacheKey,
+            contentType: 'video/mp4',
+            size: stats.size,
+            cachedAt: stats.mtimeMs,
+          });
+          await redis.set(metaKey, newMeta);
+
+          const accessTime = stats.mtimeMs;
+          await redis.zAdd(KEYS.VIDEO_LRU, [{ score: accessTime, value: cacheKey }]);
+          rebuiltMetaCount++;
+        }
       } catch (error) {
         console.error(`[VideoCache] 无法读取文件: ${file}`, error);
       }
     }
 
-    // 更新 Redis 中的总大小
     await redis.set(KEYS.VIDEO_SIZE, actualTotalSize.toString());
 
     console.log(`[VideoCache] ✅ 启动校验完成:`);
     console.log(`  - 文件数量: ${validFileCount}`);
     console.log(`  - 实际大小: ${(actualTotalSize / 1024 / 1024).toFixed(2)}MB`);
     console.log(`  - 最大限制: ${(CACHE_CONFIG.MAX_CACHE_SIZE / 1024 / 1024).toFixed(2)}MB`);
+    if (rebuiltMetaCount > 0) {
+      console.log(`  - 重建元数据: ${rebuiltMetaCount} 个`);
+    }
 
   } catch (error) {
     console.error('[VideoCache] 启动校验失败:', error);

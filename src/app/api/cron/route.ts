@@ -307,18 +307,7 @@ async function cronJob() {
       }
     })(),
 
-    // 清理过期视频缓存
-    (async () => {
-      try {
-        console.log('🧹 清理过期视频缓存...');
-        await cleanupExpiredCache();
-        console.log('✅ 视频缓存清理完成');
-      } catch (err) {
-        console.error('❌ 视频缓存清理失败:', err);
-      }
-    })(),
-
-    // 校验缓存大小
+    // 校验缓存大小（先执行，重建缺失的元数据）
     (async () => {
       try {
         console.log('🔍 校验视频缓存大小...');
@@ -326,6 +315,17 @@ async function cronJob() {
         console.log('✅ 缓存大小校验完成');
       } catch (err) {
         console.error('❌ 缓存大小校验失败:', err);
+      }
+    })(),
+
+    // 清理过期视频缓存（后执行，此时元数据已重建）
+    (async () => {
+      try {
+        console.log('🧹 清理过期视频缓存...');
+        await cleanupExpiredCache();
+        console.log('✅ 视频缓存清理完成');
+      } catch (err) {
+        console.error('❌ 视频缓存清理失败:', err);
       }
     })(),
 
