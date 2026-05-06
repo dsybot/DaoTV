@@ -44,6 +44,9 @@ const RATE_LIMIT_MAX_REQUESTS = 10;
 const lastForceRefreshTime = new Map<string, number>();
 const FORCE_REFRESH_COOLDOWN = 60 * 1000;
 
+const lastNoCacheForceRefreshTime = new Map<string, number>();
+const NO_CACHE_FORCE_REFRESH_COOLDOWN = 5 * 60 * 1000;
+
 function getCacheKey(id: string): string {
   return `trailer:${id}`;
 }
@@ -342,6 +345,46 @@ export async function GET(request: Request) {
             },
           });
         }
+
+        const lastNoCacheRefreshTime = lastNoCacheForceRefreshTime.get(id) || 0;
+        const timeSinceLastNoCacheRefresh = now - lastNoCacheRefreshTime;
+
+        if (timeSinceLastNoCacheRefresh < NO_CACHE_FORCE_REFRESH_COOLDOWN) {
+          const remainingSeconds = Math.ceil(
+            (NO_CACHE_FORCE_REFRESH_COOLDOWN - timeSinceLastNoCacheRefresh) /
+              1000,
+          );
+          console.warn(
+            `[refresh-trailer] 无视频缓存的强制刷新冷却中: ${id}，${remainingSeconds}秒后可重试`,
+          );
+
+          const cooldownResponse = {
+            code: 429,
+            message: `视频未缓存，强制刷新冷却中，${remainingSeconds}秒后可重试`,
+            error: 'NO_CACHE_FORCE_REFRESH_COOLDOWN',
+          };
+          const cooldownSize = Buffer.byteLength(
+            JSON.stringify(cooldownResponse),
+            'utf8',
+          );
+
+          recordRequest({
+            timestamp: startTime,
+            method: 'GET',
+            path: '/api/douban/refresh-trailer',
+            statusCode: 429,
+            duration: Date.now() - startTime,
+            memoryUsed:
+              (process.memoryUsage().heapUsed - startMemory) / 1024 / 1024,
+            dbQueries: 0,
+            requestSize: 0,
+            responseSize: cooldownSize,
+          });
+
+          return NextResponse.json(cooldownResponse, { status: 429 });
+        }
+
+        lastNoCacheForceRefreshTime.set(id, now);
       } catch (error) {
         console.error('[refresh-trailer] 检查视频文件缓存失败:', error);
       }

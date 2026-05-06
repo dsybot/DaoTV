@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
-import { isVideoCached, getCachedVideoPath, cacheVideoContent, cacheTrailerUrl, deleteVideoCache } from '@/lib/video-cache';
+import { isVideoCached, getCachedVideoPath, cacheVideoContent } from '@/lib/video-cache';
 import { promises as fs } from 'fs';
 import { createReadStream } from 'fs';
+import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -118,12 +119,32 @@ export async function GET(request: Request) {
     }
 
     if (!videoResponse.ok) {
-      // 🎯 如果是 403/404 等错误，删除可能过期的缓存
+      // 🎯 如果是 403/404 等错误，优先检查视频文件缓存
       if (storageType === 'kvrocks' && (videoResponse.status === 403 || videoResponse.status === 404)) {
-        console.log(`[VideoProxy] 视频URL返回 ${videoResponse.status}，删除缓存: ${videoUrl}`);
-        deleteVideoCache(videoUrl).catch(err => {
-          console.error('[VideoProxy] 删除缓存失败:', err);
-        });
+        console.log(`[VideoProxy] 视频URL返回 ${videoResponse.status}: ${videoUrl}`);
+
+        if (doubanId) {
+          try {
+            const videoFileExists = await isVideoCached('', doubanId);
+            if (videoFileExists) {
+              console.log(`[VideoProxy] URL过期但视频文件存在，返回缓存: movie_${doubanId}`);
+              const cachedPath = await getCachedVideoPath('', doubanId);
+              if (cachedPath) {
+                return serveVideoFromFile(cachedPath, request);
+              }
+            } else {
+              console.log(`[VideoProxy] 视频文件不存在，清除 Redis URL 缓存: trailer:${doubanId}`);
+              try {
+                await db.deleteCache(`trailer:${doubanId}`);
+                console.log(`[VideoProxy] ✅ 已清除 Redis URL 缓存: trailer:${doubanId}`);
+              } catch (err) {
+                console.error('[VideoProxy] 清除 Redis URL 缓存失败:', err);
+              }
+            }
+          } catch (error) {
+            console.error('[VideoProxy] 检查视频文件缓存失败:', error);
+          }
+        }
       }
 
       const errorResponse = NextResponse.json(
@@ -198,13 +219,6 @@ export async function GET(request: Request) {
         cacheVideoContent(videoUrl, videoBuffer, contentType || 'video/mp4', doubanId || undefined).catch(err => {
           console.error('[VideoProxy] 缓存视频失败:', err);
         });
-
-        // 🎯 缓存 URL 映射（如果有 douban_id）
-        if (doubanId) {
-          cacheTrailerUrl(doubanId, videoUrl).catch(err => {
-            console.error('[VideoProxy] 缓存 trailer URL 失败:', err);
-          });
-        }
 
         console.log(`[VideoProxy] ✅ 视频已缓存: ${videoUrl.substring(0, 50)}...`);
 
