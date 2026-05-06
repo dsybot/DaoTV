@@ -1116,7 +1116,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               referrerPolicy='no-referrer'
               loading={priority ? 'eager' : 'lazy'}
               priority={priority}
-              quality={85}
+              quality={68}
               onLoad={() => {
                 loadedImageUrls.add(processImageUrl(actualPoster));
                 if (!imageLoaded) {

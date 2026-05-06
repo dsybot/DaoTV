@@ -11,6 +11,7 @@ import { CinematicLoadingFallback } from '../components/CinematicLoadingFallback
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import QueryProvider from '../components/QueryProvider';
+import RouteWarmup from '../components/RouteWarmup';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
@@ -156,6 +157,7 @@ export default async function RootLayout({
                   <SiteProvider siteName={siteName} announcement={announcement}>
                     <Suspense fallback={<CinematicLoadingFallback />}>
                       <SessionTracker />
+                      <RouteWarmup />
                       {children}
                       <GlobalErrorIndicator />
                     </Suspense>

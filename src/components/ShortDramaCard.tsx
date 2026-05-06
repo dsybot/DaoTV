@@ -383,6 +383,8 @@ function ShortDramaCard({
                 ? 'opacity-100 blur-0 scale-100'
                 : 'opacity-0 blur-md scale-105'
             }`}
+            decoding='async'
+            fetchPriority={priority ? 'high' : 'low'}
             loading={priority ? undefined : 'lazy'}
             onLoad={() => {
               loadedImageUrls.add(drama.cover);

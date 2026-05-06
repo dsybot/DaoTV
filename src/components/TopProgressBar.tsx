@@ -3,6 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import RouteLoadingShell from './RouteLoadingShell';
+
 export default function TopProgressBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -12,7 +14,8 @@ export default function TopProgressBar() {
   const isNavigatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previousPathnameRef = useRef(pathname);
+  const failSafeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showOverlay, setShowOverlay] = useState(false);
 
   const clearTimers = () => {
     if (intervalRef.current) {
@@ -23,6 +26,10 @@ export default function TopProgressBar() {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
+    if (failSafeTimeoutRef.current) {
+      clearTimeout(failSafeTimeoutRef.current);
+      failSafeTimeoutRef.current = null;
+    }
   };
 
   const start = () => {
@@ -30,6 +37,12 @@ export default function TopProgressBar() {
     isNavigatingRef.current = true;
     setVisible(true);
     setProgress(8);
+    setShowOverlay(true);
+    failSafeTimeoutRef.current = setTimeout(() => {
+      if (isNavigatingRef.current) {
+        done();
+      }
+    }, 15000);
 
     intervalRef.current = setInterval(() => {
       setProgress((current) => {
@@ -44,6 +57,7 @@ export default function TopProgressBar() {
   const done = () => {
     clearTimers();
     setProgress(100);
+    setShowOverlay(false);
     hideTimeoutRef.current = setTimeout(() => {
       setVisible(false);
       setProgress(0);
@@ -66,10 +80,12 @@ export default function TopProgressBar() {
       try {
         const target = new URL(targetUrl, window.location.href);
         const currentPathname = window.location.pathname;
+        const currentRoute = `${window.location.pathname}${window.location.search}`;
+        const targetRoute = `${target.pathname}${target.search}`;
         return (
           currentPathname === '/play' ||
           currentPathname === '/live' ||
-          target.pathname !== previousPathnameRef.current
+          targetRoute !== currentRoute
         );
       } catch {
         return true;
@@ -97,6 +113,17 @@ export default function TopProgressBar() {
     };
 
     const handleAnchorClick = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        event.button !== 0
+      ) {
+        return;
+      }
+
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest('a');
       if (!anchor?.href || anchor.target || anchor.download) return;
@@ -104,10 +131,12 @@ export default function TopProgressBar() {
       try {
         const currentOrigin = window.location.origin;
         const targetUrl = new URL(anchor.href, currentOrigin);
+        const currentRoute = `${window.location.pathname}${window.location.search}`;
+        const targetRoute = `${targetUrl.pathname}${targetUrl.search}`;
         if (
           targetUrl.origin === currentOrigin &&
           targetUrl.href !== window.location.href &&
-          targetUrl.pathname !== previousPathnameRef.current
+          targetRoute !== currentRoute
         ) {
           start();
         }
@@ -136,23 +165,25 @@ export default function TopProgressBar() {
     if (isNavigatingRef.current) {
       done();
     }
-    previousPathnameRef.current = pathname;
   }, [pathname, searchParams]);
 
-  if (!visible && progress === 0) return null;
+  if (!visible && progress === 0 && !showOverlay) return null;
 
   return (
-    <div
-      className='fixed left-0 right-0 top-0 z-9999 h-[2px] bg-transparent pointer-events-none'
-      aria-hidden='true'
-    >
+    <>
+      {showOverlay && <RouteLoadingShell overlay />}
       <div
-        className='h-full bg-linear-to-r from-cyan-400 via-emerald-400 to-lime-300 shadow-[0_0_12px_rgba(45,212,191,0.65)] transition-[width,opacity] duration-200 ease-out'
-        style={{
-          width: `${progress}%`,
-          opacity: visible ? 1 : 0,
-        }}
-      />
-    </div>
+        className='fixed left-0 right-0 top-0 z-9999 h-[2px] bg-transparent pointer-events-none'
+        aria-hidden='true'
+      >
+        <div
+          className='h-full bg-linear-to-r from-cyan-400 via-emerald-400 to-lime-300 shadow-[0_0_12px_rgba(45,212,191,0.65)] transition-[width,opacity] duration-200 ease-out'
+          style={{
+            width: `${progress}%`,
+            opacity: visible ? 1 : 0,
+          }}
+        />
+      </div>
+    </>
   );
 }
