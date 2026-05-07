@@ -458,7 +458,7 @@ const PlayStatsPage: React.FC = () => {
   if (storageType === 'localstorage') {
     return (
       <PageLayout activePath="/play-stats">
-        <div className='max-w-6xl mx-auto px-4 py-8'>
+        <div className='max-w-6xl mx-auto px-4 py-8 pb-40 md:pb-safe-bottom'>
           <div className='mb-8'>
             <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
               {isAdmin ? '播放统计' : '个人统计'}
@@ -506,7 +506,7 @@ const PlayStatsPage: React.FC = () => {
   if (isAdmin && statsData && userStats) {
     return (
       <PageLayout activePath="/play-stats">
-        <div className='max-w-7xl mx-auto px-4 py-8'>
+        <div className='max-w-7xl mx-auto px-4 py-8 pb-40 md:pb-safe-bottom'>
           {/* 页面标题和描述 */}
           <div className='mb-6'>
             <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
@@ -1542,7 +1542,7 @@ const PlayStatsPage: React.FC = () => {
   if (!isAdmin && userStats) {
     return (
       <PageLayout activePath="/play-stats">
-        <div className='max-w-6xl mx-auto px-4 py-8'>
+        <div className='max-w-6xl mx-auto px-4 py-8 pb-40 md:pb-safe-bottom'>
           {/* 页面标题和刷新按钮 */}
           <div className='flex justify-between items-start mb-8'>
             <div>
@@ -2138,7 +2138,7 @@ const PlayStatsPage: React.FC = () => {
   // 加载中或错误状态
   return (
     <PageLayout activePath="/play-stats">
-      <div className='max-w-6xl mx-auto px-4 py-8'>
+      <div className='max-w-6xl mx-auto px-4 py-8 pb-40 md:pb-safe-bottom'>
         <div className='text-center py-12'>
           {error ? (
             <div className='text-red-600 dark:text-red-400'>{error}</div>

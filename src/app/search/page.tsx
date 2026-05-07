@@ -774,8 +774,8 @@ function SearchPageClient() {
       initialValue: STREAMED_INITIAL,
     }),
     enabled: !!trimmedQuery && useFluidSearch,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const traditionalSearchQuery = useQuery<SearchResult[]>({
@@ -790,8 +790,8 @@ function SearchPageClient() {
         : [];
     },
     enabled: !!trimmedQuery && !useFluidSearch,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const searchResults: SearchResult[] = useFluidSearch

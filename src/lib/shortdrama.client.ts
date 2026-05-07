@@ -14,6 +14,36 @@ import {
 import { DEFAULT_USER_AGENT } from './user-agent';
 
 // 获取API基础URL - 统一使用内部 API 代理避免 CORS 问题
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+function getPendingRequest<T>(key: string): Promise<T> | null {
+  const request = pendingRequests.get(key);
+  return request ? (request as Promise<T>) : null;
+}
+
+function runDedupedRequest<T>(
+  key: string,
+  timeoutMessage: string,
+  requestFactory: () => Promise<T>,
+): Promise<T> {
+  const requestPromise = (async () => {
+    const timeoutId = setTimeout(() => {
+      pendingRequests.delete(key);
+      console.warn(timeoutMessage);
+    }, 30000);
+
+    try {
+      return await requestFactory();
+    } finally {
+      clearTimeout(timeoutId);
+      pendingRequests.delete(key);
+    }
+  })();
+
+  pendingRequests.set(key, requestPromise);
+  return requestPromise;
+}
+
 const getApiBase = () => {
   // 所有请求都通过内部 API 代理
   return '/api/shortdrama';
@@ -31,7 +61,19 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
     }
 
     // 使用内部 API 代理
-    const apiUrl = `${getApiBase()}/categories`;
+    const pendingKey = `categories-${cacheKey}`;
+    const pendingRequest =
+      getPendingRequest<ShortDramaCategory[]>(pendingKey);
+    if (pendingRequest) {
+      console.log('短剧分类请求去重');
+      return pendingRequest;
+    }
+
+    return await runDedupedRequest(
+      pendingKey,
+      '短剧分类请求超时',
+      async () => {
+        const apiUrl = `${getApiBase()}/categories`;
 
     const response = await fetch(apiUrl);
 
@@ -48,7 +90,9 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
     if (Array.isArray(result) && result.length > 0) {
       await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.categories);
     }
-    return result;
+        return result;
+      },
+    );
   } catch (error) {
     console.error('获取短剧分类失败:', error);
     return [];
@@ -110,7 +154,21 @@ export async function getShortDramaList(
     }
 
     // 使用内部 API 代理
-    const apiUrl = `${getApiBase()}/list?categoryId=${category}&page=${page}&size=${size}`;
+    const pendingKey = `list-${cacheKey}`;
+    const pendingRequest =
+      getPendingRequest<{ list: ShortDramaItem[]; hasMore: boolean }>(
+        pendingKey,
+      );
+    if (pendingRequest) {
+      console.log(`短剧列表请求去重: ${category}/${page}`);
+      return pendingRequest;
+    }
+
+    return await runDedupedRequest(
+      pendingKey,
+      `短剧列表请求超时: ${category}/${page}`,
+      async () => {
+        const apiUrl = `${getApiBase()}/list?categoryId=${category}&page=${page}&size=${size}`;
 
     const response = await fetch(apiUrl);
 
@@ -128,7 +186,9 @@ export async function getShortDramaList(
           : SHORTDRAMA_CACHE_EXPIRE.lists;
       await setCache(cacheKey, result, cacheTime);
     }
-    return result;
+        return result;
+      },
+    );
   } catch (error) {
     console.error('获取短剧列表失败:', error);
     return { list: [], hasMore: false };

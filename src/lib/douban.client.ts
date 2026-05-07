@@ -32,6 +32,36 @@ const DOUBAN_CACHE_EXPIRE = {
 };
 
 // 缓存工具函数
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+function getPendingRequest<T>(key: string): Promise<T> | null {
+  const request = pendingRequests.get(key);
+  return request ? (request as Promise<T>) : null;
+}
+
+function runDedupedRequest<T>(
+  key: string,
+  timeoutMessage: string,
+  requestFactory: () => Promise<T>,
+): Promise<T> {
+  const requestPromise = (async () => {
+    const timeoutId = setTimeout(() => {
+      pendingRequests.delete(key);
+      console.warn(timeoutMessage);
+    }, 30000);
+
+    try {
+      return await requestFactory();
+    } finally {
+      clearTimeout(timeoutId);
+      pendingRequests.delete(key);
+    }
+  })();
+
+  pendingRequests.set(key, requestPromise);
+  return requestPromise;
+}
+
 function getCacheKey(prefix: string, params: Record<string, any>): string {
   const sortedParams = Object.keys(params)
     .sort()
@@ -409,8 +439,19 @@ export async function getDoubanCategories(
     return cached;
   }
 
-  const { proxyType, proxyUrl } = getDoubanProxyConfig();
-  let result: DoubanResult;
+  const pendingKey = `categories-${cacheKey}`;
+  const pendingRequest = getPendingRequest<DoubanResult>(pendingKey);
+  if (pendingRequest) {
+    console.log(`豆瓣分类请求去重: ${kind}/${category}/${type}`);
+    return pendingRequest;
+  }
+
+  return runDedupedRequest(
+    pendingKey,
+    `豆瓣分类请求超时: ${kind}/${category}/${type}`,
+    async () => {
+      const { proxyType, proxyUrl } = getDoubanProxyConfig();
+      let result: DoubanResult;
 
   switch (proxyType) {
     case 'cors-proxy-zwei':
@@ -449,7 +490,9 @@ export async function getDoubanCategories(
     console.log(`豆瓣分类已缓存: ${kind}/${category}/${type}`);
   }
 
-  return result;
+      return result;
+    },
+  );
 }
 
 interface DoubanListParams {
@@ -472,7 +515,18 @@ export async function getDoubanList(
     return cached;
   }
 
-  const { proxyType, proxyUrl } = getDoubanProxyConfig();
+  const pendingKey = `list-${cacheKey}`;
+  const pendingRequest = getPendingRequest<DoubanResult>(pendingKey);
+  if (pendingRequest) {
+    console.log(`豆瓣列表请求去重: ${type}/${tag}/${pageStart}`);
+    return pendingRequest;
+  }
+
+  return runDedupedRequest(
+    pendingKey,
+    `豆瓣列表请求超时: ${type}/${tag}/${pageStart}`,
+    async () => {
+      const { proxyType, proxyUrl } = getDoubanProxyConfig();
   const response = await fetch(
     `/api/douban?tag=${encodeURIComponent(tag)}&type=${type}&pageSize=${pageLimit}&pageStart=${pageStart}&proxyType=${proxyType}&proxyUrl=${encodeURIComponent(proxyUrl)}`,
   );
@@ -484,7 +538,9 @@ export async function getDoubanList(
     console.log(`豆瓣列表已缓存: ${type}/${tag}/${pageStart}`);
   }
 
-  return result;
+      return result;
+    },
+  );
 }
 
 export async function fetchDoubanList(
@@ -605,8 +661,19 @@ export async function getDoubanRecommends(
     return cached;
   }
 
-  const { proxyType, proxyUrl } = getDoubanProxyConfig();
-  let result: DoubanResult;
+  const pendingKey = `recommends-${cacheKey}`;
+  const pendingRequest = getPendingRequest<DoubanResult>(pendingKey);
+  if (pendingRequest) {
+    console.log(`豆瓣推荐请求去重: ${kind}/${category || 'all'}`);
+    return pendingRequest;
+  }
+
+  return runDedupedRequest(
+    pendingKey,
+    `豆瓣推荐请求超时: ${kind}/${category || 'all'}`,
+    async () => {
+      const { proxyType, proxyUrl } = getDoubanProxyConfig();
+      let result: DoubanResult;
 
   switch (proxyType) {
     case 'cors-proxy-zwei':
@@ -645,7 +712,9 @@ export async function getDoubanRecommends(
     console.log(`豆瓣推荐已缓存: ${kind}/${category || 'all'}`);
   }
 
-  return result;
+      return result;
+    },
+  );
 }
 
 /**

@@ -159,7 +159,13 @@ export default async function RootLayout({
                     <SessionTracker />
                     <RouteWarmup />
                     <AppShell>
-                      <Suspense fallback={<RouteLoadingState />}>
+                      <Suspense
+                        fallback={
+                          <div className='fixed inset-0 z-50'>
+                            <RouteLoadingState />
+                          </div>
+                        }
+                      >
                         {children}
                       </Suspense>
                     </AppShell>
