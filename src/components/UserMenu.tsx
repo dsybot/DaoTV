@@ -185,7 +185,7 @@ export const UserMenu: React.FC = () => {
   const showWatchingUpdates =
     !!authInfo?.username && storageType !== 'localstorage';
   const { data: watchingUpdates = null } = useWatchingUpdatesQuery({
-    enabled: showWatchingUpdates && isOpen,
+    enabled: showWatchingUpdates,
   });
   const refreshWatchingUpdates = useRefreshWatchingUpdates();
 

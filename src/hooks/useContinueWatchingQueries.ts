@@ -31,8 +31,6 @@ export function useContinueWatchingQuery() {
   return useQuery(continueWatchingOptions());
 }
 
-export function useWatchingUpdatesQuery(hasPlayRecords: boolean) {
-  return useWatchingUpdates({
-    enabled: hasPlayRecords,
-  });
+export function useWatchingUpdatesQuery(options?: { enabled?: boolean }) {
+  return useWatchingUpdates(options);
 }
