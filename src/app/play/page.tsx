@@ -30,7 +30,11 @@ import {
 } from '@/lib/db.client';
 import { normalizeDownloadSource } from '@/lib/download';
 import { SearchResult } from '@/lib/types';
-import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+import {
+  getVideoResolutionFromM3u8,
+  processImageUrl,
+  VideoSourceTestResult,
+} from '@/lib/utils';
 import type { DanmuManualOverride } from '@/hooks/useDanmu';
 import { useDanmu } from '@/hooks/useDanmu';
 
@@ -1165,7 +1169,7 @@ function PlayPageClient() {
 
   // 保存优选时的测速结果，避免EpisodeSelector重复测速
   const [precomputedVideoInfo, setPrecomputedVideoInfo] = useState<
-    Map<string, { quality: string; loadSpeed: string; pingTime: number }>
+    Map<string, VideoSourceTestResult>
   >(new Map());
 
   // 测速进度状态
@@ -2110,7 +2114,7 @@ function PlayPageClient() {
 
     const allResults: Array<{
       source: SearchResult;
-      testResult: { quality: string; loadSpeed: string; pingTime: number };
+      testResult: VideoSourceTestResult;
     } | null> = [];
 
     let shouldStop = false; // 早停标志
@@ -2201,13 +2205,20 @@ function PlayPageClient() {
       // 🎯 保守策略早停判断：找到高质量源
       const successfulInBatch = batchResults.filter(Boolean) as Array<{
         source: SearchResult;
-        testResult: { quality: string; loadSpeed: string; pingTime: number };
+        testResult: VideoSourceTestResult;
       }>;
 
       for (const result of successfulInBatch) {
-        const { quality, loadSpeed } = result.testResult;
-        const speedMatch = loadSpeed.match(/^([\d.]+)\s*MB\/s$/);
-        const speedMBps = speedMatch ? parseFloat(speedMatch[1]) : 0;
+        const { quality, speedKBps } = result.testResult;
+        let speedMBps = 0;
+        if (speedKBps && Number.isFinite(speedKBps) && speedKBps > 0) {
+          speedMBps = speedKBps / 1024;
+        } else {
+          const speedMatch = result.testResult.loadSpeed.match(
+            /^([\d.]+)\s*MB\/s$/,
+          );
+          speedMBps = speedMatch ? parseFloat(speedMatch[1]) : 0;
+        }
 
         // 🛑 保守策略：只有非常优质的源才早停
         const is4KHighSpeed = quality === '4K' && speedMBps >= 8;
@@ -2215,7 +2226,7 @@ function PlayPageClient() {
 
         if (is4KHighSpeed || is2KHighSpeed) {
           console.log(
-            `✓ 找到顶级优质源: ${result.source.source_name} (${quality}, ${loadSpeed})，停止测速`,
+            `✓ 找到顶级优质源: ${result.source.source_name} (${quality}, ${result.testResult.loadSpeed})，停止测速`,
           );
           shouldStop = true;
           break;
@@ -2230,15 +2241,7 @@ function PlayPageClient() {
 
     // 等待所有测速完成，包含成功和失败的结果
     // 保存所有测速结果到 precomputedVideoInfo，供 EpisodeSelector 使用（包含错误结果）
-    const newVideoInfoMap = new Map<
-      string,
-      {
-        quality: string;
-        loadSpeed: string;
-        pingTime: number;
-        hasError?: boolean;
-      }
-    >();
+    const newVideoInfoMap = new Map<string, VideoSourceTestResult>();
     allResults.forEach((result, index) => {
       const source = sources[index];
       const sourceKey = `${source.source}-${source.id}`;
@@ -2252,7 +2255,7 @@ function PlayPageClient() {
     // 过滤出成功的结果用于优选计算
     const successfulResults = allResults.filter(Boolean) as Array<{
       source: SearchResult;
-      testResult: { quality: string; loadSpeed: string; pingTime: number };
+      testResult: VideoSourceTestResult;
     }>;
 
     setPrecomputedVideoInfo(newVideoInfoMap);
@@ -2265,6 +2268,14 @@ function PlayPageClient() {
     // 找出所有有效速度的最大值，用于线性映射
     const validSpeeds = successfulResults
       .map((result) => {
+        if (
+          result.testResult.speedKBps &&
+          Number.isFinite(result.testResult.speedKBps) &&
+          result.testResult.speedKBps > 0
+        ) {
+          return result.testResult.speedKBps;
+        }
+
         const speedStr = result.testResult.loadSpeed;
         if (speedStr === '未知' || speedStr === '测量中...') return 0;
 
@@ -2327,11 +2338,7 @@ function PlayPageClient() {
 
   // 计算播放源综合评分
   const calculateSourceScore = (
-    testResult: {
-      quality: string;
-      loadSpeed: string;
-      pingTime: number;
-    },
+    testResult: VideoSourceTestResult,
     maxSpeed: number,
     minPing: number,
     maxPing: number,
@@ -2361,6 +2368,15 @@ function PlayPageClient() {
 
     // 下载速度评分 (40% 权重) - 基于最大速度线性映射
     const speedScore = (() => {
+      if (
+        testResult.speedKBps &&
+        Number.isFinite(testResult.speedKBps) &&
+        testResult.speedKBps > 0
+      ) {
+        const speedRatio = testResult.speedKBps / maxSpeed;
+        return Math.min(100, Math.max(0, speedRatio * 100));
+      }
+
       const speedStr = testResult.loadSpeed;
       if (speedStr === '未知' || speedStr === '测量中...') return 30;
 

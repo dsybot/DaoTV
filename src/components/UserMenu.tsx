@@ -25,14 +25,12 @@ import { createPortal } from 'react-dom';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { CURRENT_VERSION } from '@/lib/version';
 import { UpdateStatus } from '@/lib/version_check';
-import {
-  getCachedWatchingUpdates,
-  getDetailedWatchingUpdates,
-  subscribeToWatchingUpdatesEvent,
-  checkWatchingUpdates,
-  type WatchingUpdate,
-} from '@/lib/watching-updates';
 import { type PlayRecord } from '@/lib/db.client';
+import {
+  useRefreshWatchingUpdates,
+  useWatchingUpdatesQuery,
+  type WatchingUpdate,
+} from '@/hooks/useWatchingUpdates';
 
 import { useDownload } from '@/contexts/DownloadContext';
 
@@ -72,10 +70,6 @@ export const UserMenu: React.FC = () => {
     return 'localstorage';
   });
   const [mounted, setMounted] = useState(false);
-  const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(
-    null,
-  );
-  const [hasUnreadUpdates, setHasUnreadUpdates] = useState(false);
   const [dismissedReleases, setDismissedReleases] = useState<Set<string>>(
     () => {
       if (typeof window !== 'undefined') {
@@ -188,6 +182,13 @@ export const UserMenu: React.FC = () => {
     enabled: dataQueryEnabled,
   });
 
+  const showWatchingUpdates =
+    !!authInfo?.username && storageType !== 'localstorage';
+  const { data: watchingUpdates = null } = useWatchingUpdatesQuery({
+    enabled: showWatchingUpdates && isOpen,
+  });
+  const refreshWatchingUpdates = useRefreshWatchingUpdates();
+
   // 🚀 TanStack Query - 修改密码
   const changePasswordMutation = useChangePasswordMutation();
 
@@ -208,126 +209,12 @@ export const UserMenu: React.FC = () => {
 
   // 🚀 版本检查由 TanStack Query 自动管理
 
-  // 获取观看更新信息
-  useEffect(() => {
-    console.log('UserMenu watching-updates 检查条件:', {
-      window: typeof window !== 'undefined',
-      'authInfo.username': authInfo?.username,
-      storageType: storageType,
-      'storageType !== localstorage': storageType !== 'localstorage',
-    });
-
-    if (
-      typeof window !== 'undefined' &&
-      authInfo?.username &&
-      storageType !== 'localstorage'
-    ) {
-      console.log('开始加载 watching-updates 数据...');
-
-      const updateWatchingUpdates = () => {
-        const updates = getDetailedWatchingUpdates();
-        console.log('getDetailedWatchingUpdates 返回:', updates);
-        setWatchingUpdates(updates);
-
-        // 检测是否有新更新（包括新剧集更新和未忽略的新上映）
-        const activeReleases =
-          updates?.updatedSeries.filter(
-            (series) =>
-              series.hasNewRelease &&
-              !dismissedReleases.has(`${series.sourceKey}+${series.videoId}`),
-          ).length || 0;
-
-        if (
-          updates &&
-          ((updates.updatedCount || 0) > 0 || activeReleases > 0)
-        ) {
-          setHasUnreadUpdates(true);
-        } else {
-          setHasUnreadUpdates(false);
-        }
-      };
-
-      // 页面初始化时检查更新（使用缓存机制）
-      const forceInitialCheck = async () => {
-        console.log('页面初始化，检查更新...');
-        try {
-          // 🔧 修复：不使用强制刷新，让缓存机制生效（30分钟）
-          // 如果缓存有效，直接使用缓存；如果过期，自动重新检查
-          await checkWatchingUpdates();
-
-          // 更新UI
-          updateWatchingUpdates();
-          console.log('页面初始化更新检查完成');
-        } catch (error) {
-          console.error('页面初始化检查更新失败:', error);
-          // 失败时仍然尝试从缓存加载
-          updateWatchingUpdates();
-        }
-      };
-
-      // 先尝试从缓存加载，然后强制检查
-      const cachedUpdates = getCachedWatchingUpdates();
-      if (cachedUpdates) {
-        console.log('发现缓存数据，先加载缓存');
-        updateWatchingUpdates();
-      }
-
-      // 🔧 修复：延迟1秒后在后台执行更新检查，避免阻塞页面初始加载
-      setTimeout(() => {
-        forceInitialCheck();
-      }, 1000);
-
-      // 订阅更新事件
-      const unsubscribe = subscribeToWatchingUpdatesEvent(() => {
-        console.log('收到 watching-updates 事件，更新数据...');
-        updateWatchingUpdates();
-      });
-
-      return unsubscribe;
-    } else {
-      console.log('watching-updates 条件不满足，跳过加载');
-    }
-  }, [authInfo, storageType, dismissedReleases]);
-
-  // 监听watching-updates事件，刷新播放记录
-  useEffect(() => {
-    if (!dataQueryEnabled) return;
-
-    // 监听watching-updates事件，刷新播放记录
-    const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
-      const updates = getDetailedWatchingUpdates();
-      if (updates && updates.hasUpdates && updates.updatedCount > 0) {
-        console.log('UserMenu: 检测到新集数更新，invalidate play records');
-        invalidatePlayRecords();
-      }
-    });
-
-    return () => {
-      unsubscribeWatchingUpdates();
-    };
-  }, [dataQueryEnabled, invalidatePlayRecords]);
-
   const handleMenuClick = () => {
     const willOpen = !isOpen;
     setIsOpen(willOpen);
 
-    // 打开菜单只读取已有更新缓存，不抢占页面切换时的网络带宽。
-    if (willOpen && authInfo?.username && storageType !== 'localstorage') {
-      const updates = getDetailedWatchingUpdates();
-      if (updates) {
-        setWatchingUpdates(updates);
-
-        const activeReleases = getActiveReleaseCount(updates);
-
-        if (
-          updates &&
-          ((updates.updatedCount || 0) > 0 || activeReleases > 0)
-        ) {
-          setHasUnreadUpdates(true);
-        } else {
-          setHasUnreadUpdates(false);
-        }
-      }
+    if (willOpen && showWatchingUpdates) {
+      refreshWatchingUpdates();
     }
   };
 
@@ -415,17 +302,7 @@ export const UserMenu: React.FC = () => {
       console.error('保存已忽略列表失败:', error);
     }
 
-    if (watchingUpdates) {
-      const remainingReleases = watchingUpdates.updatedSeries.filter(
-        (series) =>
-          series.hasNewRelease &&
-          !newDismissed.has(`${series.sourceKey}+${series.videoId}`),
-      ).length;
-
-      const hasUpdates =
-        (watchingUpdates.updatedCount || 0) > 0 || remainingReleases > 0;
-      setHasUnreadUpdates(hasUpdates);
-    }
+    // Red dot state is derived from TanStack Query data and dismissed releases.
   };
 
   // 从 key 中解析 source 和 id
@@ -526,9 +403,6 @@ export const UserMenu: React.FC = () => {
   const showPlayStats = authInfo?.username && storageType !== 'localstorage';
 
   // 检查是否显示更新提醒按钮（登录用户且非localstorage存储就显示）
-  const showWatchingUpdates =
-    authInfo?.username && storageType !== 'localstorage';
-
   // 检查是否有实际更新（用于显示红点）- 包括新剧集更新和新上映
   const hasActualUpdates = getActualUpdateCount(watchingUpdates) > 0;
 
@@ -620,7 +494,7 @@ export const UserMenu: React.FC = () => {
             >
               <Bell className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>更新提醒</span>
-              {hasUnreadUpdates && totalUpdates > 0 && (
+              {hasActualUpdates && totalUpdates > 0 && (
                 <div className='ml-auto flex items-center gap-1'>
                   <span className='inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full'>
                     {totalUpdates > 99 ? '99+' : totalUpdates}
@@ -1398,7 +1272,7 @@ export const UserMenu: React.FC = () => {
         </button>
         {/* 统一更新提醒点：版本更新或剧集更新都显示橙色点 */}
         {(updateStatus === UpdateStatus.HAS_UPDATE ||
-          (hasUnreadUpdates && totalUpdates > 0)) && (
+          (hasActualUpdates && totalUpdates > 0)) && (
           <div className='absolute top-[2px] right-[2px] w-2 h-2 bg-yellow-500 rounded-full animate-pulse shadow-lg shadow-yellow-500/50'></div>
         )}
       </div>

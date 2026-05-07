@@ -15,6 +15,10 @@ function GlobalCacheInvalidator() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__queryClient = queryClient;
+    }
+
     const unsubscribePlayRecords = subscribeToDataUpdates(
       'playRecordsUpdated',
       () => {
@@ -29,9 +33,17 @@ function GlobalCacheInvalidator() {
       },
     );
 
+    const unsubscribeReminders = subscribeToDataUpdates(
+      'remindersUpdated',
+      () => {
+        queryClient.invalidateQueries({ queryKey: ['reminders'] });
+      },
+    );
+
     return () => {
       unsubscribePlayRecords();
       unsubscribeFavorites();
+      unsubscribeReminders();
     };
   }, [queryClient]);
 

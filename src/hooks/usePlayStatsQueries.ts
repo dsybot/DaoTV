@@ -4,12 +4,7 @@ import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { PlayStatsResult } from '@/lib/types';
 import type { ReleaseCalendarItem } from '@/lib/types';
-import {
-  checkWatchingUpdates,
-  getCachedWatchingUpdates,
-  getDetailedWatchingUpdates,
-  type WatchingUpdate,
-} from '@/lib/watching-updates';
+import { useWatchingUpdatesQuery as useWatchingUpdates } from './useWatchingUpdates';
 
 /**
  * Query options for admin play stats
@@ -90,30 +85,11 @@ export function useUserStatsQuery(enabled: boolean) {
 }
 
 /**
- * Query options for watching updates
- */
-const playStatsWatchingUpdatesOptions = () =>
-  queryOptions<WatchingUpdate | null>({
-    queryKey: ['watchingUpdates', 'playStats'],
-    queryFn: async () => {
-      const cached = getCachedWatchingUpdates();
-      if (cached) {
-        return getDetailedWatchingUpdates();
-      }
-      await checkWatchingUpdates();
-      return getDetailedWatchingUpdates();
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000,
-  });
-
-/**
  * Fetch watching updates for play-stats page
- * Based on TanStack Query useQuery with enabled option
+ * Uses the shared TanStack Query implementation
  */
 export function usePlayStatsWatchingUpdatesQuery(enabled: boolean) {
-  return useQuery({
-    ...playStatsWatchingUpdatesOptions(),
+  return useWatchingUpdates({
     enabled,
   });
 }
@@ -165,20 +141,14 @@ export function useInvalidatePlayStats() {
   const queryClient = useQueryClient();
 
   return async () => {
-    // Clear watching updates cache
-    localStorage.removeItem('moontv_watching_updates');
-    localStorage.removeItem('moontv_last_update_check');
+    // Clear localStorage cache
     localStorage.removeItem('upcoming_releases_cache');
     localStorage.removeItem('upcoming_releases_cache_time');
 
-    // Force refresh watching updates
-    await checkWatchingUpdates(true);
-
     // Invalidate all play-stats related queries
     await queryClient.invalidateQueries({ queryKey: ['playStats'] });
-    await queryClient.invalidateQueries({
-      queryKey: ['watchingUpdates', 'playStats'],
-    });
+    await queryClient.invalidateQueries({ queryKey: ['watchingUpdates'] });
     await queryClient.invalidateQueries({ queryKey: ['upcomingReleases'] });
+    await queryClient.invalidateQueries({ queryKey: ['playRecords'] });
   };
 }

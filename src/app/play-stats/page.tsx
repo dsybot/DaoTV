@@ -7,14 +7,7 @@ import { ChevronUp } from 'lucide-react';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { PlayRecord, ReleaseCalendarItem } from '@/lib/types';
-import {
-  getCachedWatchingUpdates,
-  getDetailedWatchingUpdates,
-  checkWatchingUpdates,
-  markUpdatesAsViewed,
-  forceClearWatchingUpdatesCache,
-  type WatchingUpdate,
-} from '@/lib/watching-updates';
+import type { WatchingUpdate } from '@/hooks/useWatchingUpdates';
 
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
@@ -313,7 +306,6 @@ const PlayStatsPage: React.FC = () => {
         updateTimeout = null;
       }, 1000);
 
-      forceClearWatchingUpdatesCache();
       invalidatePlayStats();
     };
 
@@ -359,7 +351,6 @@ const PlayStatsPage: React.FC = () => {
   // 关闭追番更新详情
   const handleCloseWatchingUpdates = () => {
     setShowWatchingUpdates(false);
-    markUpdatesAsViewed();
   };
 
   // 格式化更新时间

@@ -163,16 +163,38 @@ export function processImageUrl(originalUrl: string): string {
   }
 }
 
+export type VideoSourceTestStatus = 'ok' | 'partial' | 'failed';
+
+export interface VideoSourceTestResult {
+  quality: string;
+  loadSpeed: string;
+  pingTime: number;
+  speedKBps?: number;
+  hasError?: boolean;
+  status?: VideoSourceTestStatus;
+  message?: string;
+  playable?: boolean;
+  testedAt?: number;
+}
+
+export function formatVideoLoadSpeed(speedKBps?: number): string {
+  if (!speedKBps || !Number.isFinite(speedKBps) || speedKBps <= 0) {
+    return '未知';
+  }
+  if (speedKBps >= 1024) {
+    return `${(speedKBps / 1024).toFixed(1)} MB/s`;
+  }
+  return `${speedKBps.toFixed(1)} KB/s`;
+}
+
 /**
  * 从m3u8地址获取视频质量等级和网络信息
  * @param m3u8Url m3u8播放列表的URL
  * @returns Promise<{quality: string, loadSpeed: string, pingTime: number}> 视频质量等级和网络信息
  */
-export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
-  quality: string;
-  loadSpeed: string;
-  pingTime: number;
-}> {
+export async function getVideoResolutionFromM3u8(
+  m3u8Url: string,
+): Promise<VideoSourceTestResult> {
   try {
     // 检测是否为iPad（无论什么浏览器）
     const isIPad = /iPad/i.test(userAgent);
@@ -193,13 +215,23 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
         return {
           quality: '未知', // iPad不检测视频质量避免崩溃
           loadSpeed: '未知', // iPad不检测下载速度
-          pingTime
+          pingTime,
+          status: 'partial',
+          message: 'iPad 简化测速',
+          hasError: false,
+          playable: false,
+          testedAt: Date.now(),
         };
       } catch (error) {
         return {
           quality: '未知',
           loadSpeed: '未知',
-          pingTime: 9999
+          pingTime: 9999,
+          status: 'failed',
+          message: 'iPad 测速失败',
+          hasError: true,
+          playable: false,
+          testedAt: Date.now(),
         };
       }
     }
@@ -319,6 +351,7 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
       };
 
       let actualLoadSpeed = '未知';
+      let actualSpeedKBps = 0;
       let hasSpeedCalculated = false;
       let hasMetadataLoaded = false;
       let fragmentStartTime = 0;
@@ -344,6 +377,12 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
             quality,
             loadSpeed: actualLoadSpeed,
             pingTime: Math.round(pingTime),
+            speedKBps: actualSpeedKBps > 0 ? actualSpeedKBps : undefined,
+            status: 'ok',
+            message: '测速完成',
+            hasError: false,
+            playable: true,
+            testedAt: Date.now(),
           });
         }
       };
@@ -362,6 +401,7 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
 
           if (loadTime > 0 && size > 0) {
             const speedKBps = size / 1024 / (loadTime / 1000);
+            actualSpeedKBps = speedKBps;
             actualLoadSpeed = speedKBps >= 1024
               ? `${(speedKBps / 1024).toFixed(2)} MB/s`
               : `${speedKBps.toFixed(2)} KB/s`;
@@ -451,4 +491,3 @@ export function isSeriesCompleted(remarks?: string): boolean {
   // - 单独的"完"（但不包括"完整"）
   return /完结|已完结|全\d+集|完(?!整)/.test(remarks);
 }
-

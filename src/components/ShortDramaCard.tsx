@@ -18,7 +18,6 @@ import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
 import {
   deleteFavorite,
   generateStorageKey,
-  isFavorited,
   saveFavorite,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
@@ -29,6 +28,7 @@ import {
   SHORTDRAMA_CACHE_EXPIRE,
 } from '@/lib/shortdrama-cache';
 import { ShortDramaItem } from '@/lib/types';
+import { useIsFavoritedQuery } from '@/hooks/useFavoritesQuery';
 import { useToggleFavoriteMutation } from '@/hooks/useFavoritesMutations';
 import { useLongPress } from '@/hooks/useLongPress';
 
@@ -80,20 +80,15 @@ function ShortDramaCard({
   const source = 'shortdrama';
   const id = drama.id.toString();
 
-  // 检查收藏状态
+  const { data: favoritedStatus } = useIsFavoritedQuery(source, id);
+
   useEffect(() => {
-    const fetchFavoriteStatus = async () => {
-      try {
-        const fav = await isFavorited(source, id);
-        setFavorited(fav);
-      } catch (err) {
-        console.error('检查收藏状态失败:', err);
-      }
-    };
+    if (favoritedStatus !== undefined) {
+      setFavorited(favoritedStatus);
+    }
+  }, [favoritedStatus]);
 
-    fetchFavoriteStatus();
-
-    // 监听收藏状态更新事件
+  useEffect(() => {
     const storageKey = generateStorageKey(source, id);
     const unsubscribe = subscribeToDataUpdates(
       'favoritesUpdated',
@@ -106,7 +101,7 @@ function ShortDramaCard({
     return unsubscribe;
   }, [source, id]);
 
-  // 获取真实集数（优先使用备用API）
+  // ?????????????API?
   useEffect(() => {
     const fetchEpisodeCount = async () => {
       const cacheKey = getCacheKey('episodes', { id: drama.id });

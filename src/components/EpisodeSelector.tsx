@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useRouter } from 'next/navigation';
+import { Gauge, RefreshCw, Wifi } from 'lucide-react';
 import React, {
   useCallback,
   useEffect,
@@ -12,15 +13,13 @@ import React, {
 import { createPortal } from 'react-dom';
 
 import { SearchResult } from '@/lib/types';
-import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+import {
+  getVideoResolutionFromM3u8,
+  processImageUrl,
+  VideoSourceTestResult,
+} from '@/lib/utils';
 
-// 定义视频信息类型
-interface VideoInfo {
-  quality: string;
-  loadSpeed: string;
-  pingTime: number;
-  hasError?: boolean; // 添加错误状态标识
-}
+type VideoInfo = VideoSourceTestResult;
 
 // TMDB 分集信息类型
 export interface TMDBEpisodeInfo {
@@ -243,6 +242,11 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   const [attemptedSources, setAttemptedSources] = useState<Set<string>>(
     new Set()
   );
+  const [manualTesting, setManualTesting] = useState(false);
+  const [manualProgress, setManualProgress] = useState({ done: 0, total: 0 });
+  const [testingSourceKeys, setTestingSourceKeys] = useState<Set<string>>(
+    new Set(),
+  );
 
   // 使用 ref 来避免闭包问题
   const attemptedSourcesRef = useRef<Set<string>>(new Set());
@@ -308,6 +312,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           loadSpeed: '未知',
           pingTime: 0,
           hasError: true,
+          status: 'failed',
+          message: error instanceof Error ? error.message : '测速失败',
+          playable: false,
+          testedAt: Date.now(),
         })
       );
     }
@@ -315,20 +323,52 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
   // 批量测速所有播放源
   const testAllSources = useCallback(async () => {
-    if (availableSources.length === 0) return;
+    if (availableSources.length === 0 || manualTesting) return;
+
+    setManualTesting(true);
+    setManualProgress({ done: 0, total: availableSources.length });
+    setTestingSourceKeys(new Set());
+    setVideoInfoMap(new Map());
+    videoInfoMapRef.current = new Map();
 
     // 清除所有已测试标记，强制重新测速
     setAttemptedSources(new Set());
     attemptedSourcesRef.current = new Set();
 
-    // 分批次测速
-    const batchSize = Math.ceil(availableSources.length / 2);
+    const batchSize = 3;
+    let completed = 0;
 
     for (let start = 0; start < availableSources.length; start += batchSize) {
       const batch = availableSources.slice(start, start + batchSize);
-      await Promise.all(batch.map(getVideoInfo));
+      batch.forEach((source) => {
+        const sourceKey = `${source.source}-${source.id}`;
+        setTestingSourceKeys((prev) => new Set(prev).add(sourceKey));
+      });
+
+      await Promise.all(
+        batch.map(async (source) => {
+          const sourceKey = `${source.source}-${source.id}`;
+          try {
+            await getVideoInfo(source);
+          } finally {
+            completed += 1;
+            setManualProgress({
+              done: completed,
+              total: availableSources.length,
+            });
+            setTestingSourceKeys((prev) => {
+              const next = new Set(prev);
+              next.delete(sourceKey);
+              return next;
+            });
+          }
+        }),
+      );
     }
-  }, [availableSources, getVideoInfo]);
+
+    setManualTesting(false);
+    setTestingSourceKeys(new Set());
+  }, [availableSources, getVideoInfo, manualTesting]);
 
   // 当有预计算结果时，先合并到videoInfoMap中
   useEffect(() => {
@@ -710,28 +750,36 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               {availableSources.length > 0 && (
                 <button
                   onClick={testAllSources}
-                  className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95'
+                  disabled={manualTesting}
+                  className='group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed'
                   title='测速所有播放源'
                 >
                   <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors duration-200'></div>
-                  <svg
-                    className='relative z-10 w-3.5 h-3.5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M13 10V3L4 14h7v7l9-11h-7z'
-                    />
-                  </svg>
-                  <span className='relative z-10'>测速</span>
+                  <Gauge className='relative z-10 w-3.5 h-3.5' />
+                  <span className='relative z-10'>{manualTesting ? '测速中...' : '测速'}</span>
                 </button>
               )}
             </div>
           </div>
+
+          {manualTesting && (
+            <div className='mb-3 px-2'>
+              <div className='flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/80 px-3 py-2 dark:border-blue-700/60 dark:bg-blue-900/20'>
+                <RefreshCw className='h-4 w-4 animate-spin text-blue-600 dark:text-blue-400' />
+                <div className='h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700'>
+                  <div
+                    className='h-full bg-linear-to-r from-blue-500 to-cyan-500 transition-all duration-300'
+                    style={{
+                      width: `${manualProgress.total > 0 ? (manualProgress.done / manualProgress.total) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className='font-mono text-xs text-gray-600 dark:text-gray-400'>
+                  {manualProgress.done}/{manualProgress.total}
+                </span>
+              </div>
+            </div>
+          )}
 
           {sourceSearchLoading && (
             <div className='flex items-center justify-center py-8'>
@@ -814,9 +862,9 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         </div>
 
                         {/* 信息区域 */}
-                        <div className='flex-1 min-w-0 flex flex-col justify-between h-16 sm:h-20'>
-                          {/* 标题和分辨率 - 顶部 */}
-                          <div className='flex items-start justify-between gap-2 sm:gap-3 h-5 sm:h-6'>
+                        <div className='flex-1 min-w-0 flex flex-col justify-between h-16 sm:h-20 relative'>
+                          {/* 标题 - 顶部 */}
+                          <div className='flex items-start gap-2 sm:gap-3 h-5 sm:h-6'>
                             <div className='flex-1 min-w-0 relative'>
                               <h3
                                 className='font-medium text-sm sm:text-base truncate text-gray-900 dark:text-gray-100 leading-none peer'
@@ -842,43 +890,6 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                                 ></div>
                               </div>
                             </div>
-                            {(() => {
-                              const sourceKey = `${source.source}-${source.id}`;
-                              const videoInfo = videoInfoMap.get(sourceKey);
-
-                              if (videoInfo && videoInfo.quality !== '未知') {
-                                if (videoInfo.hasError) {
-                                  return (
-                                    <div className='bg-gray-500/10 dark:bg-gray-400/20 text-red-600 dark:text-red-400 px-1.5 py-0 rounded text-xs shrink-0 min-w-[50px] text-center'>
-                                      检测失败
-                                    </div>
-                                  );
-                                } else {
-                                  // 根据分辨率设置不同颜色：2K、4K为紫色，1080p、720p为绿色，其他为黄色
-                                  const isUltraHigh = ['4K', '2K'].includes(
-                                    videoInfo.quality
-                                  );
-                                  const isHigh = ['1080p', '720p'].includes(
-                                    videoInfo.quality
-                                  );
-                                  const textColorClasses = isUltraHigh
-                                    ? 'text-purple-600 dark:text-purple-400'
-                                    : isHigh
-                                      ? 'text-green-600 dark:text-green-400'
-                                      : 'text-yellow-600 dark:text-yellow-400';
-
-                                  return (
-                                    <div
-                                      className={`bg-gray-500/10 dark:bg-gray-400/20 ${textColorClasses} px-1.5 py-0 rounded text-xs shrink-0 min-w-[50px] text-center`}
-                                    >
-                                      {videoInfo.quality}
-                                    </div>
-                                  );
-                                }
-                              }
-
-                              return null;
-                            })()}
                           </div>
 
                           {/* 源名称和集数信息 - 垂直居中 */}
@@ -918,7 +929,28 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                             {(() => {
                               const sourceKey = `${source.source}-${source.id}`;
                               const videoInfo = videoInfoMap.get(sourceKey);
+                              const isTesting = testingSourceKeys.has(sourceKey);
+
+                              if (isTesting) {
+                                return (
+                                  <div className='text-blue-600 dark:text-blue-400 font-medium text-[10px] sm:text-xs animate-pulse'>
+                                    正在测速...
+                                  </div>
+                                );
+                              }
+
                               if (videoInfo) {
+                                if (videoInfo.hasError || videoInfo.status === 'failed') {
+                                  return (
+                                    <div
+                                      className='text-red-500/90 dark:text-red-400 font-medium text-[10px] sm:text-xs'
+                                      title={videoInfo.message}
+                                    >
+                                      {videoInfo.message || '测速失败'}
+                                    </div>
+                                  );
+                                }
+
                                 if (!videoInfo.hasError) {
                                   return (
                                     <div className='flex items-end gap-2 sm:gap-3'>
@@ -930,16 +962,76 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                                       </div>
                                     </div>
                                   );
-                                } else {
-                                  return (
-                                    <div className='text-red-500/90 dark:text-red-400 font-medium text-[10px] sm:text-xs'>
-                                      无测速数据
-                                    </div>
-                                  ); // 占位div
                                 }
                               }
+
+                              return null;
                             })()}
                           </div>
+
+                          {(() => {
+                            const sourceKey = `${source.source}-${source.id}`;
+                            const videoInfo = videoInfoMap.get(sourceKey);
+                            const isTesting = testingSourceKeys.has(sourceKey);
+
+                            if (isTesting) {
+                              return (
+                                <div className='absolute bottom-0 right-0 flex items-center gap-1 bg-blue-500/10 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-xs shrink-0'>
+                                  <RefreshCw className='w-3 h-3 animate-spin' />
+                                  <span>检测中</span>
+                                </div>
+                              );
+                            }
+
+                            if (!videoInfo) return null;
+
+                            if (videoInfo.hasError || videoInfo.status === 'failed') {
+                              return (
+                                <div className='absolute bottom-0 right-0 bg-red-500/10 dark:bg-red-400/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-xs shrink-0 min-w-[60px] text-center'>
+                                  检测失败
+                                </div>
+                              );
+                            }
+
+                            if (videoInfo.quality !== '未知') {
+                              const isUltraHigh = ['4K', '2K'].includes(videoInfo.quality);
+                              const isHigh = ['1080p', '720p'].includes(videoInfo.quality);
+                              const isStandard = ['480p', 'SD'].includes(videoInfo.quality);
+
+                              const bgColor = isUltraHigh
+                                ? 'bg-purple-500/10 dark:bg-purple-400/20'
+                                : isHigh
+                                  ? 'bg-green-500/10 dark:bg-green-400/20'
+                                  : isStandard
+                                    ? 'bg-yellow-500/10 dark:bg-yellow-400/20'
+                                    : 'bg-gray-500/10 dark:bg-gray-400/20';
+                              const textColor = isUltraHigh
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : isHigh
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : isStandard
+                                    ? 'text-yellow-600 dark:text-yellow-400'
+                                    : 'text-gray-600 dark:text-gray-400';
+
+                              return (
+                                <div className={`absolute bottom-0 right-0 flex items-center gap-1 ${bgColor} ${textColor} px-2 py-0.5 rounded text-xs shrink-0 font-semibold`}>
+                                  <Wifi className='w-3 h-3' />
+                                  <span>{videoInfo.quality}</span>
+                                </div>
+                              );
+                            }
+
+                            if (videoInfo.status === 'ok' || videoInfo.playable) {
+                              return (
+                                <div className='absolute bottom-0 right-0 flex items-center gap-1 bg-green-500/10 dark:bg-green-400/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded text-xs shrink-0'>
+                                  <Wifi className='w-3 h-3' />
+                                  <span>已连通</span>
+                                </div>
+                              );
+                            }
+
+                            return null;
+                          })()}
                         </div>
                       </div>
                     );

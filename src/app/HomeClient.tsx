@@ -2,7 +2,7 @@
 
 'use client';
 
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   ChevronRight,
@@ -23,13 +23,10 @@ import {
 } from 'react';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
-// 客户端收藏 API
-import {
-  getAllFavorites,
-  getAllPlayRecords,
-  getAllReminders,
-} from '@/lib/db.client';
 import { getDoubanDetails } from '@/lib/douban.client';
+import { favoritesQueryOptions } from '@/hooks/useFavoritesQuery';
+import { playRecordsQueryOptions } from '@/hooks/usePlayRecordsQuery';
+import { remindersQueryOptions } from '@/hooks/useRemindersQuery';
 import {
   defaultHomePageConfig,
   HomePageModuleConfig,
@@ -139,29 +136,9 @@ const homeReducer = (state: HomeState, action: HomeAction): HomeState => {
   }
 };
 
-const allFavoritesOptions = () =>
-  queryOptions({
-    queryKey: ['favorites'],
-    queryFn: () => getAllFavorites(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-const allPlayRecordsOptions = () =>
-  queryOptions({
-    queryKey: ['playRecords'],
-    queryFn: () => getAllPlayRecords(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-const allRemindersOptions = () =>
-  queryOptions({
-    queryKey: ['reminders'],
-    queryFn: () => getAllReminders(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
+const allFavoritesOptions = () => favoritesQueryOptions;
+const allPlayRecordsOptions = () => playRecordsQueryOptions;
+const allRemindersOptions = () => remindersQueryOptions;
 
 function HomeClient({
   initialConfig,

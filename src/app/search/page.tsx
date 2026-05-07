@@ -15,7 +15,6 @@ import {
   Search,
   UserRound,
   X,
-  Youtube,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
@@ -1694,7 +1693,7 @@ function SearchPageClient() {
                 {
                   label: 'YouTube',
                   value: 'youtube',
-                  icon: <Youtube size={16} />,
+                  icon: <Play size={16} />,
                 },
                 {
                   label: 'Bilibili',

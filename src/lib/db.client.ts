@@ -14,13 +14,26 @@
  * 如后续需要在客户端读取收藏等其它数据，可按同样方式在此文件中补充实现。
  */
 
+import { QueryClient } from '@tanstack/react-query';
+
 import { getAuthInfoFromBrowserCookie } from './auth';
 import type { PlayRecord } from './types';
 import { EpisodeSkipConfig, UserPlayStat } from './types';
-import { forceClearWatchingUpdatesCache } from './watching-updates';
 
 // 重新导出类型以保持API兼容性
 export type { EpisodeSkipConfig, PlayRecord, SkipSegment } from './types';
+
+function getQueryClient(): QueryClient | null {
+  if (typeof window === 'undefined') return null;
+  return (window as any).__queryClient || null;
+}
+
+function invalidateQueryCache(queryKey: string[]) {
+  const queryClient = getQueryClient();
+  if (queryClient) {
+    queryClient.invalidateQueries({ queryKey });
+  }
+}
 
 // 全局错误触发函数
 function triggerGlobalError(message: string) {
@@ -1098,13 +1111,8 @@ export async function savePlayRecord(
       // 🔑 关键修复：数据库更新成功后，如果更新了 original_episodes，清除相关缓存
       if (shouldClearCache) {
         try {
-          // 🔧 优化：使用新函数清除 watching-updates 缓存
-          forceClearWatchingUpdatesCache();
-
-          // 🔑 关键：立即清除播放记录缓存，确保下次检查使用最新数据
           cacheManager.forceRefreshPlayRecordsCache(true);
 
-          // 🔧 优化：立即获取最新数据并更新缓存，触发更新事件
           const freshData =
             await fetchFromApi<Record<string, PlayRecord>>(`/api/playrecords`);
           cacheManager.cachePlayRecords(freshData);
@@ -1114,9 +1122,10 @@ export async function savePlayRecord(
             }),
           );
 
-          console.log(
-            '✅ 数据库更新成功，已清除 watching-updates 和播放记录缓存，并刷新最新数据',
-          );
+          invalidateQueryCache(['playRecords']);
+          invalidateQueryCache(['watchingUpdates']);
+
+          console.log('? ????????????????????');
         } catch (cacheError) {
           console.warn('清除缓存失败:', cacheError);
         }
@@ -1191,6 +1200,9 @@ export async function deletePlayRecord(
       await fetchWithAuth(`/api/playrecords?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
       });
+
+      invalidateQueryCache(['playRecords']);
+      invalidateQueryCache(['watchingUpdates']);
     } catch (err) {
       await handleDatabaseOperationFailure('playRecords', err);
       triggerGlobalError('删除播放记录失败');
@@ -1545,6 +1557,8 @@ export async function saveFavorite(
         },
         body: JSON.stringify({ key, favorite }),
       });
+
+      invalidateQueryCache(['favorites']);
     } catch (err) {
       await handleDatabaseOperationFailure('favorites', err);
       triggerGlobalError('保存收藏失败');
@@ -1604,6 +1618,8 @@ export async function deleteFavorite(
       await fetchWithAuth(`/api/favorites?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
       });
+
+      invalidateQueryCache(['favorites']);
     } catch (err) {
       await handleDatabaseOperationFailure('favorites', err);
       triggerGlobalError('删除收藏失败');
@@ -1718,6 +1734,9 @@ export async function clearAllPlayRecords(): Promise<void> {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
+
+      invalidateQueryCache(['playRecords']);
+      invalidateQueryCache(['watchingUpdates']);
     } catch (err) {
       await handleDatabaseOperationFailure('playRecords', err);
       triggerGlobalError('清空播放记录失败');
@@ -1759,6 +1778,8 @@ export async function clearAllFavorites(): Promise<void> {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
+
+      invalidateQueryCache(['favorites']);
     } catch (err) {
       await handleDatabaseOperationFailure('favorites', err);
       triggerGlobalError('清空收藏失败');
@@ -2840,6 +2861,8 @@ export async function saveReminder(
         },
         body: JSON.stringify({ key, reminder }),
       });
+
+      invalidateQueryCache(['reminders']);
     } catch (err) {
       await handleDatabaseOperationFailure('reminders', err);
       triggerGlobalError('保存提醒失败');
@@ -2899,6 +2922,8 @@ export async function deleteReminder(
       await fetchWithAuth(`/api/reminders?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
       });
+
+      invalidateQueryCache(['reminders']);
     } catch (err) {
       await handleDatabaseOperationFailure('reminders', err);
       triggerGlobalError('删除提醒失败');
@@ -3014,6 +3039,8 @@ export async function clearAllReminders(): Promise<void> {
       await fetchWithAuth('/api/reminders', {
         method: 'DELETE',
       });
+
+      invalidateQueryCache(['reminders']);
     } catch (err) {
       await handleDatabaseOperationFailure('reminders', err);
       triggerGlobalError('清空提醒失败');

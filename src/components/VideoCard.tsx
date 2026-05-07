@@ -30,15 +30,15 @@ import React, {
 import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
 import {
   generateStorageKey,
-  isFavorited,
-  isReminded,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { loadedImageUrls } from '@/lib/imageCache';
 import { isSeriesCompleted, processImageUrl } from '@/lib/utils';
+import { useIsFavoritedQuery } from '@/hooks/useFavoritesQuery';
 import { useToggleFavoriteMutation } from '@/hooks/useFavoritesMutations';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useDeletePlayRecordMutation } from '@/hooks/usePlayRecordsMutations';
+import { useIsRemindedQuery } from '@/hooks/useRemindersQuery';
 import { useToggleReminderMutation } from '@/hooks/useRemindersMutations';
 
 import AIRecommendModal from '@/components/AIRecommendModal';
@@ -238,39 +238,27 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       );
     }, [remarks, hasReleaseTag, isAggregate, dynamicSourceNames]);
 
+    const isNewRelease = Boolean(
+      remarks &&
+        (remarks?.includes('???') || remarks?.includes('????')),
+    );
+    const shouldShowBell = isUpcoming || isNewRelease;
+
+    const { data: favoritedStatus } = useIsFavoritedQuery(
+      actualSource || '',
+      actualId || '',
+      { enabled: !!actualSource && !!actualId && !shouldShowBell },
+    );
+    const { data: remindedStatus } = useIsRemindedQuery(
+      actualSource || '',
+      actualId || '',
+      { enabled: !!actualSource && !!actualId && shouldShowBell },
+    );
+
     // 获取收藏/提醒状态
     useEffect(() => {
       if (!actualSource || !actualId) return;
 
-      const fetchStatus = async () => {
-        try {
-          // 🔥 修复：检查是否是"新上映"的内容
-          const isNewRelease =
-            remarks &&
-            (remarks.includes('已上映') || remarks.includes('今日上映'));
-          const shouldShowBell = isUpcoming || isNewRelease;
-
-          if (shouldShowBell) {
-            // 即将上映或新上映 → 检查提醒状态
-            const rem = await isReminded(actualSource, actualId);
-            setReminded(rem);
-          } else {
-            // 已上映 → 检查收藏状态
-            const fav = await isFavorited(actualSource, actualId);
-            if (from === 'search') {
-              setSearchFavorited(fav);
-            } else {
-              setFavorited(fav);
-            }
-          }
-        } catch (err) {
-          console.error('检查状态失败:', err);
-        }
-      };
-
-      fetchStatus();
-
-      // 监听状态更新事件
       const storageKey = generateStorageKey(actualSource, actualId);
       const unsubscribeFavorites = subscribeToDataUpdates(
         'favoritesUpdated',
@@ -297,6 +285,26 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         unsubscribeReminders();
       };
     }, [from, actualSource, actualId, isUpcoming, remarks]);
+
+    useEffect(() => {
+      if (shouldShowBell || favoritedStatus === undefined) {
+        return;
+      }
+
+      if (from === 'search') {
+        setSearchFavorited(favoritedStatus);
+      } else {
+        setFavorited(favoritedStatus);
+      }
+    }, [favoritedStatus, from, shouldShowBell]);
+
+    useEffect(() => {
+      if (!shouldShowBell || remindedStatus === undefined) {
+        return;
+      }
+
+      setReminded(remindedStatus);
+    }, [remindedStatus, shouldShowBell]);
 
     // 检查AI功能是否启用 - 只在没有父组件传递时才执行
     useEffect(() => {
@@ -661,52 +669,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     ]);
 
     // 检查搜索结果的收藏状态
-    const checkSearchFavoriteStatus = useCallback(async () => {
-      if (
-        from === 'search' &&
-        !isAggregate &&
-        actualSource &&
-        actualId &&
-        searchFavorited === null
-      ) {
-        try {
-          const fav = await isFavorited(actualSource, actualId);
-          setSearchFavorited(fav);
-        } catch {
-          setSearchFavorited(false);
-        }
-      }
-    }, [from, isAggregate, actualSource, actualId, searchFavorited]);
-
-    // 长按操作
     const handleLongPress = useCallback(() => {
       if (!showMobileActions) {
-        // 防止重复触发
-        // 立即显示菜单，避免等待数据加载导致动画卡顿
         setShowMobileActions(true);
-
-        // 异步检查收藏状态，不阻塞菜单显示
-        if (
-          from === 'search' &&
-          !isAggregate &&
-          actualSource &&
-          actualId &&
-          searchFavorited === null
-        ) {
-          checkSearchFavoriteStatus();
-        }
       }
-    }, [
-      showMobileActions,
-      from,
-      isAggregate,
-      actualSource,
-      actualId,
-      searchFavorited,
-      checkSearchFavoriteStatus,
-    ]);
+    }, [showMobileActions]);
 
-    // 长按手势hook
     const longPressProps = useLongPress({
       onLongPress: handleLongPress,
       onClick: handleGoToDetail, // 点击跳转到详情页
@@ -1071,16 +1039,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             setShowMobileActions(true);
 
             // 异步检查收藏状态，不阻塞菜单显示
-            if (
-              from === 'search' &&
-              !isAggregate &&
-              actualSource &&
-              actualId &&
-              searchFavorited === null
-            ) {
-              checkSearchFavoriteStatus();
-            }
-
             return false;
           }}
           onDragStart={(e) => {
