@@ -1,3 +1,33 @@
+## [6.5.3] - 2026-05-07
+
+### Added
+
+- 🛡️ SSRF保护集成：将SSRF保护集成到代理端点，增强安全性
+- 🚀 持久化导航Shell：实现遵循Next.js最佳实践的持久化导航Shell
+- ⚡ 路由优化：添加预取和加载状态的路由优化
+- 🎯 请求去重和超时保护：添加请求去重和超时保护机制
+- 🗂️ TanStack Query缓存优化：使用TanStack Query优化数据源浏览器缓存
+- 🎨 剧集选择器增强：添加手动速度测试和状态徽章到剧集选择器
+
+### Changed
+
+- 📦 依赖更新：更新依赖到最新版本
+- 🔄 TanStack Query迁移：将数据获取和缓存迁移到TanStack Query
+- ⚡ 导航优化：减少导航请求风暴并优化缓存
+
+### Fixed
+
+- 🔄 追番更新功能完整还原：100%还原旧watching-updates.ts逻辑到TanStack Query实现，包括getOriginalEpisodes数据库重读、protectedTotalEpisodes保护机制、新上映检查、排序逻辑、localStorage持久化、CDN缓存绕过等所有功能
+- 🔧 代理Tavily API使用查询：通过后端代理Tavily API使用查询以避免WAF阻止
+- 🛡️ 改进Tavily使用API错误处理：改进WAF阻止的错误处理
+- 🗄️ 启动时重建缺失的视频元数据：防止误删除，优先使用本地文件缓存
+- 🎨 移动画质徽章位置：将画质徽章移到右下角，避免与当前源标签重叠
+- 🖥️ 修复登录/注册页面全屏显示：使用fixed定位实现全屏显示，修复z-index问题
+- 🔐 跳过认证页面的RouteWarmup：防止登录干扰
+- ✅ 添加RouteWarmup认证检查：添加认证检查到RouteWarmup
+- 🎬 修复路由过渡的加载回退：将CinematicLoadingFallback包装在fixed容器中
+- 📱 添加play-stats页面底部内边距：为移动导航添加底部内边距，匹配admin页面模式
+
 ## [6.5.2] - 2026-05-06
 
 ### Added
