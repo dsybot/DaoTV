@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { getConfig } from '@/lib/config';
 
-import { MinimumTimeLoadingFallback } from '@/components/MinimumTimeLoadingFallback';
+import { CinematicLoadingFallback } from '@/components/CinematicLoadingFallback';
 
 import HomeClient from './HomeClient';
 
@@ -20,7 +20,13 @@ export default async function Home() {
   };
 
   return (
-    <Suspense fallback={<MinimumTimeLoadingFallback />}>
+    <Suspense
+      fallback={
+        <div className='fixed inset-0 z-50'>
+          <CinematicLoadingFallback />
+        </div>
+      }
+    >
       <HomeClient initialConfig={homePageConfig} />
     </Suspense>
   );

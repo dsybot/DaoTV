@@ -1,5 +1,9 @@
-import { MinimumTimeLoadingFallback } from '@/components/MinimumTimeLoadingFallback';
+import { CinematicLoadingFallback } from '@/components/CinematicLoadingFallback';
 
 export default function Loading() {
-  return <MinimumTimeLoadingFallback />;
+  return (
+    <div className='fixed inset-0 z-50'>
+      <CinematicLoadingFallback />
+    </div>
+  );
 }
