@@ -561,7 +561,7 @@ export function useWatchingUpdatesQuery(options?: {
       }
       return undefined;
     },
-    enabled: options?.enabled,
+    enabled: options?.enabled !== false,
     retry: false,
   });
 }

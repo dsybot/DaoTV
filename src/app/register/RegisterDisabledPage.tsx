@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { useSite } from '@/components/SiteProvider';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 import { VersionDisplay } from './VersionDisplay';
 
@@ -12,9 +13,7 @@ interface RegisterDisabledPageProps {
   reason: string;
 }
 
-export default function RegisterDisabledPage({
-  reason,
-}: RegisterDisabledPageProps) {
+export default function RegisterDisabledPage({ reason }: RegisterDisabledPageProps) {
   const router = useRouter();
   const { siteName } = useSite();
   const [bingWallpaper, setBingWallpaper] = useState<string>('');
@@ -37,7 +36,7 @@ export default function RegisterDisabledPage({
   }, []);
 
   return (
-    <div className='relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900'>
       {/* Bing 每日壁纸背景 */}
       {bingWallpaper && (
         <div
@@ -49,6 +48,10 @@ export default function RegisterDisabledPage({
       {/* 渐变叠加层 */}
       <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
       <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
+
+      <div className='absolute top-4 right-4 z-20'>
+        <ThemeToggle />
+      </div>
 
       <div
         className='relative z-10 w-full max-w-md rounded-3xl bg-gradient-to-br from-white/95 via-white/85 to-white/75 dark:from-zinc-900/95 dark:via-zinc-900/85 dark:to-zinc-900/75 backdrop-blur-2xl shadow-[0_20px_80px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-10 border border-white/50 dark:border-zinc-700/50 animate-fade-in hover:shadow-[0_25px_100px_rgba(0,0,0,0.4)] transition-shadow duration-500'
@@ -66,10 +69,7 @@ export default function RegisterDisabledPage({
         `}</style>
         {/* 装饰性光效 */}
         <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded-full blur-3xl animate-pulse' />
-        <div
-          className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-purple-400/30 rounded-full blur-3xl animate-pulse'
-          style={{ animationDelay: '1s' }}
-        />
+        <div className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-purple-400/30 rounded-full blur-3xl animate-pulse' style={{ animationDelay: '1s' }} />
 
         <div className='text-center mb-8'>
           <div className='inline-flex items-center justify-center w-16 h-16 mb-4 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-600 shadow-lg shadow-yellow-500/50 dark:shadow-yellow-500/30'>

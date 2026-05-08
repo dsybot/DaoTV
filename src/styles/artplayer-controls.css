@@ -12,21 +12,17 @@
   background-color: #000 !important;
 }
 
-/* ===== Native Control Bar Stability ===== */
+/* ===== Controls Hover Area Fix ===== */
+/* 增加控制栏底部的 hover 触发区域，解决全屏时需要移到很下面才能显示控制栏的问题 */
 .art-video-player .art-bottom {
-  backface-visibility: hidden;
-  isolation: isolate;
-  transform: translateZ(0);
-  will-change: opacity, transform;
+  /* 增加底部 padding，扩大 hover 区域 */
+  padding-bottom: 40px !important;
 }
 
-.art-video-player.art-native-control-opacity .art-bottom {
-  background-image: linear-gradient(
-    to top,
-    rgba(0, 0, 0, var(--art-native-control-opacity, 0.5)),
-    rgba(0, 0, 0, var(--art-native-control-mid-opacity, 0.28)),
-    transparent
-  ) !important;
+/* 全屏时增加更大的 hover 区域 */
+.art-video-player.art-fullscreen .art-bottom,
+.art-video-player.art-fullscreen-web .art-bottom {
+  padding-bottom: 60px !important;
 }
 
 /* ===== Volume Control Hover Fix ===== */
@@ -59,15 +55,4 @@
     right: auto !important;
     max-width: calc(100vw - 40px) !important;
   }
-}
-
-/* ===== Resolution Badge Visibility ===== */
-/* 分辨率徽章跟随控制栏显示/隐藏 */
-.art-video-player .art-layer-resolution-badge {
-  opacity: 0;
-  transition: opacity 0.3s ease !important;
-}
-
-.art-video-player.art-control-show .art-layer-resolution-badge {
-  opacity: 1;
 }

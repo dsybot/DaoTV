@@ -81,6 +81,24 @@ function isBlockedAddress(address: string): boolean {
 }
 
 export async function validateProxyTargetUrl(rawUrl: string): Promise<string> {
+  // 如果禁用了 SSRF 防护，仅做基本 URL 格式验证
+  // ⚠️ 警告：禁用 SSRF 防护会允许访问内网资源，仅适用于私有部署环境
+  if (process.env.DISABLE_SSRF_PROTECTION === 'true') {
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      throw new Error('Invalid url');
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('Only http/https supported');
+    }
+
+    return parsed.toString();
+  }
+
+  // 完整的 SSRF 防护验证
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
