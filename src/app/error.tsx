@@ -18,7 +18,7 @@ export default function Error({
       stack: error.stack,
       digest: error.digest,
       url: window.location.href,
-      userAgent: navigator.userAgent,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
       memory: (performance as any).memory ? {
         used: `${((performance as any).memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`,
         total: `${((performance as any).memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`,

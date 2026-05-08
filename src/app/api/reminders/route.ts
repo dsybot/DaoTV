@@ -153,8 +153,25 @@ export async function GET(request: NextRequest) {
 
     // 查询全部提醒
     const reminders = await db.getAllReminders(authInfo.username);
-    const count = Object.keys(reminders).length;
-    const responseSize = Buffer.byteLength(JSON.stringify(reminders), 'utf8');
+
+    // 数据升级：确保旧提醒记录包含新字段，防止前端崩溃
+    const upgradedReminders: Record<string, Reminder> = {};
+    for (const [key, reminder] of Object.entries(reminders)) {
+      upgradedReminders[key] = {
+        ...reminder,
+        // 确保 origin 字段存在
+        origin: reminder.origin || 'vod',
+        // 确保 type 字段存在
+        type: reminder.type || undefined,
+        // 确保 releaseDate 字段存在（提醒必须有上映日期）
+        releaseDate: reminder.releaseDate || '',
+        // 确保 remarks 字段存在
+        remarks: reminder.remarks || undefined,
+      };
+    }
+
+    const count = Object.keys(upgradedReminders).length;
+    const responseSize = Buffer.byteLength(JSON.stringify(upgradedReminders), 'utf8');
     const duration = Date.now() - startTime;
 
     console.log(
@@ -173,7 +190,7 @@ export async function GET(request: NextRequest) {
       responseSize,
     });
 
-    return NextResponse.json(reminders, { status: 200 });
+    return NextResponse.json(upgradedReminders, { status: 200 });
   } catch (err) {
     console.error('获取提醒失败', err);
     const errorResponse = { error: 'Internal Server Error' };

@@ -132,9 +132,26 @@ export async function GET(request: NextRequest) {
 
     // 查询全部收藏 - 开始性能监控
     const favorites = await db.getAllFavorites(authInfo.username);
+
+    // 数据升级：确保旧收藏记录包含新字段，防止前端崩溃
+    const upgradedFavorites: Record<string, Favorite> = {};
+    for (const [key, favorite] of Object.entries(favorites)) {
+      upgradedFavorites[key] = {
+        ...favorite,
+        // 确保 origin 字段存在
+        origin: favorite.origin || 'vod',
+        // 确保 type 字段存在
+        type: favorite.type || undefined,
+        // 确保 releaseDate 字段存在
+        releaseDate: favorite.releaseDate || undefined,
+        // 确保 remarks 字段存在
+        remarks: favorite.remarks || undefined,
+      };
+    }
+
     const duration = Date.now() - startTime;
-    const count = Object.keys(favorites).length;
-    const responseSize = Buffer.byteLength(JSON.stringify(favorites), 'utf8');
+    const count = Object.keys(upgradedFavorites).length;
+    const responseSize = Buffer.byteLength(JSON.stringify(upgradedFavorites), 'utf8');
 
     // 性能监控日志
     const durationSeconds = (duration / 1000).toFixed(2);
@@ -173,7 +190,7 @@ export async function GET(request: NextRequest) {
       responseSize,
     });
 
-    return NextResponse.json(favorites, { status: 200 });
+    return NextResponse.json(upgradedFavorites, { status: 200 });
   } catch (err) {
     console.error('获取收藏失败', err);
     const errorResponse = { error: 'Internal Server Error' };

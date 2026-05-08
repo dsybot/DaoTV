@@ -1863,7 +1863,9 @@ function PlayPageClient() {
     // 使用全局统一的设备检测结果
     const _isIPad =
       /iPad/i.test(userAgent) ||
-      (userAgent.includes('Macintosh') && navigator.maxTouchPoints >= 1);
+      (userAgent.includes('Macintosh') &&
+        typeof navigator !== 'undefined' &&
+        navigator.maxTouchPoints >= 1);
     const _isIOS = isIOSGlobal;
     const isIOS13 = isIOS13Global;
     const isMobile = isMobileGlobal;
@@ -2772,7 +2774,9 @@ function PlayPageClient() {
     /iPad|iPhone|iPod/i.test(userAgent) && !(window as any).MSStream;
   const isIOS13Global =
     isIOSGlobal ||
-    (userAgent.includes('Macintosh') && navigator.maxTouchPoints >= 1);
+    (userAgent.includes('Macintosh') &&
+      typeof navigator !== 'undefined' &&
+      navigator.maxTouchPoints >= 1);
   const isMobileGlobal =
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       userAgent,
@@ -5711,7 +5715,9 @@ function PlayPageClient() {
                 // 🎯 设备性能检测
                 const getDevicePerformance = () => {
                   const hardwareConcurrency =
-                    navigator.hardwareConcurrency || 2;
+                    typeof navigator !== 'undefined'
+                      ? navigator.hardwareConcurrency || 2
+                      : 2;
                   const memory =
                     (performance as any).memory?.jsHeapSizeLimit || 0;
 
@@ -6433,6 +6439,7 @@ function PlayPageClient() {
           // 🎯 方案C：使用插件原生UI + 自定义设置面板
           const addMobileDanmakuToggle = () => {
             const isMobile =
+              typeof navigator !== 'undefined' &&
               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
                 navigator.userAgent,
               );
