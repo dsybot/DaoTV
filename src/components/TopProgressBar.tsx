@@ -89,13 +89,7 @@ export default function TopProgressBar() {
       try {
         const target = new URL(targetUrl, window.location.href);
         const currentPathname = window.location.pathname;
-        const currentRoute = `${window.location.pathname}${window.location.search}`;
-        const targetRoute = `${target.pathname}${target.search}`;
-        return (
-          currentPathname === '/play' ||
-          currentPathname === '/live' ||
-          targetRoute !== currentRoute
-        );
+        return target.pathname !== currentPathname;
       } catch {
         return true;
       }
@@ -130,12 +124,9 @@ export default function TopProgressBar() {
       try {
         const currentOrigin = window.location.origin;
         const targetUrl = new URL(anchor.href, currentOrigin);
-        const currentRoute = `${window.location.pathname}${window.location.search}`;
-        const targetRoute = `${targetUrl.pathname}${targetUrl.search}`;
         if (
           targetUrl.origin === currentOrigin &&
-          targetUrl.href !== window.location.href &&
-          targetRoute !== currentRoute
+          targetUrl.pathname !== window.location.pathname
         ) {
           start();
         }
@@ -144,7 +135,11 @@ export default function TopProgressBar() {
       }
     };
 
-    const handlePopState = () => start();
+    const handlePopState = () => {
+      if (window.location.pathname !== pathname) {
+        start();
+      }
+    };
     const handleRouteProgressStart = () => start();
 
     document.addEventListener('click', handleAnchorClick, true);
@@ -165,7 +160,7 @@ export default function TopProgressBar() {
       );
       clearTimers();
     };
-  }, [clearTimers, start]);
+  }, [clearTimers, pathname, start]);
 
   useEffect(() => {
     if (isNavigatingRef.current) {
