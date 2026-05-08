@@ -28,18 +28,15 @@ import React, {
 } from 'react';
 
 import { isAIRecommendFeatureDisabled } from '@/lib/ai-recommend.client';
-import {
-  generateStorageKey,
-  subscribeToDataUpdates,
-} from '@/lib/db.client';
+import { generateStorageKey, subscribeToDataUpdates } from '@/lib/db.client';
 import { loadedImageUrls } from '@/lib/imageCache';
 import { isSeriesCompleted, processImageUrl } from '@/lib/utils';
-import { useIsFavoritedQuery } from '@/hooks/useFavoritesQuery';
 import { useToggleFavoriteMutation } from '@/hooks/useFavoritesMutations';
+import { useIsFavoritedQuery } from '@/hooks/useFavoritesQuery';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useDeletePlayRecordMutation } from '@/hooks/usePlayRecordsMutations';
-import { useIsRemindedQuery } from '@/hooks/useRemindersQuery';
 import { useToggleReminderMutation } from '@/hooks/useRemindersMutations';
+import { useIsRemindedQuery } from '@/hooks/useRemindersQuery';
 
 import AIRecommendModal from '@/components/AIRecommendModal';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
@@ -239,8 +236,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     }, [remarks, hasReleaseTag, isAggregate, dynamicSourceNames]);
 
     const isNewRelease = Boolean(
-      remarks &&
-        (remarks?.includes('???') || remarks?.includes('????')),
+      remarks && (remarks?.includes('???') || remarks?.includes('????')),
     );
     const shouldShowBell = isUpcoming || isNewRelease;
 
@@ -1157,8 +1153,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                   <PlayCircleIcon
                     data-button='true'
                     size={50}
-                    strokeWidth={0.8}
-                    className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1] cursor-pointer pointer-events-auto'
+                    strokeWidth={1.5}
+                    className='text-white fill-transparent transition-all duration-300 ease-out hover:text-green-500 hover:scale-[1.15] drop-shadow-[0_0_8px_rgba(34,197,94,0.6)] cursor-pointer pointer-events-auto'
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();

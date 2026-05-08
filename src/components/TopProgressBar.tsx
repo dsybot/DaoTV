@@ -3,20 +3,27 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import RouteLoadingState from './RouteLoadingState';
+
+const OVERLAY_SHOW_DELAY_MS = 120;
+const OVERLAY_FADE_DURATION_MS = 220;
+const NAVIGATION_FAILSAFE_MS = 15000;
+
 export default function TopProgressBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [visible, setVisible] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [active, setActive] = useState(false);
   const isNavigatingRef = useRef(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isOverlayMountedRef = useRef(false);
+  const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failSafeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearTimers = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (showTimeoutRef.current) {
+      clearTimeout(showTimeoutRef.current);
+      showTimeoutRef.current = null;
     }
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
@@ -28,35 +35,48 @@ export default function TopProgressBar() {
     }
   }, []);
 
+  const unmountOverlay = useCallback(() => {
+    isOverlayMountedRef.current = false;
+    setMounted(false);
+    isNavigatingRef.current = false;
+  }, []);
+
   const done = useCallback(() => {
     clearTimers();
-    setProgress(100);
-    hideTimeoutRef.current = setTimeout(() => {
-      setVisible(false);
-      setProgress(0);
+
+    if (!isOverlayMountedRef.current) {
       isNavigatingRef.current = false;
-    }, 220);
-  }, [clearTimers]);
+      return;
+    }
+
+    setActive(false);
+    hideTimeoutRef.current = setTimeout(() => {
+      unmountOverlay();
+    }, OVERLAY_FADE_DURATION_MS);
+  }, [clearTimers, unmountOverlay]);
 
   const start = useCallback(() => {
     clearTimers();
     isNavigatingRef.current = true;
-    setVisible(true);
-    setProgress(8);
+
+    if (isOverlayMountedRef.current) {
+      setActive(true);
+    } else {
+      showTimeoutRef.current = setTimeout(() => {
+        isOverlayMountedRef.current = true;
+        setMounted(true);
+
+        requestAnimationFrame(() => {
+          setActive(true);
+        });
+      }, OVERLAY_SHOW_DELAY_MS);
+    }
+
     failSafeTimeoutRef.current = setTimeout(() => {
       if (isNavigatingRef.current) {
         done();
       }
-    }, 15000);
-
-    intervalRef.current = setInterval(() => {
-      setProgress((current) => {
-        if (current < 35) return current + 8;
-        if (current < 70) return current + 4;
-        if (current < 88) return current + 1.5;
-        return current;
-      });
-    }, 180);
+    }, NAVIGATION_FAILSAFE_MS);
   }, [clearTimers, done]);
 
   useEffect(() => {
@@ -153,20 +173,24 @@ export default function TopProgressBar() {
     }
   }, [done, pathname, searchParams]);
 
-  if (!visible && progress === 0) return null;
+  if (!mounted) return null;
 
   return (
     <div
-      className='fixed left-0 right-0 top-0 z-9999 h-[2px] bg-transparent pointer-events-none'
+      className={`fixed inset-0 z-[9999] transition-opacity duration-200 ${
+        active ? 'opacity-100' : 'opacity-0'
+      }`}
+      style={{
+        transitionDuration: `${OVERLAY_FADE_DURATION_MS}ms`,
+      }}
       aria-hidden='true'
     >
-      <div
-        className='h-full bg-linear-to-r from-cyan-400 via-emerald-400 to-lime-300 shadow-[0_0_12px_rgba(45,212,191,0.65)] transition-[width,opacity] duration-200 ease-out'
-        style={{
-          width: `${progress}%`,
-          opacity: visible ? 1 : 0,
-        }}
-      />
+      <div className='absolute inset-0 bg-black/88 backdrop-blur-[2px]' />
+      <div className='relative flex min-h-screen w-full items-start justify-center'>
+        <div className='w-full'>
+          <RouteLoadingState />
+        </div>
+      </div>
     </div>
   );
 }
