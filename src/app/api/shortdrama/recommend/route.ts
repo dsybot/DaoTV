@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { getCacheTime, getConfig } from '@/lib/config';
 import {
   getDbQueryCount,
   recordRequest,
@@ -231,13 +231,11 @@ export async function GET(request: NextRequest) {
       pageSize,
     );
 
-    // 测试1小时HTTP缓存策略
+    // 使用统一缓存时间
     const response = NextResponse.json(result);
 
-    console.log('🕐 [RECOMMEND] 设置1小时HTTP缓存 - 测试自动过期刷新');
-
-    // 1小时 = 3600秒
-    const cacheTime = 3600;
+    const cacheTime = await getCacheTime();
+    console.log(`🕐 [RECOMMEND] 设置 ${cacheTime / 3600} 小时 HTTP 缓存`);
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
@@ -249,7 +247,7 @@ export async function GET(request: NextRequest) {
     );
 
     // 调试信息
-    response.headers.set('X-Cache-Duration', '1hour');
+    response.headers.set('X-Cache-Duration', `${cacheTime / 3600}hours`);
     response.headers.set(
       'X-Cache-Expires-At',
       new Date(Date.now() + cacheTime * 1000).toISOString(),

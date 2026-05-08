@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { getCacheTime, getConfig } from '@/lib/config';
 import {
   getDbQueryCount,
   recordRequest,
@@ -278,13 +278,11 @@ export async function GET(request: NextRequest) {
       hasMore: result.hasMore,
     });
 
-    // 设置与网页端一致的缓存策略（lists: 2小时）
+    // 使用统一缓存时间
     const response = NextResponse.json(result);
 
-    console.log('🕐 [LIST] 设置2小时HTTP缓存 - 与网页端lists缓存一致');
-
-    // 2小时 = 7200秒（与网页端SHORTDRAMA_CACHE_EXPIRE.lists一致）
-    const cacheTime = 7200;
+    const cacheTime = await getCacheTime();
+    console.log(`🕐 [LIST] 设置 ${cacheTime / 3600} 小时 HTTP 缓存`);
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
@@ -296,7 +294,7 @@ export async function GET(request: NextRequest) {
     );
 
     // 调试信息
-    response.headers.set('X-Cache-Duration', '2hour');
+    response.headers.set('X-Cache-Duration', `${cacheTime / 3600}hours`);
     response.headers.set(
       'X-Cache-Expires-At',
       new Date(Date.now() + cacheTime * 1000).toISOString(),

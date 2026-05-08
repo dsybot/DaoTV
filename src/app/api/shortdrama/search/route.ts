@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { getCacheTime, getConfig } from '@/lib/config';
 import { recordRequest, getDbQueryCount, resetDbQueryCount } from '@/lib/performance-monitor';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
@@ -213,19 +213,17 @@ export async function GET(request: NextRequest) {
 
     const result = await searchShortDramasInternal(query, pageNum, pageSize);
 
-    // 设置与网页端一致的缓存策略（搜索结果: 1小时）
+    // 使用统一缓存时间
     const response = NextResponse.json(result);
 
-    console.log('🕐 [SEARCH] 设置1小时HTTP缓存 - 与网页端搜索缓存一致');
-
-    // 1小时 = 3600秒（搜索结果更新频繁，短期缓存）
-    const cacheTime = 3600;
+    const cacheTime = await getCacheTime();
+    console.log(`🕐 [SEARCH] 设置 ${cacheTime / 3600} 小时 HTTP 缓存`);
     response.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
     response.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
     response.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
 
     // 调试信息
-    response.headers.set('X-Cache-Duration', '1hour');
+    response.headers.set('X-Cache-Duration', `${cacheTime / 3600}hours`);
     response.headers.set('X-Cache-Expires-At', new Date(Date.now() + cacheTime * 1000).toISOString());
     response.headers.set('X-Debug-Timestamp', new Date().toISOString());
 

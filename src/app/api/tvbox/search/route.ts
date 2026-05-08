@@ -2,30 +2,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { getCacheTime, getConfig } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
 import { rankSearchResults } from '@/lib/search-ranking';
 import { yellowWords } from '@/lib/yellow';
 
 export const runtime = 'nodejs';
 
-/**
- * TVBox 智能搜索代理端点
- *
- * 功能：
- * 1. 🔒 成人内容过滤（基于关键词和源标记）
- * 2. 🎯 智能排序（解决搜索结果不精确问题）
- * 3. ⚡ 结果优化（过滤重复和不相关内容）
- *
- * 使用方式：
- * GET /api/tvbox/search?source=dyttzy&wd=斗罗大陆&filter=on
- *
- * 参数：
- * - source: 视频源key（必需）
- * - wd: 搜索关键词（必需）
- * - filter: 成人内容过滤 on|off（可选，默认on）
- * - strict: 严格匹配模式 1|0（可选，默认0）
- */
+type TvboxRawFields = {
+  note?: string;
+  remark?: string;
+  year?: string | number;
+  area?: string;
+  actor?: string;
+  director?: string;
+};
+
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 
@@ -36,7 +28,6 @@ export async function GET(request: NextRequest) {
     const filterParam = searchParams.get('filter') || 'on';
     const strictMode = searchParams.get('strict') === '1';
 
-    // 参数验证
     if (!sourceKey || !query) {
       return NextResponse.json(
         {
@@ -44,15 +35,14 @@ export async function GET(request: NextRequest) {
           msg: '缺少必要参数: source 或 wd',
           list: [],
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const config = await getConfig();
     const shouldFilter = filterParam === 'on' || filterParam === 'enable';
-
-    // 查找视频源配置
     const targetSource = config.SourceConfig.find((s) => s.key === sourceKey);
+
     if (!targetSource) {
       return NextResponse.json(
         {
@@ -60,11 +50,10 @@ export async function GET(request: NextRequest) {
           msg: `未找到视频源: ${sourceKey}`,
           list: [],
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // 检查源是否被禁用
     if (targetSource.disabled) {
       return NextResponse.json(
         {
@@ -72,15 +61,14 @@ export async function GET(request: NextRequest) {
           msg: `视频源已被禁用: ${sourceKey}`,
           list: [],
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     console.log(
-      `[TVBox Search Proxy] source=${sourceKey}, query="${query}", filter=${filterParam}, strict=${strictMode}`
+      `[TVBox Search Proxy] source=${sourceKey}, query="${query}", filter=${filterParam}, strict=${strictMode}`,
     );
 
-    // 从上游API搜索
     let results = await searchFromApi(
       {
         key: targetSource.key,
@@ -88,26 +76,22 @@ export async function GET(request: NextRequest) {
         api: targetSource.api,
         detail: targetSource.detail,
       },
-      query
+      query,
     );
 
     console.log(
-      `[TVBox Search Proxy] Fetched ${results.length} results from upstream`
+      `[TVBox Search Proxy] Fetched ${results.length} results from upstream`,
     );
 
-    // 🔒 成人内容过滤
     if (shouldFilter) {
       const beforeFilterCount = results.length;
-
       results = results.filter((result) => {
         const typeName = result.type_name || '';
 
-        // 1. 检查源是否标记为成人资源
         if (targetSource.is_adult) {
           return false;
         }
 
-        // 2. 检查分类名称是否包含敏感关键词
         if (yellowWords.some((word: string) => typeName.includes(word))) {
           return false;
         }
@@ -116,19 +100,15 @@ export async function GET(request: NextRequest) {
       });
 
       console.log(
-        `[TVBox Search Proxy] Adult filter: ${beforeFilterCount} → ${
-          results.length
-        } (filtered ${beforeFilterCount - results.length})`
+        `[TVBox Search Proxy] Adult filter: ${beforeFilterCount} → ${results.length} (filtered ${beforeFilterCount - results.length})`,
       );
     }
 
-    // 🎯 智能排序 - 解决搜索不精确问题
     if (results.length > 0) {
       results = rankSearchResults(results, query);
-      console.log(`[TVBox Search Proxy] Applied smart ranking`);
+      console.log('[TVBox Search Proxy] Applied smart ranking');
     }
 
-    // ⚡ 严格匹配模式 - 只返回高度相关的结果
     if (strictMode && results.length > 0) {
       const queryLower = query.toLowerCase().trim();
       const beforeStrictCount = results.length;
@@ -136,34 +116,27 @@ export async function GET(request: NextRequest) {
       results = results.filter((result) => {
         const title = (result.title || '').toLowerCase().trim();
 
-        // 完全匹配
         if (title === queryLower) return true;
-
-        // 开头匹配
         if (title.startsWith(queryLower)) return true;
 
-        // 包含匹配（但必须是完整词）
         const regex = new RegExp(`\\b${queryLower}\\b`, 'i');
         if (regex.test(title)) return true;
 
-        // 编辑距离小于3（非常相似）
         if (levenshteinDistance(title, queryLower) <= 2) return true;
 
         return false;
       });
 
       console.log(
-        `[TVBox Search Proxy] Strict mode: ${beforeStrictCount} → ${results.length}`
+        `[TVBox Search Proxy] Strict mode: ${beforeStrictCount} → ${results.length}`,
       );
     }
 
     const processingTime = Date.now() - startTime;
     console.log(
-      `[TVBox Search Proxy] Completed in ${processingTime}ms, returning ${results.length} results`
+      `[TVBox Search Proxy] Completed in ${processingTime}ms, returning ${results.length} results`,
     );
 
-    // 返回TVBox兼容的格式
-    // TVBox期望的搜索API返回格式通常是MacCMS标准格式
     const response = {
       code: 1,
       msg: 'success',
@@ -172,8 +145,7 @@ export async function GET(request: NextRequest) {
       limit: results.length,
       total: results.length,
       list: results.map((r) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const raw = r as any;
+        const raw = r as TvboxRawFields;
         return {
           vod_id: r.id,
           vod_name: r.title,
@@ -185,19 +157,21 @@ export async function GET(request: NextRequest) {
           vod_director: raw.director || '',
           vod_content: r.desc || '',
           type_name: r.type_name || '',
-          // 保留原始数据以便详情页使用
           vod_play_from: r.episodes ? 'LunaTV' : '',
           vod_play_url: r.episodes ? r.episodes.join('#') : '',
         };
       }),
     };
 
+    const cacheTime = await getCacheTime();
     return NextResponse.json(response, {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'public, max-age=300, s-maxage=300', // 5分钟缓存
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+        'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
         'X-Processing-Time': `${processingTime}ms`,
         'X-Result-Count': `${results.length}`,
         'X-Filter-Applied': shouldFilter ? 'true' : 'false',
@@ -211,12 +185,11 @@ export async function GET(request: NextRequest) {
         msg: error instanceof Error ? error.message : '搜索失败',
         list: [],
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-// CORS 预检请求
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -229,9 +202,6 @@ export async function OPTIONS() {
   });
 }
 
-/**
- * 计算两个字符串的编辑距离（Levenshtein distance）
- */
 function levenshteinDistance(str1: string, str2: string): number {
   const len1 = str1.length;
   const len2 = str2.length;
@@ -240,7 +210,6 @@ function levenshteinDistance(str1: string, str2: string): number {
   if (len1 === 0) return len2;
   if (len2 === 0) return len1;
 
-  // 初始化矩阵
   for (let i = 0; i <= len1; i++) {
     matrix[i] = [i];
   }
@@ -248,14 +217,13 @@ function levenshteinDistance(str1: string, str2: string): number {
     matrix[0][j] = j;
   }
 
-  // 计算编辑距离
   for (let i = 1; i <= len1; i++) {
     for (let j = 1; j <= len2; j++) {
       const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
       matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1, // 删除
-        matrix[i][j - 1] + 1, // 插入
-        matrix[i - 1][j - 1] + cost // 替换
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
       );
     }
   }

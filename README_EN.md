@@ -54,6 +54,7 @@ This project is for educational purposes only. Do not use for commercial purpose
 - **Search List View**: Grid/list dual view mode with image preview and quick play button
 
 ### 🎬 Player Enhancements
+- **Episode Selector Enhancement**: Manual speed test feature with real-time source status badges (Available/Unavailable/Testing)
 - **Control Bar Opacity Control**: Customizable control bar obstruction (10-80%), real-time transparency and blur adjustment for better subtitle visibility
 - **Seek Buttons**: Customizable seek forward/backward buttons with Netflix-style design and responsive layout
 - **Ultrawide Monitor Support**: Video display mode control for ultrawide monitors

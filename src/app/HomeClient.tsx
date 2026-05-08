@@ -41,6 +41,7 @@ import { DoubanItem } from '@/lib/types';
 import { useClearFavoritesMutation } from '@/hooks/useFavoritesMutations';
 import { useHomePageQueries } from '@/hooks/useHomePageQueries';
 import { useClearRemindersMutation } from '@/hooks/useRemindersMutations';
+import { useWatchingUpdatesQuery } from '@/hooks/useWatchingUpdates';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import { CinematicLoadingFallback } from '@/components/CinematicLoadingFallback';
@@ -366,15 +367,7 @@ function HomeClient({
     return !(window as any).RUNTIME_CONFIG?.DISABLE_HERO_TRAILER;
   }, []);
 
-  const hasAnyData =
-    homeData &&
-    (homeData.hotMovies.length > 0 ||
-      homeData.hotTvShows.length > 0 ||
-      homeData.hotVarietyShows.length > 0 ||
-      homeData.hotAnime.length > 0 ||
-      homeData.hotShortDramas.length > 0 ||
-      homeData.bangumiCalendar.length > 0);
-  const loading = homeFetching && !hasAnyData;
+  const loading = homeLoading;
 
   // 解构本地状态
   const { activeTab, upcomingReleases, username, showAnnouncement } = state;
@@ -465,6 +458,17 @@ function HomeClient({
       }
     }
   }, []);
+
+  const authInfo = getAuthInfoFromBrowserCookie();
+  const storageType =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('storageType')
+      : null;
+  const showWatchingUpdates =
+    !!authInfo?.username && storageType !== 'localstorage';
+  useWatchingUpdatesQuery({
+    enabled: showWatchingUpdates,
+  });
 
   // 🚀 TanStack Query - 使用 useQuery 获取收藏数据（自动缓存，跨页面持久化）
   const { data: allFavorites = {} } = useQuery(allFavoritesOptions());

@@ -49,17 +49,15 @@ export function CinematicLoadingFallback() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-opacity duration-500 ${
+      className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-opacity duration-500 bg-gradient-to-b from-gray-900 via-gray-800 to-black ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {bingWallpaper ? (
+      {bingWallpaper && (
         <div
           className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000'
           style={{ backgroundImage: `url(${bingWallpaper})` }}
         />
-      ) : (
-        <div className='absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800 to-black' />
       )}
 
       <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
