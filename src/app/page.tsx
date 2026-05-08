@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { getConfig } from '@/lib/config';
 
-import RouteLoadingState from '@/components/RouteLoadingState';
+import { MinimumTimeLoadingFallback } from '@/components/MinimumTimeLoadingFallback';
 
 import HomeClient from './HomeClient';
 
@@ -20,7 +20,7 @@ export default async function Home() {
   };
 
   return (
-    <Suspense fallback={<RouteLoadingState />}>
+    <Suspense fallback={<MinimumTimeLoadingFallback />}>
       <HomeClient initialConfig={homePageConfig} />
     </Suspense>
   );

@@ -1,5 +1,5 @@
-import RouteLoadingState from '@/components/RouteLoadingState';
+import { MinimumTimeLoadingFallback } from '@/components/MinimumTimeLoadingFallback';
 
 export default function Loading() {
-  return <RouteLoadingState />;
+  return <MinimumTimeLoadingFallback />;
 }

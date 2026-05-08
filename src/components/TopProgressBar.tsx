@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import RouteLoadingState from './RouteLoadingState';
+import { CinematicLoadingFallback } from './CinematicLoadingFallback';
 
 const OVERLAY_SHOW_DELAY_MS = 120;
 const OVERLAY_FADE_DURATION_MS = 220;
@@ -177,7 +177,7 @@ export default function TopProgressBar() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] transition-opacity duration-200 ${
+      className={`fixed inset-0 z-50 transition-opacity duration-200 ${
         active ? 'opacity-100' : 'opacity-0'
       }`}
       style={{
@@ -185,12 +185,7 @@ export default function TopProgressBar() {
       }}
       aria-hidden='true'
     >
-      <div className='absolute inset-0 bg-black/88 backdrop-blur-[2px]' />
-      <div className='relative flex min-h-screen w-full items-start justify-center'>
-        <div className='w-full'>
-          <RouteLoadingState />
-        </div>
-      </div>
+      <CinematicLoadingFallback />
     </div>
   );
 }
