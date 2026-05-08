@@ -3,6 +3,8 @@
 
 import {
   experimental_streamedQuery as streamedQuery,
+  infiniteQueryOptions,
+  useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
 import {
@@ -47,6 +49,52 @@ import VirtualGrid from '@/components/VirtualGrid';
 import YouTubeVideoCard from '@/components/YouTubeVideoCard';
 
 const chineseConverter = stcasc();
+
+const youtubePopularOptions = (regionCode: string, enabled: boolean) =>
+  infiniteQueryOptions({
+    queryKey: ['youtube-popular', regionCode],
+    queryFn: async ({ pageParam }) => {
+      let url = `/api/youtube/popular?regionCode=${regionCode}`;
+      if (pageParam) {
+        url += `&pageToken=${pageParam}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'YouTube热门视频获取失败');
+      }
+
+      return {
+        videos: data.videos || [],
+        nextPageToken: data.nextPageToken || null,
+        warning: data.warning || null,
+      };
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextPageToken,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+const bilibiliPopularOptions = (enabled: boolean) => ({
+  queryKey: ['bilibili-popular'],
+  queryFn: async () => {
+    const response = await fetch('/api/bilibili/popular?pn=1&ps=50');
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Bilibili热门视频获取失败');
+    }
+
+    return data.videos || [];
+  },
+  enabled,
+  staleTime: 5 * 60 * 1000,
+  gcTime: 10 * 60 * 1000,
+});
 
 type SSEChunk =
   | { type: 'start'; totalSources: number }
@@ -471,14 +519,6 @@ function SearchPageClient() {
 
   // YouTube搜索相关状态
   const [youtubeResults, setYoutubeResults] = useState<any[] | null>(null);
-  const [youtubePopular, setYoutubePopular] = useState<any[] | null>(null);
-  const [youtubePopularLoading, setYoutubePopularLoading] = useState(false);
-  // YouTube分页token
-  const [youtubePopularPageToken, setYoutubePopularPageToken] = useState<
-    string | null
-  >(null);
-  // 是否还有更多
-  const [youtubePopularHasMore, setYoutubePopularHasMore] = useState(true);
   const [youtubeLoading, setYoutubeLoading] = useState(false);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const [youtubeWarning, setYoutubeWarning] = useState<string | null>(null);
@@ -497,10 +537,35 @@ function SearchPageClient() {
   >([]);
   const [youtubeRegionsLoading, setYoutubeRegionsLoading] = useState(false);
 
+  const {
+    data: youtubePopularData,
+    fetchNextPage: fetchNextYoutubePopular,
+    hasNextPage: hasNextYoutubePopular,
+    isFetchingNextPage: isFetchingNextYoutubePopular,
+    isLoading: isLoadingYoutubePopular,
+    error: youtubePopularError,
+    refetch: refetchYoutubePopular,
+  } = useInfiniteQuery(
+    youtubePopularOptions(
+      youtubeRegion,
+      searchType === 'youtube' && youtubeMode === 'popular',
+    ),
+  );
+
+  const youtubePopular = useMemo(
+    () => youtubePopularData?.pages.flatMap((page) => page.videos) ?? [],
+    [youtubePopularData],
+  );
+
+  const youtubePopularWarning = useMemo(
+    () =>
+      youtubePopularData?.pages[youtubePopularData.pages.length - 1]?.warning ??
+      null,
+    [youtubePopularData],
+  );
+
   // Bilibili搜索相关状态
   const [bilibiliResults, setBilibiliResults] = useState<any[] | null>(null);
-  const [bilibiliPopular, setBilibiliPopular] = useState<any[] | null>(null);
-  const [bilibiliPopularLoading, setBilibiliPopularLoading] = useState(false);
   const [bilibiliLoading, setBilibiliLoading] = useState(false);
   const [bilibiliError, setBilibiliError] = useState<string | null>(null);
   const [bilibiliTab, setBilibiliTab] = useState<
@@ -508,6 +573,17 @@ function SearchPageClient() {
   >('video');
   const [bilibiliMode, setBilibiliMode] = useState<'search' | 'popular'>(
     'popular',
+  );
+
+  const {
+    data: bilibiliPopular,
+    isLoading: isLoadingBilibiliPopular,
+    error: bilibiliPopularError,
+    refetch: refetchBilibiliPopular,
+  } = useQuery(
+    bilibiliPopularOptions(
+      searchType === 'bilibili' && bilibiliMode === 'popular',
+    ),
   );
 
   // TMDB演员搜索相关状态
@@ -1264,60 +1340,6 @@ function SearchPageClient() {
     { id: 'MY', name: '马来西亚 (Malaysia)' },
   ];
 
-  const handleYoutubePopular = async (
-    regionCode = youtubeRegion,
-    loadMore = false,
-  ) => {
-    setYoutubePopularLoading(true);
-    setYoutubeError(null);
-    setYoutubeWarning(null);
-
-    try {
-      let url = `/api/youtube/popular?regionCode=${regionCode}`;
-      if (loadMore && youtubePopularPageToken) {
-        url += `&pageToken=${youtubePopularPageToken}`;
-      }
-      console.log(
-        `🔥 YouTube热门: loadMore=${loadMore}, pageToken=${youtubePopularPageToken}, url=${url}`,
-      );
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        if (loadMore) {
-          setYoutubePopular((prev) => [
-            ...(prev || []),
-            ...(data.videos || []),
-          ]);
-        } else {
-          setYoutubePopular(data.videos || []);
-        }
-        setYoutubePopularPageToken(data.nextPageToken || null);
-        setYoutubePopularHasMore(!!data.nextPageToken);
-        console.log(
-          `✅ YouTube热门加载成功: videos=${data.videos?.length}, nextPageToken=${data.nextPageToken}`,
-        );
-        if (data.warning) {
-          setYoutubeWarning(data.warning);
-        }
-      } else {
-        setYoutubeError(data.error || 'YouTube热门视频获取失败');
-        if (!loadMore) {
-          setYoutubePopular([]);
-        }
-      }
-    } catch (error: any) {
-      console.error('YouTube热门视频请求失败:', error);
-      setYoutubeError('YouTube热门视频请求失败，请稍后重试');
-      if (!loadMore) {
-        setYoutubePopular([]);
-      }
-    } finally {
-      setYoutubePopularLoading(false);
-    }
-  };
-
   const fetchYoutubeRegions = async () => {
     setYoutubeRegionsLoading(true);
 
@@ -1376,30 +1398,6 @@ function SearchPageClient() {
       setBilibiliError('Bilibili搜索请求失败，请稍后重试');
     } finally {
       setBilibiliLoading(false);
-    }
-  };
-
-  // Bilibili热门推荐函数
-  const handleBilibiliPopular = async () => {
-    setBilibiliPopularLoading(true);
-
-    try {
-      console.log(`🔥 Bilibili热门首次加载`);
-      const response = await fetch(`/api/bilibili/popular?pn=1&ps=50`);
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setBilibiliPopular(data.videos || []);
-        console.log(`✅ Bilibili热门加载成功: ${data.videos?.length} 个视频`);
-      } else {
-        console.error('获取热门视频失败:', data.error);
-        setBilibiliPopular([]);
-      }
-    } catch (error: any) {
-      console.error('热门视频请求失败:', error);
-      setBilibiliPopular([]);
-    } finally {
-      setBilibiliPopularLoading(false);
     }
   };
 
@@ -1606,9 +1604,6 @@ function SearchPageClient() {
       setTmdbActorError(null);
 
       if (youtubeMode === 'popular') {
-        if (!youtubePopular) {
-          setTimeout(() => handleYoutubePopular(), 0);
-        }
         if (youtubeRegions.length === 0) {
           setTimeout(() => fetchYoutubeRegions(), 0);
         }
@@ -1632,9 +1627,6 @@ function SearchPageClient() {
       setTmdbActorResults(null);
       setTmdbActorError(null);
 
-      if (bilibiliMode === 'popular' && !bilibiliPopular) {
-        setTimeout(() => handleBilibiliPopular(), 0);
-      }
       if (bilibiliMode === 'search' && currentQuery && showResults) {
         setTimeout(() => handleBilibiliSearch(currentQuery), 0);
       }
@@ -1991,7 +1983,7 @@ function SearchPageClient() {
                       {youtubeMode === 'search'
                         ? 'YouTube搜索'
                         : 'YouTube热门推荐'}
-                      {(youtubeLoading || youtubePopularLoading) && (
+                      {(youtubeLoading || isLoadingYoutubePopular) && (
                         <span className='ml-2 inline-block align-middle'>
                           <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin'></span>
                         </span>
@@ -2005,7 +1997,6 @@ function SearchPageClient() {
                           type='button'
                           onClick={() => {
                             setYoutubeMode('search');
-                            setYoutubePopular(null);
                             setYoutubeError(null);
                             setYoutubeWarning(null);
                           }}
@@ -2024,9 +2015,6 @@ function SearchPageClient() {
                             setYoutubeResults(null);
                             setYoutubeError(null);
                             setYoutubeWarning(null);
-                            if (!youtubePopular) {
-                              handleYoutubePopular();
-                            }
                             if (youtubeRegions.length === 0) {
                               fetchYoutubeRegions();
                             }
@@ -2199,14 +2187,10 @@ function SearchPageClient() {
                           onChange={(option) => {
                             if (option) {
                               setYoutubeRegion(option.value);
-                              // 切换地区时重置分页
-                              setYoutubePopularPageToken(null);
-                              setYoutubePopularHasMore(true);
-                              handleYoutubePopular(option.value);
                             }
                           }}
                           options={youtubeRegionOptions}
-                          isDisabled={youtubePopularLoading}
+                          isDisabled={isLoadingYoutubePopular}
                           isLoading={youtubeRegionsLoading}
                           isSearchable
                           placeholder='搜索或选择地区...'
@@ -2242,7 +2226,7 @@ function SearchPageClient() {
                         />
                       </div>
 
-                      {youtubeWarning && (
+                      {(youtubeWarning || youtubePopularWarning) && (
                         <div className='mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800'>
                           <div className='flex items-center text-yellow-800 dark:text-yellow-200'>
                             <svg
@@ -2256,18 +2240,21 @@ function SearchPageClient() {
                                 clipRule='evenodd'
                               />
                             </svg>
-                            <span className='text-sm'>{youtubeWarning}</span>
+                            <span className='text-sm'>
+                              {youtubeWarning || youtubePopularWarning}
+                            </span>
                           </div>
                         </div>
                       )}
 
-                      {youtubeError ? (
+                      {youtubeError || youtubePopularError ? (
                         <div className='text-center py-8'>
                           <div className='text-red-500 mb-2'>
-                            {youtubeError}
+                            {youtubeError ||
+                              (youtubePopularError as Error)?.message}
                           </div>
                           <button
-                            onClick={() => handleYoutubePopular()}
+                            onClick={() => refetchYoutubePopular()}
                             className='px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors'
                           >
                             重试
@@ -2291,16 +2278,14 @@ function SearchPageClient() {
                             ))}
                           </div>
                           {/* 加载更多按钮 */}
-                          {youtubePopularHasMore && (
+                          {hasNextYoutubePopular && (
                             <div className='mt-6 text-center'>
                               <button
-                                onClick={() =>
-                                  handleYoutubePopular(youtubeRegion, true)
-                                }
-                                disabled={youtubePopularLoading}
+                                onClick={() => fetchNextYoutubePopular()}
+                                disabled={isFetchingNextYoutubePopular}
                                 className='relative px-8 py-4 rounded-2xl bg-gradient-to-r from-red-50 via-pink-50 to-rose-50 dark:from-red-900/20 dark:via-pink-900/20 dark:to-rose-900/20 border border-red-200/50 dark:border-red-700/50 shadow-lg backdrop-blur-sm overflow-hidden hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed'
                               >
-                                {youtubePopularLoading ? (
+                                {isFetchingNextYoutubePopular ? (
                                   <>
                                     <div className='absolute inset-0 bg-gradient-to-r from-red-400/10 via-pink-400/10 to-rose-400/10 animate-pulse'></div>
                                     <div className='relative flex items-center gap-3 justify-center'>
@@ -2344,7 +2329,7 @@ function SearchPageClient() {
                             </div>
                           )}
                         </>
-                      ) : !youtubePopularLoading ? (
+                      ) : !isLoadingYoutubePopular ? (
                         <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
                           暂无热门推荐内容
                         </div>
@@ -2360,7 +2345,7 @@ function SearchPageClient() {
                       {bilibiliMode === 'search'
                         ? 'Bilibili搜索'
                         : 'Bilibili热门推荐'}
-                      {(bilibiliLoading || bilibiliPopularLoading) && (
+                      {(bilibiliLoading || isLoadingBilibiliPopular) && (
                         <span className='ml-2 inline-block align-middle'>
                           <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-pink-500 rounded-full animate-spin'></span>
                         </span>
@@ -2373,7 +2358,6 @@ function SearchPageClient() {
                           type='button'
                           onClick={() => {
                             setBilibiliMode('search');
-                            setBilibiliPopular(null);
                             setBilibiliError(null);
                           }}
                           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -2390,9 +2374,6 @@ function SearchPageClient() {
                             setBilibiliMode('popular');
                             setBilibiliResults(null);
                             setBilibiliError(null);
-                            if (!bilibiliPopular) {
-                              handleBilibiliPopular();
-                            }
                           }}
                           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                             bilibiliMode === 'popular'
@@ -2435,15 +2416,22 @@ function SearchPageClient() {
                     )}
                   </div>
 
-                  {bilibiliError ? (
+                  {bilibiliError || bilibiliPopularError ? (
                     <div className='text-center py-8'>
-                      <div className='text-red-500 mb-2'>{bilibiliError}</div>
+                      <div className='text-red-500 mb-2'>
+                        {bilibiliError ||
+                          (bilibiliPopularError as Error)?.message}
+                      </div>
                       <button
                         onClick={() => {
-                          const currentQuery =
-                            searchQuery.trim() || searchParams?.get('q');
-                          if (currentQuery) {
-                            handleBilibiliSearch(currentQuery);
+                          if (bilibiliMode === 'popular') {
+                            refetchBilibiliPopular();
+                          } else {
+                            const currentQuery =
+                              searchQuery.trim() || searchParams?.get('q');
+                            if (currentQuery) {
+                              handleBilibiliSearch(currentQuery);
+                            }
                           }
                         }}
                         className='px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors'
@@ -2499,7 +2487,7 @@ function SearchPageClient() {
                         ))}
                       </div>
                     </>
-                  ) : !bilibiliPopularLoading ? (
+                  ) : !isLoadingBilibiliPopular ? (
                     <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
                       暂无热门推荐内容
                     </div>
