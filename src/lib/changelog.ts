@@ -11,6 +11,32 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "6.6.0",
+    date: "2026-05-09",
+    added: [
+    "🔍 外部流量监控优化：过滤无效域名（0.0.0.0、localhost、内网IP）显示",
+    "📊 动态Cron阈值：基于实际用户数动态计算查询阈值",
+    "🔐 SSRF保护绕过：为私有部署添加DISABLE_SSRF_PROTECTION环境变量",
+    "🎯 剧集选择器：速度测试后自动按速度排序",
+    "⏱️ API缓存统一：统一所有API缓存时长为2小时"
+    ],
+    changed: [
+    "⚡ Cron性能优化：通过进程级缓存减少数据库查询94%（466→28-30查询）",
+    "🔧 Cron配置集中化：创建DEFAULT_CRON_CONFIG作为单一配置源",
+    "📉 Cron默认值优化：批处理大小降至50条，活跃窗口缩短至21天",
+    "🚀 TanStack Query迁移：YouTube和Bilibili搜索迁移到TanStack Query",
+    "📊 豆瓣/短剧页面优化：迁移到useInfiniteQuery + 虚拟滚动"
+    ],
+    fixed: [
+    "🐛 SSR错误完全修复：修复所有服务端渲染时访问浏览器API导致的崩溃（utils.ts、download-idb.ts、stream-saver.ts、AnimatedCardGrid.tsx、HomeClient.tsx、HeroBanner.tsx）",
+    "🔄 数据迁移增强：API读取时自动升级旧版用户数据字段",
+    "🎨 UI优化：播放按钮悬停改为轮廓样式，扩大控制栏悬停区域",
+    "📝 数据导入导出：修复提醒和视频源导入导出时缺失字段",
+    "🔍 追番更新修复：修复依赖查询加载逻辑和自动刷新功能",
+    "🔄 豆瓣无限加载修复：通过记忆化endReached回调防止无限加载"
+    ]
+  },
+  {
     version: "6.5.3",
     date: "2026-05-07",
     added: [

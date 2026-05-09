@@ -25,7 +25,7 @@
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.5.3-orange)
+![Version](https://img.shields.io/badge/Version-6.6.0-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 About
 
-This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.5.3**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
+This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.0**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
 
 ## ⚠️ Disclaimer
 
@@ -83,6 +83,12 @@ This project is for educational purposes only. Do not use for commercial purpose
 - **Performance Dashboard**: Complete API performance monitoring
 - **Traffic Monitoring**: Real traffic monitoring and domain analysis
 - **Kvrocks Persistence**: High-performance caching system
+- **TanStack Query Full Integration**:
+  - Smart data caching and automatic revalidation
+  - Infinite scroll optimization (Douban, ShortDrama pages)
+  - Virtual scrolling for large list performance
+  - Unified API cache strategy (2 hours)
+  - Reduced unnecessary network requests and re-renders
 
 ## 🚀 Quick Start
 
@@ -152,7 +158,7 @@ pnpm dev
 - **Language**: TypeScript 5.8.3
 - **Styling**: TailwindCSS 4.1.18
 - **Video Player**: ArtPlayer 5.4.0 + HLS.js 1.6.16
-- **State Management**: TanStack Query 5.91.0
+- **State Management**: TanStack Query 5.100.9 (fully migrated, optimized data fetching and caching)
 - **Database**: Upstash Redis + Kvrocks
 - **Deployment**: Docker / Vercel / Render
 
