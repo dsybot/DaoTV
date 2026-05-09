@@ -362,10 +362,12 @@ function HomeClient({
     [hotMovies, hotTvShows, hotVarietyShows, hotAnime],
   );
 
+  // 🚀 Memoize enableVideo to prevent HeroBanner remount
+  // Reading window.RUNTIME_CONFIG on every render can cause props to change
   const enableVideo = useMemo(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return true; // SSR默认启用
     return !(window as any).RUNTIME_CONFIG?.DISABLE_HERO_TRAILER;
-  }, []);
+  }, []); // Empty deps - only read once on mount
 
   const loading = homeLoading;
 

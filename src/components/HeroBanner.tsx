@@ -186,7 +186,12 @@ function HeroBanner({
     onSwipeRight: handlePrev,
   });
 
+  // 预加载背景图片（只预加载当前和后一个，优化性能）
   useEffect(() => {
+    // 预加载当前、后一张
+    if (typeof window === 'undefined') return; // SSR环境跳过
+    if (!items || items.length === 0) return;
+
     const indicesToPreload = [
       currentIndex,
       (currentIndex + 1) % items.length,
@@ -202,22 +207,8 @@ function HeroBanner({
     });
   }, [items, currentIndex]);
 
-  if (!items || items.length === 0) {
-    return null;
-  }
-
-  const currentItem = items[currentIndex];
-
-  console.log('[HeroBanner] 当前项目:', {
-    title: currentItem.title,
-    hasBackdrop: !!currentItem.backdrop,
-    hasTrailer: !!currentItem.trailerUrl,
-    trailerUrl: currentItem.trailerUrl,
-    enableVideo,
-  });
-
   useEffect(() => {
-    if (!enableVideo) {
+    if (!enableVideo || !items || items.length === 0) {
       return;
     }
 
@@ -276,6 +267,20 @@ function HeroBanner({
     const timer = setTimeout(checkAndRefreshVisibleTrailers, 1000);
     return () => clearTimeout(timer);
   }, [items, currentIndex, refreshedTrailerUrls, refreshTrailerUrl, enableVideo]);
+
+  if (!items || items.length === 0) {
+    return null;
+  }
+
+  const currentItem = items[currentIndex];
+
+  console.log('[HeroBanner] 当前项目:', {
+    title: currentItem.title,
+    hasBackdrop: !!currentItem.backdrop,
+    hasTrailer: !!currentItem.trailerUrl,
+    trailerUrl: currentItem.trailerUrl,
+    enableVideo,
+  });
 
   return (
     <div
