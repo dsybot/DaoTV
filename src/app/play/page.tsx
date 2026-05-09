@@ -6226,6 +6226,22 @@ function PlayPageClient() {
             },
           });
 
+          const updateResolutionBadgeVisibility = (
+            controlsVisible: boolean,
+          ) => {
+            const badge = artPlayerRef.current?.layers['resolution-badge'] as
+              | HTMLElement
+              | undefined;
+            if (badge) {
+              badge.style.display = controlsVisible ? 'block' : 'none';
+            }
+          };
+
+          updateResolutionBadgeVisibility(artPlayerRef.current.controls.show);
+          artPlayerRef.current.on('control', (state: boolean) => {
+            updateResolutionBadgeVisibility(state);
+          });
+
           const updateResolution = () => {
             if (video.videoWidth && video.videoHeight) {
               const width = video.videoWidth;
