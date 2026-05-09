@@ -6,15 +6,25 @@ import { Film, Popcorn, Sparkles, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const loadingMessages = [
-  { icon: Film, text: '正在为您准备今晚的观影清单...', emoji: '🎬' },
+  { icon: Film, text: '正在为您准备观影清单...', emoji: '🎬' },
   { icon: Popcorn, text: '爆米花准备好了吗？', emoji: '🍿' },
   { icon: Star, text: '发现了数百部精彩影片...', emoji: '⭐' },
   { icon: Sparkles, text: '正在寻找最适合您的推荐...', emoji: '✨' },
 ];
 
+const starStyles = [
+  { id: 0, left: '12%', top: '18%', animationDelay: '0.2s', animationDuration: '3.4s' },
+  { id: 1, left: '28%', top: '74%', animationDelay: '1.1s', animationDuration: '4.1s' },
+  { id: 2, left: '43%', top: '31%', animationDelay: '2.4s', animationDuration: '3.7s' },
+  { id: 3, left: '57%', top: '63%', animationDelay: '0.8s', animationDuration: '4.6s' },
+  { id: 4, left: '69%', top: '22%', animationDelay: '1.7s', animationDuration: '3.2s' },
+  { id: 5, left: '81%', top: '47%', animationDelay: '2.8s', animationDuration: '4.8s' },
+  { id: 6, left: '9%', top: '58%', animationDelay: '1.9s', animationDuration: '3.9s' },
+  { id: 7, left: '91%', top: '81%', animationDelay: '0.4s', animationDuration: '4.3s' },
+];
+
 export function CinematicLoadingFallback() {
   const [messageIndex, setMessageIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const [bingWallpaper, setBingWallpaper] = useState('');
 
   useEffect(() => {
@@ -34,10 +44,6 @@ export function CinematicLoadingFallback() {
   }, []);
 
   useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
     }, 2500);
@@ -49,9 +55,7 @@ export function CinematicLoadingFallback() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-opacity duration-500 bg-gradient-to-b from-gray-900 via-gray-800 to-black ${
-        isVisible ? 'opacity-100' : 'opacity-0'
-      }`}
+      className='min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-b from-gray-900 via-gray-800 to-black animate-load-fade-in'
     >
       {bingWallpaper && (
         <div
@@ -64,15 +68,15 @@ export function CinematicLoadingFallback() {
       <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
       <div className='absolute inset-0 overflow-hidden'>
-        {[...Array(8)].map((_, i) => (
+        {starStyles.map((star) => (
           <div
-            key={i}
+            key={star.id}
             className='absolute w-1 h-1 bg-white rounded-full animate-twinkle'
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${3 + Math.random() * 2}s`,
+              left: star.left,
+              top: star.top,
+              animationDelay: star.animationDelay,
+              animationDuration: star.animationDuration,
             }}
           />
         ))}
@@ -173,6 +177,19 @@ export function CinematicLoadingFallback() {
           }
         }
 
+        @keyframes load-fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .animate-load-fade-in {
+          animation: load-fade-in 500ms ease-out both;
+        }
+
         .animate-twinkle {
           animation: twinkle ease-in-out infinite;
         }
@@ -193,7 +210,8 @@ export function CinematicLoadingFallback() {
           .animate-twinkle,
           .animate-spin-gentle,
           .animate-pulse-slow,
-          .animate-pulse-dot {
+          .animate-pulse-dot,
+          .animate-load-fade-in {
             animation: none !important;
           }
         }

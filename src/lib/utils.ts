@@ -19,19 +19,20 @@ export function cn(...inputs: ClassValue[]) {
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
 // iOS 设备检测 (包括 iPad 的新版本检测)
-const isIOS = /iPad|iPhone|iPod/i.test(userAgent) && !(window as any).MSStream;
+const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/i.test(userAgent) && !('MSStream' in window);
 const isIOS13Plus = isIOS || (
+  typeof window !== 'undefined' &&
   userAgent.includes('Macintosh') &&
   typeof navigator !== 'undefined' &&
   navigator.maxTouchPoints >= 1
 );
 
 // iPad 专门检测 (包括新的 iPad Pro)
-const isIPad = /iPad/i.test(userAgent) || (
+const isIPad = typeof window !== 'undefined' && (/iPad/i.test(userAgent) || (
   userAgent.includes('Macintosh') &&
   typeof navigator !== 'undefined' &&
   navigator.maxTouchPoints > 2
-);
+));
 
 // Android 设备检测
 const isAndroid = /Android/i.test(userAgent);
@@ -41,7 +42,7 @@ const isMobile = isIOS13Plus || isAndroid || /webOS|BlackBerry|IEMobile|Opera Mi
 
 // 平板设备检测
 const isTablet = isIPad || (isAndroid && !/Mobile/i.test(userAgent)) ||
-  (typeof screen !== 'undefined' && screen.width >= 768);
+  (typeof window !== 'undefined' && typeof screen !== 'undefined' && screen.width >= 768);
 
 // Safari 浏览器检测 (更精确)
 const isSafari = /^(?:(?!chrome|android).)*safari/i.test(userAgent) && !isAndroid;
@@ -63,7 +64,7 @@ const getDevicePerformanceLevel = (): 'low' | 'medium' | 'high' => {
   }
 };
 
-const devicePerformance = getDevicePerformanceLevel();
+const devicePerformance = typeof window !== 'undefined' ? getDevicePerformanceLevel() : 'medium';
 
 // 导出设备检测结果供其他模块使用
 export {

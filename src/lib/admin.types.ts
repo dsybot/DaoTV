@@ -282,3 +282,12 @@ export interface AdminConfigResult {
   Role: 'owner' | 'admin';
   Config: AdminConfig;
 }
+
+// 🎯 Cron 配置默认值（统一管理，避免多处定义）
+export const DEFAULT_CRON_CONFIG = {
+  enableAutoRefresh: true,
+  maxRecordsPerRun: 50,      // 优化：平衡性能和资源消耗
+  onlyRefreshRecent: true,
+  recentDays: 21,            // 优化：覆盖最近3周活跃用户
+  onlyRefreshOngoing: true,
+} as const;
