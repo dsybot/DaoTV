@@ -19,6 +19,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
+import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import artplayerPluginSeekButtons from '@/lib/artplayer-plugin-seek-buttons';
 import { ClientCache } from '@/lib/client-cache';
 import {
@@ -87,7 +88,7 @@ const PLAYER_PLAYBACK_RATE_KEY = 'moontv_player_playback_rate';
 const PREFERRED_AUDIO_LANG_KEY = 'preferred_audio_lang';
 const CONTROL_BAR_OPACITY_KEY = 'control_bar_opacity';
 
-function applyNativeControlBarOpacity(
+function applyLiquidGlassControlBarOpacity(
   player: HTMLElement | null | undefined,
   opacity: number,
 ) {
@@ -95,15 +96,60 @@ function applyNativeControlBarOpacity(
 
   const normalizedOpacity =
     Number.isFinite(opacity) && opacity >= 0 ? Math.min(opacity, 0.8) : 0.5;
+  const liquidGlass = player.querySelector(
+    '.art-liquid-glass',
+  ) as HTMLElement | null;
 
-  player.classList.add('art-native-control-opacity');
-  player.style.setProperty(
-    '--art-native-control-opacity',
-    normalizedOpacity.toString(),
+  if (!liquidGlass) return;
+
+  const isFullscreen =
+    player.classList.contains('art-fullscreen') ||
+    player.classList.contains('art-fullscreen-web') ||
+    !!document.fullscreenElement;
+
+  if (isFullscreen) {
+    liquidGlass.style.setProperty('backdrop-filter', 'none', 'important');
+    liquidGlass.style.setProperty(
+      '-webkit-backdrop-filter',
+      'none',
+      'important',
+    );
+    liquidGlass.style.setProperty(
+      'background-color',
+      'transparent',
+      'important',
+    );
+    liquidGlass.style.setProperty(
+      'background-image',
+      `linear-gradient(to top, rgba(0, 0, 0, ${normalizedOpacity}), rgba(0, 0, 0, ${normalizedOpacity * 0.6}), transparent)`,
+      'important',
+    );
+    liquidGlass.style.setProperty(
+      'box-shadow',
+      `0 -10px 30px rgba(0, 0, 0, ${normalizedOpacity * 0.8})`,
+      'important',
+    );
+    return;
+  }
+
+  liquidGlass.style.setProperty(
+    'background-color',
+    `rgba(0, 0, 0, ${normalizedOpacity})`,
+    'important',
   );
-  player.style.setProperty(
-    '--art-native-control-mid-opacity',
-    (normalizedOpacity * 0.55).toString(),
+  liquidGlass.style.setProperty('background-image', 'none', 'important');
+  liquidGlass.style.removeProperty('box-shadow');
+
+  const blurAmount = Math.max(0, normalizedOpacity * 15);
+  liquidGlass.style.setProperty(
+    'backdrop-filter',
+    `blur(${blurAmount}px)`,
+    'important',
+  );
+  liquidGlass.style.setProperty(
+    '-webkit-backdrop-filter',
+    `blur(${blurAmount}px)`,
+    'important',
   );
 }
 
@@ -2216,9 +2262,8 @@ function PlayPageClient() {
         if (speedKBps && Number.isFinite(speedKBps) && speedKBps > 0) {
           speedMBps = speedKBps / 1024;
         } else {
-          const speedMatch = result.testResult.loadSpeed.match(
-            /^([\d.]+)\s*MB\/s$/,
-          );
+          const speedMatch =
+            result.testResult.loadSpeed.match(/^([\d.]+)\s*MB\/s$/);
           speedMBps = speedMatch ? parseFloat(speedMatch[1]) : 0;
         }
 
@@ -5656,7 +5701,7 @@ function PlayPageClient() {
                   CONTROL_BAR_OPACITY_KEY,
                   opacity.toString(),
                 );
-                applyNativeControlBarOpacity(
+                applyLiquidGlassControlBarOpacity(
                   artPlayerRef.current?.template?.$player,
                   opacity,
                 );
@@ -5956,6 +6001,8 @@ function PlayPageClient() {
                   }),
                 ]
               : []),
+            // 毛玻璃效果控制栏插件 - 与上游保持一致
+            artplayerPluginLiquidGlass(),
             // 快进/快退按钮插件 - 在控制栏添加 ±10秒 按钮
             artplayerPluginSeekButtons({
               seekTime: parseInt(localStorage.getItem('seek_time') || '10', 10),
@@ -6053,6 +6100,16 @@ function PlayPageClient() {
             titleLayer.style.display = isFullscreenNow ? 'block' : 'none';
           }
 
+          const savedOpacity = parseFloat(
+            localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
+          );
+          requestAnimationFrame(() => {
+            applyLiquidGlassControlBarOpacity(
+              artPlayerRef.current?.template?.$player,
+              savedOpacity,
+            );
+          });
+
           // Portal 容器已固定为 ArtPlayer $player 元素，无需切换
 
           if (isFullscreenNow) {
@@ -6071,6 +6128,16 @@ function PlayPageClient() {
             if (titleLayer) {
               titleLayer.style.display = isFullscreenWebNow ? 'block' : 'none';
             }
+
+            const savedOpacity = parseFloat(
+              localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
+            );
+            requestAnimationFrame(() => {
+              applyLiquidGlassControlBarOpacity(
+                artPlayerRef.current?.template?.$player,
+                savedOpacity,
+              );
+            });
 
             if (isFullscreenWebNow) {
               revealControlsAfterFullscreenChange();
@@ -6096,11 +6163,11 @@ function PlayPageClient() {
             video.style.objectFit = savedObjectFit;
           }
 
-          // Apply the saved opacity to ArtPlayer's native control bar.
+          // Apply the saved opacity to the liquid-glass control bar.
           const savedOpacity = parseFloat(
             localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
           );
-          applyNativeControlBarOpacity(
+          applyLiquidGlassControlBarOpacity(
             artPlayerRef.current.template.$player,
             savedOpacity,
           );

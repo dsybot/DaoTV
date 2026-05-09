@@ -1,0 +1,73 @@
+/* ============================================
+   ArtPlayer Liquid Glass Plugin Styles
+   毛玻璃效果控制栏插件样式
+   ============================================ */
+
+.artplayer-plugin-liquid-glass.art-control-show {
+  --art-control-height: 42px;
+  --art-control-icon-size: 24px;
+  --art-control-icon-scale: 1.1;
+}
+
+.artplayer-plugin-liquid-glass.art-control-show .art-bottom {
+  align-items: center;
+  background-image: none;
+  padding-bottom: var(--art-padding);
+}
+
+.artplayer-plugin-liquid-glass.art-control-show .art-bottom .art-liquid-glass {
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(0, 0, 0, 0.25);
+  padding: var(--art-padding) calc(var(--art-padding) * 1.5) 5px;
+}
+
+/* 全屏模式：使用渐变 + 阴影模拟毛玻璃效果，避免 backdrop-filter 的 stacking context 问题 */
+/* 注意：不使用 !important，允许 JavaScript 动态调整透明度 */
+.artplayer-plugin-liquid-glass:fullscreen .art-liquid-glass,
+.artplayer-plugin-liquid-glass.art-fullscreen .art-liquid-glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85),
+    rgba(0, 0, 0, 0.5),
+    transparent
+  );
+  background-color: transparent;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.artplayer-plugin-liquid-glass.art-control-show .art-settings {
+  bottom: calc(
+    var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding)
+  );
+}
+
+.artplayer-plugin-liquid-glass.art-control-show .art-layer-auto-playback {
+  bottom: calc(
+    var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding) * 4 +
+      10px
+  );
+}
+
+/* 让按钮可自动缩小，防止溢出 */
+.artplayer-plugin-liquid-glass .art-control {
+  flex-shrink: 1 !important;
+  min-width: 32px !important;
+  padding: 0 6px !important;
+}
+
+/* 关键：完全按照官方CSS，不设置width让容器自适应 */
+.artplayer-plugin-liquid-glass .art-bottom {
+  align-items: center; /* 官方唯一的对齐设置 */
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .artplayer-plugin-liquid-glass .art-control {
+    padding: 0 4px !important;
+    min-width: 28px !important;
+  }
+}
