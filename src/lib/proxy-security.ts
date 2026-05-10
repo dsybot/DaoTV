@@ -7,26 +7,17 @@ const cacheable = new CacheableLookup({
   errorTtl: 0.15, // 错误缓存 0.15 秒（快速重试）
 });
 
-type LookupRecord = {
-  address: string;
-  family: number;
-};
-
-type LookupError = Error & {
-  code?: string;
-};
-
 /**
  * DNS 查询重试机制（指数退避）
  * 解决 EAI_AGAIN 临时性 DNS 失败问题
  */
 async function lookupWithRetry(
   hostname: string,
-  options: { all: true; verbatim: true },
+  options: any,
   maxRetries = 3,
-  initialDelay = 500,
-): Promise<LookupRecord[]> {
-  let lastError: LookupError | null = null;
+  initialDelay = 500
+): Promise<any[]> {
+  let lastError: Error | null = null;
 
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -38,20 +29,19 @@ async function lookupWithRetry(
         return result;
       }
       return [result];
-    } catch (error) {
-      const lookupError = error as LookupError;
-      lastError = lookupError;
+    } catch (error: any) {
+      lastError = error;
 
       // 只对临时性错误重试
       const isRetryable =
-        lookupError.code === 'EAI_AGAIN' ||
-        lookupError.code === 'ENOTFOUND' ||
-        lookupError.code === 'ETIMEDOUT';
+        error.code === 'EAI_AGAIN' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ETIMEDOUT';
 
       if (isRetryable && i < maxRetries - 1) {
         // 指数退避：500ms, 1000ms, 2000ms
         const delay = initialDelay * Math.pow(2, i);
-        console.warn(`[DNS] Retry ${i + 1}/${maxRetries} for ${hostname} after ${delay}ms (error: ${lookupError.code})`);
+        console.warn(`[DNS] Retry ${i + 1}/${maxRetries} for ${hostname} after ${delay}ms (error: ${error.code})`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
