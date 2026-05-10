@@ -2125,8 +2125,8 @@ function PlayPageClient() {
     sources: SearchResult[],
     weights: Record<string, number> = {},
   ): Promise<SearchResult> => {
-    // 桌面设备使用小批量并发，避免创建过多实例
-    const concurrency = 3;
+    // 桌面设备使用小批量并发，避免创建过多实例（降低并发数提高稳定性）
+    const concurrency = 2;
     // 限制最大测试数量为20个源（平衡速度和覆盖率）
     const maxTestCount = 20;
     const topPriorityCount = 5; // 前5个优先级最高的源（已按权重排序）
@@ -2208,7 +2208,9 @@ function PlayPageClient() {
                 ? source.episodes[1]
                 : source.episodes[0];
 
-            const testResult = await getVideoResolutionFromM3u8(episodeUrl);
+            const testResult = await getVideoResolutionFromM3u8(episodeUrl, {
+              timeoutMs: 9000,
+            });
 
             // 更新成功结果
             setSpeedTestProgress((prev) => ({
@@ -2413,7 +2415,7 @@ function PlayPageClient() {
     })();
     score += qualityScore * 0.4;
 
-    // 下载速度评分 (40% 权重) - 基于最大速度线性映射
+    // 下载速度评分 (45% 权重) - 基于最大速度线性映射
     const speedScore = (() => {
       if (
         testResult.speedKBps &&
@@ -2439,9 +2441,9 @@ function PlayPageClient() {
       const speedRatio = speedKBps / maxSpeed;
       return Math.min(100, Math.max(0, speedRatio * 100));
     })();
-    score += speedScore * 0.4;
+    score += speedScore * 0.45;
 
-    // 网络延迟评分 (20% 权重) - 基于延迟范围线性映射
+    // 网络响应评分 (15% 权重) - 响应容易受瞬时抖动影响，权重低于实际分片速度
     const pingScore = (() => {
       const ping = testResult.pingTime;
       if (ping <= 0) return 0; // 无效延迟给默认分
@@ -2453,7 +2455,7 @@ function PlayPageClient() {
       const pingRatio = (maxPing - ping) / (maxPing - minPing);
       return Math.min(100, Math.max(0, pingRatio * 100));
     })();
-    score += pingScore * 0.2;
+    score += pingScore * 0.15;
 
     return Math.round(score * 100) / 100; // 保留两位小数
   };

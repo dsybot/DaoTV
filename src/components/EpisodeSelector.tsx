@@ -21,6 +21,9 @@ import {
 
 type VideoInfo = VideoSourceTestResult;
 
+// 延迟容差：延迟差距小于此值时，优先比较速度（避免因微小延迟差异导致排序抖动）
+const RESPONSE_TIE_BREAKER_MS = 300;
+
 // TMDB 分集信息类型
 export interface TMDBEpisodeInfo {
   episodeNumber: number;
@@ -916,9 +919,23 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         if (aPlayable && !bPlayable) return -1;
                         if (!aPlayable && bPlayable) return 1;
 
+                        // 都可播放，智能排序：延迟 + 速度
                         if (aPlayable && bPlayable) {
-                          return (aInfo.pingTime || Infinity) -
-                            (bInfo.pingTime || Infinity);
+                          const pingDiff =
+                            (aInfo.pingTime || 0) - (bInfo.pingTime || 0);
+
+                          // 延迟差距大于 300ms 时，按延迟排序
+                          if (Math.abs(pingDiff) > RESPONSE_TIE_BREAKER_MS) {
+                            return pingDiff;
+                          }
+
+                          // 延迟差距小，比速度（速度高的优先）
+                          const speedDiff =
+                            (bInfo.speedKBps || 0) - (aInfo.speedKBps || 0);
+                          if (speedDiff !== 0) return speedDiff;
+
+                          // 速度也一样，再精确比延迟
+                          if (pingDiff !== 0) return pingDiff;
                         }
                       }
                     } else if (sortMode === 'name') {

@@ -39,6 +39,7 @@
     "artplayer": "^5.4.0",
     "artplayer-plugin-danmuku": "^5.3.0",
     "bs58": "^6.0.0",
+    "cacheable-lookup": "^7.0.0",
     "cheerio": "^1.2.0",
     "clsx": "^2.0.0",
     "crypto-js": "^4.2.0",

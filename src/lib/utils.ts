@@ -191,11 +191,15 @@ export function formatVideoLoadSpeed(speedKBps?: number): string {
 /**
  * 从m3u8地址获取视频质量等级和网络信息
  * @param m3u8Url m3u8播放列表的URL
- * @returns Promise<{quality: string, loadSpeed: string, pingTime: number}> 视频质量等级和网络信息
+ * @param options 配置选项
+ * @param options.timeoutMs 超时时间（毫秒），默认 5000ms
+ * @returns Promise<VideoSourceTestResult> 视频质量等级和网络信息（向后兼容）
  */
 export async function getVideoResolutionFromM3u8(
   m3u8Url: string,
+  options: { timeoutMs?: number } = {},
 ): Promise<VideoSourceTestResult> {
+  const { timeoutMs = 5000 } = options;
   try {
     // 检测是否为iPad（无论什么浏览器）
     const isIPad = /iPad/i.test(userAgent);
@@ -322,11 +326,10 @@ export async function getVideoResolutionFromM3u8(
 
       const hls = new Hls(hlsConfig);
 
-      const timeoutDuration = isMobile ? 3000 : 4000;
       const timeout = setTimeout(() => {
         cleanup();
         reject(new Error('Timeout loading video metadata'));
-      }, timeoutDuration);
+      }, timeoutMs);
 
       const cleanup = () => {
         clearTimeout(timeout);
