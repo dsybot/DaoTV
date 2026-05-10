@@ -58,7 +58,11 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { AdminConfig, AdminConfigResult, DEFAULT_CRON_CONFIG } from '@/lib/admin.types';
+import {
+  AdminConfig,
+  AdminConfigResult,
+  DEFAULT_CRON_CONFIG,
+} from '@/lib/admin.types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
 import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
@@ -6111,7 +6115,8 @@ const SiteConfigComponent = ({
   });
 
   // Cron 配置状态
-  const [cronSettings, setCronSettings] = useState<CronConfig>(DEFAULT_CRON_CONFIG);
+  const [cronSettings, setCronSettings] =
+    useState<CronConfig>(DEFAULT_CRON_CONFIG);
 
   // 豆瓣数据源相关状态
   const [isDoubanDropdownOpen, setIsDoubanDropdownOpen] = useState(false);
@@ -6203,11 +6208,20 @@ const SiteConfigComponent = ({
   useEffect(() => {
     if (config?.CronConfig) {
       setCronSettings({
-        enableAutoRefresh: config.CronConfig.enableAutoRefresh ?? DEFAULT_CRON_CONFIG.enableAutoRefresh,
-        maxRecordsPerRun: config.CronConfig.maxRecordsPerRun ?? DEFAULT_CRON_CONFIG.maxRecordsPerRun,
-        onlyRefreshRecent: config.CronConfig.onlyRefreshRecent ?? DEFAULT_CRON_CONFIG.onlyRefreshRecent,
-        recentDays: config.CronConfig.recentDays ?? DEFAULT_CRON_CONFIG.recentDays,
-        onlyRefreshOngoing: config.CronConfig.onlyRefreshOngoing ?? DEFAULT_CRON_CONFIG.onlyRefreshOngoing,
+        enableAutoRefresh:
+          config.CronConfig.enableAutoRefresh ??
+          DEFAULT_CRON_CONFIG.enableAutoRefresh,
+        maxRecordsPerRun:
+          config.CronConfig.maxRecordsPerRun ??
+          DEFAULT_CRON_CONFIG.maxRecordsPerRun,
+        onlyRefreshRecent:
+          config.CronConfig.onlyRefreshRecent ??
+          DEFAULT_CRON_CONFIG.onlyRefreshRecent,
+        recentDays:
+          config.CronConfig.recentDays ?? DEFAULT_CRON_CONFIG.recentDays,
+        onlyRefreshOngoing:
+          config.CronConfig.onlyRefreshOngoing ??
+          DEFAULT_CRON_CONFIG.onlyRefreshOngoing,
       });
     }
   }, [config]);
@@ -9304,10 +9318,7 @@ function AdminPageClient() {
                 isExpanded={expandedTabs.trustedNetworkConfig}
                 onToggle={() => toggleTab('trustedNetworkConfig')}
               >
-                <TrustedNetworkConfig
-                  config={config}
-                  refreshConfig={fetchConfig}
-                />
+                <TrustedNetworkConfig />
               </CollapsibleTab>
             )}
 
