@@ -33,6 +33,14 @@
   }
 }
 
+/* ===== Lock Mode Fix ===== */
+/* 修复锁定状态下控制栏背景异常显示的问题 */
+/* ArtPlayer 在锁定状态下会将控制栏移出视野，但 .art-bottom 的渐变背景仍然显示 */
+.art-lock .art-bottom {
+  background: transparent !important;
+  background-image: none !important;
+}
+
 /* ===== Danmaku System Mobile Optimization ===== */
 /* 弹幕面板在不同挂载位置的定位处理 */
 @media (max-width: 768px) {
