@@ -102,36 +102,6 @@ function applyLiquidGlassControlBarOpacity(
 
   if (!liquidGlass) return;
 
-  const isFullscreen =
-    player.classList.contains('art-fullscreen') ||
-    player.classList.contains('art-fullscreen-web') ||
-    !!document.fullscreenElement;
-
-  if (isFullscreen) {
-    liquidGlass.style.setProperty('backdrop-filter', 'none', 'important');
-    liquidGlass.style.setProperty(
-      '-webkit-backdrop-filter',
-      'none',
-      'important',
-    );
-    liquidGlass.style.setProperty(
-      'background-color',
-      'transparent',
-      'important',
-    );
-    liquidGlass.style.setProperty(
-      'background-image',
-      `linear-gradient(to top, rgba(0, 0, 0, ${normalizedOpacity}), rgba(0, 0, 0, ${normalizedOpacity * 0.6}), transparent)`,
-      'important',
-    );
-    liquidGlass.style.setProperty(
-      'box-shadow',
-      `0 -10px 30px rgba(0, 0, 0, ${normalizedOpacity * 0.8})`,
-      'important',
-    );
-    return;
-  }
-
   liquidGlass.style.setProperty(
     'background-color',
     `rgba(0, 0, 0, ${normalizedOpacity})`,
