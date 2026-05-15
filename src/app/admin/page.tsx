@@ -520,6 +520,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   // 用户组筛选状态
   const [filterUserGroup, setFilterUserGroup] = useState<string>('all');
+  // 用户名搜索状态
+  const [filterUsername, setFilterUsername] = useState<string>('');
 
   // 🔑 TVBox Token 管理状态
   const [showTVBoxTokenModal, setShowTVBoxTokenModal] = useState(false);
@@ -1521,6 +1523,15 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 </option>
               ))}
             </select>
+            {/* 用户名搜索框 */}
+            <input
+              type='search'
+              aria-label='搜索用户名'
+              value={filterUsername}
+              onChange={(e) => setFilterUsername(e.target.value)}
+              placeholder='搜索用户名...'
+              className='px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-44'
+            />
           </div>
           <div className='flex items-center space-x-2'>
             {/* 批量操作按钮 */}
@@ -1777,6 +1788,16 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   return priority(a) - priority(b);
                 })
                 .filter((user) => {
+                  // 用户名搜索过滤
+                  if (filterUsername.trim()) {
+                    if (
+                      !user.username
+                        .toLowerCase()
+                        .includes(filterUsername.trim().toLowerCase())
+                    ) {
+                      return false;
+                    }
+                  }
                   // 根据选择的用户组筛选用户
                   if (filterUserGroup === 'all') {
                     return true; // 显示所有用户
