@@ -11,6 +11,16 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
+    // ChunkLoadError：新版本部署后旧 chunk 失效，自动硬刷新一次
+    if (error.name === 'ChunkLoadError' || error.message?.includes('Failed to load chunk')) {
+      const reloadKey = `chunk_reload_${window.location.pathname}`;
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, '1');
+        window.location.reload();
+        return;
+      }
+    }
+
     // 记录崩溃详情到 localStorage
     const crashLog = {
       timestamp: new Date().toISOString(),

@@ -143,8 +143,12 @@ const doubanListOptions = (
       });
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.list.length < PAGE_SIZE ? undefined : allPages.length,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage?.list || lastPage.list.length < PAGE_SIZE) {
+        return undefined;
+      }
+      return allPages.length;
+    },
     enabled: !!type,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
