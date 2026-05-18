@@ -119,9 +119,9 @@ export default function artplayerPluginSeekButtons(option = {}) {
           buttons.push(button);
         }
 
-        // 跟随控制栏的显示/隐藏状态
+        // 跟随控制栏的显示/隐藏状态（锁定时也隐藏）
         const updateButtonsVisibility = () => {
-          const controlsVisible = art.controls.show;
+          const controlsVisible = art.controls.show && !art.isLock;
           const allButtons = art.template.$player.querySelectorAll(
             '.art-seek-floating-left, .art-seek-floating-right',
           );
@@ -136,8 +136,9 @@ export default function artplayerPluginSeekButtons(option = {}) {
           });
         };
 
-        // 监听控制栏显示/隐藏事件
+        // 监听控制栏显示/隐藏事件，以及锁定/解锁事件
         art.on('control', updateButtonsVisibility);
+        art.on('lock', updateButtonsVisibility);
 
         // 初始状态
         updateButtonsVisibility();
