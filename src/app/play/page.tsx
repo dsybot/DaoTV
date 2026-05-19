@@ -102,6 +102,21 @@ function applyLiquidGlassControlBarOpacity(
 
   if (!liquidGlass) return;
 
+  const fullscreenElement =
+    document.fullscreenElement ||
+    (document as any).webkitFullscreenElement ||
+    (document as any).mozFullScreenElement ||
+    (document as any).msFullscreenElement;
+  const isFullscreen =
+    player.classList.contains('art-fullscreen') ||
+    player.classList.contains('art-fullscreen-web') ||
+    fullscreenElement === player ||
+    !!(
+      fullscreenElement &&
+      (player.contains(fullscreenElement as Node) ||
+        (fullscreenElement as Element).contains(player))
+    );
+
   liquidGlass.style.setProperty(
     'background-color',
     `rgba(0, 0, 0, ${normalizedOpacity})`,
@@ -109,6 +124,17 @@ function applyLiquidGlassControlBarOpacity(
   );
   liquidGlass.style.setProperty('background-image', 'none', 'important');
   liquidGlass.style.removeProperty('box-shadow');
+
+  // Chrome can desync pointer/paint layers for filtered elements in fullscreen.
+  if (isFullscreen) {
+    liquidGlass.style.setProperty('backdrop-filter', 'none', 'important');
+    liquidGlass.style.setProperty(
+      '-webkit-backdrop-filter',
+      'none',
+      'important',
+    );
+    return;
+  }
 
   const blurAmount = Math.max(0, normalizedOpacity * 15);
   liquidGlass.style.setProperty(
@@ -3123,7 +3149,10 @@ function PlayPageClient() {
       }
 
       // 清理
-      if (websrRef.current.canvas && websrRef.current.canvas.parentNode?.contains(websrRef.current.canvas)) {
+      if (
+        websrRef.current.canvas &&
+        websrRef.current.canvas.parentNode?.contains(websrRef.current.canvas)
+      ) {
         websrRef.current.canvas.parentNode.removeChild(websrRef.current.canvas);
       }
       if (artPlayerRef.current?.video) {
