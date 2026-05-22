@@ -29,6 +29,7 @@ import {
 export interface TrustedNetworkConfig {
   enabled: boolean;
   trustedIPs: string[];
+  blockAdminAccess?: boolean;
 }
 
 export interface TrustedNetworkResponse {

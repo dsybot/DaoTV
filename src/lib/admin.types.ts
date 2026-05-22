@@ -210,6 +210,7 @@ export interface AdminConfig {
   TrustedNetworkConfig?: {
     enabled: boolean; // 是否启用信任网络模式（内网免登录）
     trustedIPs: string[]; // 信任的IP/CIDR列表（如 192.168.0.0/16, 10.0.0.0/8）
+    blockAdminAccess?: boolean; // 是否禁止信任网络访客访问后台（默认 false 保持现状）
   };
   DanmuApiConfig?: {
     enabled: boolean; // 是否启用弹幕API（默认启用）

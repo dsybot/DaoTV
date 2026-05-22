@@ -174,6 +174,27 @@ const TrustedNetworkConfig = () => {
     );
   };
 
+  // 切换"禁止访客访问后台"开关
+  const toggleBlockAdmin = (blockAdminAccess: boolean) => {
+    saveMutation.mutate(
+      {
+        ...settings,
+        blockAdminAccess,
+      },
+      {
+        onSuccess: () => {
+          showMessage(
+            'success',
+            `信任网络访客访问后台已${blockAdminAccess ? '禁止' : '允许'}！`,
+          );
+        },
+        onError: (error) => {
+          showMessage('error', error.message);
+        },
+      },
+    );
+  };
+
   // 加载状态
   if (isQueryLoading) {
     return (
@@ -393,6 +414,40 @@ const TrustedNetworkConfig = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* 禁止访客访问后台开关 */}
+        <div
+          className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 ${
+            !settings.enabled ? 'opacity-50' : ''
+          }`}
+        >
+          <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
+            <div className='flex-1 min-w-0'>
+              <h3 className='text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100'>
+                禁止访客访问管理后台
+              </h3>
+              <p className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
+                {settings.enabled
+                  ? '开启后，信任网络自动登录的访客无法进入后台 /admin。真站长用密码登录后不受影响。'
+                  : '请先启用信任网络模式'}
+              </p>
+            </div>
+            <label
+              className={`relative inline-flex items-center flex-shrink-0 ${
+                settings.enabled ? 'cursor-pointer' : 'cursor-not-allowed'
+              }`}
+            >
+              <input
+                type='checkbox'
+                checked={settings.blockAdminAccess === true}
+                onChange={(e) => toggleBlockAdmin(e.target.checked)}
+                disabled={!settings.enabled || saveMutation.isPending}
+                className='sr-only peer'
+              />
+              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+            </label>
+          </div>
         </div>
       </div>
 
