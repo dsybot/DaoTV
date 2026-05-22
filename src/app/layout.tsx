@@ -8,6 +8,7 @@ import './globals.css';
 import { getConfig } from '@/lib/config';
 
 import AppShell from '../components/AppShell';
+import { ChunkErrorGuard } from '../components/ChunkErrorGuard';
 import { CinematicLoadingFallback } from '../components/CinematicLoadingFallback';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
@@ -156,6 +157,7 @@ export default async function RootLayout({
               <DownloadProvider>
                 <WatchRoomProvider>
                   <SiteProvider siteName={siteName} announcement={announcement}>
+                    <ChunkErrorGuard />
                     <SessionTracker />
                     <RouteWarmup />
                     <AppShell>

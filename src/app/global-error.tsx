@@ -11,6 +11,30 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    // ChunkLoadError：新版本部署后旧 chunk 失效，自动硬刷新一次（10s TTL 防循环）
+    const isChunkError =
+      typeof window !== 'undefined' &&
+      (error.name === 'ChunkLoadError' ||
+        error.message?.includes('Failed to load chunk') ||
+        error.message?.includes('Loading chunk') ||
+        error.message?.includes('Loading CSS chunk'));
+    if (isChunkError) {
+      try {
+        const reloadKey = `chunk_reload_global_${window.location.pathname}`;
+        const prev = sessionStorage.getItem(reloadKey);
+        const now = Date.now();
+        if (!prev || now - parseInt(prev, 10) > 10_000) {
+          sessionStorage.setItem(reloadKey, String(now));
+          window.location.reload();
+          return;
+        }
+      } catch {
+        // sessionStorage 可能在隐私模式不可用，忽略
+      }
+      console.warn('[ChunkLoadError] 全局错误页自动刷新后仍失败', error.message);
+      return;
+    }
+
     // 记录全局崩溃详情到 localStorage
     const crashLog = {
       timestamp: new Date().toISOString(),
