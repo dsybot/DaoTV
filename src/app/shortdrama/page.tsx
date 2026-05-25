@@ -62,15 +62,10 @@ export default function ShortDramaPage() {
     return true;
   });
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery(
-    shortDramaListOptions(selectedCategory, searchQuery, isSearchMode),
-  );
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery(
+      shortDramaListOptions(selectedCategory, searchQuery, isSearchMode),
+    );
 
   const allDramas = useMemo(
     () => data?.pages.flatMap((page) => page.list) ?? [],
@@ -291,6 +286,7 @@ export default function ShortDramaPage() {
                 }
               }}
               endReachedThreshold={3}
+              restoreKey={`shortdrama:${isSearchMode ? `search:${searchQuery.trim()}` : `cat:${selectedCategory ?? ''}`}`}
               renderItem={(drama, index) => (
                 <ShortDramaCard
                   key={index}
@@ -305,9 +301,7 @@ export default function ShortDramaPage() {
                 <div
                   key={`${drama.id}-${index}`}
                   ref={
-                    index === allDramas.length - 1
-                      ? lastDramaElementRef
-                      : null
+                    index === allDramas.length - 1 ? lastDramaElementRef : null
                   }
                 >
                   <ShortDramaCard drama={drama} />

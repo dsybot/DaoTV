@@ -660,6 +660,7 @@ export default function PrivateLibraryPage() {
                   }
                 }}
                 endReachedThreshold={3}
+                restoreKey={`emby:${embyKey ?? ''}:${selectedView}:${sortBy}:${sortOrder}:${searchKeyword}`}
                 renderItem={(video) => (
                   <VideoCard
                     key={video.id}
