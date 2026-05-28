@@ -18,6 +18,7 @@ import {
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 
+import artplayerPluginAutoThumbnail from '@/lib/artplayer-plugin-auto-thumbnail';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import artplayerPluginSeekButtons from '@/lib/artplayer-plugin-seek-buttons';
@@ -6004,6 +6005,11 @@ function PlayPageClient() {
               : []),
             // 毛玻璃效果控制栏插件 - 与上游保持一致
             artplayerPluginLiquidGlass(),
+            artplayerPluginAutoThumbnail({
+              width: 160,
+              number: 100,
+              scale: 1,
+            }),
             // 快进/快退按钮插件 - 在控制栏添加 ±10秒 按钮
             artplayerPluginSeekButtons({
               seekTime: parseInt(localStorage.getItem('seek_time') || '10', 10),

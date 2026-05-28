@@ -169,6 +169,34 @@ const PlayStatsPage: React.FC = () => {
 
   // 🚀 数据获取由 TanStack Query 自动管理
 
+  const parseUserAgent = (ua: string): string => {
+    if (!ua) return '';
+    if (/iPhone/i.test(ua)) {
+      const match = ua.match(/iPhone\s*OS\s*([\d_]+)/);
+      return `iPhone${match ? ' iOS ' + match[1].replace(/_/g, '.') : ''}`;
+    }
+    if (/iPad/i.test(ua)) {
+      const match = ua.match(/iPad.*OS\s*([\d_]+)/);
+      return `iPad${match ? ' iOS ' + match[1].replace(/_/g, '.') : ''}`;
+    }
+    if (/Android/i.test(ua)) {
+      const match = ua.match(/Android\s*([\d.]+)/);
+      return `Android${match ? ' ' + match[1] : ''}`;
+    }
+    if (/Windows/i.test(ua)) {
+      const match = ua.match(/Windows\s*NT\s*([\d.]+)/);
+      const ver = match ? match[1] : '';
+      const verMap: Record<string, string> = { '10.0': '10/11', '6.3': '8.1', '6.2': '8', '6.1': '7' };
+      return `Windows${verMap[ver] ? ' ' + verMap[ver] : ''}`;
+    }
+    if (/Mac/i.test(ua)) {
+      const match = ua.match(/Mac\s*OS\s*X\s*([\d_.]+)/);
+      return `macOS${match ? ' ' + match[1].replace(/_/g, '.') : ''}`;
+    }
+    if (/Linux/i.test(ua)) return 'Linux';
+    return ua.length > 40 ? ua.substring(0, 40) + '...' : ua;
+  };
+
   // 清理过期缓存
   const cleanExpiredCache = useCallback(() => {
     const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2小时
@@ -814,6 +842,22 @@ const PlayStatsPage: React.FC = () => {
                                   ? formatDateTime(userStat.lastLoginTime)
                                   : '注册时'}
                               </p>
+                              {userStat.lastLoginIp && (
+                                <p className='text-xs text-gray-500 dark:text-gray-400'>
+                                  登入IP: {userStat.lastLoginIp}
+                                  {userStat.lastLoginLocation && (
+                                    <span className='ml-1 text-gray-400 dark:text-gray-500'>
+                                      ({userStat.lastLoginLocation})
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                              {userStat.lastLoginDevice && (
+                                <p className='text-xs text-gray-500 dark:text-gray-400'>
+                                  设备:{' '}
+                                  {parseUserAgent(userStat.lastLoginDevice)}
+                                </p>
+                              )}
                               <div className='text-xs text-gray-500 dark:text-gray-400'>
                                 {(() => {
                                   const loginCount = userStat.loginCount || 0;

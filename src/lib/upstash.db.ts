@@ -997,6 +997,9 @@ export class UpstashRedisStorage implements IStorage {
         lastLoginTime: number;
         loginCount: number;
         createdAt: number;
+        lastLoginIp: string;
+        lastLoginLocation: string;
+        lastLoginDevice: string;
       }> = [];
       let totalWatchTime = 0;
       let totalPlays = 0;
@@ -1047,8 +1050,11 @@ export class UpstashRedisStorage implements IStorage {
           mostWatchedSource: userStat.mostWatchedSource,
           registrationDays,
           lastLoginTime,
-          loginCount: userStat.loginCount || 0, // 添加登入次数字段
+          loginCount: userStat.loginCount || 0,
           createdAt: userCreatedAt,
+          lastLoginIp: '',
+          lastLoginLocation: '',
+          lastLoginDevice: '',
         };
 
         userStats.push(enhancedUserStat);
@@ -1587,6 +1593,88 @@ export class UpstashRedisStorage implements IStorage {
     } catch (error) {
       console.error('清除崩溃日志失败:', error);
       throw error;
+    }
+  }
+
+  async addLoginLog(loginLog: any): Promise<void> {
+    try {
+      const key = `login-log:${loginLog.id}`;
+      await withRetry(() =>
+        this.client.set(key, JSON.stringify(loginLog), { ex: 2592000 }),
+      );
+      const indexKey = 'login-log-index';
+      await withRetry(() =>
+        this.client.zadd(indexKey, {
+          score: loginLog.loginTime,
+          member: loginLog.id,
+        }),
+      );
+      const now = Date.now();
+      const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+      const expiredIds = await withRetry(() =>
+        this.client.zrange(indexKey, 0, thirtyDaysAgo, { byScore: true }),
+      );
+      if (expiredIds.length > 0) {
+        const expiredKeys = expiredIds.map((id) => `login-log:${id}`);
+        await withRetry(() => this.client.del(...expiredKeys));
+        await withRetry(() =>
+          this.client.zremrangebyscore(indexKey, 0, thirtyDaysAgo),
+        );
+      }
+      console.log(`登录日志已保存: ${loginLog.username}@${loginLog.ip}`);
+    } catch (error) {
+      console.error('保存登录日志失败:', error);
+    }
+  }
+
+  async getLoginLogs(limit: number = 100): Promise<any[]> {
+    try {
+      const indexKey = 'login-log-index';
+      const ids = await withRetry(() =>
+        this.client.zrange(indexKey, 0, -1, { rev: true }),
+      );
+      const limitedIds = ids.slice(0, limit);
+      if (limitedIds.length === 0) return [];
+      const keys = limitedIds.map((id) => `login-log:${id}`);
+      const logs = await withRetry(() => this.client.mget(...keys));
+      return logs
+        .filter((log): log is string => log !== null)
+        .map((log) => JSON.parse(log as string));
+    } catch (error) {
+      console.error('获取登录日志失败:', error);
+      return [];
+    }
+  }
+
+  async clearLoginLogs(): Promise<void> {
+    try {
+      const keys = await withRetry(() => this.client.keys('login-log:*'));
+      if (keys.length > 0) await withRetry(() => this.client.del(...keys));
+      await withRetry(() => this.client.del('login-log-index'));
+      console.log('已清除所有登录日志');
+    } catch (error) {
+      console.error('清除登录日志失败:', error);
+    }
+  }
+
+  async getLastLoginLog(username: string): Promise<any | null> {
+    try {
+      const indexKey = 'login-log-index';
+      const ids: string[] = await withRetry(() =>
+        this.client.zrange(indexKey, 0, -1, { rev: true }),
+      );
+      for (const id of ids) {
+        const key = `login-log:${id}`;
+        const log = await withRetry(() => this.client.get(key));
+        if (log) {
+          const parsed = typeof log === 'string' ? JSON.parse(log) : log;
+          if (parsed.username === username) return parsed;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('获取用户最后登录日志失败:', error);
+      return null;
     }
   }
 }

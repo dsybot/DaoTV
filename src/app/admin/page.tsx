@@ -25,6 +25,7 @@ import {
   Activity,
   AlertCircle,
   AlertTriangle,
+  BarChart3,
   Check,
   CheckCircle,
   ChevronDown,
@@ -34,6 +35,7 @@ import {
   ExternalLink,
   FileText,
   FolderOpen,
+  LogIn,
   MessageSquare,
   Send,
   Settings,
@@ -47,6 +49,7 @@ import {
   X,
 } from 'lucide-react';
 import { GripVertical, KeyRound } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { pinyin } from 'pinyin-pro';
 import {
   Suspense,
@@ -76,6 +79,7 @@ import EmbyConfig from '@/components/EmbyConfig';
 import HomePageConfig from '@/components/HomePageConfig';
 import ImportExportModal from '@/components/ImportExportModal';
 import InviteCodeManager from '@/components/InviteCodeManager';
+import LoginLogsPanel from '@/components/LoginLogsPanel';
 // import ShortDramaConfig from '@/components/ShortDramaConfig'; // 暂时隐藏短剧API配置
 import DownloadConfig from '@/components/OfflineDownloadConfig';
 import { OIDCAuthConfig } from '@/components/OIDCAuthConfig';
@@ -8868,6 +8872,7 @@ const NetDiskConfig = ({
 function AdminPageClient() {
   const { alertModal, showAlert, hideAlert } = useAlertModal();
   const { isLoading, withLoading } = useLoadingState();
+  const router = useRouter();
   const [config, setConfig] = useState<AdminConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -8895,6 +8900,7 @@ function AdminPageClient() {
     telegramAuthConfig: false,
     oidcAuthConfig: false,
     inviteCodeManager: false,
+    loginLogs: false,
     configFile: false,
     cacheManager: false,
     dataMigration: false,
@@ -9084,6 +9090,40 @@ function AdminPageClient() {
               >
                 <InviteCodeManager />
               </CollapsibleTab>
+            )}
+
+            {/* 登录日志标签 - 仅站长可见 */}
+            {role === 'owner' && (
+              <CollapsibleTab
+                title='登录日志'
+                icon={
+                  <LogIn
+                    size={20}
+                    className='text-emerald-500 dark:text-emerald-400'
+                  />
+                }
+                isExpanded={expandedTabs.loginLogs}
+                onToggle={() => toggleTab('loginLogs')}
+              >
+                <LoginLogsPanel />
+              </CollapsibleTab>
+            )}
+
+            {/* 播放统计 - 跳转到统计页面 */}
+            {role === 'owner' && (
+              <div
+                className='flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors'
+                onClick={() => router.push('/play-stats')}
+              >
+                <BarChart3
+                  size={20}
+                  className='text-purple-500 dark:text-purple-400'
+                />
+                <span className='font-medium text-gray-900 dark:text-gray-100'>
+                  播放统计
+                </span>
+                <ExternalLink size={16} className='ml-auto text-gray-400' />
+              </div>
             )}
 
             {/* 视频源配置标签 */}

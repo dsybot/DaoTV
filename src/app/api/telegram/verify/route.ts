@@ -364,6 +364,28 @@ export async function GET(request: Request) {
     }
 
     console.log(`[Verify ${requestId}] SUCCESS - Returning HTML with cookies`);
+
+    // 异步记录登录日志
+    const tgXff = request.headers.get('x-forwarded-for');
+    const tgRealIp = request.headers.get('x-real-ip');
+    const tgClientIp = tgXff
+      ? tgXff.split(',')[0].trim()
+      : tgRealIp
+        ? tgRealIp.trim()
+        : 'unknown';
+    const tgLoginLog = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      username: username,
+      loginTime: Date.now(),
+      ip: tgClientIp,
+      location: '',
+      userAgent: request.headers.get('user-agent') || '',
+      loginMethod: 'telegram',
+    };
+    db.addLoginLog(tgLoginLog).catch((err) => {
+      console.error('Telegram登录记录日志失败:', err);
+    });
+
     return response;
   } catch (error) {
     console.error(`[Verify ${requestId}] ERROR:`, error);

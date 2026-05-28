@@ -711,6 +711,36 @@ export class DbManager {
       await (this.storage as any).clearCrashLogs();
     }
   }
+
+  async addLoginLog(loginLog: any): Promise<void> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).addLoginLog === 'function') {
+      await (this.storage as any).addLoginLog(loginLog);
+    }
+  }
+
+  async getLoginLogs(limit?: number): Promise<any[]> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).getLoginLogs === 'function') {
+      return (this.storage as any).getLoginLogs(limit);
+    }
+    return [];
+  }
+
+  async clearLoginLogs(): Promise<void> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).clearLoginLogs === 'function') {
+      await (this.storage as any).clearLoginLogs();
+    }
+  }
+
+  async getLastLoginLog(username: string): Promise<any | null> {
+    incrementDbQuery();
+    if (typeof (this.storage as any).getLastLoginLog === 'function') {
+      return (this.storage as any).getLastLoginLog(username);
+    }
+    return null;
+  }
 }
 
 // 导出默认实例

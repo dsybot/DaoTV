@@ -15,6 +15,86 @@ const STORAGE_TYPE =
     | 'kvrocks'
     | undefined) || 'localstorage';
 
+function getClientIp(request: NextRequest): string {
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    return xff.split(',')[0].trim();
+  }
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp.trim();
+  }
+  return 'unknown';
+}
+
+async function getIpLocation(ip: string): Promise<string> {
+  if (
+    ip === 'unknown' ||
+    ip === '127.0.0.1' ||
+    ip === '::1' ||
+    ip.startsWith('192.168.') ||
+    ip.startsWith('10.') ||
+    ip.startsWith('172.')
+  ) {
+    return '本地网络';
+  }
+  try {
+    const res = await fetch(
+      `http://ip-api.com/json/${ip}?lang=zh-CN&fields=status,country,regionName,city`,
+      {
+        signal: AbortSignal.timeout(3000),
+      },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === 'success') {
+        return [data.country, data.regionName, data.city]
+          .filter(Boolean)
+          .join(' ');
+      }
+    }
+  } catch {}
+  try {
+    const res = await fetch(`https://ip.useragentinfo.com/json?ip=${ip}`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.country || data.province || data.city) {
+        return [data.country, data.province, data.city]
+          .filter(Boolean)
+          .join(' ');
+      }
+    }
+  } catch {}
+  return '未知';
+}
+
+async function recordLoginLog(
+  request: NextRequest,
+  username: string,
+  method: string = 'password',
+) {
+  if (STORAGE_TYPE === 'localstorage') return;
+  try {
+    const ip = getClientIp(request);
+    const location = await getIpLocation(ip);
+    const userAgent = request.headers.get('user-agent') || '';
+    const loginLog = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      username,
+      loginTime: Date.now(),
+      ip,
+      location,
+      userAgent,
+      loginMethod: method,
+    };
+    await db.addLoginLog(loginLog);
+  } catch (error) {
+    console.error('记录登录日志失败:', error);
+  }
+}
+
 // 生成签名
 async function generateSignature(
   data: string,
@@ -103,6 +183,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 验证成功，设置认证cookie
+      await recordLoginLog(req, '', 'password');
       const response = NextResponse.json({ ok: true });
       const cookieValue = await generateAuthCookie(
         undefined,
@@ -140,6 +221,7 @@ export async function POST(req: NextRequest) {
       password === process.env.PASSWORD
     ) {
       // 验证成功，设置认证cookie
+      await recordLoginLog(req, username, 'password');
       const response = NextResponse.json({ ok: true });
       const cookieValue = await generateAuthCookie(
         username,
@@ -184,6 +266,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 验证成功，设置认证cookie
+      await recordLoginLog(req, username, 'password');
       const response = NextResponse.json({ ok: true });
       const cookieValue = await generateAuthCookie(
         username,

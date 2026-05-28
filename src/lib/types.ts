@@ -1,5 +1,16 @@
 import { AdminConfig } from './admin.types';
 
+// 登录日志数据结构
+export interface LoginLog {
+  id: string;
+  username: string;
+  loginTime: number;
+  ip: string;
+  location: string;
+  userAgent?: string;
+  loginMethod?: string;
+}
+
 export interface CrashLog {
   timestamp: string;
   message: string;
@@ -227,6 +238,12 @@ export interface IStorage {
   getCrashLogs(limit?: number): Promise<CrashLog[]>;
   deleteCrashLog(timestamp: string): Promise<void>;
   clearCrashLogs(): Promise<void>;
+
+  // 登录日志相关
+  addLoginLog(loginLog: LoginLog): Promise<void>;
+  getLoginLogs(limit?: number): Promise<LoginLog[]>;
+  clearLoginLogs(): Promise<void>;
+  getLastLoginLog(username: string): Promise<LoginLog | null>;
 }
 
 // 搜索结果数据结构
@@ -381,6 +398,9 @@ export interface PlayStatsResult {
     lastLoginTime: number; // 最后登录时间
     loginCount: number; // 登入次数
     createdAt: number; // 用户创建时间
+    lastLoginIp: string; // 最后登录IP
+    lastLoginLocation: string; // 最后登录地区
+    lastLoginDevice: string; // 最后登录设备UA
   }>; // 每个用户的统计
   topSources: Array<{
     // 热门来源统计（前5名）
