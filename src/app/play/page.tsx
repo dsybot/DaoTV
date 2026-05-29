@@ -1187,6 +1187,8 @@ function PlayPageClient() {
   const lastVolumeRef = useRef<number>(0.7);
   // 上次使用的播放速率，从 localStorage 恢复
   const lastPlaybackRateRef = useRef<number>(loadPlaybackRate());
+  // 切换源/集数时阻止 ratechange 保存浏览器瞬态重置的倍速
+  const isSourceSwitchingRef = useRef(false);
 
   const [sourceSearchLoading, setSourceSearchLoading] = useState(false);
   const [sourceSearchError, setSourceSearchError] = useState<string | null>(
@@ -1267,6 +1269,24 @@ function PlayPageClient() {
       </div>
     `;
   }, [currentEpisodeIndex, detail, portalContainer]);
+
+  // 全屏实时时钟 - 每秒更新一次
+  useEffect(() => {
+    const updateClock = () => {
+      if (!artPlayerRef.current) return;
+      const clockLayer = artPlayerRef.current.layers['fullscreen-clock'];
+      if (!clockLayer) return;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      clockLayer.innerHTML = `<span class="fullscreen-clock">${hh}:${mm}:${ss}</span>`;
+    };
+
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 换源加载状态
   const [isVideoLoading, setIsVideoLoading] = useState(true);
@@ -4443,6 +4463,7 @@ function PlayPageClient() {
 
       // 重置状态
       isSourceChangingRef.current = false;
+      isSourceSwitchingRef.current = false;
       switchPromiseRef.current = null;
       pendingSwitchRef.current = null;
     };
@@ -5155,6 +5176,7 @@ function PlayPageClient() {
           // 在切换前从 localStorage 重新读取播放速率，确保使用最新保存的值
           const savedPlaybackRate = loadPlaybackRate();
           lastPlaybackRateRef.current = savedPlaybackRate;
+          isSourceSwitchingRef.current = true;
 
           let switchPromise: Promise<any>;
           if (isEpisodeChange) {
@@ -5206,6 +5228,9 @@ function PlayPageClient() {
             artPlayerRef.current.playbackRate = savedPlaybackRate;
             console.log(`✅ 恢复播放速率: ${savedPlaybackRate}x`);
           }
+          if (switchPromiseRef.current === switchPromise) {
+            isSourceSwitchingRef.current = false;
+          }
 
           if (artPlayerRef.current?.video) {
             ensureVideoSource(
@@ -5222,6 +5247,7 @@ function PlayPageClient() {
           console.warn('Switch方法失败，将重建播放器:', error);
           // 重置集数切换标识
           isEpisodeChangingRef.current = false;
+          isSourceSwitchingRef.current = false;
 
           await cleanupPlayer();
         }
@@ -6106,6 +6132,10 @@ function PlayPageClient() {
           if (titleLayer) {
             titleLayer.style.display = isFullscreenNow ? 'block' : 'none';
           }
+          const clockLayer = artPlayerRef.current?.layers['fullscreen-clock'];
+          if (clockLayer) {
+            clockLayer.style.display = isFullscreenNow ? 'flex' : 'none';
+          }
 
           const savedOpacity = parseFloat(
             localStorage.getItem(CONTROL_BAR_OPACITY_KEY) || '0.5',
@@ -6134,6 +6164,10 @@ function PlayPageClient() {
             const titleLayer = artPlayerRef.current?.layers['fullscreen-title'];
             if (titleLayer) {
               titleLayer.style.display = isFullscreenWebNow ? 'block' : 'none';
+            }
+            const clockLayer = artPlayerRef.current?.layers['fullscreen-clock'];
+            if (clockLayer) {
+              clockLayer.style.display = isFullscreenWebNow ? 'flex' : 'none';
             }
 
             const savedOpacity = parseFloat(
@@ -6209,6 +6243,22 @@ function PlayPageClient() {
               display: 'none', // 默认隐藏，只在全屏时显示
               pointerEvents: 'none',
               zIndex: '20',
+            },
+          });
+
+          // 全屏实时时钟层（右上角）
+          artPlayerRef.current.layers.add({
+            name: 'fullscreen-clock',
+            html: '<span class="fullscreen-clock">--:--:--</span>',
+            style: {
+              position: 'absolute',
+              top: '0',
+              right: '24px',
+              height: '80px',
+              display: 'none',
+              pointerEvents: 'none',
+              zIndex: '21',
+              alignItems: 'center',
             },
           });
 
@@ -6832,6 +6882,12 @@ function PlayPageClient() {
           lastVolumeRef.current = artPlayerRef.current.volume;
         });
         artPlayerRef.current.on('video:ratechange', () => {
+          if (isSourceSwitchingRef.current) {
+            console.log(
+              `⏭️ 忽略切换中的 ratechange: ${artPlayerRef.current.playbackRate}`,
+            );
+            return;
+          }
           lastPlaybackRateRef.current = sanitizePlaybackRate(
             artPlayerRef.current.playbackRate,
           );
@@ -6991,12 +7047,11 @@ function PlayPageClient() {
             ) {
               artPlayerRef.current.volume = lastVolumeRef.current;
             }
+            const targetRate = loadPlaybackRate();
             if (
-              Math.abs(
-                artPlayerRef.current.playbackRate - lastPlaybackRateRef.current,
-              ) > 0.01
+              Math.abs(artPlayerRef.current.playbackRate - targetRate) > 0.01
             ) {
-              artPlayerRef.current.playbackRate = lastPlaybackRateRef.current;
+              artPlayerRef.current.playbackRate = targetRate;
             }
             artPlayerRef.current.notice.show = '';
           }, 0);
@@ -7156,6 +7211,11 @@ function PlayPageClient() {
       if (titleLayer) {
         const shouldShowTitle = isFullscreen || isWebFullscreen;
         titleLayer.style.display = shouldShowTitle ? 'block' : 'none';
+      }
+      const clockLayer = artPlayerRef.current?.layers['fullscreen-clock'];
+      if (clockLayer) {
+        const shouldShowClock = isFullscreen || isWebFullscreen;
+        clockLayer.style.display = shouldShowClock ? 'flex' : 'none';
       }
 
       // 显示条件：全屏 OR 网页全屏 OR 隐藏了选集面板
@@ -7443,6 +7503,8 @@ function PlayPageClient() {
                       source={currentSource}
                       id={currentId}
                       title={detail.title}
+                      doubanId={videoDoubanId}
+                      year={videoYear}
                       episodeIndex={currentEpisodeIndex}
                       artPlayerRef={artPlayerRef}
                       currentTime={currentPlayTime}

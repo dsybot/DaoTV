@@ -15,6 +15,7 @@ import {
   deleteSkipConfig,
   EpisodeSkipConfig,
   getSkipConfig,
+  getVideoSkipConfigKey,
   saveSkipConfig,
   SkipSegment,
 } from '@/lib/db.client';
@@ -75,6 +76,8 @@ interface SkipControllerProps {
   source: string;
   id: string;
   title: string;
+  doubanId?: number;
+  year?: string;
   episodeIndex?: number; // 新增：当前集数索引，用于区分不同集数
   artPlayerRef: React.MutableRefObject<any>;
   currentTime?: number;
@@ -88,6 +91,8 @@ export default function SkipController({
   source,
   id,
   title,
+  doubanId,
+  year,
   episodeIndex = 0,
   artPlayerRef,
   currentTime = 0,
@@ -96,6 +101,10 @@ export default function SkipController({
   onSettingModeChange,
   onNextEpisode,
 }: SkipControllerProps) {
+  const skipIdentityKey = useMemo(
+    () => getVideoSkipConfigKey({ title, doubanId, year }),
+    [title, doubanId, year],
+  );
   const [skipConfig, setSkipConfig] = useState<EpisodeSkipConfig | null>(null);
   const [showSkipButton, setShowSkipButton] = useState(false);
   const [currentSkipSegment, setCurrentSkipSegment] =
@@ -590,12 +599,12 @@ export default function SkipController({
   // 加载跳过配置
   const loadSkipConfig = useCallback(async () => {
     try {
-      const config = await getSkipConfig(source, id);
+      const config = await getSkipConfig(source, id, skipIdentityKey);
       setSkipConfig(config);
     } catch (err) {
       console.error('❌ 加载跳过配置失败:', err);
     }
-  }, [source, id]);
+  }, [source, id, skipIdentityKey]);
 
   // 自动跳过逻辑
   const handleAutoSkip = useCallback(
@@ -938,7 +947,7 @@ export default function SkipController({
         updated_time: Date.now(),
       };
 
-      await saveSkipConfig(source, id, updatedConfig);
+      await saveSkipConfig(source, id, updatedConfig, skipIdentityKey);
       setSkipConfig(updatedConfig);
       onSettingModeChange?.(false);
       setNewSegment({});
@@ -948,7 +957,15 @@ export default function SkipController({
       console.error('保存跳过片段失败:', err);
       alert('保存失败，请重试');
     }
-  }, [newSegment, skipConfig, source, id, title, onSettingModeChange]);
+  }, [
+    newSegment,
+    skipConfig,
+    source,
+    id,
+    title,
+    onSettingModeChange,
+    skipIdentityKey,
+  ]);
 
   // 保存批量设置的跳过配置
   const handleSaveBatchSettings = useCallback(async () => {
@@ -1035,7 +1052,7 @@ export default function SkipController({
         updated_time: Date.now(),
       };
 
-      await saveSkipConfig(source, id, updatedConfig);
+      await saveSkipConfig(source, id, updatedConfig, skipIdentityKey);
       setSkipConfig(updatedConfig);
       // batchSettings 会通过 useEffect 自动从 skipConfig 同步，不需要手动重置
       onSettingModeChange?.(false);
@@ -1083,6 +1100,7 @@ export default function SkipController({
     onSettingModeChange,
     timeToSeconds,
     isFullscreen,
+    skipIdentityKey,
   ]);
 
   // 删除跳过片段
@@ -1097,7 +1115,7 @@ export default function SkipController({
 
         if (updatedSegments.length === 0) {
           // 如果没有片段了，删除整个配置
-          await deleteSkipConfig(source, id);
+          await deleteSkipConfig(source, id, skipIdentityKey);
           setSkipConfig(null);
         } else {
           // 更新配置
@@ -1106,7 +1124,7 @@ export default function SkipController({
             segments: updatedSegments,
             updated_time: Date.now(),
           };
-          await saveSkipConfig(source, id, updatedConfig);
+          await saveSkipConfig(source, id, updatedConfig, skipIdentityKey);
           setSkipConfig(updatedConfig);
         }
 
@@ -1116,7 +1134,7 @@ export default function SkipController({
         alert('删除失败，请重试');
       }
     },
-    [skipConfig, source, id],
+    [skipConfig, source, id, skipIdentityKey],
   );
 
   // 格式化时间显示
@@ -1268,29 +1286,9 @@ export default function SkipController({
   useEffect(() => clearPendingTimers, [clearPendingTimers]);
 
   // 🔑 关闭弹窗的统一处理函数
+  // 🔑 关闭弹窗：仅关闭弹窗，不修改任何配置（只有保存按钮才应更新配置）
   const handleCloseDialog = useCallback(() => {
     onSettingModeChange?.(false);
-    // 取消时从 localStorage 读取用户设置，不能硬编码默认值
-    const savedEnableAutoSkip = localStorage.getItem('enableAutoSkip');
-    const savedEnableAutoNextEpisode = localStorage.getItem(
-      'enableAutoNextEpisode',
-    );
-    const userAutoSkip =
-      savedEnableAutoSkip !== null ? JSON.parse(savedEnableAutoSkip) : true;
-    const userAutoNextEpisode =
-      savedEnableAutoNextEpisode !== null
-        ? JSON.parse(savedEnableAutoNextEpisode)
-        : true;
-
-    setBatchSettings({
-      openingStart: '0:00',
-      openingEnd: '1:30',
-      endingMode: 'remaining',
-      endingStart: '2:00',
-      endingEnd: '',
-      autoSkip: userAutoSkip,
-      autoNextEpisode: userAutoNextEpisode,
-    });
   }, [onSettingModeChange]);
 
   // 🔑 监听 ESC 键关闭弹窗
