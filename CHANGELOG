@@ -1,3 +1,34 @@
+## [6.6.1] - 2026-05-29
+
+### Added
+
+- 📍 登入追踪增强：记录用户每次登入的客户端IP、ip-api.com 归属地（城市/省份/国家）、设备类型（手机/平板/桌面）、浏览器及操作系统，无需外部依赖或API Key，覆盖 Redis/Upstash/SQLite 三种存储后端
+- 🗄️ SQLite 存储后端：新增 SQLite 存储实现（SqliteStorage），支持无需外部数据库的本地部署
+- 🔑 跨源跳过配置共享：新增 identityKey 支持，允许不同视频源共享同一套跳过配置
+- 🕐 全屏时钟：全屏播放模式下显示实时时钟覆盖层
+- 🖼️ 进度条缩略图预览：集成 artplayer-plugin-auto-thumbnail，进度条悬停时显示视频帧预览
+- 🔍 用户管理搜索过滤：管理员用户管理表格新增用户名搜索过滤功能
+- 🌐 VirtualGrid 滚动位置持久化：路由切换后恢复滚动位置，支持豆瓣/搜索/短剧/Emby 四个列表页，30分钟TTL
+- ⚡ ChunkLoadError 自动恢复：部署后旧 chunk 失效时自动触发单次硬刷新，10秒TTL防止无限循环
+- 🛡️ 可信网络访客管理员访问拦截：可信网络自动登入的访客可选择性屏蔽 /admin 访问，密码登入的站长不受影响
+- 🔗 Bangumi API 代理配置：管理员面板和用户设置均可配置 Bangumi API 代理（server/cmliussss/自定义），用户设置优先
+- 📡 DNS 缓存与重试机制：新增 DNS 缓存和请求重试机制，提升视频源连接稳定性
+- 🧪 视频源测速与状态持久化：优化视频源测速排序逻辑，source-browser 页面新增筛选条件和分类状态持久化
+
+### Changed
+
+- 🐳 Docker 基础镜像升级：从 node:20-alpine 升级至 node:22-alpine（Node 22 LTS，SQLite DatabaseSync 无需实验性标志）
+- 📦 @tanstack/react-query 升级至 5.100.14，TrustedNetworkConfig 迁移至 TanStack Query
+
+### Fixed
+
+- 🎬 直连模式修复：修复 HLS loader 读取错误的 localStorage key，添加 isLunaProxyUrl() 守卫防止 moontv-source 参数注入外部 CDN URL，直连模式下跳过健康检查
+- ⚡ 播放速率修复：修复切换视频源或剧集时播放速率被重置的问题
+- 🎬 播放器锁定模式修复：移除锁定模式下的背景渐变，修复浮动快进按钮在锁定时仍显示的问题
+- 🔄 source-browser URL 状态修复：修复 URL 参数与状态的同步循环，正确从 URL 恢复来源和分类，修复分类高亮类型比较和加载时分类参数丢失问题
+- 🛡️ 浏览器翻译插件崩溃防护加固：在所有页面根容器加 translate='no'，防止 Safari/Chrome 翻译插件修改 DOM 导致 React removeChild 崩溃（补充 layout.tsx 的 html 级防护）
+- 🔧 DOM 节点守卫：修复 undefined 列表和过期 DOM 节点引用导致的崩溃
+
 ## [6.6.0] - 2026-05-09
 
 ### Added

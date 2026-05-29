@@ -1400,6 +1400,11 @@ export abstract class BaseRedisStorage implements IStorage {
           firstLoginTime: 0,
           lastLoginTime: 0,
           lastLoginDate: 0,
+          lastLoginIp: undefined as string | undefined,
+          lastLoginLocation: undefined as string | undefined,
+          lastLoginDevice: undefined as string | undefined,
+          lastLoginBrowser: undefined as string | undefined,
+          lastLoginOs: undefined as string | undefined,
         };
 
         try {
@@ -1412,6 +1417,11 @@ export abstract class BaseRedisStorage implements IStorage {
               firstLoginTime: parsed.firstLoginTime || 0,
               lastLoginTime: parsed.lastLoginTime || 0,
               lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0,
+              lastLoginIp: parsed.lastLoginIp,
+              lastLoginLocation: parsed.lastLoginLocation,
+              lastLoginDevice: parsed.lastLoginDevice,
+              lastLoginBrowser: parsed.lastLoginBrowser,
+              lastLoginOs: parsed.lastLoginOs,
             };
           }
         } catch (error) {
@@ -1435,6 +1445,11 @@ export abstract class BaseRedisStorage implements IStorage {
           firstLoginTime: loginStats.firstLoginTime,
           lastLoginTime: loginStats.lastLoginTime,
           lastLoginDate: loginStats.lastLoginDate,
+          lastLoginIp: loginStats.lastLoginIp,
+          lastLoginLocation: loginStats.lastLoginLocation,
+          lastLoginDevice: loginStats.lastLoginDevice,
+          lastLoginBrowser: loginStats.lastLoginBrowser,
+          lastLoginOs: loginStats.lastLoginOs,
         };
       }
 
@@ -1485,6 +1500,11 @@ export abstract class BaseRedisStorage implements IStorage {
         firstLoginTime: 0,
         lastLoginTime: 0,
         lastLoginDate: 0,
+        lastLoginIp: undefined as string | undefined,
+        lastLoginLocation: undefined as string | undefined,
+        lastLoginDevice: undefined as string | undefined,
+        lastLoginBrowser: undefined as string | undefined,
+        lastLoginOs: undefined as string | undefined,
       };
 
       try {
@@ -1497,6 +1517,11 @@ export abstract class BaseRedisStorage implements IStorage {
             firstLoginTime: parsed.firstLoginTime || 0,
             lastLoginTime: parsed.lastLoginTime || 0,
             lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0,
+            lastLoginIp: parsed.lastLoginIp,
+            lastLoginLocation: parsed.lastLoginLocation,
+            lastLoginDevice: parsed.lastLoginDevice,
+            lastLoginBrowser: parsed.lastLoginBrowser,
+            lastLoginOs: parsed.lastLoginOs,
           };
         }
       } catch (error) {
@@ -1520,6 +1545,11 @@ export abstract class BaseRedisStorage implements IStorage {
         firstLoginTime: loginStats.firstLoginTime,
         lastLoginTime: loginStats.lastLoginTime,
         lastLoginDate: loginStats.lastLoginDate,
+        lastLoginIp: loginStats.lastLoginIp,
+        lastLoginLocation: loginStats.lastLoginLocation,
+        lastLoginDevice: loginStats.lastLoginDevice,
+        lastLoginBrowser: loginStats.lastLoginBrowser,
+        lastLoginOs: loginStats.lastLoginOs,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -1635,6 +1665,7 @@ export abstract class BaseRedisStorage implements IStorage {
     userName: string,
     loginTime: number,
     isFirstLogin?: boolean,
+    loginMeta?: { ip?: string; location?: string; device?: string; browser?: string; os?: string },
   ): Promise<void> {
     try {
       const loginStatsKey = `user_login_stats:${userName}`;
@@ -1654,6 +1685,14 @@ export abstract class BaseRedisStorage implements IStorage {
       loginStats.loginCount = (loginStats.loginCount || 0) + 1;
       loginStats.lastLoginTime = loginTime;
       loginStats.lastLoginDate = loginTime; // 保持兼容性
+      loginStats.lastLoginIp = loginMeta?.ip ?? loginStats.lastLoginIp;
+      loginStats.lastLoginLocation =
+        loginMeta?.location ?? loginStats.lastLoginLocation;
+      loginStats.lastLoginDevice =
+        loginMeta?.device ?? loginStats.lastLoginDevice;
+      loginStats.lastLoginBrowser =
+        loginMeta?.browser ?? loginStats.lastLoginBrowser;
+      loginStats.lastLoginOs = loginMeta?.os ?? loginStats.lastLoginOs;
 
       // 如果是首次登入，记录首次登入时间
       if (isFirstLogin || !loginStats.firstLoginTime) {

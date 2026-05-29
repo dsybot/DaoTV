@@ -1192,6 +1192,11 @@ export class UpstashRedisStorage implements IStorage {
           firstLoginTime: 0,
           lastLoginTime: 0,
           lastLoginDate: 0,
+          lastLoginIp: undefined as string | undefined,
+          lastLoginLocation: undefined as string | undefined,
+          lastLoginDevice: undefined as string | undefined,
+          lastLoginBrowser: undefined as string | undefined,
+          lastLoginOs: undefined as string | undefined,
         };
 
         try {
@@ -1201,6 +1206,11 @@ export class UpstashRedisStorage implements IStorage {
             firstLoginTime?: number;
             lastLoginTime?: number;
             lastLoginDate?: number;
+            lastLoginIp?: string;
+            lastLoginLocation?: string;
+            lastLoginDevice?: string;
+            lastLoginBrowser?: string;
+            lastLoginOs?: string;
           }>(loginStatsKey);
           console.log(`[Upstash-NoRecords] 用户 ${userName} 登入统计查询:`, {
             key: loginStatsKey,
@@ -1218,6 +1228,11 @@ export class UpstashRedisStorage implements IStorage {
                 storedLoginStats.lastLoginDate ||
                 storedLoginStats.lastLoginTime ||
                 0,
+              lastLoginIp: storedLoginStats.lastLoginIp,
+              lastLoginLocation: storedLoginStats.lastLoginLocation,
+              lastLoginDevice: storedLoginStats.lastLoginDevice,
+              lastLoginBrowser: storedLoginStats.lastLoginBrowser,
+              lastLoginOs: storedLoginStats.lastLoginOs,
             };
             console.log(`[Upstash-NoRecords] 解析后的登入统计:`, loginStats);
           } else {
@@ -1246,6 +1261,11 @@ export class UpstashRedisStorage implements IStorage {
           firstLoginTime: loginStats.firstLoginTime,
           lastLoginTime: loginStats.lastLoginTime,
           lastLoginDate: loginStats.lastLoginDate,
+          lastLoginIp: loginStats.lastLoginIp,
+          lastLoginLocation: loginStats.lastLoginLocation,
+          lastLoginDevice: loginStats.lastLoginDevice,
+          lastLoginBrowser: loginStats.lastLoginBrowser,
+          lastLoginOs: loginStats.lastLoginOs,
         };
       }
 
@@ -1294,6 +1314,11 @@ export class UpstashRedisStorage implements IStorage {
         firstLoginTime: 0,
         lastLoginTime: 0,
         lastLoginDate: 0,
+        lastLoginIp: undefined as string | undefined,
+        lastLoginLocation: undefined as string | undefined,
+        lastLoginDevice: undefined as string | undefined,
+        lastLoginBrowser: undefined as string | undefined,
+        lastLoginOs: undefined as string | undefined,
       };
 
       try {
@@ -1303,6 +1328,11 @@ export class UpstashRedisStorage implements IStorage {
           firstLoginTime?: number;
           lastLoginTime?: number;
           lastLoginDate?: number;
+          lastLoginIp?: string;
+          lastLoginLocation?: string;
+          lastLoginDevice?: string;
+          lastLoginBrowser?: string;
+          lastLoginOs?: string;
         }>(loginStatsKey);
         console.log(`[Upstash] 用户 ${userName} 登入统计查询:`, {
           key: loginStatsKey,
@@ -1320,6 +1350,11 @@ export class UpstashRedisStorage implements IStorage {
               storedLoginStats.lastLoginDate ||
               storedLoginStats.lastLoginTime ||
               0,
+            lastLoginIp: storedLoginStats.lastLoginIp,
+            lastLoginLocation: storedLoginStats.lastLoginLocation,
+            lastLoginDevice: storedLoginStats.lastLoginDevice,
+            lastLoginBrowser: storedLoginStats.lastLoginBrowser,
+            lastLoginOs: storedLoginStats.lastLoginOs,
           };
           console.log(`[Upstash] 解析后的登入统计:`, loginStats);
         } else {
@@ -1347,6 +1382,11 @@ export class UpstashRedisStorage implements IStorage {
         firstLoginTime: loginStats.firstLoginTime,
         lastLoginTime: loginStats.lastLoginTime,
         lastLoginDate: loginStats.lastLoginDate,
+        lastLoginIp: loginStats.lastLoginIp,
+        lastLoginLocation: loginStats.lastLoginLocation,
+        lastLoginDevice: loginStats.lastLoginDevice,
+        lastLoginBrowser: loginStats.lastLoginBrowser,
+        lastLoginOs: loginStats.lastLoginOs,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -1466,6 +1506,7 @@ export class UpstashRedisStorage implements IStorage {
     userName: string,
     loginTime: number,
     isFirstLogin?: boolean,
+    loginMeta?: { ip?: string; location?: string; device?: string; browser?: string; os?: string },
   ): Promise<void> {
     try {
       const loginStatsKey = `user_login_stats:${userName}`;
@@ -1476,6 +1517,11 @@ export class UpstashRedisStorage implements IStorage {
         firstLoginTime?: number | null;
         lastLoginTime?: number | null;
         lastLoginDate?: number | null;
+        lastLoginIp?: string;
+        lastLoginLocation?: string;
+        lastLoginDevice?: string;
+        lastLoginBrowser?: string;
+        lastLoginOs?: string;
       }>(loginStatsKey);
       const loginStats = currentStats || {
         loginCount: 0,
@@ -1488,6 +1534,14 @@ export class UpstashRedisStorage implements IStorage {
       loginStats.loginCount = (loginStats.loginCount || 0) + 1;
       loginStats.lastLoginTime = loginTime;
       loginStats.lastLoginDate = loginTime; // 保持兼容性
+      loginStats.lastLoginIp = loginMeta?.ip ?? loginStats.lastLoginIp;
+      loginStats.lastLoginLocation =
+        loginMeta?.location ?? loginStats.lastLoginLocation;
+      loginStats.lastLoginDevice =
+        loginMeta?.device ?? loginStats.lastLoginDevice;
+      loginStats.lastLoginBrowser =
+        loginMeta?.browser ?? loginStats.lastLoginBrowser;
+      loginStats.lastLoginOs = loginMeta?.os ?? loginStats.lastLoginOs;
 
       // 如果是首次登入，记录首次登入时间
       if (isFirstLogin || !loginStats.firstLoginTime) {

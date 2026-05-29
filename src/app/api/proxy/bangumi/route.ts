@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime } from '@/lib/config';
+import { getCacheTime, getConfig } from '@/lib/config';
+
+const CMLIUSSSS_BASE = 'https://img.doubanio.cmliussss.net';
 
 /**
  * Bangumi API proxy route.
@@ -18,8 +20,27 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const apiUrl = `https://api.bgm.tv/${path}`;
-    const cacheTime = await getCacheTime();
+    const [adminConfig, cacheTime] = await Promise.all([
+      getConfig(),
+      getCacheTime(),
+    ]);
+
+    const queryApiType = searchParams.get('apiType');
+    const queryApiProxy = searchParams.get('apiProxy');
+    const apiType =
+      queryApiType || adminConfig.SiteConfig?.BangumiApiType || 'server';
+    const apiProxy =
+      queryApiProxy || adminConfig.SiteConfig?.BangumiApiProxy || '';
+
+    let apiUrl: string;
+    if (apiType === 'cmliussss') {
+      apiUrl = `${CMLIUSSSS_BASE}/${path}`;
+    } else if (apiType === 'custom' && apiProxy) {
+      const base = apiProxy.endsWith('/') ? apiProxy.slice(0, -1) : apiProxy;
+      apiUrl = `${base}/${path}`;
+    } else {
+      apiUrl = `https://api.bgm.tv/${path}`;
+    }
 
     const response = await fetch(apiUrl, {
       headers: {

@@ -231,6 +231,13 @@ export interface IStorage {
     userName: string,
     loginTime: number,
     isFirstLogin?: boolean,
+    loginMeta?: {
+      ip?: string;
+      location?: string;
+      device?: string;
+      browser?: string;
+      os?: string;
+    },
   ): Promise<void>;
 
   // 崩溃日志相关
@@ -377,6 +384,11 @@ export interface UserPlayStat {
   loginCount?: number; // 登入次数（新增）
   activeStreak?: number; // 连续活跃天数
   continuousLoginDays?: number; // 连续登录天数
+  lastLoginIp?: string; // 最后登入IP
+  lastLoginLocation?: string; // 最后登入归属地
+  lastLoginDevice?: string; // 最后登入设备类型
+  lastLoginBrowser?: string; // 最后登入浏览器
+  lastLoginOs?: string; // 最后登入操作系统
 }
 
 // 全站播放统计数据结构
@@ -398,9 +410,11 @@ export interface PlayStatsResult {
     lastLoginTime: number; // 最后登录时间
     loginCount: number; // 登入次数
     createdAt: number; // 用户创建时间
-    lastLoginIp: string; // 最后登录IP
-    lastLoginLocation: string; // 最后登录地区
-    lastLoginDevice: string; // 最后登录设备UA
+    lastLoginIp?: string; // 最后登录IP
+    lastLoginLocation?: string; // 最后登录地区
+    lastLoginDevice?: string; // 最后登录设备类型
+    lastLoginBrowser?: string; // 最后登录浏览器
+    lastLoginOs?: string; // 最后登录操作系统
   }>; // 每个用户的统计
   topSources: Array<{
     // 热门来源统计（前5名）

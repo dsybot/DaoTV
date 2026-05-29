@@ -340,7 +340,8 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
           let resolvedUrl = resolveUrl(baseUrl, nextLine);
           resolvedUrl = substituteVariables(resolvedUrl, variables);
           // 把当前请求的referer参数透传到variant URL，否则下一跳会因为没有Referer被上游拒绝
-          const proxyUrl = `${proxyBase}/m3u8?url=${encodeURIComponent(resolvedUrl)}${sourceParam}${refererParam}`;
+          const allowCORSParam = allowCORS ? '&allowCORS=true' : '';
+          const proxyUrl = `${proxyBase}/m3u8?url=${encodeURIComponent(resolvedUrl)}${sourceParam}${refererParam}${allowCORSParam}`;
           rewrittenLines.push(proxyUrl);
         } else {
           rewrittenLines.push(nextLine);

@@ -25,6 +25,9 @@ export interface AdminConfig {
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
     TMDBWorkerProxy?: string; // Cloudflare Workers 代理地址（用于API和图片代理）
+    // Bangumi API 代理
+    BangumiApiType?: string;
+    BangumiApiProxy?: string;
     // 自定义去广告代码
     CustomAdFilterCode?: string;
     CustomAdFilterVersion?: number;

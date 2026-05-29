@@ -25,7 +25,7 @@
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.6.0-orange)
+![Version](https://img.shields.io/badge/Version-6.6.1-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 About
 
-This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.0**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
+This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.1**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
 
 ## ⚠️ Disclaimer
 
@@ -82,6 +82,7 @@ This project is for educational purposes only. Do not use for commercial purpose
 ### 📊 Performance & Monitoring
 - **Performance Dashboard**: Complete API performance monitoring
 - **Traffic Monitoring**: Real traffic monitoring and domain analysis
+- **Watch Statistics Enhancement**: Records user login IP, location (city/province/country), device type, browser, and operating system for admins to review in the statistics dashboard
 - **Kvrocks Persistence**: High-performance caching system
 - **TanStack Query Full Integration**:
   - Smart data caching and automatic revalidation
@@ -158,8 +159,8 @@ pnpm dev
 - **Language**: TypeScript 5.8.3
 - **Styling**: TailwindCSS 4.1.18
 - **Video Player**: ArtPlayer 5.4.0 + HLS.js 1.6.16
-- **State Management**: TanStack Query 5.100.9 (fully migrated, optimized data fetching and caching)
-- **Database**: Upstash Redis + Kvrocks
+- **State Management**: TanStack Query 5.100.14 (fully migrated, optimized data fetching and caching)
+- **Database**: Upstash Redis / Kvrocks / SQLite (three storage backends)
 - **Deployment**: Docker / Vercel / Render
 
 ## 📜 Changelog

@@ -618,6 +618,13 @@ export class DbManager {
     userName: string,
     loginTime: number,
     isFirstLogin?: boolean,
+    loginMeta?: {
+      ip?: string;
+      location?: string;
+      device?: string;
+      browser?: string;
+      os?: string;
+    },
   ): Promise<void> {
     incrementDbQuery();
     if (typeof (this.storage as any).updateUserLoginStats === 'function') {
@@ -625,6 +632,7 @@ export class DbManager {
         userName,
         loginTime,
         isFirstLogin,
+        loginMeta,
       );
     }
   }

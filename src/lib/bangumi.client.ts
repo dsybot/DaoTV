@@ -35,8 +35,21 @@ export interface BangumiCalendarData {
   }[];
 }
 
+function buildBangumiProxyUrl(path: string): string {
+  const params = new URLSearchParams({ path });
+  if (typeof window !== 'undefined') {
+    const apiType = localStorage.getItem('bangumiApiType');
+    const apiProxy = localStorage.getItem('bangumiApiProxy');
+    if (apiType && apiType !== 'server') params.set('apiType', apiType);
+    if (apiProxy) params.set('apiProxy', apiProxy);
+  }
+  return `/api/proxy/bangumi?${params.toString()}`;
+}
+
 export async function GetBangumiCalendarData(): Promise<BangumiCalendarData[]> {
-  const response = await fetch('/api/proxy/bangumi?path=calendar');
+  const response = await fetch(buildBangumiProxyUrl('calendar'));
   const data = await response.json();
   return data;
 }
+
+export { buildBangumiProxyUrl };

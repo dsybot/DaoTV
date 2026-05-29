@@ -5,6 +5,8 @@ interface PageLayoutProps {
   activePath?: string;
 }
 
-const PageLayout = ({ children }: PageLayoutProps) => <>{children}</>;
+const PageLayout = ({ children }: PageLayoutProps) => (
+  <div translate="no">{children}</div>
+);
 
 export default PageLayout;
