@@ -1662,7 +1662,8 @@ function LivePageClient() {
           (context as any).type === 'level'
         ) {
           // 判断是否浏览器直连
-          const isLiveDirectConnect = JSON.parse(localStorage.getItem('live-direct-playback-enabled') || 'false');
+          const isLiveDirectConnectStr = localStorage.getItem('liveDirectConnect');
+          const isLiveDirectConnect = isLiveDirectConnectStr === 'true';
           if (isLiveDirectConnect) {
             // 浏览器直连，使用 URL 对象处理参数
             try {
