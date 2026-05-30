@@ -20,6 +20,7 @@ type DoubanProxyType =
   | 'cors-proxy-zwei'
   | 'cmliussss-cdn-tencent'
   | 'cmliussss-cdn-ali'
+  | 'cmliussss-unified'
   | 'cors-anywhere'
   | 'custom';
 
@@ -40,6 +41,13 @@ async function fetchDoubanListWithProxy(
       const cdnTarget = target.replace(
         'https://movie.douban.com',
         'https://movie.douban.cmliussss.com',
+      );
+      return fetchDoubanData<DoubanApiResponse>(cdnTarget);
+    }
+    case 'cmliussss-unified': {
+      const cdnTarget = target.replace(
+        'https://movie.douban.com',
+        'https://img.doubanio.cmliussss.net',
       );
       return fetchDoubanData<DoubanApiResponse>(cdnTarget);
     }

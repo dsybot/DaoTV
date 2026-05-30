@@ -1,6 +1,6 @@
-import { Radio, X } from 'lucide-react';
+import { ChevronDown, Radio, X } from 'lucide-react';
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ActionItem {
@@ -24,6 +24,9 @@ interface MobileActionSheetProps {
   currentEpisode?: number; // 当前集数
   totalEpisodes?: number; // 总集数
   origin?: 'vod' | 'live' | 'shortdrama';
+  doubanId?: number;
+  videoTitle?: string;
+  videoYear?: string;
 }
 
 const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
@@ -38,9 +41,15 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
   currentEpisode,
   totalEpisodes,
   origin = 'vod',
+  doubanId,
+  videoTitle,
+  videoYear,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [doubanDetails, setDoubanDetails] = useState<any>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   // Portal 容器（独立容器，避免多实例冲突和 z-index 问题）
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
 
@@ -163,6 +172,47 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
       return () => document.removeEventListener('keydown', handleEsc);
     }
   }, [isVisible, onClose]);
+
+  // 打开时加载豆瓣详情
+  useEffect(() => {
+    if (!isOpen) {
+      setDoubanDetails(null);
+      setShowScrollHint(false);
+      return;
+    }
+    setDoubanDetails(null);
+    setShowScrollHint(false);
+
+    const load = async () => {
+      let id = doubanId && doubanId > 0 ? String(doubanId) : null;
+
+      if (!id && videoTitle) {
+        try {
+          const res = await fetch(
+            `/api/douban/suggest?q=${encodeURIComponent(videoTitle.trim())}`,
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.[0]?.id) id = data[0].id;
+          }
+        } catch {}
+      }
+
+      if (!id) return;
+
+      try {
+        const res = await fetch(`/api/douban/quick-info?id=${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.code === 200 && data?.data) {
+          setDoubanDetails(data.data);
+          setShowScrollHint(true);
+        }
+      } catch {}
+    };
+
+    load();
+  }, [isOpen, doubanId, videoTitle, videoYear]);
 
   if (!isVisible || !portalEl) return null;
 
@@ -345,6 +395,56 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 豆瓣详情区域 */}
+        {doubanDetails && (
+          <div
+            ref={scrollRef}
+            className="border-t border-gray-100 dark:border-gray-800 overflow-y-auto"
+            style={{ maxHeight: '280px', touchAction: 'pan-y' }}
+            onTouchMove={(e) => e.stopPropagation()}
+            onScroll={() => setShowScrollHint(false)}
+          >
+            <div className="px-4 pt-4 pb-5 space-y-3">
+              <p className="text-base font-semibold text-gray-900 dark:text-white">豆瓣简介</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {doubanDetails.rate && parseFloat(doubanDetails.rate) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-yellow-400/10 text-yellow-500 text-sm font-semibold">
+                    ★ {doubanDetails.rate}
+                  </span>
+                )}
+                {doubanDetails.year && (
+                  <span className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs text-gray-500 dark:text-gray-400">
+                    {doubanDetails.year}
+                  </span>
+                )}
+                {doubanDetails.genres?.slice(0, 4).map((g: string, i: number) => (
+                  <span key={i} className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-300">{g}</span>
+                ))}
+              </div>
+              {doubanDetails.directors?.length > 0 && (
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-gray-800 dark:text-gray-200">导演　</span>
+                  {doubanDetails.directors.slice(0, 3).join(' / ')}
+                </div>
+              )}
+              {doubanDetails.cast?.length > 0 && (
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-gray-800 dark:text-gray-200">主演　</span>
+                  {doubanDetails.cast.slice(0, 4).join(' / ')}
+                </div>
+              )}
+              {doubanDetails.plot_summary && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{doubanDetails.plot_summary}</p>
+              )}
+            </div>
+          </div>
+        )}
+        {showScrollHint && doubanDetails && (
+          <div className="flex justify-center py-1 pointer-events-none">
+            <ChevronDown size={18} className="text-gray-300 dark:text-gray-600 animate-bounce" />
           </div>
         )}
       </div>

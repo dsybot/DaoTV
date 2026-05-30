@@ -2,8 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
+import { db } from '@/lib/db';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+const CACHE_TTL = 86400; // 24小时
+
+export const runtime = 'nodejs';
 
 // TMDB API Key 轮询索引
 let tmdbApiKeyIndex = 0;
@@ -214,7 +218,7 @@ function calculateDateDiff(date1: string, date2: string): number {
 
 
 // 通过标题搜索TMDB（简化版，用于降级匹配）
-async function searchByTitle(config: any, searchQuery: string, year: string, type: string, apiKey: string, language: string): Promise<any> {
+async function searchByTitle(config: any, searchQuery: string, _year: string, type: string, apiKey: string, language: string): Promise<any> {
   const searchType = type === 'movie' ? 'movie' : 'tv';
 
   const params: Record<string, string> = {
@@ -222,15 +226,6 @@ async function searchByTitle(config: any, searchQuery: string, year: string, typ
     language: language,
     query: searchQuery
   };
-
-  // 如果提供了年份，添加年份参数
-  if (year) {
-    if (searchType === 'movie') {
-      params.year = year;
-    } else {
-      params.first_air_date_year = year;
-    }
-  }
 
   const searchUrl = buildApiUrl(config, `/search/${searchType}`, params);
 
@@ -260,15 +255,17 @@ async function searchByTitle(config: any, searchQuery: string, year: string, typ
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const title = searchParams.get('title');
+    const title = searchParams.get('title')?.trim() || '';
+    const originalTitle = searchParams.get('original_title')?.trim() || '';
     const year = searchParams.get('year') || '';
-    const type = searchParams.get('type') || 'tv';
+    const typeParam = searchParams.get('stype') || searchParams.get('type') || 'tv';
+    const type = typeParam === 'movie' ? 'movie' : 'tv';
     const season = searchParams.get('season') || '1';
     const includeDetails = searchParams.get('details') === 'true';
     const imdbId = searchParams.get('imdb_id') || '';
     const airDate = searchParams.get('air_date') || ''; // 新增：开播日期参数（格式：YYYY-MM-DD）
 
-    if (!title) {
+    if (!title && !originalTitle) {
       return NextResponse.json({ error: '缺少标题参数' }, { status: 400 });
     }
 
@@ -281,6 +278,31 @@ export async function GET(request: NextRequest) {
 
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
     const searchType = type === 'movie' ? 'movie' : 'tv';
+    const cacheKey = [
+      'tmdb-backdrop',
+      originalTitle || title,
+      title,
+      year || '',
+      searchType,
+      season,
+      includeDetails ? 'details' : 'basic',
+      imdbId,
+      airDate,
+    ].join('|');
+
+    try {
+      const cached = await db.getCache(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: {
+            'Cache-Control':
+              'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+          },
+        });
+      }
+    } catch (e) {
+      console.warn('[TMDB] 读取服务端缓存失败:', e);
+    }
 
     let result: any = null;
     let detectedSeason = parseInt(season) || 1;
@@ -318,8 +340,10 @@ export async function GET(request: NextRequest) {
 
     // 2. 如果没有IMDb ID或匹配失败或验证失败，通过标题搜索
     if (!result) {
-      const { titles: titlesToTry, seasonNumber } = cleanTitle(title);
+      const { titles: titlesToTry, seasonNumber } = cleanTitle(originalTitle || title);
       detectedSeason = seasonNumber; // 使用从标题中检测到的季数
+      const fallbackTitles = originalTitle && title ? cleanTitle(title).titles : [];
+      const searchTitles = Array.from(new Set([...titlesToTry, ...fallbackTitles]));
 
       // 如果提供了开播日期，使用日期匹配
       if (airDate && searchType === 'tv') {
@@ -327,7 +351,7 @@ export async function GET(request: NextRequest) {
 
         // 搜索所有可能的标题变体
         let allCandidates: any[] = [];
-        for (const t of titlesToTry) {
+        for (const t of searchTitles) {
           // 搜索该标题的所有结果
           const params: Record<string, string> = {
             api_key: apiKey,
@@ -406,7 +430,7 @@ export async function GET(request: NextRequest) {
 
       // 如果没有提供日期或日期匹配失败，使用简化的降级匹配
       if (!result) {
-        for (const t of titlesToTry) {
+        for (const t of searchTitles) {
           // 先尝试带年份搜索
           if (year) {
             result = await searchByTitle(config, t, year, type, apiKey, language);
@@ -623,17 +647,27 @@ export async function GET(request: NextRequest) {
       }
 
       // 构建基本响应
+      const firstDate = result.first_air_date || result.release_date || '';
       const response: any = {
         backdrop,
+        poster: getTMDBImageUrl(config, result.poster_path, 'w500'),
         logo,
         title: result.title || result.name,
         id: mediaId,
         matched_season: detectedSeason, // 新增：返回实际匹配到的季号
         // 基本信息（优先使用详情数据，降级到搜索结果）
         overview: result.overview || '',
+        rating: result.vote_average
+          ? parseFloat(Number(result.vote_average).toFixed(1))
+          : null,
+        year: firstDate?.slice(0, 4) || null,
+        numberOfSeasons:
+          searchType === 'tv'
+            ? detailData?.number_of_seasons || seasons.length || null
+            : null,
         vote_average: result.vote_average || 0,
         vote_count: result.vote_count || 0,
-        first_air_date: result.first_air_date || result.release_date || '',
+        first_air_date: firstDate,
         genre_ids: result.genre_ids || [],
         genres: result.genres || [],
       };
@@ -646,10 +680,25 @@ export async function GET(request: NextRequest) {
         response.cast = cast;
       }
 
-      return NextResponse.json(response);
+      const body = { ...response, data: response };
+      await db.setCache(cacheKey, body, CACHE_TTL);
+
+      return NextResponse.json(body, {
+        headers: {
+          'Cache-Control':
+            'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      });
     }
 
-    return NextResponse.json({ backdrop: null, logo: null });
+    const emptyBody = { backdrop: null, logo: null, data: null };
+    await db.setCache(cacheKey, emptyBody, CACHE_TTL);
+    return NextResponse.json(emptyBody, {
+      headers: {
+        'Cache-Control':
+          'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+      },
+    });
   } catch (error) {
     console.error('获取TMDB信息失败:', error);
     return NextResponse.json({ error: '获取信息失败' }, { status: 500 });

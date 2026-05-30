@@ -32,6 +32,7 @@ const doubanDataSourceOptions = [
   { value: 'cors-proxy-zwei', label: 'Cors Proxy By Zwei' },
   { value: 'cmliussss-cdn-tencent', label: '豆瓣 CDN By CMLiussss（腾讯云）' },
   { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
+  { value: 'cmliussss-unified', label: '豆瓣 CDN By CMLiussss（统一域名）' },
   { value: 'custom', label: '自定义代理' },
 ];
 
@@ -63,6 +64,7 @@ function getThanksInfo(dataSource: string) {
       return { text: 'Thanks to @Zwei', url: 'https://github.com/bestzwei' };
     case 'cmliussss-cdn-tencent':
     case 'cmliussss-cdn-ali':
+    case 'cmliussss-unified':
       return { text: 'Thanks to @CMLiussss', url: 'https://github.com/cmliu' };
     default:
       return null;
