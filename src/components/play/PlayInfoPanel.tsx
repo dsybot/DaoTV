@@ -369,6 +369,7 @@ function OverviewTab({ detail, year, movieDetails, bangumiDetails, shortdramaDet
       {tmdbCast.length > 0 && (
         <CastPhotos
           tmdbCast={tmdbCast}
+          doubanCelebrities={movieDetails?.celebrities}
           doubanId={videoDoubanId ? videoDoubanId.toString() : undefined}
           onEnabledChange={setTmdbCastEnabled}
         />

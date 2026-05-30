@@ -287,6 +287,14 @@ function stripHtmlTags(text: string): string {
   return decodeHtmlText(text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
 }
 
+function extractCharacter(text: string): string {
+  const cleanText = stripHtmlTags(text);
+  const characterMatch = cleanText.match(
+    /饰(?:演)?\s*[:：]?\s*([^/／,，;；)）]+)/,
+  );
+  return characterMatch ? characterMatch[1].trim() : '';
+}
+
 function extractRoleInfo(item: string): { role: string; character: string } {
   const roleAttrMatch = item.match(
     /<span[^>]*class=["'][^"']*role[^"']*["'][^>]*title=["']([^"']+)["'][^>]*>/,
@@ -297,11 +305,11 @@ function extractRoleInfo(item: string): { role: string; character: string } {
   const roleText = stripHtmlTags(roleAttrMatch?.[1] || roleTextMatch?.[1] || '');
   const roleTypeMatch = roleText.match(/^([^\s(（]+)/);
   const isActor = roleText.includes('演员') || /\bActor\b/i.test(roleText);
-  const characterMatch = roleText.match(/饰(?:演)?\s*[:：]?\s*([^)）]+)/);
+  const character = extractCharacter(roleText) || extractCharacter(item);
 
   return {
     role: isActor ? '演员' : roleTypeMatch?.[1] || '',
-    character: characterMatch ? characterMatch[1].trim() : '',
+    character,
   };
 }
 

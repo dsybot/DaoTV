@@ -11,6 +11,7 @@ interface ActorPhoto {
   photo: string | null;
   id: number | null;
   character?: string;
+  characterFromDouban?: boolean;
 }
 
 interface TMDBCastItem {
@@ -36,8 +37,8 @@ interface DoubanCelebrity {
   name_en?: string;
   aliases?: string[];
   role: string;
-  character: string;
-  douban_id: string;
+  character?: string;
+  douban_id?: string;
   order?: number;
 }
 
@@ -111,6 +112,16 @@ function getDoubanAliases(celebrity: DoubanCelebrity): string[] {
 
 function getTmdbAliases(actor: TMDBCastItem): string[] {
   return uniqueNames([actor.name, actor.original_name]);
+}
+
+function extractCharacterFromRole(role?: string): string {
+  if (!role) return '';
+  const characterMatch = role.match(/饰(?:演)?\s*[:：]?\s*([^)）]+)/);
+  return characterMatch ? characterMatch[1].trim() : '';
+}
+
+function getDoubanCharacter(celebrity: DoubanCelebrity): string {
+  return celebrity.character || extractCharacterFromRole(celebrity.role);
 }
 
 function scoreNameMatch(
@@ -198,7 +209,8 @@ function buildDoubanCharacterMap(
 
   tmdbCast.forEach((actor, actorIndex) => {
     doubanCelebrities.forEach((celebrity, celebrityIndex) => {
-      if (!celebrity.character) return;
+      const character = getDoubanCharacter(celebrity);
+      if (!character) return;
 
       const match = scoreNameMatch(
         actor,
@@ -213,7 +225,7 @@ function buildDoubanCharacterMap(
       candidates.push({
         actorIndex,
         celebrityIndex,
-        character: celebrity.character,
+        character,
         ...match,
       });
       candidatesByActor.set(actorIndex, candidates);
@@ -252,11 +264,12 @@ function buildDoubanCharacterMap(
 
 interface CastPhotosProps {
   tmdbCast?: TMDBCastItem[];  // TMDB演员数据
+  doubanCelebrities?: DoubanCelebrity[];  // 豆瓣详情里的演员数据，优先用于角色名
   doubanId?: string;          // 豆瓣ID，用于获取角色名
   onEnabledChange?: (enabled: boolean) => void;
 }
 
-export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: CastPhotosProps) {
+export default function CastPhotos({ tmdbCast, doubanCelebrities: detailDoubanCelebrities = [], doubanId, onEnabledChange }: CastPhotosProps) {
   const [actors, setActors] = useState<ActorPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -276,21 +289,24 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
   const [showWorksRightArrow, setShowWorksRightArrow] = useState(false);
 
   // 豆瓣演员数据（用于补充角色名）
-  const [doubanCelebrities, setDoubanCelebrities] = useState<DoubanCelebrity[]>([]);
+  const [fetchedDoubanCelebrities, setFetchedDoubanCelebrities] = useState<DoubanCelebrity[]>([]);
+  const doubanCelebrities = detailDoubanCelebrities.length > 0
+    ? detailDoubanCelebrities
+    : fetchedDoubanCelebrities;
 
   // 获取豆瓣演员表
   useEffect(() => {
     let cancelled = false;
-    setDoubanCelebrities([]);
+    setFetchedDoubanCelebrities([]);
 
-    if (!doubanId) return;
+    if (!doubanId || detailDoubanCelebrities.length > 0) return;
 
     const fetchDoubanCelebrities = async () => {
       try {
         const response = await fetch(`/api/douban/celebrities?id=${doubanId}&v=3`);
         const data = await response.json();
         if (!cancelled && data.code === 200 && data.data?.celebrities) {
-          setDoubanCelebrities(data.data.celebrities);
+          setFetchedDoubanCelebrities(data.data.celebrities);
         }
       } catch (error) {
         console.error('获取豆瓣演员表失败:', error);
@@ -302,7 +318,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
     return () => {
       cancelled = true;
     };
-  }, [doubanId]);
+  }, [doubanId, detailDoubanCelebrities.length]);
 
   // 处理TMDB演员数据，豆瓣只用于在当前演员列表内保守补充角色名
   useEffect(() => {
@@ -320,12 +336,16 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
         : new Map<number, string>();
 
     const actorsWithPhoto = tmdbCast
-      .map((a, index) => ({
-        name: a.name,
-        photo: a.photo,
-        id: a.id,
-        character: doubanCharacterMap.get(index) || a.character,
-      }))
+      .map((a, index) => {
+        const doubanCharacter = doubanCharacterMap.get(index);
+        return {
+          name: a.name,
+          photo: a.photo,
+          id: a.id,
+          character: doubanCharacter || a.character,
+          characterFromDouban: Boolean(doubanCharacter),
+        };
+      })
       .filter((actor) => actor.photo);
 
     setActors(actorsWithPhoto);
@@ -535,7 +555,7 @@ export default function CastPhotos({ tmdbCast, doubanId, onEnabledChange }: Cast
                 }`} title={actor.name}>
                 {actor.name}
               </p>
-              {actor.character && /[\u4e00-\u9fa5]/.test(actor.character) && (
+              {actor.character && (actor.characterFromDouban || /[\u4e00-\u9fa5]/.test(actor.character)) && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 truncate px-1" title={`饰 ${actor.character}`}>
                   饰 {actor.character}
                 </p>
