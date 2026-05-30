@@ -25,7 +25,7 @@
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.6.1-orange)
+![Version](https://img.shields.io/badge/Version-6.6.2-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 About
 
-This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.1**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
+This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.2**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
 
 ## ⚠️ Disclaimer
 
@@ -52,8 +52,10 @@ This project is for educational purposes only. Do not use for commercial purpose
 - **Bangumi Anime**: Intelligent anime detection and API integration
 - **Traditional Chinese Search**: Smart conversion and multi-strategy search
 - **Search List View**: Grid/list dual view mode with image preview and quick play button
+- **Douban Quick Info Panel**: Mobile ActionSheet with Douban details via quick-info and suggest API
 
 ### 🎬 Player Enhancements
+- **TMDB Hero Banner**: Play page uses TMDB backdrop as main visual with logo, poster, rating, overview, and multi-season badge
 - **Episode Selector Enhancement**: Manual speed test feature with real-time source status badges (Available/Unavailable/Testing)
 - **Control Bar Opacity Control**: Customizable control bar obstruction (10-80%), real-time transparency and blur adjustment for better subtitle visibility
 - **Seek Buttons**: Customizable seek forward/backward buttons with Netflix-style design and responsive layout

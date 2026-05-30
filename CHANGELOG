@@ -1,3 +1,26 @@
+## [6.6.2] - 2026-05-30
+
+### Added
+
+- 🎬 PlayInfoPanel Hero Banner：新增 TMDB backdrop 背景图、logo 图片、海报、评分、简介展示，支持多季徽章（共X季）
+- 🔍 豆瓣快速信息面板：新增豆瓣 quick-info 和 suggest API，MobileActionSheet 接入豆瓣详情
+- 🌐 豆瓣代理新增 cmliussss 统一 CDN 选项
+- 🗄️ TMDB 服务端缓存：TMDB backdrop API 新增 db.getCache/setCache 服务端缓存（tmdb- 前缀，24小时 TTL），与管理员缓存管理集成
+
+### Changed
+
+- 🎬 PlayInfoPanel 重构：以 TMDB backdrop 为主视觉，TMDB logo/poster/评分/简介优先展示，收藏按钮移至简介下方
+- 🔍 TMDB 搜索优化：自动清理标题中的「第X季」「Season X」「S1」「年份」等后缀；移除年份参数避免年份不一致导致搜索失败；根据 stype（movie/tv）只搜对应端点，避免电视剧搜到同名电影
+- 🐛 TMDB 与豆瓣数据获取完全独立：移除 loadingMovieDetails 守卫，两者并行加载互不阻塞
+- 📺 直播频道展开触发区域：缩小为仅 chevron 按钮触发展开，避免误触
+
+### Fixed
+
+- 📺 直播错误覆盖：在 artplayer ready 事件清除 unsupportedType，频道慢速连接成功后不再显示错误覆盖层
+- 🔧 直播频道健康检查：修复 directPlaybackEnabled 未加入 useCallback 依赖导致的问题
+- ⚡ 管理员播放统计 API：并行化每用户数据库查询，提升性能
+- 📱 登入详情卡片：修复移动端地区徽章溢出问题，优化登入 IP/设备信息响应式布局
+
 ## [6.6.1] - 2026-05-29
 
 ### Added
