@@ -2171,6 +2171,7 @@ function LivePageClient() {
         artPlayerRef.current.on('ready', () => {
           setError(null);
           setIsVideoLoading(false);
+          setUnsupportedType(null);
 
           // 延迟检测是否支持 DVR/时移回放（仅在未启用DVR模式时检测）
           if (!enableDvrMode) {
