@@ -4,10 +4,11 @@
 import { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
 import { Heart } from 'lucide-react';
 import VideoCard from '@/components/VideoCard';
+import CastPhotos from '@/components/CastPhotos';
 import CommentSection from '@/components/play/CommentSection';
 import { processImageUrl } from '@/lib/utils';
 
-type Tab = 'overview' | 'cast' | 'recommendations' | 'comments';
+type Tab = 'overview' | 'comments';
 
 interface PlayInfoPanelProps {
   title: string;
@@ -34,11 +35,16 @@ interface PlayInfoPanelProps {
   loadingMovieDetails: boolean;
   loadingBangumiDetails: boolean;
   loadingComments: boolean;
-  loadingCelebrityWorks: boolean;
-  selectedCelebrityName: string | null;
-  celebrityWorks: any[];
-  onCelebrityClick: (name: string) => void;
-  onClearCelebrity: () => void;
+  tmdbCast?: Array<{
+    id: number;
+    name: string;
+    original_name?: string;
+    character?: string;
+    photo: string | null;
+    order?: number;
+  }>;
+  tmdbCastEnabled?: boolean;
+  setTmdbCastEnabled?: (enabled: boolean) => void;
   videoDoubanId: number;
   currentSource: string;
 }
@@ -50,8 +56,8 @@ export default function PlayInfoPanel(props: PlayInfoPanelProps) {
     favorited, onToggleFavorite,
     detail, movieDetails, bangumiDetails, shortdramaDetails,
     movieComments, commentsError, loadingMovieDetails, loadingBangumiDetails,
-    loadingComments, loadingCelebrityWorks, selectedCelebrityName,
-    celebrityWorks, onCelebrityClick, onClearCelebrity, videoDoubanId, currentSource,
+    loadingComments, tmdbCast = [], tmdbCastEnabled = false,
+    setTmdbCastEnabled, videoDoubanId, currentSource,
   } = props;
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -66,14 +72,8 @@ export default function PlayInfoPanel(props: PlayInfoPanelProps) {
   // 评分：TMDB 优先
   const displayRating = tmdbRating || (movieDetails?.rate ? parseFloat(movieDetails.rate) : null) || (bangumiDetails?.rating?.score ? parseFloat(bangumiDetails.rating.score) : null);
 
-  const hasCast = (movieDetails?.celebrities?.length ?? 0) > 0 &&
-    movieDetails.celebrities.some((c: any) => c.avatar);
-  const hasRecommendations = (movieDetails?.recommendations?.length ?? 0) > 0;
-
   const tabs: Array<{ key: Tab; label: string; show: boolean }> = [
     { key: 'overview', label: '概览', show: true },
-    { key: 'cast', label: '演员', show: hasCast },
-    { key: 'recommendations', label: '推荐', show: hasRecommendations },
     { key: 'comments', label: '短评', show: videoDoubanId !== 0 },
   ];
   const visibleTabs = tabs.filter(t => t.show);
@@ -123,6 +123,17 @@ export default function PlayInfoPanel(props: PlayInfoPanelProps) {
           {/* 内容区 — 右边留出海报宽度 */}
           <div className="absolute inset-0 z-10 flex flex-col justify-end gap-2.5 p-4 sm:p-6 lg:pr-36 xl:pr-40">
 
+            {/* 标题 — 有 TMDB logo 就显示图片，没有就显示文字 */}
+            {tmdbLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tmdbLogo} alt={title}
+                className="max-h-16 sm:max-h-20 md:max-h-28 w-auto max-w-[60%] object-contain drop-shadow-lg" />
+            ) : (
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight line-clamp-2">
+                {title}
+              </h1>
+            )}
+
             {/* 标签行 */}
             <div className="flex flex-wrap items-center gap-1.5">
               {sourceName && (
@@ -161,17 +172,6 @@ export default function PlayInfoPanel(props: PlayInfoPanelProps) {
                 </span>
               )}
             </div>
-
-            {/* 标题 — 有 TMDB logo 就显示图片，没有就显示文字 */}
-            {tmdbLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={tmdbLogo} alt={title}
-                className="max-h-16 sm:max-h-20 md:max-h-28 w-auto max-w-[60%] object-contain drop-shadow-lg" />
-            ) : (
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight line-clamp-2">
-                {title}
-              </h1>
-            )}
 
             {/* 简介 — TMDB 优先 */}
             {overview && (
@@ -231,17 +231,9 @@ export default function PlayInfoPanel(props: PlayInfoPanelProps) {
             bangumiDetails={bangumiDetails} shortdramaDetails={shortdramaDetails}
             loadingMovieDetails={loadingMovieDetails} loadingBangumiDetails={loadingBangumiDetails}
             currentSource={currentSource} videoDoubanId={videoDoubanId}
+            tmdbCast={tmdbCast} tmdbCastEnabled={tmdbCastEnabled}
+            setTmdbCastEnabled={setTmdbCastEnabled}
           />
-        )}
-        {activeTab === 'cast' && (
-          <CastTab
-            movieDetails={movieDetails} loadingCelebrityWorks={loadingCelebrityWorks}
-            selectedCelebrityName={selectedCelebrityName} celebrityWorks={celebrityWorks}
-            onCelebrityClick={onCelebrityClick} onClearCelebrity={onClearCelebrity}
-          />
-        )}
-        {activeTab === 'recommendations' && (
-          <RecommendationsTab movieDetails={movieDetails} />
         )}
         {activeTab === 'comments' && (
           <CommentSection
@@ -257,7 +249,8 @@ export default function PlayInfoPanel(props: PlayInfoPanelProps) {
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({ detail, year, movieDetails, bangumiDetails, shortdramaDetails,
-  loadingMovieDetails, loadingBangumiDetails, currentSource, videoDoubanId, hasBg }: any) {
+  loadingMovieDetails, loadingBangumiDetails, currentSource, videoDoubanId,
+  tmdbCast = [], tmdbCastEnabled = false, setTmdbCastEnabled }: any) {
 
   const showDetails = currentSource !== 'shortdrama' && videoDoubanId !== 0
     && detail && detail.source !== 'shortdrama';
@@ -340,7 +333,7 @@ function OverviewTab({ detail, year, movieDetails, bangumiDetails, shortdramaDet
           {movieDetails.screenwriters?.length > 0 && (
             <div><span className="font-semibold text-gray-700 dark:text-gray-300">编剧: </span><span className="text-gray-600 dark:text-gray-400">{movieDetails.screenwriters.join('、')}</span></div>
           )}
-          {movieDetails.cast?.length > 0 && (
+          {movieDetails.cast?.length > 0 && !tmdbCastEnabled && (
             <div><span className="font-semibold text-gray-700 dark:text-gray-300">主演: </span><span className="text-gray-600 dark:text-gray-400">{movieDetails.cast.slice(0, 5).join('、')}</span></div>
           )}
           {movieDetails.first_aired && (
@@ -372,82 +365,43 @@ function OverviewTab({ detail, year, movieDetails, bangumiDetails, shortdramaDet
           )}
         </div>
       )}
-    </div>
-  );
-}
 
-// ─── Cast Tab ─────────────────────────────────────────────────────────────────
+      {tmdbCast.length > 0 && (
+        <CastPhotos
+          tmdbCast={tmdbCast}
+          doubanId={videoDoubanId ? videoDoubanId.toString() : undefined}
+          onEnabledChange={setTmdbCastEnabled}
+        />
+      )}
 
-function CastTab({ movieDetails, loadingCelebrityWorks, selectedCelebrityName,
-  celebrityWorks, onCelebrityClick, onClearCelebrity }: any) {
-
-  const celebrities = movieDetails?.celebrities?.filter((c: any) => c.avatar) || [];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-        {celebrities.slice(0, 20).map((c: any) => (
-          <div key={c.id} onClick={() => onCelebrityClick(c.name)}
-            className="shrink-0 text-center group cursor-pointer">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 mb-2 ring-2 ring-transparent group-hover:ring-green-500 transition-all duration-200 group-hover:scale-105">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={processImageUrl(c.avatar)} alt={c.name}
-                className="w-full h-full object-cover" loading="lazy"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      {movieDetails?.recommendations && movieDetails.recommendations.length > 0 && (
+        <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6 -mx-3 md:mx-0 px-3 md:px-0">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <span>💡</span>
+            <span>喜欢这部{movieDetails.episodes ? '剧' : '电影'}的人也喜欢</span>
+          </h3>
+          <div className="overflow-x-auto pb-4 pt-2 pl-2 -ml-2 episode-list show-scrollbar">
+            <div className="flex gap-4 pr-2" style={{ width: 'max-content' }}>
+              {movieDetails.recommendations.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="shrink-0 w-32 sm:w-36 md:w-40"
+                >
+                  <VideoCard
+                    id={item.id}
+                    title={item.title}
+                    poster={item.poster}
+                    rate={item.rate}
+                    douban_id={parseInt(item.id)}
+                    from="douban"
+                    isAggregate={true}
+                  />
+                </div>
+              ))}
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 w-16 sm:w-20 truncate group-hover:text-green-500 transition-colors">{c.name}</p>
-            {c.role && <p className="text-[10px] text-gray-500 w-16 sm:w-20 truncate mt-0.5">{c.role}</p>}
           </div>
-        ))}
-      </div>
-
-      {selectedCelebrityName && (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">{selectedCelebrityName} 的作品</h3>
-            <button onClick={onClearCelebrity} className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">收起 ✕</button>
-          </div>
-          {loadingCelebrityWorks ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500" />
-            </div>
-          ) : celebrityWorks.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-              {celebrityWorks.map((work: any) => {
-                const url = work.source === 'tmdb'
-                  ? `/play?title=${encodeURIComponent(work.title)}&prefer=true`
-                  : `/play?title=${encodeURIComponent(work.title)}&douban_id=${work.id}&prefer=true`;
-                return (
-                  <a key={work.id} href={url}>
-                    <VideoCard id={work.id} title={work.title} poster={work.poster}
-                      rate={work.rate} year={work.year} from="douban" douban_id={parseInt(work.id)} />
-                  </a>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-8">暂无相关作品</p>
-          )}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── Recommendations Tab ──────────────────────────────────────────────────────
-
-function RecommendationsTab({ movieDetails }: any) {
-  const items = movieDetails?.recommendations || [];
-  if (!items.length) return <p className="text-center text-gray-500 dark:text-gray-400 py-8">暂无推荐</p>;
-
-  return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-      {items.map((item: any) => (
-        <a key={item.id} href={`/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`}>
-          <VideoCard id={item.id} title={item.title} poster={item.poster}
-            rate={item.rate} douban_id={parseInt(item.id)} from="douban" isAggregate />
-        </a>
-      ))}
     </div>
   );
 }

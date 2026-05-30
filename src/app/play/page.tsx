@@ -7635,11 +7635,9 @@ function PlayPageClient() {
             loadingMovieDetails={loadingMovieDetails}
             loadingBangumiDetails={loadingBangumiDetails}
             loadingComments={loadingComments}
-            loadingCelebrityWorks={false}
-            selectedCelebrityName={null}
-            celebrityWorks={[]}
-            onCelebrityClick={() => {}}
-            onClearCelebrity={() => {}}
+            tmdbCast={tmdbCast}
+            tmdbCastEnabled={tmdbCastEnabled}
+            setTmdbCastEnabled={setTmdbCastEnabled}
             videoDoubanId={videoDoubanId}
             currentSource={currentSource}
           />
