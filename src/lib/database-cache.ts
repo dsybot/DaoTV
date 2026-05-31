@@ -63,6 +63,7 @@ export class DatabaseCacheManager {
       douban: { count: 0, size: 0, types: {} as Record<string, number> },
       shortdrama: { count: 0, size: 0, types: {} as Record<string, number> },
       tmdb: { count: 0, size: 0, types: {} as Record<string, number> },
+      bangumi: { count: 0, size: 0, types: {} as Record<string, number> },
       danmu: { count: 0, size: 0 },
       netdisk: { count: 0, size: 0 },
       youtube: { count: 0, size: 0 },
@@ -240,6 +241,12 @@ export class DatabaseCacheManager {
 
           const type = key.split('-')[1];
           stats.douban.types[type] = (stats.douban.types[type] || 0) + 1;
+        } else if (key.startsWith('bangumi-')) {
+          stats.bangumi.count++;
+          stats.bangumi.size += size;
+
+          const type = key.split('-')[1];
+          stats.bangumi.types[type] = (stats.bangumi.types[type] || 0) + 1;
         } else if (key.startsWith('shortdrama-')) {
           stats.shortdrama.count++;
           stats.shortdrama.size += size;
@@ -299,6 +306,7 @@ export class DatabaseCacheManager {
         note: '数据来源：Redis兼容数据库（KVRocks/Upstash/Redis）',
         formattedSizes: {
           douban: formatBytes(redisStats.douban.size),
+          bangumi: formatBytes(redisStats.bangumi.size),
           shortdrama: formatBytes(redisStats.shortdrama.size),
           tmdb: formatBytes(redisStats.tmdb.size),
           danmu: formatBytes(redisStats.danmu.size),
@@ -315,6 +323,7 @@ export class DatabaseCacheManager {
       douban: { count: 0, size: 0, types: {} as Record<string, number> },
       shortdrama: { count: 0, size: 0, types: {} as Record<string, number> },
       tmdb: { count: 0, size: 0, types: {} as Record<string, number> },
+      bangumi: { count: 0, size: 0, types: {} as Record<string, number> },
       danmu: { count: 0, size: 0 },
       netdisk: { count: 0, size: 0 },
       youtube: { count: 0, size: 0 },
@@ -327,6 +336,7 @@ export class DatabaseCacheManager {
       const keys = Object.keys(localStorage).filter(
         (key) =>
           key.startsWith('douban-') ||
+          key.startsWith('bangumi-') ||
           key.startsWith('shortdrama-') ||
           key.startsWith('tmdb-') ||
           key.startsWith('danmu-cache') ||
@@ -352,6 +362,12 @@ export class DatabaseCacheManager {
 
           const type = key.split('-')[1];
           stats.douban.types[type] = (stats.douban.types[type] || 0) + 1;
+        } else if (key.startsWith('bangumi-')) {
+          stats.bangumi.count++;
+          stats.bangumi.size += size;
+
+          const type = key.split('-')[1];
+          stats.bangumi.types[type] = (stats.bangumi.types[type] || 0) + 1;
         } else if (key.startsWith('shortdrama-')) {
           stats.shortdrama.count++;
           stats.shortdrama.size += size;
@@ -395,6 +411,7 @@ export class DatabaseCacheManager {
       note: 'Redis数据库不可用，使用localStorage作为备用数据源',
       formattedSizes: {
         douban: formatBytes(stats.douban.size),
+        bangumi: formatBytes(stats.bangumi.size),
         shortdrama: formatBytes(stats.shortdrama.size),
         tmdb: formatBytes(stats.tmdb.size),
         danmu: formatBytes(stats.danmu.size),
@@ -412,6 +429,7 @@ export class DatabaseCacheManager {
       | 'douban'
       | 'shortdrama'
       | 'tmdb'
+      | 'bangumi'
       | 'danmu'
       | 'netdisk'
       | 'youtube'
@@ -424,6 +442,10 @@ export class DatabaseCacheManager {
         case 'douban':
           await db.clearExpiredCache('douban-');
           console.log('🗑️ 豆瓣缓存清理完成');
+          break;
+        case 'bangumi':
+          await db.clearExpiredCache('bangumi-');
+          console.log('🗑️ Bangumi缓存清理完成');
           break;
         case 'shortdrama':
           await db.clearExpiredCache('shortdrama-');

@@ -2012,6 +2012,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           doubanId={actualDoubanId}
           videoTitle={actualTitle}
           videoYear={actualYear}
+          isBangumi={isBangumi}
         />
 
         {/* AI问片弹窗 */}

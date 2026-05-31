@@ -1135,3 +1135,43 @@ export async function getDoubanComments(
     };
   }
 }
+
+// 豆瓣快速信息（quick-info）
+export async function fetchDoubanQuickInfo(id: string): Promise<any> {
+  const cacheKey = getCacheKey('quick-info', { id });
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(`/api/douban/quick-info?id=${id}`);
+    if (!response.ok) return null;
+    const result = await response.json();
+    if (result.code === 200) {
+      await setCache(cacheKey, result, 4 * 60 * 60);
+    }
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+// 豆瓣搜索建议（suggest）
+export async function fetchDoubanSuggest(q: string): Promise<any[]> {
+  const cacheKey = getCacheKey('suggest', { q });
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(
+      `/api/douban/suggest?q=${encodeURIComponent(q)}`,
+    );
+    if (!response.ok) return [];
+    const results = await response.json();
+    if (Array.isArray(results) && results.length > 0) {
+      await setCache(cacheKey, results, DOUBAN_CACHE_EXPIRE.lists);
+    }
+    return results;
+  } catch {
+    return [];
+  }
+}
