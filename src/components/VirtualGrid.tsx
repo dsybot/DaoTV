@@ -215,7 +215,7 @@ export default function VirtualGrid<T>({
   ]);
 
   return (
-    <DOMErrorBoundary>
+    <DOMErrorBoundary componentName="VirtualGrid">
       {/* Hidden probe element to measure column count from computed CSS grid */}
       <div
         ref={probeRef}

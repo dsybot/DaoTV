@@ -147,6 +147,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       null,
     ); // 搜索结果的收藏状态
     const [showAIChat, setShowAIChat] = useState(false); // AI问片弹窗
+    const [isNavigating, setIsNavigating] = useState(false); // 导航加载状态
 
     // AI功能状态：优先使用父组件传递的值，否则自己检测
     const [aiEnabledLocal, setAiEnabledLocal] = useState(false);
@@ -466,7 +467,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       [from, actualSource, actualId, onDelete, deletePlayRecordMutation],
     );
 
-    // 🚀 数据预取 - 在 hover 时预取收藏数据
+    // 🚀 数据预取 - 在 hover 时预取收藏数据和预加载路由
     const handlePrefetch = useCallback(() => {
       if (!actualSource || !actualId) return;
 
@@ -480,7 +481,46 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         },
         staleTime: 10 * 1000, // 10秒内不重复预取
       });
-    }, [actualSource, actualId, queryClient]);
+
+      // 🔥 预加载播放页面路由 - 关键优化！
+      const doubanIdParam =
+        actualDoubanId && actualDoubanId > 0
+          ? `&douban_id=${actualDoubanId}`
+          : '';
+
+      if (origin === 'live' && actualSource && actualId) {
+        const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
+        router.prefetch(url);
+      } else if (actualSource === 'shortdrama' && actualId) {
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}&shortdrama_id=${actualId}`;
+        router.prefetch(url);
+      } else if (
+        from === 'douban' ||
+        (isAggregate && !actualSource && !actualId) ||
+        actualSource === 'upcoming_release' ||
+        actualSource === 'douban' ||
+        actualSource === 'bangumi'
+      ) {
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+        router.prefetch(url);
+      } else if (actualSource && actualId) {
+        const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(actualTitle)}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+        router.prefetch(url);
+      }
+    }, [
+      actualSource,
+      actualId,
+      queryClient,
+      router,
+      origin,
+      actualTitle,
+      actualYear,
+      actualDoubanId,
+      actualSearchType,
+      isAggregate,
+      actualQuery,
+      from,
+    ]);
 
     // 跳转到详情页或直接播放
     const handleGoToDetail = useCallback(() => {
@@ -549,6 +589,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       if (isUpcoming) {
         return;
       }
+
+      // 🔥 立即显示加载状态，提供即时反馈
+      setIsNavigating(true);
 
       // 构建豆瓣ID参数
       const doubanIdParam =
@@ -1128,10 +1171,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               }}
             />
 
-            {/* 播放按钮 / 即将上映提示 */}
+            {/* 播放按钮 / 即将上映提示 / 加载状态 */}
             {config.showPlayButton && (
               <div
-                className='absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-in-out delay-75 group-hover:opacity-100 group-hover:scale-100 pointer-events-none'
+                className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out pointer-events-none ${
+                  isNavigating
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 delay-75 group-hover:opacity-100 group-hover:scale-100'
+                }`}
                 style={
                   {
                     WebkitUserSelect: 'none',
@@ -1140,7 +1187,15 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                   } as React.CSSProperties
                 }
               >
-                {isUpcoming ? (
+                {isNavigating ? (
+                  // 🔥 加载状态 - 提供即时反馈
+                  <div className='flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md px-6 py-4 rounded-xl'>
+                    <div className='w-10 h-10 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin' />
+                    <span className='text-white font-bold text-sm whitespace-nowrap'>
+                      加载中...
+                    </span>
+                  </div>
+                ) : isUpcoming ? (
                   // 即将上映 - 显示敬请期待
                   <div className='flex flex-col items-center gap-2 bg-black/80 px-6 py-4 rounded-xl'>
                     <span className='text-3xl'>📅</span>

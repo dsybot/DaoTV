@@ -7,6 +7,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  componentName?: string; // 用于标识是哪个组件
 }
 
 interface State {
@@ -58,10 +59,79 @@ export class DOMErrorBoundary extends Component<Props, State> {
         {
           error: error.message,
           componentStack: errorInfo.componentStack,
+          componentName: this.props.componentName,
         },
       );
+
+      // 使用 queueMicrotask 异步发送，避免阻塞错误恢复
+      queueMicrotask(() => {
+        this.sendCrashReport({
+          type: 'DOM_ERROR_BOUNDARY',
+          message: error.message,
+          stack: error.stack || '',
+          errorName: error.name,
+          errorSource: 'DOMErrorBoundary',
+          componentName: this.props.componentName || 'Unknown',
+          additionalInfo: {
+            componentStack: errorInfo.componentStack,
+            translationDetected: true,
+          },
+        });
+      });
     } else {
       console.error('[DOMErrorBoundary] Caught error:', error, errorInfo);
+
+      // 使用 queueMicrotask 异步发送
+      queueMicrotask(() => {
+        this.sendCrashReport({
+          type: 'ERROR_BOUNDARY',
+          message: error.message,
+          stack: error.stack || '',
+          errorName: error.name,
+          errorSource: 'DOMErrorBoundary',
+          componentName: this.props.componentName || 'Unknown',
+          additionalInfo: {
+            componentStack: errorInfo.componentStack,
+          },
+        });
+      });
+    }
+  }
+
+  private sendCrashReport(data: {
+    type: string;
+    message: string;
+    stack: string;
+    errorName: string;
+    errorSource: string;
+    componentName: string;
+    additionalInfo: any;
+  }) {
+    // 只在浏览器环境发送
+    if (typeof window === 'undefined') return;
+
+    const crashReport = {
+      ...data,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+    };
+
+    // 使用 sendBeacon 优先（更可靠），降级到 fetch
+    const payload = JSON.stringify(crashReport);
+    const sent = navigator.sendBeacon?.('/api/crash-report', new Blob([payload], { type: 'application/json' }));
+
+    if (!sent) {
+      // sendBeacon 失败或不支持，降级到 fetch
+      fetch('/api/crash-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        // 使用 keepalive 确保即使页面关闭也能发送
+        keepalive: true,
+      }).catch((err) => {
+        console.error('[DOMErrorBoundary] Failed to send crash report:', err);
+      });
     }
   }
 

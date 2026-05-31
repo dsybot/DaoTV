@@ -13,6 +13,11 @@ interface CrashLog {
   userAgent: string;
   memory: any;
   localStorage: string;
+  type?: string; // 新增：错误类型
+  errorName?: string; // 新增：错误名称
+  errorSource?: string; // 新增：错误来源
+  componentName?: string; // 新增：组件名称
+  additionalInfo?: any; // 新增：额外信息
 }
 
 export default function CrashLogsPage() {
@@ -124,10 +129,20 @@ export default function CrashLogsPage() {
                     <span className="text-xs sm:text-sm font-mono text-gray-600 dark:text-gray-400">
                       {new Date(log.timestamp).toLocaleString('zh-CN')}
                     </span>
+                    {log.type && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
+                        {log.type}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 truncate">
                     {log.message}
                   </p>
+                  {log.componentName && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      组件: {log.componentName}
+                    </p>
+                  )}
                   <div className="mt-2 flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-500">
                     <span>内存: {typeof log.memory === 'object' ? log.memory.used : log.memory}</span>
                     <span>存储: {log.localStorage}</span>
@@ -141,6 +156,39 @@ export default function CrashLogsPage() {
               {selectedLog ? (
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
                   <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">详细信息</h2>
+
+                  {selectedLog.type && (
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                        错误类型
+                      </h3>
+                      <p className="text-xs sm:text-sm font-mono">
+                        {selectedLog.type}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedLog.componentName && (
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                        组件名称
+                      </h3>
+                      <p className="text-xs sm:text-sm font-mono text-blue-600 dark:text-blue-400">
+                        {selectedLog.componentName}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedLog.errorSource && (
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                        错误来源
+                      </h3>
+                      <p className="text-xs sm:text-sm font-mono">
+                        {selectedLog.errorSource}
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
@@ -184,6 +232,17 @@ export default function CrashLogsPage() {
                     </h3>
                     <p className="text-xs sm:text-sm font-mono">{selectedLog.localStorage}</p>
                   </div>
+
+                  {selectedLog.additionalInfo && (
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                        额外信息
+                      </h3>
+                      <pre className="text-xs font-mono bg-gray-100 dark:bg-gray-900 p-2 sm:p-3 rounded overflow-x-auto max-h-32 overflow-y-auto">
+                        {JSON.stringify(selectedLog.additionalInfo, null, 2)}
+                      </pre>
+                    </div>
+                  )}
 
                   {selectedLog.stack && (
                     <div>
