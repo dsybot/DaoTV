@@ -75,6 +75,14 @@ const doubanListOptions = (
         }
 
         const calendarData = await GetBangumiCalendarData();
+        if (!Array.isArray(calendarData)) {
+          console.warn(
+            '[Bangumi] Calendar data is not an array, API may be blocked:',
+            calendarData,
+          );
+          return { code: 200, message: 'success', list: [] };
+        }
+
         const weekdayData = calendarData.find(
           (item) => item.weekday.en === selectedWeekday,
         );

@@ -26,6 +26,7 @@ interface BannerItem {
   douban_id?: number;
   type?: string;
   trailerUrl?: string;
+  tmdbLogo?: string;
 }
 
 interface HeroBannerProps {
@@ -468,9 +469,24 @@ function HeroBanner({
 
       <div className='dao-hero-content absolute bottom-0 left-0 right-0 px-4 pb-10 sm:px-8 sm:pb-16 md:pb-24'>
         <div className='max-w-2xl space-y-3 sm:space-y-4 md:space-y-5'>
-          <h1 className='line-clamp-1 text-3xl font-bold leading-tight text-white drop-shadow-2xl sm:text-5xl md:line-clamp-2 md:text-6xl xl:text-7xl'>
-            {currentItem.title}
-          </h1>
+          {currentItem.tmdbLogo ? (
+            <div className='relative inline-block max-w-[70%]'>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentItem.tmdbLogo}
+                alt={currentItem.title}
+                className='max-h-16 w-auto object-contain sm:max-h-20 md:max-h-24 lg:max-h-28'
+                style={{
+                  filter:
+                    'drop-shadow(0 0 12px rgba(255,255,255,0.6)) drop-shadow(0 4px 8px rgba(0,0,0,0.9))',
+                }}
+              />
+            </div>
+          ) : (
+            <h1 className='line-clamp-1 text-3xl font-bold leading-tight text-white drop-shadow-2xl sm:text-5xl md:line-clamp-2 md:text-6xl xl:text-7xl'>
+              {currentItem.title}
+            </h1>
+          )}
 
           <div className='flex flex-wrap items-center gap-2 text-xs sm:gap-3 sm:text-base'>
             {currentItem.rate && (

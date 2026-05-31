@@ -11,6 +11,7 @@ import AppShell from '../components/AppShell';
 import { ChunkErrorGuard } from '../components/ChunkErrorGuard';
 import { CinematicLoadingFallback } from '../components/CinematicLoadingFallback';
 import { DownloadPanel } from '../components/download/DownloadPanel';
+import { GlobalDOMErrorHandler } from '../components/GlobalDOMErrorHandler';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import QueryProvider from '../components/QueryProvider';
 import RouteWarmup from '../components/RouteWarmup';
@@ -143,6 +144,7 @@ export default async function RootLayout({
         />
       </head>
       <body
+        translate='no'
         className={`${inter.className} min-h-screen bg-black text-gray-200`}
       >
         <ThemeProvider
@@ -158,6 +160,7 @@ export default async function RootLayout({
               <DownloadProvider>
                 <WatchRoomProvider>
                   <SiteProvider siteName={siteName} announcement={announcement}>
+                    <GlobalDOMErrorHandler />
                     <ChunkErrorGuard />
                     <SessionTracker />
                     <RouteWarmup />

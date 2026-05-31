@@ -41,6 +41,7 @@ import { DoubanItem } from '@/lib/types';
 import { useClearFavoritesMutation } from '@/hooks/useFavoritesMutations';
 import { useHomePageQueries } from '@/hooks/useHomePageQueries';
 import { useClearRemindersMutation } from '@/hooks/useRemindersMutations';
+import { useTMDBLogos } from '@/hooks/useTMDBLogo';
 import { useWatchingUpdatesQuery } from '@/hooks/useWatchingUpdates';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
@@ -360,6 +361,23 @@ function HomeClient({
       })),
     ],
     [hotMovies, hotTvShows, hotVarietyShows, hotAnime],
+  );
+
+  const tmdbLogos = useTMDBLogos(
+    heroBannerItems.map((item) => ({
+      title: item.title,
+      year: item.year,
+      type: item.type,
+    })),
+  );
+
+  const heroBannerItemsWithLogos = useMemo(
+    () =>
+      heroBannerItems.map((item) => ({
+        ...item,
+        tmdbLogo: tmdbLogos[item.title] || undefined,
+      })),
+    [heroBannerItems, tmdbLogos],
   );
 
   // 🚀 Memoize enableVideo to prevent HeroBanner remount
@@ -954,10 +972,11 @@ function HomeClient({
 
       <div className='dao-home-shell overflow-visible pb-32 md:pb-safe-bottom'>
         {/* 轮播图 - 在所有tab显示 */}
-        {state.homePageConfig.showHeroBanner && heroBannerItems.length > 0 && (
+        {state.homePageConfig.showHeroBanner &&
+          heroBannerItemsWithLogos.length > 0 && (
           <div className='dao-hero-wrap mb-5 md:mb-4'>
             <HeroBanner
-              items={heroBannerItems}
+              items={heroBannerItemsWithLogos}
               autoPlayInterval={8000}
               showControls={true}
               showIndicators={true}

@@ -9,6 +9,8 @@ import React, {
   useState,
 } from 'react';
 
+import { DOMErrorBoundary } from './DOMErrorBoundary';
+
 interface VirtualGridProps<T> {
   items: T[];
   renderItem: (item: T, index: number) => React.ReactNode;
@@ -213,11 +215,12 @@ export default function VirtualGrid<T>({
   ]);
 
   return (
-    <>
+    <DOMErrorBoundary>
       {/* Hidden probe element to measure column count from computed CSS grid */}
       <div
         ref={probeRef}
         aria-hidden
+        translate='no'
         className={`grid invisible h-0 overflow-hidden ${className}`}
       >
         <div />
@@ -225,6 +228,7 @@ export default function VirtualGrid<T>({
 
       <div
         ref={parentRef}
+        translate='no'
         style={{
           height: virtualizer.getTotalSize(),
           width: '100%',
@@ -233,6 +237,7 @@ export default function VirtualGrid<T>({
       >
         {/* Container with unified offset - official pattern */}
         <div
+          translate='no'
           style={{
             position: 'absolute',
             top: 0,
@@ -251,8 +256,9 @@ export default function VirtualGrid<T>({
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 className={rowGapClass}
+                translate='no'
               >
-                <div className={`grid ${className}`}>
+                <div className={`grid ${className}`} translate='no'>
                   {rowItems.map((item, i) => (
                     <React.Fragment key={startIdx + i}>
                       {renderItem(item, startIdx + i)}
@@ -264,6 +270,6 @@ export default function VirtualGrid<T>({
           })}
         </div>
       </div>
-    </>
+    </DOMErrorBoundary>
   );
 }
