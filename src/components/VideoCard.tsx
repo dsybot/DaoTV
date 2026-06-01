@@ -467,7 +467,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       [from, actualSource, actualId, onDelete, deletePlayRecordMutation],
     );
 
-    // 🚀 数据预取 - 在 hover 时预取收藏数据和预加载路由
+    // 轻量预取收藏数据。播放页体积较大，不在 hover/focus 时预取，避免鼠标扫过卡片时持续占用内存。
     const handlePrefetch = useCallback(() => {
       if (!actualSource || !actualId) return;
 
@@ -481,46 +481,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         },
         staleTime: 10 * 1000, // 10秒内不重复预取
       });
-
-      // 🔥 预加载播放页面路由 - 关键优化！
-      const doubanIdParam =
-        actualDoubanId && actualDoubanId > 0
-          ? `&douban_id=${actualDoubanId}`
-          : '';
-
-      if (origin === 'live' && actualSource && actualId) {
-        const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
-        router.prefetch(url);
-      } else if (actualSource === 'shortdrama' && actualId) {
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}&shortdrama_id=${actualId}`;
-        router.prefetch(url);
-      } else if (
-        from === 'douban' ||
-        (isAggregate && !actualSource && !actualId) ||
-        actualSource === 'upcoming_release' ||
-        actualSource === 'douban' ||
-        actualSource === 'bangumi'
-      ) {
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
-        router.prefetch(url);
-      } else if (actualSource && actualId) {
-        const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(actualTitle)}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
-        router.prefetch(url);
-      }
-    }, [
-      actualSource,
-      actualId,
-      queryClient,
-      router,
-      origin,
-      actualTitle,
-      actualYear,
-      actualDoubanId,
-      actualSearchType,
-      isAggregate,
-      actualQuery,
-      from,
-    ]);
+    }, [actualSource, actualId, queryClient]);
 
     // 跳转到详情页或直接播放
     const handleGoToDetail = useCallback(() => {
