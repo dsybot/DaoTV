@@ -240,6 +240,8 @@ async function getInitConfig(
       DoubanDetailProxy: process.env.DOUBAN_DETAIL_PROXY || '',
       BangumiApiType: process.env.NEXT_PUBLIC_BANGUMI_API_TYPE || 'server',
       BangumiApiProxy: process.env.NEXT_PUBLIC_BANGUMI_API_PROXY || '',
+      BangumiImageProxyType: process.env.NEXT_PUBLIC_BANGUMI_IMAGE_PROXY_TYPE || 'server',
+      BangumiImageProxy: process.env.NEXT_PUBLIC_BANGUMI_IMAGE_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
       ShowAdultContent: false, // 默认不显示成人内容，可在管理面板修改
