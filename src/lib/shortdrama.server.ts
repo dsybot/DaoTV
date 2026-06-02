@@ -5,7 +5,7 @@ import type { SearchResult, ShortDramaParseResult } from './types';
 import { DEFAULT_USER_AGENT } from './user-agent';
 import { cleanHtmlTags } from './utils';
 
-const DEFAULT_SHORT_DRAMA_API = 'https://wwzy.tv/api.php/provide/vod';
+const DEFAULT_SHORT_DRAMA_API = 'https://tyyszyapi.com/api.php/provide/vod';
 
 type ShortDramaSource = {
   key: string;

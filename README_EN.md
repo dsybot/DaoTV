@@ -193,7 +193,8 @@ Based on [MoonTV](https://github.com/MoonTechLab/LunaTV).
 
 ### Original Projects
 - [MoonTV](https://github.com/MoonTechLab/LunaTV) — Original project
-- [Selene](https://github.com/MoonTechLab/Selene) — Official mobile APP
+- [Selene](https://github.com/MoonTechLab/Selene) — Official mobile APP (iOS / Android phones)
+- [Selene-TV](https://github.com/MoonTechLab/Selene-TV) — Official Android TV client, optimized for remote control devices
 - [LibreTV](https://github.com/LibreSpark/LibreTV) — Inspiration source
 
 ### Core Dependencies

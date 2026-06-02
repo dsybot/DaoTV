@@ -193,7 +193,8 @@ pnpm dev
 
 ### 原始项目
 - [MoonTV](https://github.com/MoonTechLab/LunaTV) — 项目原始版本
-- [Selene](https://github.com/MoonTechLab/Selene) — 官方移动端 APP
+- [Selene](https://github.com/MoonTechLab/Selene) — 官方移动端 APP（iOS / Android 手机）
+- [Selene-TV](https://github.com/MoonTechLab/Selene-TV) — 官方 Android TV 客户端，针对遥控器设备优化
 - [LibreTV](https://github.com/LibreSpark/LibreTV) — 灵感来源
 
 ### 核心依赖

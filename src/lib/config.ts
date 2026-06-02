@@ -459,7 +459,7 @@ export async function configSelfCheck(
   // 确保短剧配置有默认值
   if (!adminConfig.ShortDramaConfig) {
     adminConfig.ShortDramaConfig = {
-      primaryApiUrl: 'https://wwzy.tv/api.php/provide/vod', // 默认主API
+      primaryApiUrl: 'https://tyyszyapi.com/api.php/provide/vod', // 默认主API
       alternativeApiUrl: '', // 默认为空，需要管理员配置
       enableAlternative: false, // 默认关闭备用API
     };
