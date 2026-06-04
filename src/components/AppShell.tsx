@@ -114,18 +114,12 @@ function subscribeAIEnabled(onStoreChange: () => void) {
   };
 }
 
-function startRouteProgress() {
-  if (typeof window === 'undefined') return;
-  window.dispatchEvent(new Event('dao-route-progress-start'));
-}
-
 function DesktopSearchControls({ initialQuery }: { initialQuery: string }) {
   const router = useRouter();
   const [desktopSearchQuery, setDesktopSearchQuery] = useState(initialQuery);
   const [showDesktopSuggestions, setShowDesktopSuggestions] = useState(false);
 
   const navigateToSearch = (href: string) => {
-    startRouteProgress();
     router.push(href);
   };
 

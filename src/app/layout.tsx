@@ -18,7 +18,6 @@ import RouteWarmup from '../components/RouteWarmup';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
-import TopProgressBar from '../components/TopProgressBar';
 import ChatFloatingWindow from '../components/watch-room/ChatFloatingWindow';
 import { WatchRoomProvider } from '../components/WatchRoomProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
@@ -161,7 +160,6 @@ export default async function RootLayout({
           forcedTheme='dark'
           disableTransitionOnChange
         >
-          <TopProgressBar />
           <QueryProvider>
             <GlobalCacheProvider>
               <DownloadProvider>

@@ -494,6 +494,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       const isOnPlayPage =
         typeof window !== 'undefined' && window.location.pathname === '/play';
       const navigate = (url: string) => {
+        setIsNavigating(true);
         if (isOnPlayPage) {
           window.location.href = url;
         } else {
