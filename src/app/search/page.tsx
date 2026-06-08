@@ -1485,7 +1485,9 @@ function SearchPageClient() {
         params.append('sortOrder', filterState.sortOrder);
 
       // 调用TMDB API端点
-      const response = await fetch(`/api/tmdb/actor?${params.toString()}`);
+      const response = await fetch(`/api/tmdb/actor?${params.toString()}`, {
+        cache: 'no-store',
+      });
       const data = await response.json();
 
       if (response.ok && data.code === 200) {

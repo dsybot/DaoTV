@@ -29,7 +29,9 @@ async function fetchTMDBData(
   if (year) params.set('year', year);
   if (type) params.set('stype', type);
 
-  const res = await fetch(`/api/tmdb/backdrop?${params.toString()}`);
+  const res = await fetch(`/api/tmdb/backdrop?${params.toString()}`, {
+    cache: 'no-store',
+  });
   if (!res.ok) return null;
   const json = await res.json();
   return json?.data || null;
@@ -54,7 +56,7 @@ export function useTMDBLogos(
     queries: items.map((item) => ({
       queryKey: ['tmdb-logo', item.title, item.year, item.type],
       queryFn: () => fetchTMDBData(item.title, item.year, item.type),
-      staleTime: 24 * 60 * 60 * 1000,
+      staleTime: 0,
       gcTime: 7 * 24 * 60 * 60 * 1000,
       retry: 1,
       enabled: !!item.title,

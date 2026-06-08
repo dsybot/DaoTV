@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { ArrowLeft, Heart, Play, ExternalLink, ChevronDown, Check } from 'lucide-react';
+import {
+  ArrowLeft,
+  Heart,
+  Play,
+  ExternalLink,
+  ChevronDown,
+  Check,
+} from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState, useRef } from 'react';
@@ -65,8 +72,19 @@ interface TMDBData {
 
 // 解析中文数字（支持一到九百九十九）
 function parseChineseNumber(str: string): number {
-  const digits: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
-  const units: Record<string, number> = { '十': 10, '百': 100 };
+  const digits: Record<string, number> = {
+    零: 0,
+    一: 1,
+    二: 2,
+    三: 3,
+    四: 4,
+    五: 5,
+    六: 6,
+    七: 7,
+    八: 8,
+    九: 9,
+  };
+  const units: Record<string, number> = { 十: 10, 百: 100 };
 
   let result = 0;
   let temp = 0;
@@ -101,7 +119,10 @@ function SeasonSelector({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+      if (
+        selectRef.current &&
+        !selectRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -112,35 +133,44 @@ function SeasonSelector({
   const selectedSeason = seasons.find((s) => s.seasonNumber === currentSeason);
 
   return (
-    <div className="relative ml-auto" ref={selectRef}>
+    <div className='relative ml-auto' ref={selectRef}>
       <button
-        type="button"
+        type='button'
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className='inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500'
       >
         <span>{selectedSeason?.name || `第${currentSeason}季`}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 min-w-[140px] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl overflow-hidden animate-scaleIn">
-          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+        <div className='absolute right-0 z-50 mt-2 min-w-[140px] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl overflow-hidden animate-scaleIn'>
+          <div className='max-h-64 overflow-y-auto custom-scrollbar'>
             {seasons.map((s) => (
               <button
                 key={s.seasonNumber}
-                type="button"
+                type='button'
                 onClick={() => {
                   onChange(s.seasonNumber);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${s.seasonNumber === currentSeason
-                  ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
-                  : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
-                  }`}
+                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  s.seasonNumber === currentSeason
+                    ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                }`}
               >
-                <div className="flex items-center gap-2">
-                  {s.seasonNumber === currentSeason && <Check className="w-4 h-4 shrink-0" />}
-                  <span className={s.seasonNumber === currentSeason ? '' : 'ml-6'}>{s.name}</span>
+                <div className='flex items-center gap-2'>
+                  {s.seasonNumber === currentSeason && (
+                    <Check className='w-4 h-4 shrink-0' />
+                  )}
+                  <span
+                    className={s.seasonNumber === currentSeason ? '' : 'ml-6'}
+                  >
+                    {s.name}
+                  </span>
                 </div>
               </button>
             ))}
@@ -152,10 +182,19 @@ function SeasonSelector({
 }
 
 // TMDB背景图、Logo和详情获取
-async function getTMDBData(title: string, year: string, type: string, season: number = 1, imdbId?: string): Promise<TMDBData> {
+async function getTMDBData(
+  title: string,
+  year: string,
+  type: string,
+  season: number = 1,
+  imdbId?: string,
+): Promise<TMDBData> {
   try {
     const imdbParam = imdbId ? `&imdb_id=${imdbId}` : '';
-    const response = await fetch(`/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}&season=${season}&details=true${imdbParam}`);
+    const response = await fetch(
+      `/api/tmdb/backdrop?title=${encodeURIComponent(title)}&year=${year}&type=${type}&season=${season}&details=true${imdbParam}`,
+      { cache: 'no-store' },
+    );
     if (response.ok) {
       const data = await response.json();
       return {
@@ -173,7 +212,17 @@ async function getTMDBData(title: string, year: string, type: string, season: nu
   } catch (error) {
     console.error('获取TMDB数据失败:', error);
   }
-  return { backdrop: null, logo: null, providers: [], episodes: [], seasons: [], cast: [], overview: '', vote_average: 0, first_air_date: '' };
+  return {
+    backdrop: null,
+    logo: null,
+    providers: [],
+    episodes: [],
+    seasons: [],
+    cast: [],
+    overview: '',
+    vote_average: 0,
+    first_air_date: '',
+  };
 }
 
 function DetailPageClient() {
@@ -188,7 +237,12 @@ function DetailPageClient() {
   const id = searchParams.get('id') || '';
   // 优先使用 douban_id 参数，其次如果 source 是虚拟源（douban/bangumi），则 id 就是豆瓣/bangumi ID
   const doubanIdParam = parseInt(searchParams.get('douban_id') || '0') || 0;
-  const doubanId = doubanIdParam > 0 ? doubanIdParam : ((source === 'douban' || source === 'bangumi') && id ? parseInt(id) || 0 : 0);
+  const doubanId =
+    doubanIdParam > 0
+      ? doubanIdParam
+      : (source === 'douban' || source === 'bangumi') && id
+        ? parseInt(id) || 0
+        : 0;
   const stype = searchParams.get('stype') || '';
   const stitle = searchParams.get('stitle') || '';
   const sourceName = searchParams.get('source_name') || '';
@@ -197,8 +251,19 @@ function DetailPageClient() {
   const parseSeasonFromTitle = (t: string): number => {
     // 解析中文数字
     const parseChineseNumber = (str: string): number => {
-      const digits: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
-      const units: Record<string, number> = { '十': 10, '百': 100 };
+      const digits: Record<string, number> = {
+        零: 0,
+        一: 1,
+        二: 2,
+        三: 3,
+        四: 4,
+        五: 5,
+        六: 6,
+        七: 7,
+        八: 8,
+        九: 9,
+      };
+      const units: Record<string, number> = { 十: 10, 百: 100 };
       let result = 0;
       let temp = 0;
       for (let i = 0; i < str.length; i++) {
@@ -219,7 +284,9 @@ function DetailPageClient() {
     const seasonMatch = t.match(/第([零一二三四五六七八九十百]+|\d+)季/);
     if (seasonMatch) {
       const seasonStr = seasonMatch[1];
-      return /^\d+$/.test(seasonStr) ? parseInt(seasonStr) : parseChineseNumber(seasonStr);
+      return /^\d+$/.test(seasonStr)
+        ? parseInt(seasonStr)
+        : parseChineseNumber(seasonStr);
     }
     // 匹配数字后缀（如"喜人奇妙夜2"）
     const numberMatch = t.match(/(\d+)$/);
@@ -283,9 +350,19 @@ function DetailPageClient() {
         const imdbId = movieDetails?.imdb_id;
         // 判断类型：优先豆瓣数据 > URL参数stype > 默认tv
         const mediaType = movieDetails
-          ? (movieDetails.movie_duration ? 'movie' : (movieDetails.episodes ? 'tv' : (stype || 'tv')))
-          : (stype || 'tv');
-        const data = await getTMDBData(title, year, mediaType, currentSeason, imdbId);
+          ? movieDetails.movie_duration
+            ? 'movie'
+            : movieDetails.episodes
+              ? 'tv'
+              : stype || 'tv'
+          : stype || 'tv';
+        const data = await getTMDBData(
+          title,
+          year,
+          mediaType,
+          currentSeason,
+          imdbId,
+        );
         setBackdrop(data.backdrop);
         setLogo(data.logo);
         setLogoRetry(0); // 重置logo重试次数
@@ -301,10 +378,14 @@ function DetailPageClient() {
           let detectedSeasonNumber = 0;
 
           // 提取"第X部分"格式（如"赛马娘 芦毛灰姑娘 第2部分" -> 第2季）
-          const partMatch = title.match(/第([零一二三四五六七八九十百]+|\d+)部分?$/);
+          const partMatch = title.match(
+            /第([零一二三四五六七八九十百]+|\d+)部分?$/,
+          );
           if (partMatch) {
             const partStr = partMatch[1];
-            detectedSeasonNumber = /^\d+$/.test(partStr) ? parseInt(partStr) : parseChineseNumber(partStr);
+            detectedSeasonNumber = /^\d+$/.test(partStr)
+              ? parseInt(partStr)
+              : parseChineseNumber(partStr);
           }
 
           // 提取标题中可能的季名后缀（如"花儿与少年 同心季" -> "同心季"）
@@ -332,22 +413,41 @@ function DetailPageClient() {
           }
 
           // 如果检测到了季数，直接使用
-          if (detectedSeasonNumber > 0 && detectedSeasonNumber <= data.seasons.length) {
-            console.log(`[Detail] 根据"第X部分"格式匹配到第 ${detectedSeasonNumber} 季`);
+          if (
+            detectedSeasonNumber > 0 &&
+            detectedSeasonNumber <= data.seasons.length
+          ) {
+            console.log(
+              `[Detail] 根据"第X部分"格式匹配到第 ${detectedSeasonNumber} 季`,
+            );
             setCurrentSeason(detectedSeasonNumber);
             // 重新获取对应季的分集
-            const seasonData = await getTMDBData(title, year, mediaType, detectedSeasonNumber, imdbId);
+            const seasonData = await getTMDBData(
+              title,
+              year,
+              mediaType,
+              detectedSeasonNumber,
+              imdbId,
+            );
             setEpisodes(seasonData.episodes);
           } else if (seasonKeyword) {
             // 在季数列表中查找匹配的季名
-            const matchedSeason = data.seasons.find((s: TMDBSeason) =>
-              s.name && s.name.includes(seasonKeyword)
+            const matchedSeason = data.seasons.find(
+              (s: TMDBSeason) => s.name && s.name.includes(seasonKeyword),
             );
             if (matchedSeason) {
-              console.log(`[Detail] 根据关键词 "${seasonKeyword}" 匹配到第 ${matchedSeason.seasonNumber} 季: ${matchedSeason.name}`);
+              console.log(
+                `[Detail] 根据关键词 "${seasonKeyword}" 匹配到第 ${matchedSeason.seasonNumber} 季: ${matchedSeason.name}`,
+              );
               setCurrentSeason(matchedSeason.seasonNumber);
               // 重新获取对应季的分集
-              const seasonData = await getTMDBData(title, year, mediaType, matchedSeason.seasonNumber, imdbId);
+              const seasonData = await getTMDBData(
+                title,
+                year,
+                mediaType,
+                matchedSeason.seasonNumber,
+                imdbId,
+              );
               setEpisodes(seasonData.episodes);
             }
           }
@@ -383,7 +483,7 @@ function DetailPageClient() {
         (newFavorites: Record<string, any>) => {
           const isNowFavorited = !!newFavorites[storageKey];
           setFavorited(isNowFavorited);
-        }
+        },
       );
       return unsubscribe;
     }
@@ -398,7 +498,8 @@ function DetailPageClient() {
         setFavorited(false);
       } else {
         // 根据集数判断类型
-        const contentType = (movieDetails?.episodes || 1) === 1 ? 'movie' : 'tv';
+        const contentType =
+          (movieDetails?.episodes || 1) === 1 ? 'movie' : 'tv';
         await saveFavorite(source, id, {
           title: title,
           source_name: sourceName || source, // 优先使用sourceName，没有则使用source
@@ -415,7 +516,18 @@ function DetailPageClient() {
     } catch (error) {
       console.error('切换收藏状态失败:', error);
     }
-  }, [favorited, source, id, title, year, poster, movieDetails, stitle, sourceName]);
+  }, [
+    favorited,
+    source,
+    id,
+    title,
+    year,
+    poster,
+    movieDetails,
+    stitle,
+    stype,
+    sourceName,
+  ]);
 
   // 跳转到播放页
   const handlePlay = useCallback(() => {
@@ -425,8 +537,10 @@ function DetailPageClient() {
     // 虚拟源（douban/bangumi）：id 就是豆瓣/bangumi ID，用 douban_id 参数传递
     const isVirtualSource = source === 'douban' || source === 'bangumi';
     // 优先使用 URL 中的 doubanId，其次使用虚拟源的 id
-    const effectiveDoubanId = doubanId > 0 ? doubanId : (isVirtualSource && id ? parseInt(id) : 0);
-    const doubanIdParam = effectiveDoubanId > 0 ? `&douban_id=${effectiveDoubanId}` : '';
+    const effectiveDoubanId =
+      doubanId > 0 ? doubanId : isVirtualSource && id ? parseInt(id) : 0;
+    const doubanIdParam =
+      effectiveDoubanId > 0 ? `&douban_id=${effectiveDoubanId}` : '';
 
     if (source && id && !isVirtualSource) {
       // 真实源：用 source/id 跳转
@@ -442,85 +556,109 @@ function DetailPageClient() {
   // 跳转到豆瓣
   const handleOpenDouban = useCallback(() => {
     if (doubanId > 0) {
-      window.open(`https://movie.douban.com/subject/${doubanId}`, '_blank', 'noopener,noreferrer');
+      window.open(
+        `https://movie.douban.com/subject/${doubanId}`,
+        '_blank',
+        'noopener,noreferrer',
+      );
     } else {
       // 没有豆瓣ID时，通过标题搜索豆瓣
       const searchQuery = encodeURIComponent(title);
-      window.open(`https://search.douban.com/movie/subject_search?search_text=${searchQuery}`, '_blank', 'noopener,noreferrer');
+      window.open(
+        `https://search.douban.com/movie/subject_search?search_text=${searchQuery}`,
+        '_blank',
+        'noopener,noreferrer',
+      );
     }
   }, [doubanId, title]);
 
   // 优先使用URL参数中的poster（来自搜索结果），其次使用豆瓣详情中的poster
   const displayPoster = poster || movieDetails?.poster || movieDetails?.cover;
   // 优先使用豆瓣数据，如果没有则使用TMDB数据作为备用
-  const rate = movieDetails?.rate || (tmdbRating > 0 ? tmdbRating.toFixed(1) : '');
+  const rate =
+    movieDetails?.rate || (tmdbRating > 0 ? tmdbRating.toFixed(1) : '');
   const firstAired = movieDetails?.first_aired || tmdbFirstAirDate || '';
   const genres = movieDetails?.genres || [];
   const description = movieDetails?.plot_summary || tmdbOverview || '';
   const cast = movieDetails?.cast || [];
   // 判断类型：优先豆瓣数据 > URL参数stype
   const displayType = movieDetails
-    ? (movieDetails.movie_duration ? 'movie' : (movieDetails.episodes ? 'tv' : stype))
+    ? movieDetails.movie_duration
+      ? 'movie'
+      : movieDetails.episodes
+        ? 'tv'
+        : stype
     : stype;
 
   return (
-    <PageLayout activePath="/detail">
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24">
+    <PageLayout activePath='/detail'>
+      <div className='min-h-screen bg-gray-100 dark:bg-gray-900 -mt-12 md:-mt-24'>
         {/* 背景图区域 - 至少填满视口高度 */}
-        <div className="relative w-full min-h-screen overflow-hidden">
+        <div className='relative w-full min-h-screen overflow-hidden'>
           {/* 背景图 - 手机端用豆瓣海报，桌面端用TMDB横版背景 */}
           {/* 手机端背景（豆瓣海报） */}
           {displayPoster && (
             <img
               src={processImageUrl(displayPoster)}
               alt={title}
-              className="md:hidden absolute inset-0 w-full h-full object-cover object-top blur-sm scale-105"
+              className='md:hidden absolute inset-0 w-full h-full object-cover object-top blur-sm scale-105'
             />
           )}
           {/* 桌面端背景（TMDB横版） */}
           {backdrop ? (
-            <img src={backdrop} alt={title} className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />
+            <img
+              src={backdrop}
+              alt={title}
+              className='hidden md:block absolute inset-0 w-full h-full object-cover object-center'
+            />
           ) : displayPoster ? (
-            <img src={processImageUrl(displayPoster)} alt={title} className="hidden md:block absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110" />
+            <img
+              src={processImageUrl(displayPoster)}
+              alt={title}
+              className='hidden md:block absolute inset-0 w-full h-full object-cover object-center blur-xl scale-110'
+            />
           ) : (
-            <div className="absolute inset-0 bg-linear-to-br from-gray-700 to-gray-900" />
+            <div className='absolute inset-0 bg-linear-to-br from-gray-700 to-gray-900' />
           )}
           {/* 手机端无海报时的默认背景 */}
           {!displayPoster && (
-            <div className="md:hidden absolute inset-0 bg-linear-to-br from-gray-700 to-gray-900" />
+            <div className='md:hidden absolute inset-0 bg-linear-to-br from-gray-700 to-gray-900' />
           )}
           {/* 渐变遮罩 */}
-          <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
-          <div className="absolute inset-0 bg-linear-to-t from-black via-black/20 to-transparent" />
+          <div className='absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent' />
+          <div className='absolute inset-0 bg-linear-to-t from-black via-black/20 to-transparent' />
           {/* 底部渐变虚化 - 过渡到下方内容区域 */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-gray-100 dark:from-gray-900 to-transparent" />
+          <div className='absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-gray-100 dark:from-gray-900 to-transparent' />
 
           {/* 返回按钮 */}
           <button
             onClick={() => router.back()}
-            className="absolute top-16 md:top-28 left-4 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors"
-            aria-label="返回"
+            className='absolute top-16 md:top-28 left-4 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors'
+            aria-label='返回'
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className='w-5 h-5' />
           </button>
 
           {/* 内容区域 - 底部对齐 */}
-          <div className="absolute bottom-8 left-0 right-0 px-4 sm:px-6 md:px-8 lg:px-12">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end">
+          <div className='absolute bottom-8 left-0 right-0 px-4 sm:px-6 md:px-8 lg:px-12'>
+            <div className='max-w-6xl mx-auto'>
+              <div className='flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end'>
                 {/* 左侧：封面卡片和按钮 */}
-                <div className="shrink-0 w-36 sm:w-44 md:w-52 mx-auto md:mx-0">
-                  <div className="group relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10 hover:shadow-3xl transition-shadow duration-500">
+                <div className='shrink-0 w-36 sm:w-44 md:w-52 mx-auto md:mx-0'>
+                  <div className='group relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gray-800 ring-1 ring-white/10 hover:shadow-3xl transition-shadow duration-500'>
                     {/* 渐变光泽动画层 */}
                     <div
                       className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10'
                       style={{
-                        background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
+                        background:
+                          'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.15) 55%, transparent 70%)',
                         backgroundSize: '200% 100%',
                         animation: 'cover-shimmer 2.5s ease-in-out infinite',
                       }}
                     />
-                    {!imageLoaded && <ImagePlaceholder aspectRatio="aspect-[2/3]" />}
+                    {!imageLoaded && (
+                      <ImagePlaceholder aspectRatio='aspect-[2/3]' />
+                    )}
                     {displayPoster && (
                       <Image
                         src={processImageUrl(displayPoster)}
@@ -528,35 +666,40 @@ function DetailPageClient() {
                         fill
                         className={`object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                         onLoad={() => setImageLoaded(true)}
-                        referrerPolicy="no-referrer"
+                        referrerPolicy='no-referrer'
                       />
                     )}
                   </div>
                   {/* 按钮组 */}
-                  <div className="mt-4 flex flex-col gap-2">
+                  <div className='mt-4 flex flex-col gap-2'>
                     <button
                       onClick={handlePlay}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all"
+                      className='w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all'
                     >
-                      <Play className="w-4 h-4 fill-current" />
+                      <Play className='w-4 h-4 fill-current' />
                       <span>播放</span>
                     </button>
-                    <div className="flex gap-2">
+                    <div className='flex gap-2'>
                       {source && id && (
                         <button
                           onClick={handleToggleFavorite}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-all ${favorited ? 'bg-red-500/20 text-red-400' : 'bg-white/10 hover:bg-white/20 text-white'
-                            }`}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-all ${
+                            favorited
+                              ? 'bg-red-500/20 text-red-400'
+                              : 'bg-white/10 hover:bg-white/20 text-white'
+                          }`}
                         >
-                          <Heart className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`} />
+                          <Heart
+                            className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`}
+                          />
                           <span>{favorited ? '已收藏' : '收藏'}</span>
                         </button>
                       )}
                       <button
                         onClick={handleOpenDouban}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all"
+                        className='flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all'
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className='w-3.5 h-3.5' />
                         <span>豆瓣</span>
                       </button>
                     </div>
@@ -564,44 +707,59 @@ function DetailPageClient() {
                 </div>
 
                 {/* 右侧：详情信息 */}
-                <div className="flex-1 w-full text-white pb-2">
+                <div className='flex-1 w-full text-white pb-2'>
                   {/* 标题 - 优先使用Logo图片，水平居中 */}
-                  <div className="flex justify-center items-center mb-4 min-h-[6rem] sm:min-h-[8rem] md:min-h-[10rem]">
+                  <div className='flex justify-center items-center mb-4 min-h-[6rem] sm:min-h-[8rem] md:min-h-[10rem]'>
                     {logo && logoRetry < 5 ? (
                       <img
                         key={`logo-${logoRetry}`}
                         src={`${logo}${logoRetry > 0 ? `?retry=${logoRetry}` : ''}`}
                         alt={title}
-                        className="h-24 sm:h-32 md:h-40 max-w-full object-contain drop-shadow-2xl"
+                        className='h-24 sm:h-32 md:h-40 max-w-full object-contain drop-shadow-2xl'
                         onError={() => {
                           // 最多重试5次，间隔递增
                           if (logoRetry < 5) {
-                            setTimeout(() => setLogoRetry(prev => prev + 1), 1000 * (logoRetry + 1));
+                            setTimeout(
+                              () => setLogoRetry((prev) => prev + 1),
+                              1000 * (logoRetry + 1),
+                            );
                           }
                         }}
                       />
                     ) : (
-                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold drop-shadow-lg text-center">{title}</h1>
+                      <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold drop-shadow-lg text-center'>
+                        {title}
+                      </h1>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 text-sm">
-                    {firstAired && <span className="text-gray-300">{firstAired}</span>}
+                  <div className='flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 text-sm'>
+                    {firstAired && (
+                      <span className='text-gray-300'>{firstAired}</span>
+                    )}
                     {displayType && (
-                      <span className="px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded">
+                      <span className='px-2 py-0.5 bg-blue-500/80 text-white text-xs rounded'>
                         {displayType === 'movie' ? '电影' : '电视剧'}
                       </span>
                     )}
-                    {genres.length > 0 && <span className="text-gray-300">{genres.slice(0, 3).join(' · ')}</span>}
+                    {genres.length > 0 && (
+                      <span className='text-gray-300'>
+                        {genres.slice(0, 3).join(' · ')}
+                      </span>
+                    )}
                     {rate && rate !== '0' && parseFloat(rate) > 0 && (
-                      <span className="px-2 py-0.5 bg-green-500/80 text-white text-xs rounded font-semibold">{rate}</span>
+                      <span className='px-2 py-0.5 bg-green-500/80 text-white text-xs rounded font-semibold'>
+                        {rate}
+                      </span>
                     )}
                   </div>
                   {description && (
-                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-4 text-center md:text-left">{description}</p>
+                    <p className='text-gray-300 text-sm leading-relaxed line-clamp-4 text-center md:text-left'>
+                      {description}
+                    </p>
                   )}
                   {loading && (
-                    <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm mt-2">
-                      <div className="w-3 h-3 border-2 border-gray-500 border-t-blue-400 rounded-full animate-spin" />
+                    <div className='flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm mt-2'>
+                      <div className='w-3 h-3 border-2 border-gray-500 border-t-blue-400 rounded-full animate-spin' />
                       <span>加载详情中...</span>
                     </div>
                   )}
@@ -612,151 +770,200 @@ function DetailPageClient() {
         </div>
 
         {/* 下方扩展区域 */}
-        <div className="bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-          <div className="max-w-6xl mx-auto space-y-8">
+        <div className='bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 md:px-8 lg:px-12 py-8'>
+          <div className='max-w-6xl mx-auto space-y-8'>
             {/* 播出平台 */}
             {providers.length > 0 && (
-              <div className="flex flex-wrap gap-4">
+              <div className='flex flex-wrap gap-4'>
                 {providers.map((provider) =>
                   provider.logo ? (
                     <img
                       key={provider.id}
                       src={provider.logo}
                       alt={provider.name}
-                      className="h-10 object-contain"
+                      className='h-10 object-contain'
                     />
-                  ) : null
+                  ) : null,
                 )}
               </div>
             )}
 
             {/* 剧集列表（仅电视剧） */}
-            {stype !== 'movie' && episodes.length > 0 && (() => {
-              // 集数超过200时每页50集，否则每页20集
-              const pageSize = episodes.length > 200 ? 50 : 20;
-              return (
-                <div>
-                  <div className="flex items-center gap-4 mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white shrink-0">剧集列表</h2>
-                    {/* 分页切换 - 加滚动条 */}
-                    <div className="flex-1 overflow-x-auto">
-                      <div className="flex items-center gap-1 text-sm whitespace-nowrap">
-                        {Array.from({ length: Math.ceil(episodes.length / pageSize) }, (_, i) => {
-                          const start = i * pageSize + 1;
-                          const end = Math.min((i + 1) * pageSize, episodes.length);
-                          return (
-                            <button
-                              key={i}
-                              onClick={() => setEpisodePage(i)}
-                              className={`px-2 py-1 rounded transition-colors ${episodePage === i
-                                ? 'text-gray-900 dark:text-white font-semibold'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                            >
-                              {start}-{end}
-                            </button>
-                          );
-                        })}
+            {stype !== 'movie' &&
+              episodes.length > 0 &&
+              (() => {
+                // 集数超过200时每页50集，否则每页20集
+                const pageSize = episodes.length > 200 ? 50 : 20;
+                return (
+                  <div>
+                    <div className='flex items-center gap-4 mb-3'>
+                      <h2 className='text-lg font-semibold text-gray-900 dark:text-white shrink-0'>
+                        剧集列表
+                      </h2>
+                      {/* 分页切换 - 加滚动条 */}
+                      <div className='flex-1 overflow-x-auto'>
+                        <div className='flex items-center gap-1 text-sm whitespace-nowrap'>
+                          {Array.from(
+                            { length: Math.ceil(episodes.length / pageSize) },
+                            (_, i) => {
+                              const start = i * pageSize + 1;
+                              const end = Math.min(
+                                (i + 1) * pageSize,
+                                episodes.length,
+                              );
+                              return (
+                                <button
+                                  key={i}
+                                  onClick={() => setEpisodePage(i)}
+                                  className={`px-2 py-1 rounded transition-colors ${
+                                    episodePage === i
+                                      ? 'text-gray-900 dark:text-white font-semibold'
+                                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                  }`}
+                                >
+                                  {start}-{end}
+                                </button>
+                              );
+                            },
+                          )}
+                        </div>
                       </div>
+                      {seasons.length > 1 && (
+                        <SeasonSelector
+                          seasons={seasons}
+                          currentSeason={currentSeason}
+                          onChange={(season) => {
+                            setCurrentSeason(season);
+                            setEpisodePage(0);
+                          }}
+                        />
+                      )}
                     </div>
-                    {seasons.length > 1 && (
-                      <SeasonSelector
-                        seasons={seasons}
-                        currentSeason={currentSeason}
-                        onChange={(season) => {
-                          setCurrentSeason(season);
-                          setEpisodePage(0);
-                        }}
-                      />
+                    {tmdbLoading ? (
+                      <div className='flex items-center gap-2 text-gray-500 text-sm'>
+                        <div className='w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin' />
+                        <span>加载剧集信息...</span>
+                      </div>
+                    ) : (
+                      <div className='episode-list overflow-x-auto pb-2 show-scrollbar'>
+                        <div
+                          className='flex gap-3'
+                          style={{ width: 'max-content' }}
+                        >
+                          {episodes
+                            .slice(
+                              episodePage * pageSize,
+                              (episodePage + 1) * pageSize,
+                            )
+                            .map((ep) => (
+                              <div
+                                key={ep.episodeNumber}
+                                className='group cursor-pointer shrink-0 w-40 sm:w-44'
+                                onClick={() => {
+                                  const stypeParam = stype
+                                    ? `&stype=${stype}`
+                                    : '';
+                                  const stitleParam = stitle
+                                    ? `&stitle=${encodeURIComponent(stitle)}`
+                                    : '';
+                                  const episodeParam = `&episode=${ep.episodeNumber}`;
+                                  // 虚拟源（douban/bangumi）：id 就是豆瓣/bangumi ID
+                                  const isVirtualSource =
+                                    source === 'douban' || source === 'bangumi';
+                                  const effectiveDoubanId =
+                                    doubanId > 0
+                                      ? doubanId
+                                      : isVirtualSource && id
+                                        ? parseInt(id)
+                                        : 0;
+                                  const doubanIdParam =
+                                    effectiveDoubanId > 0
+                                      ? `&douban_id=${effectiveDoubanId}`
+                                      : '';
+                                  if (source && id && !isVirtualSource) {
+                                    router.push(
+                                      `/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`,
+                                    );
+                                  } else {
+                                    router.push(
+                                      `/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`,
+                                    );
+                                  }
+                                }}
+                              >
+                                <div className='relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700'>
+                                  {ep.stillPath &&
+                                  (episodeRetry[ep.episodeNumber] || 0) < 5 ? (
+                                    <img
+                                      key={`ep-${ep.episodeNumber}-${episodeRetry[ep.episodeNumber] || 0}`}
+                                      src={`${ep.stillPath}${(episodeRetry[ep.episodeNumber] || 0) > 0 ? `?retry=${episodeRetry[ep.episodeNumber]}` : ''}`}
+                                      alt={ep.name}
+                                      className='w-full h-full object-cover'
+                                      onError={() => {
+                                        // 最多重试5次，间隔递增
+                                        const currentRetry =
+                                          episodeRetry[ep.episodeNumber] || 0;
+                                        if (currentRetry < 5) {
+                                          setTimeout(
+                                            () => {
+                                              setEpisodeRetry((prev) => ({
+                                                ...prev,
+                                                [ep.episodeNumber]:
+                                                  currentRetry + 1,
+                                              }));
+                                            },
+                                            1000 * (currentRetry + 1),
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  ) : backdrop ? (
+                                    // 没有剧照时使用TMDB背景图作为备用
+                                    <img
+                                      src={backdrop}
+                                      alt={ep.name}
+                                      className='w-full h-full object-cover'
+                                    />
+                                  ) : (
+                                    <div className='w-full h-full bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center'>
+                                      <span className='text-lg font-bold text-gray-400 dark:text-gray-500'>
+                                        E{ep.episodeNumber}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className='absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded'>
+                                    第 {ep.episodeNumber} 集
+                                  </div>
+                                  {/* 播放按钮悬浮 */}
+                                  <div className='absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity'>
+                                    <div className='w-10 h-10 rounded-full bg-white/90 flex items-center justify-center'>
+                                      <Play className='w-5 h-5 text-gray-900 fill-current ml-0.5' />
+                                    </div>
+                                  </div>
+                                </div>
+                                <h3 className='mt-2 text-sm font-medium text-gray-900 dark:text-white line-clamp-1'>
+                                  {ep.name || `第${ep.episodeNumber}集`}
+                                </h3>
+                                {ep.overview && (
+                                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2'>
+                                    {ep.overview}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
                     )}
                   </div>
-                  {tmdbLoading ? (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm">
-                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-                      <span>加载剧集信息...</span>
-                    </div>
-                  ) : (
-                    <div className="episode-list overflow-x-auto pb-2 show-scrollbar">
-                      <div className="flex gap-3" style={{ width: 'max-content' }}>
-                        {episodes.slice(episodePage * pageSize, (episodePage + 1) * pageSize).map((ep) => (
-                          <div
-                            key={ep.episodeNumber}
-                            className="group cursor-pointer shrink-0 w-40 sm:w-44"
-                            onClick={() => {
-                              const stypeParam = stype ? `&stype=${stype}` : '';
-                              const stitleParam = stitle ? `&stitle=${encodeURIComponent(stitle)}` : '';
-                              const episodeParam = `&episode=${ep.episodeNumber}`;
-                              // 虚拟源（douban/bangumi）：id 就是豆瓣/bangumi ID
-                              const isVirtualSource = source === 'douban' || source === 'bangumi';
-                              const effectiveDoubanId = doubanId > 0 ? doubanId : (isVirtualSource && id ? parseInt(id) : 0);
-                              const doubanIdParam = effectiveDoubanId > 0 ? `&douban_id=${effectiveDoubanId}` : '';
-                              if (source && id && !isVirtualSource) {
-                                router.push(`/play?source=${source}&id=${id}&title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}${episodeParam}`);
-                              } else {
-                                router.push(`/play?title=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}${doubanIdParam}${stypeParam}${stitleParam}&prefer=true${episodeParam}`);
-                              }
-                            }}
-                          >
-                            <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
-                              {ep.stillPath && (episodeRetry[ep.episodeNumber] || 0) < 5 ? (
-                                <img
-                                  key={`ep-${ep.episodeNumber}-${episodeRetry[ep.episodeNumber] || 0}`}
-                                  src={`${ep.stillPath}${(episodeRetry[ep.episodeNumber] || 0) > 0 ? `?retry=${episodeRetry[ep.episodeNumber]}` : ''}`}
-                                  alt={ep.name}
-                                  className="w-full h-full object-cover"
-                                  onError={() => {
-                                    // 最多重试5次，间隔递增
-                                    const currentRetry = episodeRetry[ep.episodeNumber] || 0;
-                                    if (currentRetry < 5) {
-                                      setTimeout(() => {
-                                        setEpisodeRetry(prev => ({
-                                          ...prev,
-                                          [ep.episodeNumber]: currentRetry + 1
-                                        }));
-                                      }, 1000 * (currentRetry + 1));
-                                    }
-                                  }}
-                                />
-                              ) : backdrop ? (
-                                // 没有剧照时使用TMDB背景图作为备用
-                                <img
-                                  src={backdrop}
-                                  alt={ep.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
-                                  <span className="text-lg font-bold text-gray-400 dark:text-gray-500">E{ep.episodeNumber}</span>
-                                </div>
-                              )}
-                              <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-green-500 text-white text-xs font-medium rounded">
-                                第 {ep.episodeNumber} 集
-                              </div>
-                              {/* 播放按钮悬浮 */}
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                                  <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
-                                </div>
-                              </div>
-                            </div>
-                            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                              {ep.name || `第${ep.episodeNumber}集`}
-                            </h3>
-                            {ep.overview && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{ep.overview}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             {/* 主演照片和作品 */}
             {tmdbCast.length > 0 && (
-              <CastPhotos tmdbCast={tmdbCast} doubanId={doubanId ? doubanId.toString() : undefined} />
+              <CastPhotos
+                tmdbCast={tmdbCast}
+                doubanId={doubanId ? doubanId.toString() : undefined}
+              />
             )}
           </div>
         </div>
@@ -767,13 +974,15 @@ function DetailPageClient() {
 
 export default function DetailPage() {
   return (
-    <Suspense fallback={
-      <PageLayout activePath="/detail">
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-          <div className="text-gray-500">加载中...</div>
-        </div>
-      </PageLayout>
-    }>
+    <Suspense
+      fallback={
+        <PageLayout activePath='/detail'>
+          <div className='min-h-screen bg-gray-900 flex items-center justify-center'>
+            <div className='text-gray-500'>加载中...</div>
+          </div>
+        </PageLayout>
+      }
+    >
       <DetailPageClient />
     </Suspense>
   );

@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { getConfig } from '@/lib/config';
-import { TMDB_CACHE_EXPIRE, getCacheKey, getCache, setCache } from '@/lib/tmdb-cache';
+import {
+  TMDB_CACHE_EXPIRE,
+  getCacheKey,
+  getCache,
+  setCache,
+} from '@/lib/tmdb-cache';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // TMDB API 配置
@@ -12,11 +17,14 @@ const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 /**
  * 生成 TMDB 图片 URL（支持 Worker 代理）
  */
-async function getTMDBImageUrl(path: string, size: 'w500' | 'w1280' = 'w500'): Promise<string> {
+async function getTMDBImageUrl(
+  path: string,
+  size: 'w500' | 'w1280' = 'w500',
+): Promise<string> {
   if (!path) return '';
 
   const config = await getConfig();
-  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
 
   // 如果配置了 Worker 代理，使用代理
   if (workerProxy) {
@@ -32,7 +40,7 @@ async function getTMDBImageUrl(path: string, size: 'w500' | 'w1280' = 'w500'): P
 async function getTMDBWorkerProxy(): Promise<string> {
   try {
     const config = await getConfig();
-    return config.SiteConfig.TMDBWorkerProxy || '';
+    return (config.SiteConfig.TMDBWorkerProxy || '').trim();
   } catch {
     return '';
   }
@@ -137,7 +145,13 @@ export interface TMDBFilterOptions {
   onlyRated?: boolean;
 
   // 排序方式
-  sortBy?: 'rating' | 'date' | 'popularity' | 'vote_count' | 'title' | 'episode_count';
+  sortBy?:
+    | 'rating'
+    | 'date'
+    | 'popularity'
+    | 'vote_count'
+    | 'title'
+    | 'episode_count';
   sortOrder?: 'asc' | 'desc';
 
   // 结果限制
@@ -148,7 +162,9 @@ export interface TMDBFilterOptions {
  * 检查是否有可用的TMDB API Key
  */
 function hasTMDBApiKey(config: any): boolean {
-  const hasMultiKeys = config.SiteConfig.TMDBApiKeys?.some((k: string) => k && k.trim());
+  const hasMultiKeys = config.SiteConfig.TMDBApiKeys?.some(
+    (k: string) => k && k.trim(),
+  );
   const hasSingleKey = !!config.SiteConfig.TMDBApiKey;
   return hasMultiKeys || hasSingleKey;
 }
@@ -177,13 +193,16 @@ let tmdbApiKeyIndex = 0;
  */
 function getNextTMDBApiKey(config: any): string {
   // 优先使用多Key配置
-  const apiKeys = config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
+  const apiKeys =
+    config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
 
   // 如果有多个Key，使用轮询
   if (apiKeys.length > 0) {
     const key = apiKeys[tmdbApiKeyIndex % apiKeys.length];
     tmdbApiKeyIndex = (tmdbApiKeyIndex + 1) % apiKeys.length;
-    console.log(`[TMDB API] 使用API Key #${(tmdbApiKeyIndex === 0 ? apiKeys.length : tmdbApiKeyIndex)}/${apiKeys.length}`);
+    console.log(
+      `[TMDB API] 使用API Key #${tmdbApiKeyIndex === 0 ? apiKeys.length : tmdbApiKeyIndex}/${apiKeys.length}`,
+    );
     return key;
   }
 
@@ -200,11 +219,19 @@ function getNextTMDBApiKey(config: any): string {
  */
 export async function searchTMDBMovieByTitle(
   title: string,
-  year?: string
-): Promise<{ id: number; title: string; release_date: string; vote_average: number } | null> {
+  year?: string,
+): Promise<{
+  id: number;
+  title: string;
+  release_date: string;
+  vote_average: number;
+} | null> {
   try {
     // 检查缓存
-    const cacheKey = getCacheKey('movie_search_by_title', { title: title.trim(), year: year || '' });
+    const cacheKey = getCacheKey('movie_search_by_title', {
+      title: title.trim(),
+      year: year || '',
+    });
     const cached = await getCache(cacheKey);
     if (cached) {
       console.log(`TMDB电影搜索缓存命中: ${title}`);
@@ -249,11 +276,19 @@ export async function searchTMDBMovieByTitle(
  */
 export async function searchTMDBTVByTitle(
   title: string,
-  year?: string
-): Promise<{ id: number; name: string; first_air_date: string; vote_average: number } | null> {
+  year?: string,
+): Promise<{
+  id: number;
+  name: string;
+  first_air_date: string;
+  vote_average: number;
+} | null> {
   try {
     // 检查缓存
-    const cacheKey = getCacheKey('tv_search_by_title', { title: title.trim(), year: year || '' });
+    const cacheKey = getCacheKey('tv_search_by_title', {
+      title: title.trim(),
+      year: year || '',
+    });
     const cached = await getCache(cacheKey);
     if (cached) {
       console.log(`TMDB电视剧搜索缓存命中: ${title}`);
@@ -296,17 +331,23 @@ export async function searchTMDBTVByTitle(
 /**
  * 调用TMDB API的通用函数
  */
-async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
+async function fetchTMDB<T>(
+  endpoint: string,
+  params: Record<string, string> = {},
+): Promise<T> {
   const config = await getConfig();
   const apiKey = getNextTMDBApiKey(config);
-  const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
 
   // 如果配置了 Worker 代理，使用代理
   if (workerProxy) {
     const proxyUrl = workerProxy.replace(/\/$/, ''); // 移除末尾斜杠
     const url = new URL(`${proxyUrl}${endpoint}`);
     url.searchParams.append('api_key', apiKey);
-    url.searchParams.append('language', config.SiteConfig.TMDBLanguage || 'zh-CN');
+    url.searchParams.append(
+      'language',
+      config.SiteConfig.TMDBLanguage || 'zh-CN',
+    );
 
     // 添加其他参数
     Object.entries(params).forEach(([key, value]) => {
@@ -317,13 +358,15 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
 
     const response = await fetch(url.toString(), {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'User-Agent': DEFAULT_USER_AGENT,
-      }
+      },
     });
 
     if (!response.ok) {
-      throw new Error(`TMDB API错误: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `TMDB API错误: ${response.status} ${response.statusText}`,
+      );
     }
 
     return await response.json();
@@ -332,7 +375,10 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
   // 没有配置代理，直连 TMDB
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
   url.searchParams.append('api_key', apiKey);
-  url.searchParams.append('language', config.SiteConfig.TMDBLanguage || 'zh-CN');
+  url.searchParams.append(
+    'language',
+    config.SiteConfig.TMDBLanguage || 'zh-CN',
+  );
 
   // 添加其他参数
   Object.entries(params).forEach(([key, value]) => {
@@ -343,9 +389,9 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
 
   const response = await fetch(url.toString(), {
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'User-Agent': DEFAULT_USER_AGENT,
-    }
+    },
   });
 
   if (!response.ok) {
@@ -358,7 +404,10 @@ async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {
 /**
  * 搜索演员
  */
-export async function searchTMDBPerson(query: string, page = 1): Promise<TMDBPersonSearchResponse> {
+export async function searchTMDBPerson(
+  query: string,
+  page = 1,
+): Promise<TMDBPersonSearchResponse> {
   // 检查缓存
   const cacheKey = getCacheKey('person_search', { query: query.trim(), page });
   const cached = await getCache(cacheKey);
@@ -369,7 +418,7 @@ export async function searchTMDBPerson(query: string, page = 1): Promise<TMDBPer
 
   const result = await fetchTMDB<TMDBPersonSearchResponse>('/search/person', {
     query: query.trim(),
-    page: page.toString()
+    page: page.toString(),
   });
 
   // 保存到缓存
@@ -382,7 +431,9 @@ export async function searchTMDBPerson(query: string, page = 1): Promise<TMDBPer
 /**
  * 获取演员的电影作品
  */
-export async function getTMDBPersonMovies(personId: number): Promise<TMDBMovieCreditsResponse> {
+export async function getTMDBPersonMovies(
+  personId: number,
+): Promise<TMDBMovieCreditsResponse> {
   // 检查缓存
   const cacheKey = getCacheKey('movie_credits', { personId });
   const cached = await getCache(cacheKey);
@@ -391,7 +442,9 @@ export async function getTMDBPersonMovies(personId: number): Promise<TMDBMovieCr
     return cached;
   }
 
-  const result = await fetchTMDB<TMDBMovieCreditsResponse>(`/person/${personId}/movie_credits`);
+  const result = await fetchTMDB<TMDBMovieCreditsResponse>(
+    `/person/${personId}/movie_credits`,
+  );
 
   // 保存到缓存
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.movie_credits);
@@ -403,7 +456,9 @@ export async function getTMDBPersonMovies(personId: number): Promise<TMDBMovieCr
 /**
  * 获取演员的电视剧作品
  */
-export async function getTMDBPersonTVShows(personId: number): Promise<TMDBTVCreditsResponse> {
+export async function getTMDBPersonTVShows(
+  personId: number,
+): Promise<TMDBTVCreditsResponse> {
   // 检查缓存
   const cacheKey = getCacheKey('tv_credits', { personId });
   const cached = await getCache(cacheKey);
@@ -412,7 +467,9 @@ export async function getTMDBPersonTVShows(personId: number): Promise<TMDBTVCred
     return cached;
   }
 
-  const result = await fetchTMDB<TMDBTVCreditsResponse>(`/person/${personId}/tv_credits`);
+  const result = await fetchTMDB<TMDBTVCreditsResponse>(
+    `/person/${personId}/tv_credits`,
+  );
 
   // 保存到缓存
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.tv_credits);
@@ -453,13 +510,13 @@ export async function getTMDBMovieDetails(movieId: number): Promise<{
     const [details, keywordsData, similarData] = await Promise.all([
       fetchTMDB(`/movie/${movieId}`, {}),
       fetchTMDB(`/movie/${movieId}/keywords`, {}),
-      fetchTMDB(`/movie/${movieId}/similar`, {})
+      fetchTMDB(`/movie/${movieId}/similar`, {}),
     ]);
 
     const result = {
       ...(details as any),
       keywords: (keywordsData as any).keywords || [],
-      similar: ((similarData as any).results || []).slice(0, 5) // 只取前5个相似影片
+      similar: ((similarData as any).results || []).slice(0, 5), // 只取前5个相似影片
     };
 
     // 保存到缓存
@@ -505,13 +562,13 @@ export async function getTMDBTVDetails(tvId: number): Promise<{
     const [details, keywordsData, similarData] = await Promise.all([
       fetchTMDB(`/tv/${tvId}`, {}),
       fetchTMDB(`/tv/${tvId}/keywords`, {}),
-      fetchTMDB(`/tv/${tvId}/similar`, {})
+      fetchTMDB(`/tv/${tvId}/similar`, {}),
     ]);
 
     const result = {
       ...(details as any),
-      keywords: ((keywordsData as any).results || []),
-      similar: ((similarData as any).results || []).slice(0, 5) // 只取前5个相似影片
+      keywords: (keywordsData as any).results || [],
+      similar: ((similarData as any).results || []).slice(0, 5), // 只取前5个相似影片
     };
 
     // 保存到缓存
@@ -531,9 +588,11 @@ export async function getTMDBTVDetails(tvId: number): Promise<{
 export async function searchTMDBActorWorks(
   actorName: string,
   type: 'movie' | 'tv' = 'movie',
-  filterOptions: TMDBFilterOptions = {}
+  filterOptions: TMDBFilterOptions = {},
 ): Promise<TMDBResult> {
-  console.log(`🚀 [TMDB] searchTMDBActorWorks 开始执行: ${actorName}, type=${type}`);
+  console.log(
+    `🚀 [TMDB] searchTMDBActorWorks 开始执行: ${actorName}, type=${type}`,
+  );
 
   try {
     console.log(`🔍 [TMDB] 检查是否启用...`);
@@ -544,7 +603,7 @@ export async function searchTMDBActorWorks(
         code: 500,
         message: 'TMDB演员搜索功能未启用或API Key未配置',
         list: [],
-        source: 'tmdb'
+        source: 'tmdb',
       } as TMDBResult;
     }
 
@@ -552,13 +611,18 @@ export async function searchTMDBActorWorks(
 
     // 获取配置以确定图片 URL 前缀
     const config = await getConfig();
-    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
     const imageBaseUrl = workerProxy
       ? `${workerProxy.replace(/\/$/, '')}/image/w500`
       : TMDB_IMAGE_BASE_URL;
 
     // 检查缓存 - 为整个搜索结果缓存
-    const cacheKey = getCacheKey('actor_works', { actorName, type, ...filterOptions });
+    const cacheKey = getCacheKey('actor_works', {
+      actorName,
+      type,
+      tmdbProxy: workerProxy || 'direct',
+      ...filterOptions,
+    });
     console.log(`🔑 [TMDB] 缓存Key: ${cacheKey}`);
 
     const cached = await getCache(cacheKey);
@@ -579,7 +643,7 @@ export async function searchTMDBActorWorks(
         message: '未找到相关演员',
         list: [],
         total: 0,
-        source: 'tmdb'
+        source: 'tmdb',
       };
       // 缓存空结果，避免重复请求
       await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
@@ -588,10 +652,18 @@ export async function searchTMDBActorWorks(
 
     // 2. 优先选择名字完全匹配且有头像的演员，其次名字匹配，最后按人气排序
     const results = personSearch.results;
-    const exactMatchWithPhoto = results.find(p => p.name === actorName && p.profile_path);
-    const exactMatch = results.find(p => p.name === actorName);
-    const withPhotoSorted = results.filter(p => p.profile_path).sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-    const person = exactMatchWithPhoto || exactMatch || withPhotoSorted[0] || results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
+    const exactMatchWithPhoto = results.find(
+      (p) => p.name === actorName && p.profile_path,
+    );
+    const exactMatch = results.find((p) => p.name === actorName);
+    const withPhotoSorted = results
+      .filter((p) => p.profile_path)
+      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    const person =
+      exactMatchWithPhoto ||
+      exactMatch ||
+      withPhotoSorted[0] ||
+      results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
     console.log(`[TMDB演员搜索] 找到演员: ${person.name} (ID: ${person.id})`);
 
     // 3. 获取该演员的作品
@@ -616,29 +688,49 @@ export async function searchTMDBActorWorks(
       const genreIds = work.genre_ids || [];
 
       // 时间筛选
-      if (filterOptions.startYear && year && year < filterOptions.startYear) return false;
-      if (filterOptions.endYear && year && year > filterOptions.endYear) return false;
+      if (filterOptions.startYear && year && year < filterOptions.startYear)
+        return false;
+      if (filterOptions.endYear && year && year > filterOptions.endYear)
+        return false;
 
       // 评分筛选
-      if (filterOptions.minRating && rating < filterOptions.minRating) return false;
-      if (filterOptions.maxRating && rating > filterOptions.maxRating) return false;
+      if (filterOptions.minRating && rating < filterOptions.minRating)
+        return false;
+      if (filterOptions.maxRating && rating > filterOptions.maxRating)
+        return false;
 
       // 人气筛选
-      if (filterOptions.minPopularity && popularity < filterOptions.minPopularity) return false;
-      if (filterOptions.maxPopularity && popularity > filterOptions.maxPopularity) return false;
+      if (
+        filterOptions.minPopularity &&
+        popularity < filterOptions.minPopularity
+      )
+        return false;
+      if (
+        filterOptions.maxPopularity &&
+        popularity > filterOptions.maxPopularity
+      )
+        return false;
 
       // 投票数筛选
-      if (filterOptions.minVoteCount && voteCount < filterOptions.minVoteCount) return false;
+      if (filterOptions.minVoteCount && voteCount < filterOptions.minVoteCount)
+        return false;
 
       // 参演集数筛选（TV剧）
-      if (filterOptions.minEpisodeCount && type === 'tv' && episodeCount < filterOptions.minEpisodeCount) return false;
+      if (
+        filterOptions.minEpisodeCount &&
+        type === 'tv' &&
+        episodeCount < filterOptions.minEpisodeCount
+      )
+        return false;
 
       // 只显示有评分的
       if (filterOptions.onlyRated && rating === 0) return false;
 
       // 类型筛选
       if (filterOptions.genreIds && filterOptions.genreIds.length > 0) {
-        const hasMatchingGenre = filterOptions.genreIds.some(id => genreIds.includes(id));
+        const hasMatchingGenre = filterOptions.genreIds.some((id) =>
+          genreIds.includes(id),
+        );
         if (!hasMatchingGenre) return false;
       }
 
@@ -660,19 +752,26 @@ export async function searchTMDBActorWorks(
 
       switch (sortBy) {
         case 'rating':
-          compareValue = ((b.vote_average || 0) - (a.vote_average || 0)) * orderMultiplier;
+          compareValue =
+            ((b.vote_average || 0) - (a.vote_average || 0)) * orderMultiplier;
           break;
         case 'date': {
-          const dateA = new Date(a.release_date || a.first_air_date || '1900-01-01');
-          const dateB = new Date(b.release_date || b.first_air_date || '1900-01-01');
+          const dateA = new Date(
+            a.release_date || a.first_air_date || '1900-01-01',
+          );
+          const dateB = new Date(
+            b.release_date || b.first_air_date || '1900-01-01',
+          );
           compareValue = (dateB.getTime() - dateA.getTime()) * orderMultiplier;
           break;
         }
         case 'popularity':
-          compareValue = ((b.popularity || 0) - (a.popularity || 0)) * orderMultiplier;
+          compareValue =
+            ((b.popularity || 0) - (a.popularity || 0)) * orderMultiplier;
           break;
         case 'vote_count':
-          compareValue = ((b.vote_count || 0) - (a.vote_count || 0)) * orderMultiplier;
+          compareValue =
+            ((b.vote_count || 0) - (a.vote_count || 0)) * orderMultiplier;
           break;
         case 'title': {
           const titleA = (a.title || a.name || '').toLowerCase();
@@ -682,7 +781,9 @@ export async function searchTMDBActorWorks(
         }
         case 'episode_count':
           if (type === 'tv') {
-            compareValue = ((b.episode_count || 0) - (a.episode_count || 0)) * orderMultiplier;
+            compareValue =
+              ((b.episode_count || 0) - (a.episode_count || 0)) *
+              orderMultiplier;
           }
           break;
       }
@@ -692,8 +793,12 @@ export async function searchTMDBActorWorks(
         const ratingDiff = (b.vote_average || 0) - (a.vote_average || 0);
         if (ratingDiff !== 0) return ratingDiff;
 
-        const dateA = new Date(a.release_date || a.first_air_date || '1900-01-01');
-        const dateB = new Date(b.release_date || b.first_air_date || '1900-01-01');
+        const dateA = new Date(
+          a.release_date || a.first_air_date || '1900-01-01',
+        );
+        const dateB = new Date(
+          b.release_date || b.first_air_date || '1900-01-01',
+        );
         compareValue = dateB.getTime() - dateA.getTime();
       }
 
@@ -710,7 +815,9 @@ export async function searchTMDBActorWorks(
     const list = filteredWorks
       .map((work: any) => {
         const releaseDate = work.release_date || work.first_air_date || '';
-        const year = releaseDate ? new Date(releaseDate).getFullYear().toString() : '';
+        const year = releaseDate
+          ? new Date(releaseDate).getFullYear().toString()
+          : '';
 
         return {
           id: work.id.toString(),
@@ -723,10 +830,10 @@ export async function searchTMDBActorWorks(
           genre_ids: work.genre_ids,
           character: work.character,
           episode_count: work.episode_count,
-          original_language: work.original_language
+          original_language: work.original_language,
         };
       })
-      .filter(work => {
+      .filter((work) => {
         // 过滤掉没有标题的和重复的
         if (!work.title) return false;
         if (seenIds.has(work.id)) return false;
@@ -734,14 +841,16 @@ export async function searchTMDBActorWorks(
         return true;
       });
 
-    console.log(`[TMDB演员搜索] 筛选后找到 ${list.length} 个${type === 'movie' ? '电影' : '电视剧'}作品（原始: ${works.length}）`);
+    console.log(
+      `[TMDB演员搜索] 筛选后找到 ${list.length} 个${type === 'movie' ? '电影' : '电视剧'}作品（原始: ${works.length}）`,
+    );
 
     const result: TMDBResult = {
       code: 200,
       message: '获取成功',
       list: list,
       total: list.length,
-      source: 'tmdb'
+      source: 'tmdb',
     };
 
     // 保存到缓存
@@ -749,14 +858,13 @@ export async function searchTMDBActorWorks(
     console.log(`TMDB演员作品搜索已缓存: ${actorName}/${type}`);
 
     return result;
-
   } catch (error) {
     console.error(`[TMDB演员搜索] 搜索失败:`, error);
     return {
       code: 500,
       message: `搜索失败: ${(error as Error).message}`,
       list: [],
-      source: 'tmdb'
+      source: 'tmdb',
     } as TMDBResult;
   }
 }
@@ -832,7 +940,9 @@ export async function getTMDBTrendingMovies(): Promise<TMDBMovieSearchResponse> 
     return cached;
   }
 
-  const result = await fetchTMDB<TMDBMovieSearchResponse>('/trending/movie/week');
+  const result = await fetchTMDB<TMDBMovieSearchResponse>(
+    '/trending/movie/week',
+  );
 
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
   console.log(`TMDB热门电影已缓存 (${result.results.length}条结果)`);
@@ -862,17 +972,22 @@ export async function getTMDBTrendingTV(): Promise<TMDBTVSearchResponse> {
 /**
  * 搜索电影
  */
-export async function searchTMDBMovie(query: string, page = 1): Promise<TMDBMovieSearchResponse> {
+export async function searchTMDBMovie(
+  query: string,
+  page = 1,
+): Promise<TMDBMovieSearchResponse> {
   const cacheKey = getCacheKey('movie_search', { query: query.trim(), page });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB电影搜索缓存命中: ${query} (${cached.results.length}条结果)`);
+    console.log(
+      `TMDB电影搜索缓存命中: ${query} (${cached.results.length}条结果)`,
+    );
     return cached;
   }
 
   const result = await fetchTMDB<TMDBMovieSearchResponse>('/search/movie', {
     query: query.trim(),
-    page: page.toString()
+    page: page.toString(),
   });
 
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
@@ -884,21 +999,28 @@ export async function searchTMDBMovie(query: string, page = 1): Promise<TMDBMovi
 /**
  * 搜索电视剧
  */
-export async function searchTMDBTV(query: string, page = 1): Promise<TMDBTVSearchResponse> {
+export async function searchTMDBTV(
+  query: string,
+  page = 1,
+): Promise<TMDBTVSearchResponse> {
   const cacheKey = getCacheKey('tv_search', { query: query.trim(), page });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB电视剧搜索缓存命中: ${query} (${cached.results.length}条结果)`);
+    console.log(
+      `TMDB电视剧搜索缓存命中: ${query} (${cached.results.length}条结果)`,
+    );
     return cached;
   }
 
   const result = await fetchTMDB<TMDBTVSearchResponse>('/search/tv', {
     query: query.trim(),
-    page: page.toString()
+    page: page.toString(),
   });
 
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
-  console.log(`TMDB电视剧搜索已缓存: ${query} (${result.results.length}条结果)`);
+  console.log(
+    `TMDB电视剧搜索已缓存: ${query} (${result.results.length}条结果)`,
+  );
 
   return result;
 }
@@ -953,7 +1075,12 @@ function generateTitleVariants(title: string): string[] {
     const englishColon = trimmed.replace(/：/g, ':');
     if (!variants.includes(englishColon)) variants.push(englishColon);
     const beforeColon = trimmed.split('：')[0].trim();
-    if (beforeColon && beforeColon.length >= 2 && !variants.includes(beforeColon)) variants.push(beforeColon);
+    if (
+      beforeColon &&
+      beforeColon.length >= 2 &&
+      !variants.includes(beforeColon)
+    )
+      variants.push(beforeColon);
   }
 
   // 英文冒号变体
@@ -963,7 +1090,12 @@ function generateTitleVariants(title: string): string[] {
     const noColon = trimmed.replace(/:/g, '');
     if (!variants.includes(noColon)) variants.push(noColon);
     const beforeColon = trimmed.split(':')[0].trim();
-    if (beforeColon && beforeColon.length >= 2 && !variants.includes(beforeColon)) variants.push(beforeColon);
+    if (
+      beforeColon &&
+      beforeColon.length >= 2 &&
+      !variants.includes(beforeColon)
+    )
+      variants.push(beforeColon);
   }
 
   // 去掉"之XXX"后缀
@@ -981,14 +1113,18 @@ function generateTitleVariants(title: string): string[] {
   }
 
   // 去掉语言版本后缀
-  const langMatch = trimmed.match(/^(.+?)\s*(国语版|粤语版|日语版|英语版|中文版|原声版|配音版)$/);
+  const langMatch = trimmed.match(
+    /^(.+?)\s*(国语版|粤语版|日语版|英语版|中文版|原声版|配音版)$/,
+  );
   if (langMatch && langMatch[1].length >= 2) {
     const mainTitle = langMatch[1].trim();
     if (!variants.includes(mainTitle)) variants.push(mainTitle);
   }
 
   // 去掉括号内的语言/版本标记
-  const bracketLangMatch = trimmed.match(/^(.+?)[（(](粤|国|国语|粤语|日语|英语|中文|原声|配音|港版|台版|美版)[）)]$/);
+  const bracketLangMatch = trimmed.match(
+    /^(.+?)[（(](粤|国|国语|粤语|日语|英语|中文|原声|配音|港版|台版|美版)[）)]$/,
+  );
   if (bracketLangMatch && bracketLangMatch[1].length >= 2) {
     const mainTitle = bracketLangMatch[1].trim();
     if (!variants.includes(mainTitle)) variants.push(mainTitle);
@@ -1015,8 +1151,15 @@ function generateTitleVariants(title: string): string[] {
   }
 
   // 去除所有标点符号的变体
-  const noPunctuation = trimmed.replace(/[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>\s]/g, '');
-  if (noPunctuation !== trimmed && noPunctuation.length >= 2 && !variants.includes(noPunctuation)) {
+  const noPunctuation = trimmed.replace(
+    /[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>\s]/g,
+    '',
+  );
+  if (
+    noPunctuation !== trimmed &&
+    noPunctuation.length >= 2 &&
+    !variants.includes(noPunctuation)
+  ) {
     variants.push(noPunctuation);
   }
 
@@ -1040,11 +1183,13 @@ export async function findByIMDBId(imdbId: string): Promise<TMDBFindResponse> {
   }
 
   const result = await fetchTMDB<TMDBFindResponse>(`/find/${imdbId}`, {
-    external_source: 'imdb_id'
+    external_source: 'imdb_id',
   });
 
   await setCache(cacheKey, result, TMDB_CACHE_EXPIRE.actor_search);
-  console.log(`[TMDB] IMDB查找已缓存: ${imdbId} (电影:${result.movie_results.length}, 电视剧:${result.tv_results.length})`);
+  console.log(
+    `[TMDB] IMDB查找已缓存: ${imdbId} (电影:${result.movie_results.length}, 电视剧:${result.tv_results.length})`,
+  );
 
   return result;
 }
@@ -1054,7 +1199,7 @@ export async function findByIMDBId(imdbId: string): Promise<TMDBFindResponse> {
  */
 export async function getCarouselItemByIMDB(
   imdbId: string,
-  type: 'movie' | 'tv'
+  type: 'movie' | 'tv',
 ): Promise<CarouselItem | null> {
   try {
     console.log(`[TMDB轮播] 🎯 通过IMDB精确查找: ${imdbId} (${type})`);
@@ -1065,10 +1210,14 @@ export async function getCarouselItemByIMDB(
 
     if (type === 'movie' && findResult.movie_results.length > 0) {
       searchResult = findResult.movie_results[0];
-      console.log(`[TMDB轮播] ✅ IMDB匹配成功: ${(searchResult as TMDBMovie).title}`);
+      console.log(
+        `[TMDB轮播] ✅ IMDB匹配成功: ${(searchResult as TMDBMovie).title}`,
+      );
     } else if (type === 'tv' && findResult.tv_results.length > 0) {
       searchResult = findResult.tv_results[0];
-      console.log(`[TMDB轮播] ✅ IMDB匹配成功: ${(searchResult as TMDBTVShow).name}`);
+      console.log(
+        `[TMDB轮播] ✅ IMDB匹配成功: ${(searchResult as TMDBTVShow).name}`,
+      );
     }
 
     if (!searchResult) {
@@ -1078,7 +1227,7 @@ export async function getCarouselItemByIMDB(
 
     // 获取配置以确定图片 URL 前缀
     const config = await getConfig();
-    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
     const backdropBaseUrl = workerProxy
       ? `${workerProxy.replace(/\/$/, '')}/image/w1280`
       : TMDB_BACKDROP_BASE_URL;
@@ -1088,18 +1237,28 @@ export async function getCarouselItemByIMDB(
 
     const carouselItem: CarouselItem = {
       id: searchResult.id,
-      title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
+      title:
+        type === 'movie'
+          ? (searchResult as TMDBMovie).title
+          : (searchResult as TMDBTVShow).name,
       overview: searchResult.overview || '',
-      backdrop: searchResult.backdrop_path ? `${backdropBaseUrl}${searchResult.backdrop_path}` : '',
-      poster: searchResult.poster_path ? `${imageBaseUrl}${searchResult.poster_path}` : '',
+      backdrop: searchResult.backdrop_path
+        ? `${backdropBaseUrl}${searchResult.backdrop_path}`
+        : '',
+      poster: searchResult.poster_path
+        ? `${imageBaseUrl}${searchResult.poster_path}`
+        : '',
       rate: searchResult.vote_average || 0,
-      year: type === 'movie'
-        ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
-        : ((searchResult as TMDBTVShow).first_air_date?.split('-')[0] || ''),
+      year:
+        type === 'movie'
+          ? (searchResult as TMDBMovie).release_date?.split('-')[0] || ''
+          : (searchResult as TMDBTVShow).first_air_date?.split('-')[0] || '',
       type,
     };
 
-    console.log(`[TMDB轮播] 📸 IMDB匹配海报: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`);
+    console.log(
+      `[TMDB轮播] 📸 IMDB匹配海报: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`,
+    );
 
     return carouselItem;
   } catch (error) {
@@ -1113,18 +1272,21 @@ export async function getCarouselItemByIMDB(
  */
 export async function getCarouselItemByTitle(
   title: string,
-  type: 'movie' | 'tv'
+  type: 'movie' | 'tv',
 ): Promise<CarouselItem | null> {
   try {
     console.log(`[TMDB轮播] 🔍 标题搜索 ${type}: "${title}"`);
 
     // 生成搜索变体
     const titleVariants = generateTitleVariants(title);
-    console.log(`[TMDB轮播] 生成 ${titleVariants.length} 个搜索变体:`, titleVariants.slice(0, 5));
+    console.log(
+      `[TMDB轮播] 生成 ${titleVariants.length} 个搜索变体:`,
+      titleVariants.slice(0, 5),
+    );
 
     // 获取配置以确定图片 URL 前缀
     const config = await getConfig();
-    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
     const backdropBaseUrl = workerProxy
       ? `${workerProxy.replace(/\/$/, '')}/image/w1280`
       : TMDB_BACKDROP_BASE_URL;
@@ -1140,13 +1302,19 @@ export async function getCarouselItemByTitle(
       // 尝试所有变体直到找到结果
       for (const variant of titleVariants) {
         const movieSearch = await searchTMDBMovie(variant);
-        console.log(`[TMDB轮播] 电影变体 "${variant}" 搜索结果: ${movieSearch.results.length}个匹配`);
+        console.log(
+          `[TMDB轮播] 电影变体 "${variant}" 搜索结果: ${movieSearch.results.length}个匹配`,
+        );
         if (movieSearch.results.length > 0) {
           // 优先选择有海报的结果
-          searchResult = movieSearch.results.find(r => r.backdrop_path || r.poster_path) || movieSearch.results[0];
+          searchResult =
+            movieSearch.results.find((r) => r.backdrop_path || r.poster_path) ||
+            movieSearch.results[0];
           mediaId = searchResult.id;
           const selectedIndex = movieSearch.results.indexOf(searchResult);
-          console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.title} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
+          console.log(
+            `[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.title} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`,
+          );
           break;
         }
       }
@@ -1154,13 +1322,19 @@ export async function getCarouselItemByTitle(
       // 尝试所有变体直到找到结果
       for (const variant of titleVariants) {
         const tvSearch = await searchTMDBTV(variant);
-        console.log(`[TMDB轮播] 电视剧变体 "${variant}" 搜索结果: ${tvSearch.results.length}个匹配`);
+        console.log(
+          `[TMDB轮播] 电视剧变体 "${variant}" 搜索结果: ${tvSearch.results.length}个匹配`,
+        );
         if (tvSearch.results.length > 0) {
           // 优先选择有海报的结果
-          searchResult = tvSearch.results.find(r => r.backdrop_path || r.poster_path) || tvSearch.results[0];
+          searchResult =
+            tvSearch.results.find((r) => r.backdrop_path || r.poster_path) ||
+            tvSearch.results[0];
           mediaId = searchResult.id;
           const selectedIndex = tvSearch.results.indexOf(searchResult);
-          console.log(`[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.name} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`);
+          console.log(
+            `[TMDB轮播] ✅ 选择第${selectedIndex + 1}个: ${searchResult.name} (ID: ${mediaId}, 有海报: ${!!(searchResult.backdrop_path || searchResult.poster_path)})`,
+          );
           break;
         }
       }
@@ -1174,18 +1348,28 @@ export async function getCarouselItemByTitle(
     // 2. 构建轮播图项（移除预告片获取，提升性能）
     const carouselItem: CarouselItem = {
       id: searchResult.id,
-      title: type === 'movie' ? (searchResult as TMDBMovie).title : (searchResult as TMDBTVShow).name,
+      title:
+        type === 'movie'
+          ? (searchResult as TMDBMovie).title
+          : (searchResult as TMDBTVShow).name,
       overview: searchResult.overview || '',
-      backdrop: searchResult.backdrop_path ? `${backdropBaseUrl}${searchResult.backdrop_path}` : '',
-      poster: searchResult.poster_path ? `${imageBaseUrl}${searchResult.poster_path}` : '',
+      backdrop: searchResult.backdrop_path
+        ? `${backdropBaseUrl}${searchResult.backdrop_path}`
+        : '',
+      poster: searchResult.poster_path
+        ? `${imageBaseUrl}${searchResult.poster_path}`
+        : '',
       rate: searchResult.vote_average || 0,
-      year: type === 'movie'
-        ? ((searchResult as TMDBMovie).release_date?.split('-')[0] || '')
-        : ((searchResult as TMDBTVShow).first_air_date?.split('-')[0] || ''),
+      year:
+        type === 'movie'
+          ? (searchResult as TMDBMovie).release_date?.split('-')[0] || ''
+          : (searchResult as TMDBTVShow).first_air_date?.split('-')[0] || '',
       type,
     };
 
-    console.log(`[TMDB轮播] 📸 海报情况: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`);
+    console.log(
+      `[TMDB轮播] 📸 海报情况: backdrop=${!!carouselItem.backdrop}, poster=${!!carouselItem.poster}`,
+    );
 
     if (!carouselItem.backdrop && !carouselItem.poster) {
       console.warn(`[TMDB轮播] ⚠️  ${title} 缺少所有海报，将被过滤`);

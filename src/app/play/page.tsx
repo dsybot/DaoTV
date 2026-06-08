@@ -654,7 +654,7 @@ function PlayPageClient() {
     if (movieDetails?.original_title)
       params.set('original_title', movieDetails.original_title);
     if (searchType) params.set('stype', searchType);
-    fetch(`/api/tmdb/backdrop?${params.toString()}`)
+    fetch(`/api/tmdb/backdrop?${params.toString()}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (!cancelled && json?.data) setTmdbData(json.data);
@@ -1092,24 +1092,8 @@ function PlayPageClient() {
         return;
       }
 
-      // 生成缓存键（基于标题、年份、类型、季数、开播日期）
       const type = searchType === 'movie' ? 'movie' : 'tv';
       const detectedSeason = parseSeasonFromTitle(videoTitle);
-      const cacheKey = `tmdb_${videoTitle}_${videoYear}_${type}_${detectedSeason}_${airDate}`;
-
-      // 检查 sessionStorage 缓存
-      try {
-        const cached = sessionStorage.getItem(cacheKey);
-        if (cached) {
-          const data = JSON.parse(cached);
-          console.log('[TMDB] 使用会话缓存数据');
-          if (data.cast) setTmdbCast(data.cast);
-          if (data.episodes) setTmdbEpisodes(data.episodes);
-          return;
-        }
-      } catch (e) {
-        console.warn('[TMDB] 读取缓存失败:', e);
-      }
 
       try {
         console.log(
@@ -1117,6 +1101,7 @@ function PlayPageClient() {
         );
         const response = await fetch(
           `/api/tmdb/backdrop?title=${encodeURIComponent(videoTitle)}&year=${videoYear || ''}&type=${type}&season=${detectedSeason}&details=true&air_date=${encodeURIComponent(airDate)}`,
+          { cache: 'no-store' },
         );
         console.log(`[TMDB] API响应状态: ${response.status}`);
         if (response.ok) {
@@ -1127,19 +1112,6 @@ function PlayPageClient() {
             hasEpisodes: !!data.episodes,
             episodesLength: data.episodes?.length || 0,
           });
-
-          // 保存到 sessionStorage
-          try {
-            sessionStorage.setItem(
-              cacheKey,
-              JSON.stringify({
-                cast: data.cast || [],
-                episodes: data.episodes || [],
-              }),
-            );
-          } catch (e) {
-            console.warn('[TMDB] 保存缓存失败:', e);
-          }
 
           // 获取演员数据
           if (data.cast && data.cast.length > 0) {

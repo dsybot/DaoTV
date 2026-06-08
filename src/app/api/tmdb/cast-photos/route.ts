@@ -7,14 +7,27 @@ import { db } from '@/lib/db';
 import { isTMDBEnabled } from '@/lib/tmdb.client';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 const CACHE_TIME = 24 * 60 * 60; // 24小时缓存
+const NO_BROWSER_CACHE_HEADERS = {
+  'Cache-Control': 'private, no-store, max-age=0',
+};
 
-// 生成 TMDB 图片 URL（不使用代理，因为 image.tmdb.org 全球可访问）
+function getTMDBProxyCacheKey(config: any): string {
+  return (config.SiteConfig.TMDBWorkerProxy || '').trim() || 'direct';
+}
+
+// 生成 TMDB 图片 URL（支持 Worker 代理）
 function getTMDBImageUrl(config: any, path: string | null): string | null {
   if (!path) return null;
 
-  // 图片 CDN 不需要代理，直接返回原始 URL
-  return `https://image.tmdb.org/t/p/w300${path}`;
+  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
+  if (workerProxy) {
+    const proxyUrl = workerProxy.replace(/\/$/, '');
+    return `${proxyUrl}/image/w300${path}`;
+  }
+
+  return `${TMDB_IMAGE_BASE_URL}/w300${path}`;
 }
 
 // TMDB API Key 轮询索引
@@ -25,7 +38,8 @@ let tmdbApiKeyIndex = 0;
  */
 function getNextTMDBApiKey(config: any): string | null {
   // 优先使用多Key配置
-  const apiKeys = config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
+  const apiKeys =
+    config.SiteConfig.TMDBApiKeys?.filter((k: string) => k && k.trim()) || [];
 
   // 如果有多个Key，使用轮询
   if (apiKeys.length > 0) {
@@ -61,7 +75,7 @@ export async function GET(request: NextRequest) {
   if (!namesParam?.trim()) {
     return NextResponse.json(
       { error: '缺少必要参数: names（演员名字，逗号分隔）' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -76,10 +90,8 @@ export async function GET(request: NextRequest) {
         { enabled: false, message: 'TMDB演员搜索功能未启用' },
         {
           status: 200,
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-          },
-        }
+          headers: NO_BROWSER_CACHE_HEADERS,
+        },
       );
     }
 
@@ -87,7 +99,10 @@ export async function GET(request: NextRequest) {
 
     const config = await getConfig();
 
-    const names = namesParam.split(',').map(n => n.trim()).filter(n => n);
+    const names = namesParam
+      .split(',')
+      .map((n) => n.trim())
+      .filter((n) => n);
     if (names.length === 0) {
       return NextResponse.json({ enabled: true, actors: [] });
     }
@@ -96,16 +111,23 @@ export async function GET(request: NextRequest) {
     const limitedNames = names.slice(0, 20);
 
     // 生成缓存key（保持原始顺序）
-    const cacheKey = `tmdb-cast-photos-${limitedNames.join(',')}`;
+    const cacheKey = `tmdb-cast-photos-${getTMDBProxyCacheKey(config)}-${limitedNames.join(',')}`;
 
     // 检查缓存（开关状态已在上面检查过，这里只缓存演员数据）
     try {
       const cachedResult = await db.getCache(cacheKey);
       if (cachedResult && cachedResult.actors) {
-        console.log(`✅ [TMDB Cast Photos] 缓存命中: ${limitedNames.length} 个演员`);
+        console.log(
+          `✅ [TMDB Cast Photos] 缓存命中: ${limitedNames.length} 个演员`,
+        );
         // 返回时重新设置 enabled 状态，并过滤掉没有图片的演员（兼容旧缓存）
-        const actorsWithPhoto = cachedResult.actors.filter((actor: any) => actor.photo);
-        return NextResponse.json({ enabled: true, actors: actorsWithPhoto });
+        const actorsWithPhoto = cachedResult.actors.filter(
+          (actor: any) => actor.photo,
+        );
+        return NextResponse.json(
+          { enabled: true, actors: actorsWithPhoto },
+          { headers: NO_BROWSER_CACHE_HEADERS },
+        );
       }
     } catch (cacheError) {
       console.warn('TMDB演员图片缓存检查失败:', cacheError);
@@ -113,10 +135,13 @@ export async function GET(request: NextRequest) {
 
     const apiKey = getNextTMDBApiKey(config);
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
-    const workerProxy = config.SiteConfig.TMDBWorkerProxy || '';
+    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
 
     // 构建 API URL（支持 Worker 代理）
-    const buildApiUrl = (endpoint: string, params: Record<string, string>): string => {
+    const buildApiUrl = (
+      endpoint: string,
+      params: Record<string, string>,
+    ): string => {
       if (workerProxy) {
         const proxyUrl = workerProxy.replace(/\/$/, '');
         const url = new URL(`${proxyUrl}${endpoint}`);
@@ -144,13 +169,16 @@ export async function GET(request: NextRequest) {
           const url = buildApiUrl('/search/person', { query: name });
           const response = await fetch(url, {
             headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            }
+              Accept: 'application/json',
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
           });
 
           if (!response.ok) {
-            console.warn(`TMDB搜索演员失败: ${name}, status: ${response.status}`);
+            console.warn(
+              `TMDB搜索演员失败: ${name}, status: ${response.status}`,
+            );
             return { name, photo: null, id: null };
           }
 
@@ -158,14 +186,26 @@ export async function GET(request: NextRequest) {
           if (data.results && data.results.length > 0) {
             // 优先选择：1.名字完全匹配且有头像 2.名字完全匹配 3.有头像且人气最高 4.人气最高
             const results = data.results;
-            const exactMatchWithPhoto = results.find((p: any) => p.name === name && p.profile_path);
+            const exactMatchWithPhoto = results.find(
+              (p: any) => p.name === name && p.profile_path,
+            );
             const exactMatch = results.find((p: any) => p.name === name);
-            const withPhotoSorted = results.filter((p: any) => p.profile_path).sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0));
-            const person = exactMatchWithPhoto || exactMatch || withPhotoSorted[0] || results.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))[0];
+            const withPhotoSorted = results
+              .filter((p: any) => p.profile_path)
+              .sort(
+                (a: any, b: any) => (b.popularity || 0) - (a.popularity || 0),
+              );
+            const person =
+              exactMatchWithPhoto ||
+              exactMatch ||
+              withPhotoSorted[0] ||
+              results.sort(
+                (a: any, b: any) => (b.popularity || 0) - (a.popularity || 0),
+              )[0];
             return {
               name,
               photo: getTMDBImageUrl(config, person.profile_path),
-              id: person.id
+              id: person.id,
             };
           }
           return { name, photo: null, id: null };
@@ -173,15 +213,15 @@ export async function GET(request: NextRequest) {
           console.warn(`获取演员图片失败: ${name}`, error);
           return { name, photo: null, id: null };
         }
-      })
+      }),
     );
 
     // 过滤掉没有图片的演员
-    const actorsWithPhoto = actorPhotos.filter(actor => actor.photo);
+    const actorsWithPhoto = actorPhotos.filter((actor) => actor.photo);
 
     const result = {
       enabled: true,
-      actors: actorsWithPhoto
+      actors: actorsWithPhoto,
     };
 
     // 缓存结果
@@ -193,12 +233,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 不设置浏览器缓存，因为开关状态可能随时变化
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: NO_BROWSER_CACHE_HEADERS,
+    });
   } catch (error) {
     console.error('[TMDB Cast Photos] 获取失败:', error);
     return NextResponse.json(
       { error: '获取演员图片失败', details: (error as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
