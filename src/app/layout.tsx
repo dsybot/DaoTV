@@ -10,6 +10,7 @@ import { getConfig } from '@/lib/config';
 import AppShell from '../components/AppShell';
 import { ChunkErrorGuard } from '../components/ChunkErrorGuard';
 import { CinematicLoadingFallback } from '../components/CinematicLoadingFallback';
+import { DOMErrorBoundary } from '../components/DOMErrorBoundary';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalDOMErrorHandler } from '../components/GlobalDOMErrorHandler';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
@@ -170,15 +171,17 @@ export default async function RootLayout({
                     <SessionTracker />
                     <RouteWarmup />
                     <AppShell>
-                      <Suspense
-                        fallback={
-                          <div className='fixed inset-0 z-50'>
-                            <CinematicLoadingFallback />
-                          </div>
-                        }
-                      >
-                        {children}
-                      </Suspense>
+                      <DOMErrorBoundary componentName='PageContent'>
+                        <Suspense
+                          fallback={
+                            <div className='fixed inset-0 z-50'>
+                              <CinematicLoadingFallback />
+                            </div>
+                          }
+                        >
+                          {children}
+                        </Suspense>
+                      </DOMErrorBoundary>
                     </AppShell>
                     <GlobalErrorIndicator />
                   </SiteProvider>
