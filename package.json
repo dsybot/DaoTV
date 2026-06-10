@@ -27,7 +27,7 @@
     "@emotion/styled": "^11.14.1",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
-    "@mui/material": "^9.0.1",
+    "@mui/material": "^9.1.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-virtual": "^3.14.2",
