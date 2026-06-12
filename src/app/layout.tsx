@@ -19,6 +19,7 @@ import RouteWarmup from '../components/RouteWarmup';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { TranslationWarningToast } from '../components/TranslationWarningToast';
 import ChatFloatingWindow from '../components/watch-room/ChatFloatingWindow';
 import { WatchRoomProvider } from '../components/WatchRoomProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
@@ -168,6 +169,7 @@ export default async function RootLayout({
                   <SiteProvider siteName={siteName} announcement={announcement}>
                     <GlobalDOMErrorHandler />
                     <ChunkErrorGuard />
+                    <TranslationWarningToast />
                     <SessionTracker />
                     <RouteWarmup />
                     <AppShell>

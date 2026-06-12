@@ -11,10 +11,43 @@ import { useEffect } from 'react';
  */
 export function GlobalDOMErrorHandler() {
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sendCrashReport = (data: any) => {
-      const payload = JSON.stringify(data);
+      const payload = JSON.stringify({
+        ...data,
+        // 添加更多诊断信息
+        browserInfo: {
+          language: navigator.language,
+          languages: navigator.languages,
+          platform: navigator.platform,
+          vendor: navigator.vendor,
+          cookieEnabled: navigator.cookieEnabled,
+        },
+        documentInfo: {
+          readyState: document.readyState,
+          visibilityState: document.visibilityState,
+          title: document.title,
+        },
+        windowInfo: {
+          innerWidth: window.innerWidth,
+          innerHeight: window.innerHeight,
+          devicePixelRatio: window.devicePixelRatio,
+        },
+        // 检测可能的翻译插件特征
+        translationDetection: {
+          hasGoogleTranslate: !!document.querySelector(
+            'iframe[src*="translate.google"]',
+          ),
+          hasTranslateTag: !!document.querySelector('html[translate]'),
+          hasFontTags: document.getElementsByTagName('font').length > 0,
+          hasTranslateClass: !!document.querySelector('[class*="translated"]'),
+        },
+      });
       // 使用 sendBeacon 优先（更可靠），降级到 fetch
-      const sent = navigator.sendBeacon?.('/api/crash-report', new Blob([payload], { type: 'application/json' }));
+      const sent = navigator.sendBeacon?.(
+        '/api/crash-report',
+        new Blob([payload], { type: 'application/json' }),
+      );
 
       if (!sent) {
         // sendBeacon 失败或不支持，降级到 fetch
@@ -24,7 +57,10 @@ export function GlobalDOMErrorHandler() {
           body: payload,
           keepalive: true,
         }).catch((err) => {
-          console.error('[GlobalDOMErrorHandler] Failed to send crash report:', err);
+          console.error(
+            '[GlobalDOMErrorHandler] Failed to send crash report:',
+            err,
+          );
         });
       }
     };
@@ -111,7 +147,10 @@ export function GlobalDOMErrorHandler() {
 
     return () => {
       window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.removeEventListener(
+        'unhandledrejection',
+        handleUnhandledRejection,
+      );
     };
   }, []);
 
