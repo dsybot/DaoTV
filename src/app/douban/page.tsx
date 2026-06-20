@@ -20,6 +20,7 @@ import {
   getWindowCustomCategories,
   normalizeCustomCategories,
 } from '@/lib/runtime-config.client';
+import type { DoubanItem } from '@/lib/types';
 
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
 import DoubanCustomSelector from '@/components/DoubanCustomSelector';
@@ -230,7 +231,10 @@ function DoubanPageClient() {
     );
 
   const allItems = useMemo(
-    () => data?.pages.flatMap((page) => page.list) ?? [],
+    () =>
+      data?.pages
+        .flatMap((page) => page.list)
+        .filter((item): item is DoubanItem => !!item?.id) ?? [],
     [data],
   );
 

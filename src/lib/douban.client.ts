@@ -903,7 +903,10 @@ async function fetchDoubanRecommends(
 
     const doubanData: DoubanRecommendApiResponse = await response.json();
     const list: DoubanItem[] = doubanData.items
-      .filter((item) => item.type == 'movie' || item.type == 'tv')
+      .filter(
+        (item) =>
+          (item.type == 'movie' || item.type == 'tv') && item.id && item.title,
+      )
       .map((item) => ({
         id: item.id,
         title: item.title,
