@@ -8994,6 +8994,9 @@ const NetDiskConfig = ({
       'magnet',
       'ed2k',
     ],
+    token: '',
+    username: '',
+    password: '',
   });
 
   // 网盘类型选项
@@ -9027,6 +9030,9 @@ const NetDiskConfig = ({
           'tianyi',
           'uc',
         ],
+        token: config.NetDiskConfig.token || '',
+        username: config.NetDiskConfig.username || '',
+        password: config.NetDiskConfig.password || '',
       });
     }
   }, [config]);
@@ -9186,6 +9192,52 @@ const NetDiskConfig = ({
               }
               className='w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
             />
+          </div>
+
+          {/* 认证配置 */}
+          <div className='space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700'>
+            <div>
+              <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>认证配置（可选）</h4>
+              <p className='text-xs text-gray-500 dark:text-gray-400'>如果您的 PanSou 实例启用了认证，填写以下任意一种方式。用户名+密码优先级高于 Token。</p>
+            </div>
+            <div className='space-y-2'>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+                Bearer Token
+              </label>
+              <input
+                type='password'
+                value={netDiskSettings.token}
+                onChange={(e) => setNetDiskSettings(prev => ({ ...prev, token: e.target.value }))}
+                placeholder='留空则不使用 Token 认证'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
+              />
+            </div>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='space-y-2'>
+                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  用户名
+                </label>
+                <input
+                  type='text'
+                  value={netDiskSettings.username}
+                  onChange={(e) => setNetDiskSettings(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder='PanSou 登录用户名'
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
+                />
+              </div>
+              <div className='space-y-2'>
+                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  密码
+                </label>
+                <input
+                  type='password'
+                  value={netDiskSettings.password}
+                  onChange={(e) => setNetDiskSettings(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder='PanSou 登录密码'
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

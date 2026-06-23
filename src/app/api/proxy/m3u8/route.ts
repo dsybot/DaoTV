@@ -253,19 +253,30 @@ export async function GET(request: Request) {
 }
 
 function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allowCORS: boolean, sourceKey: string | null) {
-  // 从 referer 头提取协议信息
-  const referer = req.headers.get('referer');
-  let protocol = 'http';
-  if (referer) {
-    try {
-      const refererUrl = new URL(referer);
-      protocol = refererUrl.protocol.replace(':', '');
-    } catch (error) {
-      // ignore
+  // 优先使用 X-Forwarded-Proto + X-Forwarded-Host，处理非标准端口反代场景
+  const forwardedProto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+
+  let protocol: string;
+  let host: string;
+
+  if (forwardedProto && forwardedHost) {
+    protocol = forwardedProto;
+    host = forwardedHost;
+  } else {
+    // 回退：从 referer 头提取协议，从 host 头提取主机
+    const referer = req.headers.get('referer');
+    protocol = 'http';
+    if (referer) {
+      try {
+        protocol = new URL(referer).protocol.replace(':', '');
+      } catch {
+        // ignore
+      }
     }
+    host = req.headers.get('host') || '';
   }
 
-  const host = req.headers.get('host');
   const proxyBase = `${protocol}://${host}/api/proxy`;
   const sourceParam = sourceKey ? `&moontv-source=${sourceKey}` : '';
 

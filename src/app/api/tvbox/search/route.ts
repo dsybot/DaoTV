@@ -3,13 +3,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
-import { searchFromApi } from '@/lib/downstream';
+import { getDetailFromApi, searchFromApi } from '@/lib/downstream';
 import { rankSearchResults } from '@/lib/search-ranking';
+import {
+  buildResolutionFilterFromSearchParams,
+  filterSearchResultsByResolution,
+} from '@/lib/video-quality';
 import { yellowWords } from '@/lib/yellow';
 
 export const runtime = 'nodejs';
 
 type TvboxRawFields = {
+  remarks?: string;
   note?: string;
   remark?: string;
   year?: string | number;
@@ -24,11 +29,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const sourceKey = searchParams.get('source');
+    const ac = (searchParams.get('ac') || '').toLowerCase();
+    const detailId = searchParams.get('ids') || searchParams.get('id') || searchParams.get('vod_id');
+    const wantsDetail = ac === 'detail' || Boolean(detailId);
     const query = searchParams.get('wd');
     const filterParam = searchParams.get('filter') || 'on';
     const strictMode = searchParams.get('strict') === '1';
+    const resolutionFilter = buildResolutionFilterFromSearchParams(searchParams);
 
-    if (!sourceKey || !query) {
+    if (!sourceKey || (!query && !wantsDetail)) {
       return NextResponse.json(
         {
           code: 400,
@@ -65,8 +74,43 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (wantsDetail) {
+      if (!detailId) {
+        return NextResponse.json({ code: 400, msg: '缺少详情参数: ids 或 id', list: [] }, { status: 400 });
+      }
+      try {
+        const detail = await getDetailFromApi(
+          { key: targetSource.key, name: targetSource.name, api: targetSource.api, detail: targetSource.detail },
+          detailId,
+        );
+        const raw = detail as typeof detail & TvboxRawFields;
+        const playUrl = formatTvboxPlayUrl(detail.episodes, detail.episodes_titles);
+        return NextResponse.json({
+          code: 1, msg: 'success', page: 1, pagecount: 1, limit: 1, total: 1,
+          list: [{
+            vod_id: detail.id,
+            vod_name: detail.title,
+            vod_pic: detail.poster,
+            vod_remarks: String(raw.remarks || raw.note || raw.remark || '') || detail.resolution || '',
+            vod_year: String(raw.year || ''),
+            vod_area: String(raw.area || ''),
+            vod_actor: String(raw.actor || ''),
+            vod_director: String(raw.director || ''),
+            vod_content: detail.desc || '',
+            type_name: detail.type_name || '',
+            vod_play_from: playUrl ? targetSource.name || 'LunaTV' : '',
+            vod_play_url: playUrl,
+          }],
+        }, { headers: { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300, s-maxage=300' } });
+      } catch (error) {
+        return NextResponse.json({ code: 1, msg: error instanceof Error ? error.message : '详情获取失败', list: [] }, { status: 200 });
+      }
+    }
+
+    const searchQuery = query || '';
+
     console.log(
-      `[TVBox Search Proxy] source=${sourceKey}, query="${query}", filter=${filterParam}, strict=${strictMode}`,
+      `[TVBox Search Proxy] source=${sourceKey}, query="${searchQuery}", filter=${filterParam}, strict=${strictMode}`,
     );
 
     let results = await searchFromApi(
@@ -76,7 +120,7 @@ export async function GET(request: NextRequest) {
         api: targetSource.api,
         detail: targetSource.detail,
       },
-      query,
+      searchQuery,
     );
 
     console.log(
@@ -105,12 +149,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (results.length > 0) {
-      results = rankSearchResults(results, query);
+      results = rankSearchResults(results, searchQuery);
       console.log('[TVBox Search Proxy] Applied smart ranking');
     }
 
+    // 🎬 分辨率过滤（resolution 已在 downstream 解析阶段装饰）
+    if (resolutionFilter.minLevel > 0) {
+      const beforeCount = results.length;
+      results = filterSearchResultsByResolution(results, resolutionFilter);
+      console.log(`[TVBox Search Proxy] Resolution filter (>=${resolutionFilter.minLevel}p): ${beforeCount} → ${results.length}`);
+    }
+
     if (strictMode && results.length > 0) {
-      const queryLower = query.toLowerCase().trim();
+      const queryLower = searchQuery.toLowerCase().trim();
       const beforeStrictCount = results.length;
 
       results = results.filter((result) => {
@@ -150,7 +201,7 @@ export async function GET(request: NextRequest) {
           vod_id: r.id,
           vod_name: r.title,
           vod_pic: r.poster,
-          vod_remarks: raw.note || raw.remark || '',
+          vod_remarks: String(r.remarks || raw.note || raw.remark || '') || r.resolution || '',
           vod_year: raw.year || '',
           vod_area: raw.area || '',
           vod_actor: raw.actor || '',
@@ -158,7 +209,7 @@ export async function GET(request: NextRequest) {
           vod_content: r.desc || '',
           type_name: r.type_name || '',
           vod_play_from: r.episodes ? 'LunaTV' : '',
-          vod_play_url: r.episodes ? r.episodes.join('#') : '',
+          vod_play_url: r.episodes ? formatTvboxPlayUrl(r.episodes, r.episodes_titles) : '',
         };
       }),
     };
@@ -200,6 +251,20 @@ export async function OPTIONS() {
       'Access-Control-Max-Age': '86400',
     },
   });
+}
+
+function formatTvboxPlayUrl(episodes: string[] | undefined, episodeTitles: string[] | undefined = []): string {
+  if (!Array.isArray(episodes) || episodes.length === 0) return '';
+  return episodes
+    .map((url, index) => {
+      const cleanUrl = typeof url === 'string' ? url.trim() : '';
+      if (!cleanUrl) return '';
+      const rawTitle = episodeTitles[index] || '';
+      const title = rawTitle.replace(/[$#]/g, ' ').trim() || `第${index + 1}集`;
+      return `${title}$${cleanUrl}`;
+    })
+    .filter(Boolean)
+    .join('#');
 }
 
 function levenshteinDistance(str1: string, str2: string): number {

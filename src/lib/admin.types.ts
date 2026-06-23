@@ -115,6 +115,9 @@ export interface AdminConfig {
     pansouUrl: string; // PanSou服务地址
     timeout: number; // 请求超时时间(秒)
     enabledCloudTypes: string[]; // 启用的网盘类型
+    token?: string; // PanSou Bearer Token（可选）
+    username?: string; // PanSou 登录用户名（可选）
+    password?: string; // PanSou 登录密码（可选）
   };
   AIRecommendConfig?: {
     enabled: boolean; // 是否启用AI推荐功能

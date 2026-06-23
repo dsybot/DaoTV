@@ -423,6 +423,9 @@ export async function configSelfCheck(
       pansouUrl: 'https://so.252035.xyz', // 默认公益服务
       timeout: 30, // 默认30秒超时
       enabledCloudTypes: ['baidu', 'aliyun', 'quark'], // 默认只启用百度、阿里、夸克三大主流网盘
+      token: '',
+      username: '',
+      password: '',
     };
   }
 
