@@ -210,7 +210,7 @@ async function getInitConfig(
     AutoUpdate: boolean;
     LastCheck: string;
   } = {
-    URL: '',
+    URL: process.env.NEXT_PUBLIC_SUB_URL || '',
     AutoUpdate: false,
     LastCheck: '',
   },
@@ -261,6 +261,14 @@ async function getInitConfig(
     SourceConfig: [],
     CustomCategories: [],
     LiveConfig: [],
+    TVBoxProxyConfig: {
+      enabled: false,
+      proxyUrl: process.env.NEXT_PUBLIC_CORSAPI_URL || 'https://corsapi.smone.workers.dev',
+    },
+    VideoProxyConfig: {
+      enabled: false,
+      proxyUrl: process.env.NEXT_PUBLIC_CORSAPI_URL || 'https://corsapi.smone.workers.dev',
+    },
     HomePageConfig: defaultHomePageConfig,
   };
 

@@ -3,15 +3,16 @@
 const { PHASE_PRODUCTION_BUILD } = require('next/constants');
 
 module.exports = (phase) => {
+  // 构建阶段标记：直接设置 process.env（非 env 配置字段），
+  // 这样子进程/worker 能继承，但 Turbopack 不会将其内联到编译产物中
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    process.env.IS_BUILD_PHASE = 'true';
+  }
+
   const nextConfig = {
     // 生产环境始终使用 standalone 模式（Vercel/Docker/Render）
     // 本地开发时（NODE_ENV !== 'production'）不使用 standalone
     ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
-
-    env: {
-      // 构建阶段标记，供需要区分 build-time vs runtime 的模块使用
-      IS_BUILD_PHASE: phase === PHASE_PRODUCTION_BUILD ? 'true' : 'false',
-    },
 
     reactStrictMode: false,
 
