@@ -15,14 +15,23 @@
 /* ===== Controls Hover Area Fix ===== */
 /* 增加控制栏底部的 hover 触发区域，解决全屏时需要移到很下面才能显示控制栏的问题 */
 .art-video-player .art-bottom {
-  /* 增加底部 padding，扩大 hover 区域 */
-  padding-bottom: 40px !important;
+  /* 保留少量底部间距，避免控制栏在桌面端贴底 */
+  padding-bottom: 18px !important;
 }
 
-/* 全屏时增加更大的 hover 区域 */
+/* 全屏时保留略大的 hover 区域，但不要把控制栏抬得过高 */
 .art-video-player.art-fullscreen .art-bottom,
 .art-video-player.art-fullscreen-web .art-bottom {
-  padding-bottom: 60px !important;
+  padding-bottom: 24px !important;
+}
+
+/* 移动端底部空间有限，控制栏贴底显示 */
+@media (max-width: 768px) {
+  .art-video-player .art-bottom,
+  .art-video-player.art-fullscreen .art-bottom,
+  .art-video-player.art-fullscreen-web .art-bottom {
+    padding-bottom: 0 !important;
+  }
 }
 
 /* ===== Volume Control Hover Fix ===== */
