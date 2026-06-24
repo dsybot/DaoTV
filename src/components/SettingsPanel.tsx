@@ -106,9 +106,9 @@ export const SettingsPanel = memo(({ isOpen, onClose }: SettingsPanelProps) => {
   const [isDoubanImageProxyDropdownOpen, setIsDoubanImageProxyDropdownOpen] = useState(false);
   const [isBangumiApiDropdownOpen, setIsBangumiApiDropdownOpen] = useState(false);
   const [isBangumiImageProxyDropdownOpen, setIsBangumiImageProxyDropdownOpen] = useState(false);
-  const [bangumiApiType, setBangumiApiType] = useState('server');
+  const [bangumiApiType, setBangumiApiType] = useState('cmliussss');
   const [bangumiApiProxy, setBangumiApiProxy] = useState('');
-  const [bangumiImageProxyType, setBangumiImageProxyType] = useState('server');
+  const [bangumiImageProxyType, setBangumiImageProxyType] = useState('cmliussss');
   const [bangumiImageProxyUrl, setBangumiImageProxyUrl] = useState('');
 
   // ── Emby config via TanStack Query ────────────────────────────────────────
@@ -127,9 +127,9 @@ export const SettingsPanel = memo(({ isOpen, onClose }: SettingsPanelProps) => {
     setDoubanDataSource(localStorage.getItem('doubanDataSource') ?? RC.DOUBAN_PROXY_TYPE ?? 'direct');
     setDoubanImageProxyType(localStorage.getItem('doubanImageProxyType') ?? RC.DOUBAN_IMAGE_PROXY_TYPE ?? 'server');
     setDoubanImageProxyUrl(readLS('doubanImageProxyUrl', RC.DOUBAN_IMAGE_PROXY || ''));
-    setBangumiApiType(localStorage.getItem('bangumiApiType') ?? RC.BANGUMI_API_TYPE ?? 'server');
+    setBangumiApiType(localStorage.getItem('bangumiApiType') ?? RC.BANGUMI_API_TYPE ?? 'cmliussss');
     setBangumiApiProxy(readLS('bangumiApiProxy', RC.BANGUMI_API_PROXY || ''));
-    setBangumiImageProxyType(localStorage.getItem('bangumiImageProxyType') ?? RC.BANGUMI_IMAGE_PROXY_TYPE ?? 'server');
+    setBangumiImageProxyType(localStorage.getItem('bangumiImageProxyType') ?? RC.BANGUMI_IMAGE_PROXY_TYPE ?? 'cmliussss');
     setBangumiImageProxyUrl(readLS('bangumiImageProxyUrl', RC.BANGUMI_IMAGE_PROXY || ''));
     setContinueWatchingMinProgress(readLS('continueWatchingMinProgress', 5));
     setContinueWatchingMaxProgress(readLS('continueWatchingMaxProgress', 100));
@@ -189,9 +189,9 @@ export const SettingsPanel = memo(({ isOpen, onClose }: SettingsPanelProps) => {
     const defaultDoubanProxy = RC.DOUBAN_PROXY || '';
     const defaultDoubanImageProxyType = RC.DOUBAN_IMAGE_PROXY_TYPE || 'server';
     const defaultDoubanImageProxyUrl = RC.DOUBAN_IMAGE_PROXY || '';
-    const defaultBangumiApiType = RC.BANGUMI_API_TYPE || 'server';
+    const defaultBangumiApiType = RC.BANGUMI_API_TYPE || 'cmliussss';
     const defaultBangumiApiProxy = RC.BANGUMI_API_PROXY || '';
-    const defaultBangumiImageProxyType = RC.BANGUMI_IMAGE_PROXY_TYPE || 'server';
+    const defaultBangumiImageProxyType = RC.BANGUMI_IMAGE_PROXY_TYPE || 'cmliussss';
     const defaultBangumiImageProxyUrl = RC.BANGUMI_IMAGE_PROXY || '';
     const defaultFluidSearch = RC.FLUID_SEARCH !== false;
 

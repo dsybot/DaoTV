@@ -6272,9 +6272,9 @@ const SiteConfigComponent = ({
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
     TMDBWorkerProxy: '',
-    BangumiApiType: 'server',
+    BangumiApiType: 'cmliussss',
     BangumiApiProxy: '',
-    BangumiImageProxyType: 'server',
+    BangumiImageProxyType: 'cmliussss',
     BangumiImageProxy: '',
     // 登录页背景配置
     LoginBgDesktop: '',
@@ -6385,9 +6385,9 @@ const SiteConfigComponent = ({
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
         TMDBWorkerProxy: config.SiteConfig.TMDBWorkerProxy || '',
-        BangumiApiType: config.SiteConfig.BangumiApiType || 'server',
+        BangumiApiType: config.SiteConfig.BangumiApiType || 'cmliussss',
         BangumiApiProxy: config.SiteConfig.BangumiApiProxy || '',
-        BangumiImageProxyType: config.SiteConfig.BangumiImageProxyType || 'server',
+        BangumiImageProxyType: config.SiteConfig.BangumiImageProxyType || 'cmliussss',
         BangumiImageProxy: config.SiteConfig.BangumiImageProxy || '',
         // 登录页背景配置
         LoginBgDesktop: config.SiteConfig.LoginBgDesktop || '',

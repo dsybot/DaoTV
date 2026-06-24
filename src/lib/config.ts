@@ -238,9 +238,9 @@ async function getInitConfig(
         process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE || 'direct',
       DoubanImageProxy: process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '',
       DoubanDetailProxy: process.env.DOUBAN_DETAIL_PROXY || '',
-      BangumiApiType: process.env.NEXT_PUBLIC_BANGUMI_API_TYPE || 'server',
+      BangumiApiType: process.env.NEXT_PUBLIC_BANGUMI_API_TYPE || 'cmliussss',
       BangumiApiProxy: process.env.NEXT_PUBLIC_BANGUMI_API_PROXY || '',
-      BangumiImageProxyType: process.env.NEXT_PUBLIC_BANGUMI_IMAGE_PROXY_TYPE || 'server',
+      BangumiImageProxyType: process.env.NEXT_PUBLIC_BANGUMI_IMAGE_PROXY_TYPE || 'cmliussss',
       BangumiImageProxy: process.env.NEXT_PUBLIC_BANGUMI_IMAGE_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',

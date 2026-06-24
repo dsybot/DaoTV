@@ -307,7 +307,7 @@ function HomeClient({
     return dataToUse;
   }, [homeData?.hotShortDramas, state.hotShortDramas, homeFetching]);
 
-  const bangumiCalendarData = homeData?.bangumiCalendar || [];
+  const bangumiCalendarData = Array.isArray(homeData?.bangumiCalendar) ? homeData.bangumiCalendar : [];
 
   const heroBannerItems = useMemo(
     () => [
