@@ -1151,17 +1151,18 @@ function LivePageClient() {
                   target.style.display = 'none';
                   const parent = target.parentElement;
                   if (parent && !parent.querySelector('.fallback-icon')) {
-                    parent.innerHTML = `
-                      <div class="fallback-icon relative w-full h-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                        </svg>
-                        <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                        </span>
-                      </div>
+                    const fallback = document.createElement('div');
+                    fallback.className = 'fallback-icon relative w-full h-full flex items-center justify-center';
+                    fallback.innerHTML = `
+                      <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                      </svg>
+                      <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                      </span>
                     `;
+                    parent.appendChild(fallback);
                   }
                 }}
               />
