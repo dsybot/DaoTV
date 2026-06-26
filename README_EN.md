@@ -25,7 +25,7 @@
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.6.2-orange)
+![Version](https://img.shields.io/badge/Version-6.6.3-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 About
 
-This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.2**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
+This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.3**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
 
 ## ⚠️ Disclaimer
 
@@ -46,8 +46,8 @@ This project is for educational purposes only. Do not use for commercial purpose
 - **Emby Private Library**: Complete Emby media server integration with passwordless login, auth mode switcher, and multi-audio track playback → [Documentation](docs/integration/EMBY_GUIDE.md)
 - **YouTube Integration**: Full YouTube search, playback, live streaming, popular videos with region selector
 - **Bilibili Integration**: Bilibili search and playback with UP主 videos, popular videos, QR code login, cookie management
-- **Cloud Drive Search**: Advanced filtering and cache management
-- **ACG Torrent Search**: Mikan Project dual-source system
+- **Cloud Drive Search**: Advanced filtering and cache management, PanSou authentication support
+- **ACG Torrent Search**: Mikan Project dual-source system + Nyaa search with download export
 - **IPTV Live TV**: m3u/m3u8 subscription, FLV streaming, EPG guide, M3U import/export
 - **Bangumi Anime**: Intelligent anime detection and API integration
 - **Traditional Chinese Search**: Smart conversion and multi-strategy search
@@ -62,7 +62,8 @@ This project is for educational purposes only. Do not use for commercial purpose
 - **Ultrawide Monitor Support**: Video display mode control for ultrawide monitors
 - **Skip Presets**: Flexible intro/outro template system with import/export and validation
 - **Persistent Playback Rate**: Remember playback speed settings across sessions
-- **Multi-Audio Track Support**: Auto-select browser-compatible audio tracks for Emby playback with track switching
+- **Multi-Audio Track Support**: Auto-select browser-compatible audio tracks for Emby playback with track switching; custom X-Emby-Authorization header support
+- **Video Resolution Filtering**: Auto-infer video stream resolution with resolution-based source filtering
 
 ### 🔔 Content Tracking System
 - **Upcoming Content Reminders**: Complete watchlist and reminder system for upcoming content
@@ -84,7 +85,7 @@ This project is for educational purposes only. Do not use for commercial purpose
 ### 📊 Performance & Monitoring
 - **Performance Dashboard**: Complete API performance monitoring
 - **Traffic Monitoring**: Real traffic monitoring and domain analysis
-- **Watch Statistics Enhancement**: Records user login IP, location (city/province/country), device type, browser, and operating system for admins to review in the statistics dashboard
+- **Enhanced Watch Statistics**: Records login IP, geolocation (city/region/country), device type, browser and OS per login — visible to admins in the stats dashboard
 - **Kvrocks Persistence**: High-performance caching system
 - **TanStack Query Full Integration**:
   - Smart data caching and automatic revalidation
@@ -162,8 +163,8 @@ pnpm dev
 - **Styling**: TailwindCSS 4.1.18
 - **Video Player**: ArtPlayer 5.4.0 + HLS.js 1.6.16
 - **State Management**: TanStack Query 5.100.14 (fully migrated, optimized data fetching and caching)
-- **Database**: Upstash Redis / Kvrocks / SQLite (three storage backends)
-- **Deployment**: Docker / Vercel / Render
+- **Database**: Upstash Redis / Kvrocks / SQLite (three storage backends available)
+- **Deployment**: Docker / Vercel / Render / Tencent EdgeOne
 
 ## 📜 Changelog
 

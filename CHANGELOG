@@ -1,3 +1,37 @@
+## [6.6.3] - 2026-06-26
+
+### Added
+
+- 🔍 Nyaa 搜索与下载导出：支持 Nyaa 种子站搜索及下载链接导出
+- 🔐 PanSou 认证支持：新增盘搜身份认证，支持需要登录的私有搜索接口
+- 🖼️ Bangumi 图片代理：新增 Bangumi 封面图片代理，支持用户自选代理方式
+- 🏠 HomeBanner TMDB Logo：首页 HeroBanner 新增 TMDB logo 展示及撤销删除功能
+- 📺 Bangumi 集成增强：管理员缓存管理器新增 Bangumi 独立缓存分类，移动端操作面板展示番剧详情
+- 🌐 EdgeOne 部署支持：新增腾讯云 EdgeOne 部署方案及构建脚本
+- 📡 TVBox 代理增强：新增 TVBox/Video 代理端点配置、detail 接口及剧集标题格式化
+- 🎬 视频分辨率推断与筛选：自动推断视频流分辨率并支持按分辨率筛选
+- 🌍 翻译插件检测警告：检测到浏览器翻译插件时弹出友好提示 Toast
+- 🔑 自定义 X-Emby-Authorization 请求头：支持用户自定义 Emby 鉴权请求头
+- 🏗️ Next.js 构建阶段环境标志：standalone 模式新增构建阶段环境变量标记
+
+### Changed
+
+- 📦 @mui/material 升级至 9.1.2
+- 📦 @tanstack/react-virtual 升级至 3.14.4
+- 📦 TanStack Query 升级至 5.101.0
+
+### Fixed
+
+- 🛡️ 翻译插件 DOM 崩溃防护：为页面根容器加 `translate='no'` 并用 DOMErrorBoundary 包裹内容，多层防止浏览器翻译插件修改 DOM 导致 React 崩溃；ErrorBoundary 新增 removeChild 错误自动恢复
+- 🌐 Bangumi CN 区修复：修复中国区 API 被拦截导致首页崩溃问题，新增多层智能降级策略；修复 useState 初始值、localStorage 重置及管理面板缺少默认 cmliussss 的问题；修复服务端日历 API 返回非数组时的错误
+- 📺 短剧数据源修复：迁移短剧 API 数据源并支持子分类，首页热门短剧返回空时自动切换至第一个非空子分类，当前分类无结果时自动跳转下一分类
+- 🐛 豆瓣数据清理：过滤推荐 API 返回的广告及播放列表条目，过滤列表中 null/undefined 条目防止 renderItem 崩溃
+- ⏩ 快进/快退图标方向修复：修复播放器快进快退按钮图标方向错误
+- 🖼️ 分辨率与 TMDB Logo 修复：修复下游解析层分辨率标注问题；优化 TMDB logo 在深色背景的显示效果，防止溢出
+- 🎨 播放器锁定模式：锁定模式下彻底隐藏控制栏背景
+- ⚡ 卡片点击性能优化：优化卡片点击响应速度并加强 DOM 错误追踪
+- 🔧 代理端口转发修复：修复代理层端口转发问题
+
 ## [6.6.2] - 2026-05-30
 
 ### Added

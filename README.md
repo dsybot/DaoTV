@@ -25,7 +25,7 @@
 ![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.6.2-orange)
+![Version](https://img.shields.io/badge/Version-6.6.3-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 项目说明
 
-本项目是在 **MoonTV** 基础上进行的深度二次开发版本，从 **v4.3.1** 版本开始，持续迭代至当前 **v6.6.2**，累计新增 60+ 重大功能模块，400+ 细节优化。所有新增功能详见 [CHANGELOG](CHANGELOG)。
+本项目是在 **MoonTV** 基础上进行的深度二次开发版本，从 **v4.3.1** 版本开始，持续迭代至当前 **v6.6.3**，累计新增 60+ 重大功能模块，400+ 细节优化。所有新增功能详见 [CHANGELOG](CHANGELOG)。
 
 ## ⚠️ 重要声明
 
@@ -46,8 +46,8 @@
 - **Emby 私有库**：完整的 Emby 媒体服务器集成，支持免密登录、认证模式切换和多音轨播放 → [详细文档](docs/integration/EMBY_GUIDE.md)
 - **YouTube 集成**：完整的 YouTube 搜索、播放、直播功能，支持热门视频和地区选择器
 - **Bilibili 集成**：Bilibili 搜索和播放功能，支持 UP主视频、热门视频、QR码登录、Cookie管理
-- **网盘搜索**：集成高级筛选和缓存管理的网盘资源搜索
-- **ACG 种子搜索**：Mikan Project 双源系统，丰富的动漫资源
+- **网盘搜索**：集成高级筛选和缓存管理的网盘资源搜索，PanSou 支持身份认证
+- **ACG 种子搜索**：Mikan Project 双源系统 + Nyaa 搜索，支持种子下载链接导出，丰富的动漫资源
 - **IPTV 直播**：m3u/m3u8 订阅、FLV 直播流、EPG 节目单、M3U 导入导出
 - **Bangumi 动漫**：动漫信息智能检测、API 集成
 - **繁体中文搜索**：智能繁简转换、多策略搜索
@@ -62,7 +62,8 @@
 - **超宽显示器适配**：视频显示模式控制，完美支持超宽显示器
 - **片头片尾跳过预设**：灵活的片头片尾模板系统，支持导入导出和验证
 - **播放速率持久化**：记住播放速率设置，跨会话保持
-- **多音轨支持**：Emby 播放自动选择浏览器兼容音轨，支持音轨切换
+- **多音轨支持**：Emby 播放自动选择浏览器兼容音轨，支持音轨切换；支持自定义 X-Emby-Authorization 请求头
+- **视频分辨率筛选**：自动推断视频流分辨率并支持按分辨率筛选源
 
 ### 🔔 内容追踪系统
 - **即将上映提醒**：完整的即将上映内容关注列表和提醒系统
@@ -163,7 +164,7 @@ pnpm dev
 - **视频播放**：ArtPlayer 5.4.0 + HLS.js 1.6.16
 - **状态管理**：TanStack Query 5.100.14（全面迁移完成，优化数据获取和缓存）
 - **数据库**：Upstash Redis / Kvrocks / SQLite（三种存储后端可选）
-- **部署方案**：Docker / Vercel / Render
+- **部署方案**：Docker / Vercel / Render / 腾讯云 EdgeOne
 
 ## 📜 更新日志
 
