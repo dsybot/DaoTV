@@ -6,6 +6,9 @@ import { CinematicLoadingFallback } from '@/components/CinematicLoadingFallback'
 
 import HomeClient from './HomeClient';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Home() {
   const config = await getConfig();
   const homePageConfig = config.HomePageConfig || {

@@ -55,8 +55,21 @@ export const API_CONFIG = {
 };
 
 // 在模块加载时根据环境决定配置来源
-let cachedConfig: AdminConfig | null = null;
-let configInitPromise: Promise<AdminConfig> | null = null;
+type ConfigCacheState = {
+  cachedConfig: AdminConfig | null;
+  configInitPromise: Promise<AdminConfig> | null;
+};
+
+const globalConfigCache = globalThis as typeof globalThis & {
+  __MOONTV_CONFIG_CACHE__?: ConfigCacheState;
+};
+
+const configCache =
+  globalConfigCache.__MOONTV_CONFIG_CACHE__ ??
+  (globalConfigCache.__MOONTV_CONFIG_CACHE__ = {
+    cachedConfig: null,
+    configInitPromise: null,
+  });
 
 // 从配置文件补充管理员配置
 export function refineConfig(adminConfig: AdminConfig): AdminConfig {
@@ -338,12 +351,12 @@ async function getInitConfig(
 }
 
 export async function getConfig(): Promise<AdminConfig> {
-  if (cachedConfig) {
-    return cachedConfig;
+  if (configCache.cachedConfig) {
+    return configCache.cachedConfig;
   }
 
-  if (configInitPromise) {
-    return configInitPromise;
+  if (configCache.configInitPromise) {
+    return configCache.configInitPromise;
   }
 
   const initPromise = (async () => {
@@ -359,19 +372,19 @@ export async function getConfig(): Promise<AdminConfig> {
     }
     adminConfig = await configSelfCheck(adminConfig);
 
-    cachedConfig = adminConfig;
-    configInitPromise = null;
-    return cachedConfig;
+    configCache.cachedConfig = adminConfig;
+    configCache.configInitPromise = null;
+    return configCache.cachedConfig;
   })();
 
-  configInitPromise = initPromise;
+  configCache.configInitPromise = initPromise;
   return initPromise;
 }
 
 // 清除配置缓存，强制重新从数据库读取
 export function clearConfigCache(): void {
-  cachedConfig = null;
-  configInitPromise = null;
+  configCache.cachedConfig = null;
+  configCache.configInitPromise = null;
 }
 
 export async function configSelfCheck(
@@ -640,7 +653,7 @@ export async function resetConfig() {
     originConfig.ConfigFile,
     originConfig.ConfigSubscribtion,
   );
-  cachedConfig = adminConfig;
+  configCache.cachedConfig = adminConfig;
   await db.saveAdminConfig(adminConfig);
 
   return;
@@ -824,7 +837,7 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
 }
 
 export async function setCachedConfig(config: AdminConfig) {
-  cachedConfig = config;
+  configCache.cachedConfig = config;
 }
 
 // 特殊功能权限检查

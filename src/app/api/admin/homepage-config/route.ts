@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
@@ -59,11 +60,22 @@ export async function POST(request: NextRequest) {
 
     await db.saveAdminConfig(config);
     clearConfigCache();
+    revalidatePath('/');
 
-    return NextResponse.json({
-      success: true,
-      message: 'Home page config updated',
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Home page config updated',
+      },
+      {
+        headers: {
+          'Cache-Control':
+            'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      },
+    );
   } catch (error) {
     console.error('保存首页配置失败:', error);
     return NextResponse.json({ error: '保存失败，请重试' }, { status: 500 });
@@ -90,10 +102,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '权限不足' }, { status: 403 });
     }
 
-    return NextResponse.json({
-      success: true,
-      config: config.HomePageConfig || defaultHomePageConfig,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        config: config.HomePageConfig || defaultHomePageConfig,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      },
+    );
   } catch (error) {
     console.error('获取首页配置失败:', error);
     return NextResponse.json({ error: '获取配置失败' }, { status: 500 });
