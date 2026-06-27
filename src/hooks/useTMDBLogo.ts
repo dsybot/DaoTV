@@ -39,7 +39,6 @@ async function fetchTMDBData(
 
 export function useTMDBLogos(
   items: TMDBLogoItem[],
-  options?: { enabled?: boolean },
 ): Record<string, string | null> {
   const combine = useCallback(
     (results: UseQueryResult<TMDBData | null>[]) => {
@@ -60,7 +59,7 @@ export function useTMDBLogos(
       staleTime: 0,
       gcTime: 7 * 24 * 60 * 60 * 1000,
       retry: 1,
-      enabled: options?.enabled !== false && !!item.title,
+      enabled: !!item.title,
     })),
     combine,
   });

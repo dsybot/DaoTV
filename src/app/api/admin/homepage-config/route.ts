@@ -5,10 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
-import {
-  defaultHomePageConfig,
-  normalizeHomePageConfig,
-} from '@/lib/homepage-config';
+import { defaultHomePageConfig } from '@/lib/homepage-config';
 
 export const runtime = 'nodejs';
 
@@ -48,7 +45,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '权限不足' }, { status: 403 });
     }
 
-    config.HomePageConfig = normalizeHomePageConfig(body);
+    config.HomePageConfig = {
+      ...defaultHomePageConfig,
+      showHeroBanner: body.showHeroBanner ?? true,
+      showContinueWatching: body.showContinueWatching ?? true,
+      showUpcomingReleases: body.showUpcomingReleases ?? true,
+      showHotMovies: body.showHotMovies ?? true,
+      showHotTvShows: body.showHotTvShows ?? true,
+      showNewAnime: body.showNewAnime ?? true,
+      showHotVariety: body.showHotVariety ?? true,
+      showHotShortDramas: body.showHotShortDramas ?? true,
+    };
 
     await db.saveAdminConfig(config);
     clearConfigCache();
@@ -85,9 +92,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      config: normalizeHomePageConfig(
-        config.HomePageConfig || defaultHomePageConfig,
-      ),
+      config: config.HomePageConfig || defaultHomePageConfig,
     });
   } catch (error) {
     console.error('获取首页配置失败:', error);

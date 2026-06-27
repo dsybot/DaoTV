@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-console, unused-imports/no-unused-vars */
 
 import { db } from '@/lib/db';
-import {
-  defaultHomePageConfig,
-  normalizeHomePageConfig,
-} from '@/lib/homepage-config';
+import { defaultHomePageConfig } from '@/lib/homepage-config';
 
 import { AdminConfig } from './admin.types';
 import { DEFAULT_USER_AGENT } from './user-agent';
@@ -409,9 +406,23 @@ export async function configSelfCheck(
   if (!adminConfig.LiveConfig || !Array.isArray(adminConfig.LiveConfig)) {
     adminConfig.LiveConfig = [];
   }
-  adminConfig.HomePageConfig = normalizeHomePageConfig(
-    adminConfig.HomePageConfig,
-  );
+  if (!adminConfig.HomePageConfig) {
+    adminConfig.HomePageConfig = defaultHomePageConfig;
+  } else {
+    adminConfig.HomePageConfig = {
+      ...defaultHomePageConfig,
+      showHeroBanner: adminConfig.HomePageConfig.showHeroBanner ?? true,
+      showContinueWatching:
+        adminConfig.HomePageConfig.showContinueWatching ?? true,
+      showUpcomingReleases:
+        adminConfig.HomePageConfig.showUpcomingReleases ?? true,
+      showHotMovies: adminConfig.HomePageConfig.showHotMovies ?? true,
+      showHotTvShows: adminConfig.HomePageConfig.showHotTvShows ?? true,
+      showNewAnime: adminConfig.HomePageConfig.showNewAnime ?? true,
+      showHotVariety: adminConfig.HomePageConfig.showHotVariety ?? true,
+      showHotShortDramas: adminConfig.HomePageConfig.showHotShortDramas ?? true,
+    };
+  }
 
   // 确保网盘搜索配置有默认值
   if (!adminConfig.NetDiskConfig) {

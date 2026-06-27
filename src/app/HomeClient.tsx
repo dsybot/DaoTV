@@ -24,9 +24,12 @@ import {
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { getDoubanDetails } from '@/lib/douban.client';
+import { favoritesQueryOptions } from '@/hooks/useFavoritesQuery';
+import { playRecordsQueryOptions } from '@/hooks/usePlayRecordsQuery';
+import { remindersQueryOptions } from '@/hooks/useRemindersQuery';
 import {
+  defaultHomePageConfig,
   HomePageModuleConfig,
-  normalizeHomePageConfig,
 } from '@/lib/homepage-config';
 import {
   cleanExpiredCache,
@@ -36,11 +39,8 @@ import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
 import { DoubanItem } from '@/lib/types';
 // 🚀 TanStack Query Mutations
 import { useClearFavoritesMutation } from '@/hooks/useFavoritesMutations';
-import { favoritesQueryOptions } from '@/hooks/useFavoritesQuery';
 import { useHomePageQueries } from '@/hooks/useHomePageQueries';
-import { playRecordsQueryOptions } from '@/hooks/usePlayRecordsQuery';
 import { useClearRemindersMutation } from '@/hooks/useRemindersMutations';
-import { remindersQueryOptions } from '@/hooks/useRemindersQuery';
 import { useTMDBLogos } from '@/hooks/useTMDBLogo';
 import { useWatchingUpdatesQuery } from '@/hooks/useWatchingUpdates';
 
@@ -172,7 +172,7 @@ function HomeClient({
   const [isPending, startTransition] = useTransition();
 
   const homePageConfig = useMemo(
-    () => normalizeHomePageConfig(initialConfig),
+    () => ({ ...defaultHomePageConfig, ...initialConfig }),
     [initialConfig],
   );
   const homeQueryConfig = useMemo(
@@ -216,17 +216,20 @@ function HomeClient({
   });
 
   const { announcement } = useSite();
-
-  useEffect(() => {
-    dispatch({ type: 'SET_HOME_PAGE_CONFIG', payload: homePageConfig });
-  }, [homePageConfig]);
+  const prevHotMoviesRef = useRef<any[]>([]);
+  const prevHotTvShowsRef = useRef<any[]>([]);
+  const prevHotVarietyShowsRef = useRef<any[]>([]);
+  const prevHotAnimeRef = useRef<any[]>([]);
+  const prevHotShortDramasRef = useRef<any[]>([]);
 
   // 🚀 从 TanStack Query 获取首页数据，本地状态作为详情增强
   const hotMovies = useMemo(() => {
-    if (!state.homePageConfig.showHotMovies) return [];
-
     const cached = homeData?.hotMovies || [];
-    const dataToUse = cached;
+    if (cached.length > 0) {
+      prevHotMoviesRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching ? prevHotMoviesRef.current : cached;
     if (state.hotMovies.length > 0 && dataToUse.length > 0) {
       return dataToUse.map((m) => {
         const local = state.hotMovies.find((lm) => lm.id === m.id);
@@ -234,17 +237,15 @@ function HomeClient({
       });
     }
     return dataToUse;
-  }, [
-    homeData?.hotMovies,
-    state.hotMovies,
-    state.homePageConfig.showHotMovies,
-  ]);
+  }, [homeData?.hotMovies, state.hotMovies, homeFetching]);
 
   const hotTvShows = useMemo(() => {
-    if (!state.homePageConfig.showHotTvShows) return [];
-
     const cached = homeData?.hotTvShows || [];
-    const dataToUse = cached;
+    if (cached.length > 0) {
+      prevHotTvShowsRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching ? prevHotTvShowsRef.current : cached;
     if (state.hotTvShows.length > 0 && dataToUse.length > 0) {
       return dataToUse.map((s) => {
         const local = state.hotTvShows.find((ls) => ls.id === s.id);
@@ -252,17 +253,17 @@ function HomeClient({
       });
     }
     return dataToUse;
-  }, [
-    homeData?.hotTvShows,
-    state.hotTvShows,
-    state.homePageConfig.showHotTvShows,
-  ]);
+  }, [homeData?.hotTvShows, state.hotTvShows, homeFetching]);
 
   const hotVarietyShows = useMemo(() => {
-    if (!state.homePageConfig.showHotVariety) return [];
-
     const cached = homeData?.hotVarietyShows || [];
-    const dataToUse = cached;
+    if (cached.length > 0) {
+      prevHotVarietyShowsRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching
+        ? prevHotVarietyShowsRef.current
+        : cached;
     if (state.hotVarietyShows.length > 0 && dataToUse.length > 0) {
       return dataToUse.map((s) => {
         const local = state.hotVarietyShows.find((ls) => ls.id === s.id);
@@ -270,17 +271,15 @@ function HomeClient({
       });
     }
     return dataToUse;
-  }, [
-    homeData?.hotVarietyShows,
-    state.hotVarietyShows,
-    state.homePageConfig.showHotVariety,
-  ]);
+  }, [homeData?.hotVarietyShows, state.hotVarietyShows, homeFetching]);
 
   const hotAnime = useMemo(() => {
-    if (!state.homePageConfig.showNewAnime) return [];
-
     const cached = homeData?.hotAnime || [];
-    const dataToUse = cached;
+    if (cached.length > 0) {
+      prevHotAnimeRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching ? prevHotAnimeRef.current : cached;
     if (state.hotAnime.length > 0 && dataToUse.length > 0) {
       return dataToUse.map((a) => {
         const local = state.hotAnime.find((la) => la.id === a.id);
@@ -288,17 +287,17 @@ function HomeClient({
       });
     }
     return dataToUse;
-  }, [
-    homeData?.hotAnime,
-    state.hotAnime,
-    state.homePageConfig.showNewAnime,
-  ]);
+  }, [homeData?.hotAnime, state.hotAnime, homeFetching]);
 
   const hotShortDramas = useMemo(() => {
-    if (!state.homePageConfig.showHotShortDramas) return [];
-
     const cached = homeData?.hotShortDramas || [];
-    const dataToUse = cached;
+    if (cached.length > 0) {
+      prevHotShortDramasRef.current = cached;
+    }
+    const dataToUse =
+      cached.length === 0 && homeFetching
+        ? prevHotShortDramasRef.current
+        : cached;
     if (state.hotShortDramas.length > 0 && dataToUse.length > 0) {
       return dataToUse.map((d) => {
         const local = state.hotShortDramas.find((ld) => ld.id === d.id);
@@ -306,79 +305,62 @@ function HomeClient({
       });
     }
     return dataToUse;
-  }, [
-    homeData?.hotShortDramas,
-    state.hotShortDramas,
-    state.homePageConfig.showHotShortDramas,
-  ]);
+  }, [homeData?.hotShortDramas, state.hotShortDramas, homeFetching]);
 
-  const bangumiCalendarData =
-    state.homePageConfig.showNewAnime &&
-    Array.isArray(homeData?.bangumiCalendar)
-      ? homeData.bangumiCalendar
-      : [];
+  const bangumiCalendarData = Array.isArray(homeData?.bangumiCalendar) ? homeData.bangumiCalendar : [];
 
   const heroBannerItems = useMemo(
-    () =>
-      state.homePageConfig.showHeroBanner
-        ? [
-            ...hotMovies.slice(0, 2).map((movie) => ({
-              id: movie.id,
-              title: movie.title,
-              poster: movie.poster,
-              backdrop: movie.backdrop,
-              trailerUrl: movie.trailerUrl,
-              description: movie.plot_summary,
-              year: movie.year,
-              rate: movie.rate,
-              douban_id: Number(movie.id),
-              type: 'movie' as const,
-            })),
-            ...hotTvShows.slice(0, 2).map((show) => ({
-              id: show.id,
-              title: show.title,
-              poster: show.poster,
-              backdrop: show.backdrop,
-              trailerUrl: show.trailerUrl,
-              description: show.plot_summary,
-              year: show.year,
-              rate: show.rate,
-              douban_id: Number(show.id),
-              type: 'tv' as const,
-            })),
-            ...hotVarietyShows.slice(0, 1).map((show) => ({
-              id: show.id,
-              title: show.title,
-              poster: show.poster,
-              backdrop: show.backdrop,
-              trailerUrl: show.trailerUrl,
-              description: show.plot_summary,
-              year: show.year,
-              rate: show.rate,
-              douban_id: Number(show.id),
-              type: 'variety' as const,
-            })),
-            ...hotAnime.slice(0, 1).map((anime) => ({
-              id: anime.id,
-              title: anime.title,
-              poster: anime.poster,
-              backdrop: anime.backdrop,
-              trailerUrl: anime.trailerUrl,
-              description: anime.plot_summary,
-              year: anime.year,
-              rate: anime.rate,
-              douban_id: Number(anime.id),
-              type: 'anime' as const,
-            })),
-          ]
-        : [],
-    [
-      hotMovies,
-      hotTvShows,
-      hotVarietyShows,
-      hotAnime,
-      state.homePageConfig.showHeroBanner,
+    () => [
+      ...hotMovies.slice(0, 2).map((movie) => ({
+        id: movie.id,
+        title: movie.title,
+        poster: movie.poster,
+        backdrop: movie.backdrop,
+        trailerUrl: movie.trailerUrl,
+        description: movie.plot_summary,
+        year: movie.year,
+        rate: movie.rate,
+        douban_id: Number(movie.id),
+        type: 'movie' as const,
+      })),
+      ...hotTvShows.slice(0, 2).map((show) => ({
+        id: show.id,
+        title: show.title,
+        poster: show.poster,
+        backdrop: show.backdrop,
+        trailerUrl: show.trailerUrl,
+        description: show.plot_summary,
+        year: show.year,
+        rate: show.rate,
+        douban_id: Number(show.id),
+        type: 'tv' as const,
+      })),
+      ...hotVarietyShows.slice(0, 1).map((show) => ({
+        id: show.id,
+        title: show.title,
+        poster: show.poster,
+        backdrop: show.backdrop,
+        trailerUrl: show.trailerUrl,
+        description: show.plot_summary,
+        year: show.year,
+        rate: show.rate,
+        douban_id: Number(show.id),
+        type: 'variety' as const,
+      })),
+      ...hotAnime.slice(0, 1).map((anime) => ({
+        id: anime.id,
+        title: anime.title,
+        poster: anime.poster,
+        backdrop: anime.backdrop,
+        trailerUrl: anime.trailerUrl,
+        description: anime.plot_summary,
+        year: anime.year,
+        rate: anime.rate,
+        douban_id: Number(anime.id),
+        type: 'anime' as const,
+      })),
     ],
+    [hotMovies, hotTvShows, hotVarietyShows, hotAnime],
   );
 
   const tmdbLogos = useTMDBLogos(
@@ -387,7 +369,6 @@ function HomeClient({
       year: item.year,
       type: item.type,
     })),
-    { enabled: state.homePageConfig.showHeroBanner },
   );
 
   const heroBannerItemsWithLogos = useMemo(
@@ -500,11 +481,11 @@ function HomeClient({
 
   const authInfo = getAuthInfoFromBrowserCookie();
   const storageType =
-    typeof window !== 'undefined' ? localStorage.getItem('storageType') : null;
+    typeof window !== 'undefined'
+      ? localStorage.getItem('storageType')
+      : null;
   const showWatchingUpdates =
-    state.homePageConfig.showContinueWatching &&
-    !!authInfo?.username &&
-    storageType !== 'localstorage';
+    !!authInfo?.username && storageType !== 'localstorage';
   useWatchingUpdatesQuery({
     enabled: showWatchingUpdates,
   });
@@ -644,11 +625,6 @@ function HomeClient({
 
     // 🔄 异步加载即将上映数据（不阻塞页面显示）
     const fetchUpcomingReleases = async () => {
-      if (!state.homePageConfig.showUpcomingReleases) {
-        dispatch({ type: 'SET_UPCOMING_RELEASES', payload: [] });
-        return;
-      }
-
       try {
         const response = await fetch('/api/release-calendar?limit=100', {
           signal: abortController.signal,
@@ -750,7 +726,7 @@ function HomeClient({
         console.log('📅 [Main] Web Worker已清理');
       }
     };
-  }, [state.homePageConfig.showUpcomingReleases]);
+  }, []);
 
   // 如果首页数据加载完成但热门短剧为空，强制刷新（可能之前缓存了空数据）
   useEffect(() => {
@@ -778,11 +754,7 @@ function HomeClient({
     const timeouts: NodeJS.Timeout[] = [];
 
     // 延迟加载电影详情
-    if (
-      state.homePageConfig.showHeroBanner &&
-      state.homePageConfig.showHotMovies &&
-      homeData.hotMovies.length > 0
-    ) {
+    if (state.homePageConfig.showHotMovies && homeData.hotMovies.length > 0) {
       const timeout = setTimeout(() => {
         Promise.all(
           homeData.hotMovies.slice(0, 2).map(async (movie) => {
@@ -820,11 +792,7 @@ function HomeClient({
     }
 
     // 延迟加载剧集详情
-    if (
-      state.homePageConfig.showHeroBanner &&
-      state.homePageConfig.showHotTvShows &&
-      homeData.hotTvShows.length > 0
-    ) {
+    if (state.homePageConfig.showHotTvShows && homeData.hotTvShows.length > 0) {
       const timeout = setTimeout(() => {
         Promise.all(
           homeData.hotTvShows.slice(0, 2).map(async (show) => {
@@ -862,11 +830,7 @@ function HomeClient({
     }
 
     // 延迟加载动漫详情
-    if (
-      state.homePageConfig.showHeroBanner &&
-      state.homePageConfig.showNewAnime &&
-      homeData.hotAnime.length > 0
-    ) {
+    if (state.homePageConfig.showNewAnime && homeData.hotAnime.length > 0) {
       const timeout = setTimeout(() => {
         const anime = homeData.hotAnime[0];
         getDoubanDetails(anime.id)
@@ -894,7 +858,6 @@ function HomeClient({
 
     // 延迟加载综艺详情
     if (
-      state.homePageConfig.showHeroBanner &&
       state.homePageConfig.showHotVariety &&
       homeData.hotVarietyShows.length > 0
     ) {
@@ -1011,16 +974,16 @@ function HomeClient({
         {/* 轮播图 - 在所有tab显示 */}
         {state.homePageConfig.showHeroBanner &&
           heroBannerItemsWithLogos.length > 0 && (
-            <div className='dao-hero-wrap mb-5 md:mb-4'>
-              <HeroBanner
-                items={heroBannerItemsWithLogos}
-                autoPlayInterval={8000}
-                showControls={true}
-                showIndicators={true}
-                enableVideo={enableVideo}
-              />
-            </div>
-          )}
+          <div className='dao-hero-wrap mb-5 md:mb-4'>
+            <HeroBanner
+              items={heroBannerItemsWithLogos}
+              autoPlayInterval={8000}
+              showControls={true}
+              showIndicators={true}
+              enableVideo={enableVideo}
+            />
+          </div>
+        )}
 
         {/* 顶部 Tab 切换 */}
         <div className='relative z-10 mb-8 flex items-center justify-center px-2 sm:px-10 md:-mt-1'>
