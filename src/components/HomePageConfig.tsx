@@ -4,7 +4,10 @@ import { CheckCircle, Layout } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
-import { defaultHomePageConfig } from '@/lib/homepage-config';
+import {
+  defaultHomePageConfig,
+  normalizeHomePageConfig,
+} from '@/lib/homepage-config';
 
 interface HomePageConfigProps {
   config: AdminConfig | null;
@@ -23,18 +26,9 @@ const HomePageConfig = ({ config, refreshConfig }: HomePageConfigProps) => {
 
   useEffect(() => {
     if (config?.HomePageConfig) {
-      setHomePageSettings({
-        showHeroBanner: config.HomePageConfig.showHeroBanner ?? true,
-        showContinueWatching:
-          config.HomePageConfig.showContinueWatching ?? true,
-        showUpcomingReleases:
-          config.HomePageConfig.showUpcomingReleases ?? true,
-        showHotMovies: config.HomePageConfig.showHotMovies ?? true,
-        showHotTvShows: config.HomePageConfig.showHotTvShows ?? true,
-        showNewAnime: config.HomePageConfig.showNewAnime ?? true,
-        showHotVariety: config.HomePageConfig.showHotVariety ?? true,
-        showHotShortDramas: config.HomePageConfig.showHotShortDramas ?? true,
-      });
+      setHomePageSettings(normalizeHomePageConfig(config.HomePageConfig));
+    } else {
+      setHomePageSettings(defaultHomePageConfig);
     }
   }, [config]);
 

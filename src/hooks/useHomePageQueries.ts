@@ -112,49 +112,80 @@ export function useHomePageQueries(
   );
 
   // 使用 useCallback 缓存 combine 函数，避免每次渲染都重新创建
-  const combine = useCallback((results: any[]) => {
-    const [
-      moviesResult,
-      tvResult,
-      varietyResult,
-      animeResult,
-      shortDramasResult,
-      bangumiResult,
-    ] = results;
+  const combine = useCallback(
+    (results: any[]) => {
+      const [
+        moviesResult,
+        tvResult,
+        varietyResult,
+        animeResult,
+        shortDramasResult,
+        bangumiResult,
+      ] = results;
 
-    // 聚合数据
-    const data: HomePageData = {
-      hotMovies: moviesResult.data?.code === 200 ? moviesResult.data.list : [],
-      hotTvShows: tvResult.data?.code === 200 ? tvResult.data.list : [],
-      hotVarietyShows:
-        varietyResult.data?.code === 200 ? varietyResult.data.list : [],
-      hotAnime: animeResult.data?.code === 200 ? animeResult.data.list : [],
-      hotShortDramas: shortDramasResult.data || [],
-      bangumiCalendar: bangumiResult.data || [],
-    };
+      // 聚合数据
+      const data: HomePageData = {
+        hotMovies:
+          enabledConfig.showHotMovies && moviesResult.data?.code === 200
+            ? moviesResult.data.list
+            : [],
+        hotTvShows:
+          enabledConfig.showHotTvShows && tvResult.data?.code === 200
+            ? tvResult.data.list
+            : [],
+        hotVarietyShows:
+          enabledConfig.showHotVariety && varietyResult.data?.code === 200
+            ? varietyResult.data.list
+            : [],
+        hotAnime:
+          enabledConfig.showNewAnime && animeResult.data?.code === 200
+            ? animeResult.data.list
+            : [],
+        hotShortDramas: enabledConfig.showHotShortDramas
+          ? shortDramasResult.data || []
+          : [],
+        bangumiCalendar: enabledConfig.showNewAnime
+          ? bangumiResult.data || []
+          : [],
+      };
 
-    // 聚合加载状态
-    const isLoading = results.some((r) => r.isLoading);
-    const isFetching = results.some((r) => r.isFetching);
+      // 聚合加载状态
+      const isLoading = results.some((r) => r.isLoading);
+      const isFetching = results.some((r) => r.isFetching);
 
-    // 聚合错误
-    const errors = results.filter((r) => r.error).map((r) => r.error as Error);
-    const hasError = errors.length > 0;
+      // 聚合错误
+      const errors = results
+        .filter((r) => r.error)
+        .map((r) => r.error as Error);
+      const hasError = errors.length > 0;
 
-    // 聚合 refetch 函数
-    const refetch = () => {
-      results.forEach((r) => r.refetch());
-    };
+      // 聚合 refetch 函数
+      const refetch = () => {
+        [
+          enabledConfig.showHotMovies,
+          enabledConfig.showHotTvShows,
+          enabledConfig.showHotVariety,
+          enabledConfig.showNewAnime,
+          enabledConfig.showHotShortDramas,
+          enabledConfig.showNewAnime,
+        ].forEach((enabled, index) => {
+          if (enabled) {
+            results[index].refetch();
+          }
+        });
+      };
 
-    return {
-      data,
-      isLoading,
-      isFetching,
-      errors,
-      hasError,
-      refetch,
-    };
-  }, []);
+      return {
+        data,
+        isLoading,
+        isFetching,
+        errors,
+        hasError,
+        refetch,
+      };
+    },
+    [enabledConfig],
+  );
 
   // 使用 useQueries 并行获取所有数据
   const result = useQueries({
