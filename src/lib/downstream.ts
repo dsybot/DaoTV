@@ -92,14 +92,14 @@ async function searchWithCache(
             const episode_title_url = title_url.split('$');
             if (
               episode_title_url.length === 2 &&
-              episode_title_url[1].endsWith('.m3u8')
+              /^https?:\/\//i.test(episode_title_url[1].trim())
             ) {
               // 标准格式：第1集$https://xxx.m3u8
               matchTitles.push(episode_title_url[0]);
               matchEpisodes.push(episode_title_url[1]);
             } else if (
               episode_title_url.length === 1 &&
-              episode_title_url[0].endsWith('.m3u8')
+              /^https?:\/\//i.test(episode_title_url[0].trim())
             ) {
               // 纯链接格式：https://xxx.m3u8（无标题信息）
               matchTitles.push(`第${matchEpisodes.length + 1}集`);
@@ -532,7 +532,7 @@ export async function getDetailFromApi(
         const episode_title_url = title_url.split('$');
         if (
           episode_title_url.length === 2 &&
-          episode_title_url[1].endsWith('.m3u8')
+          /^https?:\/\//i.test(episode_title_url[1].trim())
         ) {
           matchTitles.push(episode_title_url[0]);
           matchEpisodes.push(episode_title_url[1]);

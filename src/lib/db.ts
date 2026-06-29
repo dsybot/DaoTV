@@ -37,6 +37,12 @@ function createStorage(): IStorage {
     case 'kvrocks':
       return new KvrocksStorage();
     case 'sqlite':
+      if (process.env.EDGEONE_PAGES === '1') {
+        throw new Error(
+          '[LunaTV] SQLite storage is not supported on EdgeOne Pages: the platform has no persistent filesystem. ' +
+          'Please set NEXT_PUBLIC_STORAGE_TYPE to "upstash", "redis", or "kvrocks".'
+        );
+      }
       return new SqliteStorage();
     case 'localstorage':
     default:

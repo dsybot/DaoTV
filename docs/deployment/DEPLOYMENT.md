@@ -310,7 +310,7 @@ your-space/
 
 1. **准备工作**
    - 注册 [EdgeOne](https://edgeone.ai/) 账号
-   - 在 [Upstash](https://upstash.com/) 创建 Redis 实例（EdgeOne Pages 无持久化存储）
+   - 在 [Upstash](https://upstash.com/) 创建 Redis 实例（EdgeOne Pages 无持久化存储，**不支持 SQLite**）
    - Fork 本项目到你的 GitHub/GitLab 账号
 
 2. **创建 Pages 项目**
@@ -342,7 +342,7 @@ your-space/
    USERNAME=admin
    PASSWORD=your_secure_password
 
-   # 必填：存储配置（必须使用 Upstash）
+   # 必填：存储配置（必须使用 Upstash、Redis 或 KVRocks，不支持 SQLite）
    NEXT_PUBLIC_STORAGE_TYPE=upstash
    UPSTASH_URL=https://your-redis-instance.upstash.io
    UPSTASH_TOKEN=AxxxxxxxxxxxxxxxxxxxxxxxxxxxQ==
@@ -380,7 +380,7 @@ your-space/
 #### ⚠️ EdgeOne Pages 注意事项
 
 - **无 Docker 支持**：EdgeOne Pages 是无服务器平台，仅支持源码构建部署
-- **必须使用 Upstash**：无持久化文件系统，需要外部数据库
+- **不支持 SQLite**：平台无持久化文件系统，SQLite 数据库在每次冷启动后会丢失，必须使用 `upstash`、`redis` 或 `kvrocks`
 - **函数执行限制**：单次请求最长执行 120 秒（已在 `edgeone.json` 中配置）
 - **不支持视频缓存**：无本地文件系统，视频缓存功能不可用
 

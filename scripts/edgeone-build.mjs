@@ -182,6 +182,7 @@ function patchEdgeFunctionEnvInjection() {
     );
   }
 
+  // 兼容 Next.js 16 proxy.ts（executeMiddleware，构建时已临时转换）
   const middlewareSignature = 'async function executeMiddleware({request}) {';
   const middlewareMarker = '/* edgeone-middleware-env-injected */';
   if (!code.includes(middlewareMarker) && !code.includes(middlewareSignature)) {
@@ -209,6 +210,36 @@ function patchEdgeFunctionEnvInjection() {
   writeFileSync(edgeFunctionPath, code);
   console.log('[edgeone-build] Patched edge function process.env injection');
 }
+
+// EdgeOne 平台暂未完整支持 Next.js 16 proxy.ts 规范，
+// 构建前临时创建 middleware.ts 以确保兼容性。
+// 安全策略：保留原 proxy.ts 不删除，只在构建后删除临时的 middleware.ts。
+function convertProxyToMiddlewareForBuild() {
+  const proxyPath = join(process.cwd(), 'src', 'proxy.ts');
+  const middlewarePath = join(process.cwd(), 'src', 'middleware.ts');
+
+  if (!existsSync(proxyPath) || existsSync(middlewarePath)) return false;
+
+  let content = readFileSync(proxyPath, 'utf8');
+  content = content.replace(/export async function proxy\b/, 'export async function middleware');
+
+  writeFileSync(middlewarePath, content);
+  // 不删除 proxy.ts，保留原文件，防止构建中断时源码丢失
+  console.log('[edgeone-build] Temporarily created middleware.ts for EdgeOne compatibility');
+  return true;
+}
+
+function restoreProxyAfterBuild(wasConverted) {
+  if (!wasConverted) return;
+
+  const middlewarePath = join(process.cwd(), 'src', 'middleware.ts');
+  rmSync(middlewarePath, { force: true });
+  console.log('[edgeone-build] Removed temporary middleware.ts, proxy.ts restored');
+}
+
+const wasConverted = convertProxyToMiddlewareForBuild();
+// 兜底：确保即使父进程异常退出也能清理临时文件
+process.on('exit', () => restoreProxyAfterBuild(wasConverted));
 
 const isInsideEdgeOneBuilder = process.env.NEXT_PRIVATE_STANDALONE === 'true';
 
