@@ -5303,8 +5303,8 @@ function PlayPageClient() {
               display: none !important;
             }
 
-            /* 📱 移动端默认隐藏弹幕输入框，仅全屏时显示 */
-            @media (max-width: 768px) {
+            /* 📱 移动端/平板横屏非全屏隐藏弹幕输入框，仅全屏时显示 */
+            @media (max-width: 768px), (min-width: 769px) and (max-width: 1180px) and (orientation: landscape) and (hover: none) and (pointer: coarse) {
               .artplayer-plugin-danmuku .apd-emitter {
                 display: none !important;
               }
@@ -7481,7 +7481,7 @@ function PlayPageClient() {
   return (
     <>
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (min-width: 769px) and (max-width: 1180px) and (orientation: landscape) and (hover: none) and (pointer: coarse) {
           .mobile-danmaku-emitter-guard .artplayer-plugin-danmuku .apd-emitter {
             display: none !important;
           }
