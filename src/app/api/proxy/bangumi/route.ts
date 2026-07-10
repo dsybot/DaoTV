@@ -35,6 +35,10 @@ export async function GET(request: NextRequest) {
     let apiUrl: string;
     if (apiType === 'cmliussss') {
       apiUrl = `${CMLIUSSSS_BASE}/${path}`;
+    } else if (apiType === 'corsapi') {
+      // 使用 Cloudflare Worker 代理，从 VideoProxyConfig 获取地址
+      const corsApiBase = adminConfig.VideoProxyConfig?.proxyUrl || 'https://corsapi.smone.workers.dev';
+      apiUrl = `${corsApiBase}/https://api.bgm.tv/${path}`;
     } else if (apiType === 'custom' && apiProxy) {
       const base = apiProxy.endsWith('/') ? apiProxy.slice(0, -1) : apiProxy;
       apiUrl = `${base}/${path}`;
