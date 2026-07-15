@@ -275,7 +275,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
 
           <main
-            className={`flex-1 md:min-h-0 mt-12 mb-24 md:mb-0 ${mainSpacingClass}`}
+            className={`flex-1 md:min-h-0 mt-[calc(3rem+env(safe-area-inset-top))] mb-24 md:mb-0 ${mainSpacingClass}`}
           >
             {children}
           </main>

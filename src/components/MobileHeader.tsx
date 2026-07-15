@@ -46,7 +46,10 @@ const MobileHeader = ({
     ) : null;
 
   return (
-    <header className='md:hidden fixed top-0 left-0 right-0 z-999 w-full'>
+    <header
+      className='md:hidden fixed left-0 right-0 z-999 w-full'
+      style={{ top: 'env(safe-area-inset-top)' }}
+    >
       <GlassmorphismEffect
         intensity='light'
         animated={false}

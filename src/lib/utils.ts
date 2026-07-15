@@ -222,6 +222,55 @@ export interface VideoSourceTestResult {
   testedAt?: number;
 }
 
+interface VideoPlayRuntimeConfig {
+  VIDEO_PROXY_ENABLED?: boolean;
+  VIDEO_PROXY_URL?: string;
+}
+
+type VideoPlayWindow = Window & {
+  RUNTIME_CONFIG?: VideoPlayRuntimeConfig;
+};
+
+// 视频播放代理配置（Cloudflare Worker 加速播放流，与 VideoProxyConfig 共用同一开关）
+function getVideoPlayProxyConfig(): { enabled: boolean; proxyUrl: string } {
+  if (typeof window === 'undefined') return { enabled: false, proxyUrl: '' };
+  const rc = (window as VideoPlayWindow).RUNTIME_CONFIG;
+  return {
+    enabled: !!rc?.VIDEO_PROXY_ENABLED,
+    proxyUrl: (rc?.VIDEO_PROXY_URL || '').replace(/\/$/, ''),
+  };
+}
+
+// 把真实播放地址包一层 Cloudflare Worker 代理（m3u8 走 /m3u8 端点，自动重写 .ts 子链接；其他格式走通用 /?url= 端点）
+export function applyVideoPlayProxy(url: string): string {
+  if (!url || !/^https?:\/\//i.test(url)) return url;
+
+  const { enabled, proxyUrl } = getVideoPlayProxyConfig();
+  if (!enabled || !proxyUrl) return url;
+
+  // 已经代理过，避免套娃
+  if (url.startsWith(proxyUrl)) return url;
+
+  const isM3u8 = /\.m3u8(\?|#|$)/i.test(url);
+  const endpoint = isM3u8 ? '/m3u8' : '/';
+  return `${proxyUrl}${endpoint}?url=${encodeURIComponent(url)}`;
+}
+
+// Worker 代理请求失败（超时/502等）时，从代理地址还原出真实地址，用于自动降级直连
+export function stripVideoPlayProxy(url: string): string | null {
+  if (!url) return null;
+  const { proxyUrl } = getVideoPlayProxyConfig();
+  if (!proxyUrl || !url.startsWith(proxyUrl)) return null;
+
+  try {
+    const parsed = new URL(url);
+    const raw = parsed.searchParams.get('url');
+    return raw ? decodeURIComponent(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function formatVideoLoadSpeed(speedKBps?: number): string {
   if (!speedKBps || !Number.isFinite(speedKBps) || speedKBps <= 0) {
     return '未知';

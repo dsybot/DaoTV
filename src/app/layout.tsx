@@ -75,6 +75,8 @@ export default async function RootLayout({
   let customAdFilterVersion = 0;
   let aiRecommendEnabled = false;
   let embyEnabled = false;
+  let videoProxyEnabled = false;
+  let videoProxyUrl = '';
   let customCategories = [] as {
     name: string;
     type: 'movie' | 'tv';
@@ -109,6 +111,8 @@ export default async function RootLayout({
       config.EmbyConfig.Sources.length > 0 &&
       config.EmbyConfig.Sources.some((s) => s.enabled && s.ServerURL)
     );
+    videoProxyEnabled = config.VideoProxyConfig?.enabled ?? false;
+    videoProxyUrl = config.VideoProxyConfig?.proxyUrl || '';
   }
 
   // Inject runtime config for client-side code.
@@ -128,6 +132,8 @@ export default async function RootLayout({
     AI_RECOMMEND_ENABLED: aiRecommendEnabled,
     EMBY_ENABLED: embyEnabled,
     PRIVATE_LIBRARY_ENABLED: embyEnabled,
+    VIDEO_PROXY_ENABLED: videoProxyEnabled,
+    VIDEO_PROXY_URL: videoProxyUrl,
     // 禁用预告片：Vercel 自动检测，或用户手动设�?DISABLE_HERO_TRAILER=true
     DISABLE_HERO_TRAILER:
       process.env.VERCEL === '1' || process.env.DISABLE_HERO_TRAILER === 'true',
@@ -142,6 +148,9 @@ export default async function RootLayout({
         />
         <meta name='color-scheme' content='light dark' />
         <meta name='google' content='notranslate' />
+        {/* iOS PWA 沉浸式状态栏：manifest.json 里的同名字段对 Safari 无效，必须通过 meta 标签设置 */}
+        <meta name='apple-mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
         <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         {}
@@ -155,6 +164,15 @@ export default async function RootLayout({
         translate='no'
         className={`${inter.className} min-h-screen bg-black text-gray-200`}
       >
+        {/*
+          iOS 沉浸式状态栏（black-translucent）下，状态栏图标固定为白色，
+          不随亮/暗主题切换。用一条固定深色条带盖住状态栏区域，
+          确保任何主题下时间/电量图标都清晰可读。安全区外的设备该高度为 0，不受影响。
+        */}
+        <div
+          className='fixed top-0 left-0 right-0 z-1000 bg-black md:hidden'
+          style={{ height: 'env(safe-area-inset-top)' }}
+        />
         <ThemeProvider
           attribute='class'
           defaultTheme='dark'

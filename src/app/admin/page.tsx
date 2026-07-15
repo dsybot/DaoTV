@@ -4707,7 +4707,7 @@ const VideoSourceConfig = ({
               Cloudflare Worker 代理加速
             </h3>
             <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
-              为网页播放启用全球CDN加速，提升视频源API访问速度和稳定性
+              为网页播放启用全球CDN加速，同时加速视频源API访问和视频/m3u8播放流
             </p>
           </div>
           <ToggleSwitch
@@ -4753,6 +4753,9 @@ const VideoSourceConfig = ({
                 <li>• 通过Cloudflare全球CDN加速视频源API访问</li>
                 <li>• 自动转发所有API参数（ac=list, ac=detail等）</li>
                 <li>• 为每个源生成唯一路径，提升兼容性</li>
+                <li>• 播放m3u8/视频时自动经Worker代理转发，加速播放流</li>
+                <li>• Worker 代理失败时自动降级为直连，不影响正常播放</li>
+                <li>• Emby 源不受影响（需自定义鉴权头，始终直连）</li>
                 <li>• 仅影响网页播放，不影响TVBox配置</li>
               </ul>
             </div>
