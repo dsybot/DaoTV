@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys,
       TMDBLanguage,
       EnableTMDBActorSearch,
-      TMDBWorkerProxy,
       LoginBgDesktop,
       LoginBgMobile,
       cronConfig,
@@ -82,7 +81,6 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys?: string[];
       TMDBLanguage?: string;
       EnableTMDBActorSearch?: boolean;
-      TMDBWorkerProxy?: string;
       LoginBgDesktop?: string;
       LoginBgMobile?: string;
       cronConfig?: {
@@ -152,7 +150,6 @@ export async function POST(request: NextRequest) {
       TMDBApiKeys: (TMDBApiKeys || []).filter((k: string) => k && k.trim()),  // 过滤空值
       TMDBLanguage: TMDBLanguage || 'zh-CN',
       EnableTMDBActorSearch: EnableTMDBActorSearch ?? false,
-      TMDBWorkerProxy: TMDBWorkerProxy || '',
       LoginBgDesktop: LoginBgDesktop || '',
       LoginBgMobile: LoginBgMobile || '',
     };

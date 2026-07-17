@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { getConfig } from '@/lib/config';
+import type { AdminConfig } from '@/lib/admin.types';
 import {
   TMDB_CACHE_EXPIRE,
   getCacheKey,
@@ -15,6 +16,17 @@ const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
 /**
+ * 若已启用 VideoProxyConfig（Cloudflare Worker 代理），把目标 URL 包一层代理，
+ * 用于绕过 TMDB 在国内的访问限制/加速图片加载。未启用时原样返回。
+ */
+export function applyCorsProxy(url: string, config: AdminConfig): string {
+  const proxyConfig = config.VideoProxyConfig;
+  if (!proxyConfig?.enabled || !proxyConfig.proxyUrl) return url;
+  const base = proxyConfig.proxyUrl.replace(/\/$/, '');
+  return `${base}/?url=${encodeURIComponent(url)}`;
+}
+
+/**
  * 生成 TMDB 图片 URL（支持 Worker 代理）
  */
 async function getTMDBImageUrl(
@@ -24,26 +36,7 @@ async function getTMDBImageUrl(
   if (!path) return '';
 
   const config = await getConfig();
-  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-
-  // 如果配置了 Worker 代理，使用代理
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, '');
-    return `${proxyUrl}/image/${size}${path}`;
-  }
-
-  // 没有配置代理，直连 TMDB
-  return `https://image.tmdb.org/t/p/${size}${path}`;
-}
-
-// 获取 TMDB Worker 代理地址（如果配置了）
-async function getTMDBWorkerProxy(): Promise<string> {
-  try {
-    const config = await getConfig();
-    return (config.SiteConfig.TMDBWorkerProxy || '').trim();
-  } catch {
-    return '';
-  }
+  return applyCorsProxy(`https://image.tmdb.org/t/p/${size}${path}`, config);
 }
 
 // TMDB API 响应类型
@@ -337,42 +330,6 @@ async function fetchTMDB<T>(
 ): Promise<T> {
   const config = await getConfig();
   const apiKey = getNextTMDBApiKey(config);
-  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-
-  // 如果配置了 Worker 代理，使用代理
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, ''); // 移除末尾斜杠
-    const url = new URL(`${proxyUrl}${endpoint}`);
-    url.searchParams.append('api_key', apiKey);
-    url.searchParams.append(
-      'language',
-      config.SiteConfig.TMDBLanguage || 'zh-CN',
-    );
-
-    // 添加其他参数
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-
-    console.log(`[TMDB API] 通过 Worker 代理请求: ${endpoint}`);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': DEFAULT_USER_AGENT,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `TMDB API错误: ${response.status} ${response.statusText}`,
-      );
-    }
-
-    return await response.json();
-  }
-
-  // 没有配置代理，直连 TMDB
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
   url.searchParams.append('api_key', apiKey);
   url.searchParams.append(
@@ -385,9 +342,10 @@ async function fetchTMDB<T>(
     url.searchParams.append(key, value);
   });
 
-  console.log(`[TMDB API] 直连请求: ${endpoint}`);
+  const requestUrl = applyCorsProxy(url.toString(), config);
+  console.log(`[TMDB API] 请求: ${endpoint}`);
 
-  const response = await fetch(url.toString(), {
+  const response = await fetch(requestUrl, {
     headers: {
       Accept: 'application/json',
       'User-Agent': DEFAULT_USER_AGENT,
@@ -609,18 +567,12 @@ export async function searchTMDBActorWorks(
 
     console.log(`✅ [TMDB] TMDB功能已启用`);
 
-    // 获取配置以确定图片 URL 前缀
     const config = await getConfig();
-    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-    const imageBaseUrl = workerProxy
-      ? `${workerProxy.replace(/\/$/, '')}/image/w500`
-      : TMDB_IMAGE_BASE_URL;
 
     // 检查缓存 - 为整个搜索结果缓存
     const cacheKey = getCacheKey('actor_works', {
       actorName,
       type,
-      tmdbProxy: workerProxy || 'direct',
       ...filterOptions,
     });
     console.log(`🔑 [TMDB] 缓存Key: ${cacheKey}`);
@@ -822,7 +774,9 @@ export async function searchTMDBActorWorks(
         return {
           id: work.id.toString(),
           title: work.title || work.name || '',
-          poster: work.poster_path ? `${imageBaseUrl}${work.poster_path}` : '',
+          poster: work.poster_path
+            ? applyCorsProxy(`${TMDB_IMAGE_BASE_URL}${work.poster_path}`, config)
+            : '',
           rate: work.vote_average ? work.vote_average.toFixed(1) : '',
           year: year,
           popularity: work.popularity,
@@ -1225,15 +1179,7 @@ export async function getCarouselItemByIMDB(
       return null;
     }
 
-    // 获取配置以确定图片 URL 前缀
     const config = await getConfig();
-    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-    const backdropBaseUrl = workerProxy
-      ? `${workerProxy.replace(/\/$/, '')}/image/w1280`
-      : TMDB_BACKDROP_BASE_URL;
-    const imageBaseUrl = workerProxy
-      ? `${workerProxy.replace(/\/$/, '')}/image/w500`
-      : TMDB_IMAGE_BASE_URL;
 
     const carouselItem: CarouselItem = {
       id: searchResult.id,
@@ -1243,10 +1189,16 @@ export async function getCarouselItemByIMDB(
           : (searchResult as TMDBTVShow).name,
       overview: searchResult.overview || '',
       backdrop: searchResult.backdrop_path
-        ? `${backdropBaseUrl}${searchResult.backdrop_path}`
+        ? applyCorsProxy(
+            `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}`,
+            config,
+          )
         : '',
       poster: searchResult.poster_path
-        ? `${imageBaseUrl}${searchResult.poster_path}`
+        ? applyCorsProxy(
+            `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}`,
+            config,
+          )
         : '',
       rate: searchResult.vote_average || 0,
       year:
@@ -1284,15 +1236,7 @@ export async function getCarouselItemByTitle(
       titleVariants.slice(0, 5),
     );
 
-    // 获取配置以确定图片 URL 前缀
     const config = await getConfig();
-    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-    const backdropBaseUrl = workerProxy
-      ? `${workerProxy.replace(/\/$/, '')}/image/w1280`
-      : TMDB_BACKDROP_BASE_URL;
-    const imageBaseUrl = workerProxy
-      ? `${workerProxy.replace(/\/$/, '')}/image/w500`
-      : TMDB_IMAGE_BASE_URL;
 
     // 1. 搜索电影或电视剧
     let searchResult: TMDBMovie | TMDBTVShow | null = null;
@@ -1354,10 +1298,16 @@ export async function getCarouselItemByTitle(
           : (searchResult as TMDBTVShow).name,
       overview: searchResult.overview || '',
       backdrop: searchResult.backdrop_path
-        ? `${backdropBaseUrl}${searchResult.backdrop_path}`
+        ? applyCorsProxy(
+            `${TMDB_BACKDROP_BASE_URL}${searchResult.backdrop_path}`,
+            config,
+          )
         : '',
       poster: searchResult.poster_path
-        ? `${imageBaseUrl}${searchResult.poster_path}`
+        ? applyCorsProxy(
+            `${TMDB_IMAGE_BASE_URL}${searchResult.poster_path}`,
+            config,
+          )
         : '',
       rate: searchResult.vote_average || 0,
       year:

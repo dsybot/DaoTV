@@ -441,7 +441,6 @@ interface SiteConfig {
   TMDBApiKeys?: string[]; // 多个API Key（轮询使用）
   TMDBLanguage?: string;
   EnableTMDBActorSearch?: boolean;
-  TMDBWorkerProxy?: string; // Cloudflare Workers 代理地址
   // Bangumi API 代理
   BangumiApiType?: string;
   BangumiApiProxy?: string;
@@ -4707,7 +4706,7 @@ const VideoSourceConfig = ({
               Cloudflare Worker 代理加速
             </h3>
             <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
-              为网页播放启用全球CDN加速，同时加速视频源API访问和视频/m3u8播放流
+              为网页播放启用全球CDN加速，同时加速视频源API访问、视频/m3u8播放流，以及所有 TMDB 接口和图片请求（演员搜索、首页 Hero 横幅背景图/Logo、播放页背景图等）
             </p>
           </div>
           <ToggleSwitch
@@ -6274,7 +6273,6 @@ const SiteConfigComponent = ({
     TMDBApiKeys: [],
     TMDBLanguage: 'zh-CN',
     EnableTMDBActorSearch: false,
-    TMDBWorkerProxy: '',
     BangumiApiType: 'cmliussss',
     BangumiApiProxy: '',
     BangumiImageProxyType: 'cmliussss',
@@ -6389,7 +6387,6 @@ const SiteConfigComponent = ({
         TMDBApiKeys: config.SiteConfig.TMDBApiKeys || [],
         TMDBLanguage: config.SiteConfig.TMDBLanguage || 'zh-CN',
         EnableTMDBActorSearch: config.SiteConfig.EnableTMDBActorSearch ?? false,
-        TMDBWorkerProxy: config.SiteConfig.TMDBWorkerProxy || '',
         BangumiApiType: config.SiteConfig.BangumiApiType || 'cmliussss',
         BangumiApiProxy: config.SiteConfig.BangumiApiProxy || '',
         BangumiImageProxyType: config.SiteConfig.BangumiImageProxyType || 'cmliussss',
@@ -7402,7 +7399,7 @@ const SiteConfigComponent = ({
             >
               TMDB 官网
             </a>{' '}
-            申请免费的 API Key。添加多个Key可以分散请求，避免触发速率限制。
+            申请免费的 API Key。添加多个Key可以分散请求，避免触发速率限制。国内直连 TMDB 可能较慢或不稳定，可在「视频源配置」标签下的「Cloudflare Worker 代理加速」中启用后统一走代理转发
           </p>
         </div>
 
@@ -7427,32 +7424,6 @@ const SiteConfigComponent = ({
             <option value='ja-JP'>日语</option>
             <option value='ko-KR'>韩语</option>
           </select>
-        </div>
-
-        {/* TMDB Worker 代理地址 */}
-        <div className='mb-6'>
-          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-            TMDB Cloudflare Workers 代理地址
-            <span className='ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal'>
-              （可选，用于提升 TMDB API 稳定性）
-            </span>
-          </label>
-          <input
-            type='text'
-            value={siteSettings.TMDBWorkerProxy || ''}
-            onChange={(e) =>
-              setSiteSettings((prev) => ({
-                ...prev,
-                TMDBWorkerProxy: e.target.value,
-              }))
-            }
-            placeholder='https://your-worker.workers.dev'
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
-          />
-          <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
-            如果服务器访问 TMDB 不稳定，可以配置 Cloudflare Workers
-            代理。留空则直连 TMDB。
-          </p>
         </div>
 
         {/* 启用TMDB演员搜索 */}

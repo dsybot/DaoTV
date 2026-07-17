@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { applyCorsProxy } from '@/lib/tmdb.client';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
@@ -51,24 +52,6 @@ function buildApiUrl(
   endpoint: string,
   params: Record<string, string>,
 ): string {
-  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-
-  // 如果配置了 Worker 代理，使用代理
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, ''); // 移除末尾斜杠
-    const url = new URL(`${proxyUrl}${endpoint}`);
-
-    // 添加所有参数
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.append(key, value);
-      }
-    });
-
-    return url.toString();
-  }
-
-  // 没有配置代理，直连 TMDB
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
 
   // 添加所有参数
@@ -78,11 +61,11 @@ function buildApiUrl(
     }
   });
 
-  return url.toString();
+  return applyCorsProxy(url.toString(), config);
 }
 
 function getTMDBProxyCacheKey(config: any): string {
-  return (config.SiteConfig.TMDBWorkerProxy || '').trim() || 'direct';
+  return applyCorsProxy(TMDB_BASE_URL, config);
 }
 
 // TMDB 图片 URL 生成（支持 Worker 代理）
@@ -92,14 +75,7 @@ function getTMDBImageUrl(
   size: string,
 ): string | null {
   if (!path) return null;
-
-  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, '');
-    return `${proxyUrl}/image/${size}${path}`;
-  }
-
-  return `${TMDB_IMAGE_BASE_URL}/${size}${path}`;
+  return applyCorsProxy(`${TMDB_IMAGE_BASE_URL}/${size}${path}`, config);
 }
 
 // 解析中文数字（支持一到九百九十九）

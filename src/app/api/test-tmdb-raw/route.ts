@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
+import { applyCorsProxy } from '@/lib/tmdb.client';
 
 export const runtime = 'nodejs';
 
@@ -44,7 +45,6 @@ export async function GET(request: Request) {
     const config = await getConfig();
     const apiKey = getNextTMDBApiKey(config);
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
-    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
 
     if (!apiKey) {
       return NextResponse.json(
@@ -54,20 +54,18 @@ export async function GET(request: Request) {
     }
 
     const endpoint = type === 'movie' ? 'search/movie' : 'search/tv';
-    const baseUrl = workerProxy
-      ? `${workerProxy.replace(/\/$/, '')}/${endpoint}`
-      : `${TMDB_BASE_URL}/${endpoint}`;
-    const url = new URL(baseUrl);
+    const url = new URL(`${TMDB_BASE_URL}/${endpoint}`);
     url.searchParams.append('api_key', apiKey);
     url.searchParams.append('language', language);
     url.searchParams.append('query', title);
+    const requestUrl = applyCorsProxy(url.toString(), config);
 
     console.log(
       '[TMDB测试] URL:',
-      url.toString().replace(apiKey, 'API_KEY_HIDDEN'),
+      requestUrl.replace(apiKey, 'API_KEY_HIDDEN'),
     );
 
-    const response = await fetch(url.toString());
+    const response = await fetch(requestUrl);
     const data = await response.json();
 
     return NextResponse.json({
@@ -75,7 +73,7 @@ export async function GET(request: Request) {
       type,
       language,
       endpoint,
-      proxied: !!workerProxy,
+      proxied: requestUrl !== url.toString(),
       responseStatus: response.status,
       totalResults: data.total_results || 0,
       results:

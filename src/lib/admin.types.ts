@@ -24,7 +24,6 @@ export interface AdminConfig {
     TMDBApiKeys?: string[]; // 多个API Key（轮询使用）
     TMDBLanguage?: string;
     EnableTMDBActorSearch?: boolean;
-    TMDBWorkerProxy?: string; // Cloudflare Workers 代理地址（用于API和图片代理）
     // Bangumi API 代理
     BangumiApiType?: string;
     BangumiApiProxy?: string;

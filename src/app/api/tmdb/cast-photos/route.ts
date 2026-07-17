@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
-import { isTMDBEnabled } from '@/lib/tmdb.client';
+import { applyCorsProxy, isTMDBEnabled } from '@/lib/tmdb.client';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
@@ -14,20 +14,13 @@ const NO_BROWSER_CACHE_HEADERS = {
 };
 
 function getTMDBProxyCacheKey(config: any): string {
-  return (config.SiteConfig.TMDBWorkerProxy || '').trim() || 'direct';
+  return applyCorsProxy(TMDB_BASE_URL, config);
 }
 
 // 生成 TMDB 图片 URL（支持 Worker 代理）
 function getTMDBImageUrl(config: any, path: string | null): string | null {
   if (!path) return null;
-
-  const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
-  if (workerProxy) {
-    const proxyUrl = workerProxy.replace(/\/$/, '');
-    return `${proxyUrl}/image/w300${path}`;
-  }
-
-  return `${TMDB_IMAGE_BASE_URL}/w300${path}`;
+  return applyCorsProxy(`${TMDB_IMAGE_BASE_URL}/w300${path}`, config);
 }
 
 // TMDB API Key 轮询索引
@@ -135,31 +128,19 @@ export async function GET(request: NextRequest) {
 
     const apiKey = getNextTMDBApiKey(config);
     const language = config.SiteConfig.TMDBLanguage || 'zh-CN';
-    const workerProxy = (config.SiteConfig.TMDBWorkerProxy || '').trim();
 
     // 构建 API URL（支持 Worker 代理）
     const buildApiUrl = (
       endpoint: string,
       params: Record<string, string>,
     ): string => {
-      if (workerProxy) {
-        const proxyUrl = workerProxy.replace(/\/$/, '');
-        const url = new URL(`${proxyUrl}${endpoint}`);
-        url.searchParams.append('api_key', apiKey);
-        url.searchParams.append('language', language);
-        Object.entries(params).forEach(([key, value]) => {
-          url.searchParams.append(key, value);
-        });
-        return url.toString();
-      }
-
       const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
       url.searchParams.append('api_key', apiKey);
       url.searchParams.append('language', language);
       Object.entries(params).forEach(([key, value]) => {
         url.searchParams.append(key, value);
       });
-      return url.toString();
+      return applyCorsProxy(url.toString(), config);
     };
 
     // 并发获取所有演员图片

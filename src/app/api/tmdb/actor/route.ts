@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
 import {
+  applyCorsProxy,
   searchTMDBActorWorks,
   isTMDBEnabled,
   TMDBFilterOptions,
@@ -126,8 +127,7 @@ export async function GET(request: NextRequest) {
     }
 
     const config = await getConfig();
-    const tmdbProxy =
-      (config.SiteConfig.TMDBWorkerProxy || '').trim() || 'direct';
+    const tmdbProxy = applyCorsProxy('https://api.themoviedb.org/3', config);
 
     // 生成缓存key
     const cacheParams = {
