@@ -33,8 +33,10 @@ import {
 import { normalizeDownloadSource } from '@/lib/download';
 import { SearchResult } from '@/lib/types';
 import {
+  applyFirstPartyM3u8Proxy,
   applyVideoPlayProxy,
   getVideoResolutionFromM3u8,
+  isFirstPartyM3u8Proxy,
   stripVideoPlayProxy,
   VideoSourceTestResult,
 } from '@/lib/utils';
@@ -4219,6 +4221,87 @@ function PlayPageClient() {
     initFromHistory();
   }, []);
 
+  // 🚀 换源完成后加载弹幕（由 switchQuality 的 Promise 触发，而非固定延迟）
+  const loadDanmuAfterSourceSwitch = async () => {
+    if (
+      !artPlayerRef.current?.plugins?.artplayerPluginDanmuku ||
+      !externalDanmuEnabledRef.current
+    ) {
+      return;
+    }
+    console.log('🔄 换源完成，开始优化弹幕加载...');
+
+    // 确保状态完全重置
+    lastDanmuLoadKeyRef.current = '';
+    danmuLoadingRef.current = false;
+
+    try {
+      const startTime = performance.now();
+      const result = await loadExternalDanmu();
+
+      if (
+        result.count > 0 &&
+        artPlayerRef.current?.plugins?.artplayerPluginDanmuku
+      ) {
+        const plugin = artPlayerRef.current.plugins.artplayerPluginDanmuku;
+
+        // 🚀 确保在加载新弹幕前完全清空旧弹幕
+        plugin.reset(); // 立即回收所有正在显示的弹幕DOM
+        plugin.load(); // 不传参数，完全清空队列
+        console.log('🧹 换源后已清空旧弹幕，准备加载新弹幕');
+
+        // 🚀 优化大量弹幕的加载：分批处理，减少阻塞
+        if (result.count > 1000) {
+          console.log(
+            `📊 检测到大量弹幕 (${result.count}条)，启用分批加载`,
+          );
+
+          // 先加载前500条，快速显示
+          const firstBatch = result.data.slice(0, 500);
+          plugin.load(firstBatch);
+
+          // 剩余弹幕分批异步加载，避免阻塞
+          const remainingBatches = [];
+          for (let i = 500; i < result.data.length; i += 300) {
+            remainingBatches.push(result.data.slice(i, i + 300));
+          }
+
+          // 使用requestIdleCallback分批加载剩余弹幕
+          remainingBatches.forEach((batch, index) => {
+            setTimeout(
+              () => {
+                if (
+                  artPlayerRef.current?.plugins?.artplayerPluginDanmuku
+                ) {
+                  // 将批次弹幕追加到现有队列
+                  batch.forEach((danmu) => {
+                    plugin.emit(danmu).catch(console.warn);
+                  });
+                }
+              },
+              (index + 1) * 100,
+            ); // 每100ms加载一批
+          });
+
+          console.log(
+            `⚡ 分批加载完成: 首批${firstBatch.length}条 + ${remainingBatches.length}个后续批次`,
+          );
+        } else {
+          // 弹幕数量较少，正常加载
+          plugin.load(result.data);
+          console.log(`✅ 换源后弹幕加载完成: ${result.count} 条`);
+        }
+
+        const loadTime = performance.now() - startTime;
+        console.log(`⏱️ 弹幕加载耗时: ${loadTime.toFixed(2)}ms`);
+      } else {
+        console.log('📭 换源后没有弹幕数据');
+      }
+    } catch (error) {
+      console.error('❌ 换源后弹幕加载失败:', error);
+    }
+  };
+
   // 🚀 优化的换源处理（防连续点击）
   const handleSourceChange = async (
     newSource: string,
@@ -4289,17 +4372,11 @@ function PlayPageClient() {
         );
       }
 
-      // 清除前一个历史记录
+      // 清除前一个历史记录（不阻塞换源流程，异步执行）
       if (currentSourceRef.current && currentIdRef.current) {
-        try {
-          await deletePlayRecord(
-            currentSourceRef.current,
-            currentIdRef.current,
-          );
-          console.log('已清除前一个播放记录');
-        } catch (err) {
-          console.error('清除播放记录失败:', err);
-        }
+        deletePlayRecord(currentSourceRef.current, currentIdRef.current)
+          .then(() => console.log('已清除前一个播放记录'))
+          .catch((err) => console.error('清除播放记录失败:', err));
       }
 
       const newDetail = availableSources.find(
@@ -4307,6 +4384,8 @@ function PlayPageClient() {
       );
       if (!newDetail) {
         setError('未找到匹配结果');
+        isSourceChangingRef.current = false;
+        setIsVideoLoading(false);
         return;
       }
 
@@ -4383,88 +4462,8 @@ function PlayPageClient() {
         setCurrentEpisodeIndex(targetIndex);
       }
 
-      // 🚀 换源完成后，优化弹幕加载流程
-      setTimeout(async () => {
-        isSourceChangingRef.current = false; // 重置换源标识
-
-        if (
-          artPlayerRef.current?.plugins?.artplayerPluginDanmuku &&
-          externalDanmuEnabledRef.current
-        ) {
-          console.log('🔄 换源完成，开始优化弹幕加载...');
-
-          // 确保状态完全重置
-          lastDanmuLoadKeyRef.current = '';
-          danmuLoadingRef.current = false;
-
-          try {
-            const startTime = performance.now();
-            const result = await loadExternalDanmu();
-
-            if (
-              result.count > 0 &&
-              artPlayerRef.current?.plugins?.artplayerPluginDanmuku
-            ) {
-              const plugin =
-                artPlayerRef.current.plugins.artplayerPluginDanmuku;
-
-              // 🚀 确保在加载新弹幕前完全清空旧弹幕
-              plugin.reset(); // 立即回收所有正在显示的弹幕DOM
-              plugin.load(); // 不传参数，完全清空队列
-              console.log('🧹 换源后已清空旧弹幕，准备加载新弹幕');
-
-              // 🚀 优化大量弹幕的加载：分批处理，减少阻塞
-              if (result.count > 1000) {
-                console.log(
-                  `📊 检测到大量弹幕 (${result.count}条)，启用分批加载`,
-                );
-
-                // 先加载前500条，快速显示
-                const firstBatch = result.data.slice(0, 500);
-                plugin.load(firstBatch);
-
-                // 剩余弹幕分批异步加载，避免阻塞
-                const remainingBatches = [];
-                for (let i = 500; i < result.data.length; i += 300) {
-                  remainingBatches.push(result.data.slice(i, i + 300));
-                }
-
-                // 使用requestIdleCallback分批加载剩余弹幕
-                remainingBatches.forEach((batch, index) => {
-                  setTimeout(
-                    () => {
-                      if (
-                        artPlayerRef.current?.plugins?.artplayerPluginDanmuku
-                      ) {
-                        // 将批次弹幕追加到现有队列
-                        batch.forEach((danmu) => {
-                          plugin.emit(danmu).catch(console.warn);
-                        });
-                      }
-                    },
-                    (index + 1) * 100,
-                  ); // 每100ms加载一批
-                });
-
-                console.log(
-                  `⚡ 分批加载完成: 首批${firstBatch.length}条 + ${remainingBatches.length}个后续批次`,
-                );
-              } else {
-                // 弹幕数量较少，正常加载
-                plugin.load(result.data);
-                console.log(`✅ 换源后弹幕加载完成: ${result.count} 条`);
-              }
-
-              const loadTime = performance.now() - startTime;
-              console.log(`⏱️ 弹幕加载耗时: ${loadTime.toFixed(2)}ms`);
-            } else {
-              console.log('📭 换源后没有弹幕数据');
-            }
-          } catch (error) {
-            console.error('❌ 换源后弹幕加载失败:', error);
-          }
-        }
-      }, 1000); // 减少到1秒延迟，加快响应
+      // 🚀 换源标记和弹幕加载改由实际执行 switchQuality 的 effect 在切换真正完成后触发，
+      // 不再用固定延迟猜测新源何时可播放（见 loadDanmuAfterSourceSwitch 调用处）
     } catch (err) {
       // 重置换源标识
       isSourceChangingRef.current = false;
@@ -5273,7 +5272,11 @@ function PlayPageClient() {
             );
           }
 
-          // 🚀 移除原有的 setTimeout 弹幕加载逻辑，交由 useEffect 统一优化处理
+          // 🚀 换源（非切集数）成功后，新源已真正 canplay，此时才加载弹幕，不再猜固定延迟
+          if (!isEpisodeChange && isSourceChangingRef.current) {
+            isSourceChangingRef.current = false;
+            void loadDanmuAfterSourceSwitch();
+          }
 
           console.log('使用switch方法成功切换视频');
           return;
@@ -5283,6 +5286,7 @@ function PlayPageClient() {
           isEpisodeChangingRef.current = false;
           isSourceSwitchingRef.current = false;
 
+          // 🔥 switch失败会重建播放器，重建路径的 ready 事件里会重置换源标识
           await cleanupPlayer();
         }
       }
@@ -5409,8 +5413,11 @@ function PlayPageClient() {
                 video.hls.destroy();
               }
 
-              // ☁️ 新地址加载，重置 Worker 代理降级标记
+              // ☁️ 新地址加载，重置 Worker 代理 / 第一方代理降级标记
               (video as any)._proxyFallbackDone = false;
+              (video as any)._firstPartyProxyFallbackDone = false;
+              (video as any)._currentHlsUrl = url;
+              (video as any)._consecutiveNetworkErrorCount = 0;
 
               // 在函数内部重新检测iOS13+设备
               const localIsIOS13 = isIOS13;
@@ -5581,6 +5588,41 @@ function PlayPageClient() {
                 },
               );
 
+              // 依次尝试：Worker 代理 -> 直连 -> 本站第一方代理，每一级只降级一次。
+              // 返回 true 表示已发起下一级 loadSource，调用方不应再做其他恢复动作；
+              // 返回 false 表示所有降级手段已用尽。
+              const tryFallbackOrGiveUp = (): boolean => {
+                const activeUrl = (video as any)._currentHlsUrl || url;
+
+                // ☁️ Worker 代理请求失败（超时/502/畸形响应等）时，自动降级到直连原始地址
+                const rawUrl = !(video as any)._proxyFallbackDone
+                  ? stripVideoPlayProxy(activeUrl)
+                  : null;
+                if (rawUrl) {
+                  console.warn('Worker 代理错误，降级为直连:', rawUrl);
+                  (video as any)._proxyFallbackDone = true;
+                  (video as any)._currentHlsUrl = rawUrl;
+                  (video as any)._consecutiveNetworkErrorCount = 0;
+                  hls.loadSource(rawUrl);
+                  return true;
+                }
+                // 🧭 直连失败时，最后尝试走本站第一方 m3u8 代理——常见于上游要求
+                // 特定 Referer/UA 或不返回 CORS 头，浏览器直连必然失败。
+                if (
+                  !(video as any)._firstPartyProxyFallbackDone &&
+                  !isFirstPartyM3u8Proxy(activeUrl)
+                ) {
+                  (video as any)._firstPartyProxyFallbackDone = true;
+                  const proxiedUrl = applyFirstPartyM3u8Proxy(activeUrl);
+                  console.warn('直连错误，降级为第一方代理:', proxiedUrl);
+                  (video as any)._currentHlsUrl = proxiedUrl;
+                  (video as any)._consecutiveNetworkErrorCount = 0;
+                  hls.loadSource(proxiedUrl);
+                  return true;
+                }
+                return false;
+              };
+
               hls.on(Hls.Events.ERROR, function (event: any, data: any) {
                 console.error('HLS Error:', event, data);
 
@@ -5613,17 +5655,35 @@ function PlayPageClient() {
                   return;
                 }
 
+                // 旧版/不兼容的代理（例如未实现 m3u8 重写的 Worker）常常不会让 hls.js
+                // 判定为 fatal：分片请求持续失败但清晰度切换/内部重试机制会不断吸收错误，
+                // 播放器只是卡住不报错。这里独立计数非 fatal 的网络错误，达到阈值时
+                // 主动触发降级，而不是干等一个永远不会到来的 fatal 事件。
+                if (
+                  !data.fatal &&
+                  data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+                  (data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR ||
+                    data.details === Hls.ErrorDetails.FRAG_LOAD_TIMEOUT ||
+                    data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR ||
+                    data.details === Hls.ErrorDetails.LEVEL_LOAD_TIMEOUT)
+                ) {
+                  const count =
+                    ((video as any)._consecutiveNetworkErrorCount || 0) + 1;
+                  (video as any)._consecutiveNetworkErrorCount = count;
+                  if (count >= 8) {
+                    console.warn(
+                      `连续 ${count} 次非致命网络错误，主动降级:`,
+                      data.details,
+                    );
+                    tryFallbackOrGiveUp();
+                  }
+                  return;
+                }
+
                 if (data.fatal) {
                   switch (data.type) {
                     case Hls.ErrorTypes.NETWORK_ERROR: {
-                      // ☁️ Worker 代理请求致命失败（超时/502等）时，自动降级到直连原始地址，避免播放中断
-                      const rawUrl = !(video as any)._proxyFallbackDone
-                        ? stripVideoPlayProxy(url)
-                        : null;
-                      if (rawUrl) {
-                        console.warn('Worker 代理网络错误，降级为直连:', rawUrl);
-                        (video as any)._proxyFallbackDone = true;
-                        hls.loadSource(rawUrl);
+                      if (tryFallbackOrGiveUp()) {
                         break;
                       }
                       console.log('网络错误，尝试恢复...');
@@ -5635,6 +5695,11 @@ function PlayPageClient() {
                       hls.recoverMediaError();
                       break;
                     default:
+                      // OTHER_ERROR / MUX_ERROR / KEY_SYSTEM_ERROR 等非网络类致命错误，
+                      // 仍有可能是代理返回了畸形内容导致的解封装失败，降级一次再放弃。
+                      if (tryFallbackOrGiveUp()) {
+                        break;
+                      }
                       console.log('无法恢复的错误');
                       hls.destroy();
                       break;
@@ -7205,6 +7270,12 @@ function PlayPageClient() {
 
           // 隐藏换源加载状态
           setIsVideoLoading(false);
+
+          // 🔥 重置换源标识（防止 switchQuality 失败重建播放器时标识卡死，导致后续无法再换源/弹幕永久隐藏）
+          if (isSourceChangingRef.current) {
+            isSourceChangingRef.current = false;
+            console.log('🎯 播放器重建完成，重置换源标识');
+          }
 
           // 🔥 重置集数切换标识（播放器成功创建后）
           if (isEpisodeChangingRef.current) {

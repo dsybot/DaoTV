@@ -136,6 +136,25 @@ async function getTrustedNetworkConfig(
   return await getTrustedNetworkFromAPI(request);
 }
 
+// 常见弱默认密码/凭据黑名单（小写比对）。命中时视同未配置密码，
+// 强制走 /warning 页而不是静默放行——这类值通常来自教程截图、示例配置复制粘贴。
+const WEAK_DEFAULT_CREDENTIALS = new Set([
+  'admin',
+  'admin123',
+  'password',
+  'password123',
+  '123456',
+  '12345678',
+  'changeme',
+  'letmein',
+  'lunatv',
+  'moontv',
+]);
+
+function isWeakDefaultCredential(value: string): boolean {
+  return WEAK_DEFAULT_CREDENTIALS.has(value.toLowerCase());
+}
+
 // 获取客户端 IP
 function getClientIP(request: NextRequest): string {
   // 按优先级获取客户端 IP
@@ -306,6 +325,14 @@ async function handleAuthentication(
 
   if (!process.env.PASSWORD) {
     const warningUrl = new URL('/warning', request.url);
+    return NextResponse.redirect(warningUrl);
+  }
+
+  if (isWeakDefaultCredential(process.env.PASSWORD)) {
+    // 已设置密码，但命中常见弱默认值黑名单（admin/admin123/password等）——
+    // 用不同的 reason 参数区分，避免用户误以为环境变量没生效
+    const warningUrl = new URL('/warning', request.url);
+    warningUrl.searchParams.set('reason', 'weak-password');
     return NextResponse.redirect(warningUrl);
   }
 

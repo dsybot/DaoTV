@@ -12,8 +12,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
-import { validateProxyTargetUrl } from '@/lib/proxy-security';
+import { readTextLimited, validateProxyTargetUrl } from '@/lib/proxy-security';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
+
+// CMS 搜索/详情/分类响应体大小硬上限，防止异常上游返回超大响应把内存打爆
+const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10MB
 
 // 使用 Node.js Runtime 以获得更好的网络兼容性
 export const runtime = 'nodejs';
@@ -211,8 +214,8 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // 获取响应内容
-      let responseText = await response.text();
+      // 获取响应内容（设大小硬上限，防止异常上游把内存打爆）
+      let responseText = await readTextLimited(response, MAX_RESPONSE_BYTES);
 
       // 清理响应文本（移除 BOM 等）
       responseText = cleanResponseText(responseText);
