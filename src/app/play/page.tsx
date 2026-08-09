@@ -5429,8 +5429,10 @@ function PlayPageClient() {
               const hls = new Hls({
                 debug: false,
                 enableWorker: true,
-                // 参考 HLS.js config.ts：移动设备关闭低延迟模式以节省资源
-                lowLatencyMode: !isMobile,
+                // 关闭低延迟模式以改善点播体验 - Issue #194
+                // HLS.js 默认 lowLatencyMode: true，主要为 LL-HLS 直播流设计
+                // 点播场景下会导致：缓冲区过小、网络波动时容易卡顿、CPU 负担增加
+                lowLatencyMode: false,
 
                 // 🎯 官方推荐的缓冲策略 - iOS13+ 特别优化
                 /* 缓冲长度配置 - 参考 hlsDefaultConfig - 桌面设备应用用户配置 */
