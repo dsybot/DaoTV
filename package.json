@@ -65,7 +65,7 @@
     "redis": "^4.6.7",
     "remark-gfm": "^4.0.1",
     "socket.io-client": "^4.8.3",
-    "sonner": "^2.0.7",
+    "sonner": "^2.0.8",
     "swiper": "^11.2.8",
     "switch-chinese": "^1.0.16",
     "tailwind-merge": "^2.6.0",
